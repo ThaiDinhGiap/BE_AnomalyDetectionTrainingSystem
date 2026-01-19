@@ -26,7 +26,7 @@ public class DefectTrainingContentServiceImpl implements DefectTrainingContentSe
 
     @Override
     public Page<DefectTrainingContentResponse> getAll(int pageNumber, int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Pageable pageable = PageRequest.of(pageNumber - 1, pageSize);
         return defectTrainingContentRepository.findAll(pageable)
                 .map(DefectTrainingContentMapper.INSTANCE::toResponse);
     }

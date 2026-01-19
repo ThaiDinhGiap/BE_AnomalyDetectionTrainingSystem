@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AnomalyTrainingBackendApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <envs>
+      <env name="DB_URL" value="jdbc:mysql://localhost:3306/anomaly_training" />
+      <env name="DB_USERNAME" value="root" />
+      <env name="DB_PASSWORD" value="Root@123" />
+      <env name="MAIL_USERNAME" value="giaptdhe186094@fpt.edu.vn" />
+      <env name="MAIL_PASSWORD" value="nrpnxpymtropnlhx" />
+      <env name="MAIL_ENABLED" value="true" />
+      <env name="JWT_SECRET" value="YW5vbWFseS10cmFpbmluZy1iYWNrZW5kLXNlY3JldC1rZXktMjAyNi1kZW5zby1qd3Q=" />
+      <env name="AZURE_CLIENT_ID" value="aa62d549-c721-4fb0-a675-24a5dae7c8cd" />
+      <env name="AZURE_CLIENT_SECRET" value="O6S8Q~1r63HPmR2x4BkCHc6AF~d-dYWIN4eujbW." />
+    </envs>
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <module name="anomaly-training-backend" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.denso.anomaly_training_backend.AnomalyTrainingBackendApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

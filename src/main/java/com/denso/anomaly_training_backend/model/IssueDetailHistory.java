@@ -1,14 +1,7 @@
 package com.denso.anomaly_training_backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.denso.anomaly_training_backend.enums.IssueDetailType;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,10 +44,14 @@ public class IssueDetailHistory extends BaseEntity {
     @Column(name = "detected_date", nullable = false)
     private LocalDate detectedDate;
 
-    @Column(name = "is_escaped")
-    @Builder.Default
-    private Boolean isEscaped = false;
-
     @Column(columnDefinition = "text")
     private String note;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "issue_detail_type")
+    IssueDetailType type;
+
+    @Column(name = "target_defect_id")
+    Long targetDefectId;
 }
