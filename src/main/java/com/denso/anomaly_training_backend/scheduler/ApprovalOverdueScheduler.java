@@ -103,7 +103,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Results waiting for SV
         List<TrainingResult> pendingResults = trainingResultRepository
-                .findByStatusAndUpdatedAtBefore(TrainingResultStatus.WAITING_SV.toString(), threshold);
+                .findByStatusAndUpdatedAtBefore(TrainingResultStatus.ON_GOING.toString(), threshold);
 
         for (TrainingResult result : pendingResults) {
             Long svId = result.getGroup().getSupervisor().getId();
