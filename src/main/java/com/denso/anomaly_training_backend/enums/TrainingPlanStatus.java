@@ -6,5 +6,8 @@ public enum TrainingPlanStatus {
     REJECTED_BY_SV,
     WAITING_MANAGER,
     REJECTED_BY_MANAGER,
+    APPROVED_BY_SV,
+    APPROVED_BY_MANAGER,
+    NEED_UPDATE,
     APPROVED
 }

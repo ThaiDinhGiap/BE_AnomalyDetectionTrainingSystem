@@ -6,14 +6,15 @@ import com.denso.anomaly_training_backend.dto.response.TrainingPlanResponse;
 
 public interface TrainingPlanService {
 
-    /**
-     * Lấy dữ liệu nguồn (Employees, Processes) dựa trên Group ID
-     * để chuẩn bị tạo Plan mới.
-     * @param groupId ID của dây chuyền
-     * @return DTO chứa full info cần thiết
-     */
+    // Lấy dữ liệu khởi tạo (Employees, Processes) để vẽ bảng
     TrainingPlanInitDataResponse getInitializationData(Long groupId);
-    public Long submitPlan(TrainingPlanRequest request);
-    public Long saveDraft(TrainingPlanRequest request);
+
+    // Lưu nháp (Không validate supervisor, status = DRAFT)
+    Long saveDraft(TrainingPlanRequest request);
+
+    // Gửi duyệt (Validate supervisor, status = WAITING_SV, ghi log)
+    Long submitPlan(TrainingPlanRequest request);
+
+    // Lấy chi tiết + Lịch sử duyệt
     TrainingPlanResponse getTrainingPlanById(Long id);
 }
