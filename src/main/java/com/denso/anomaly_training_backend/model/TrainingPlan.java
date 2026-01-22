@@ -44,23 +44,23 @@ public class TrainingPlan extends BaseEntity {
     @EqualsAndHashCode.Exclude
     private Group group;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "verified_by_sv")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private User verifiedBySv;
-
-    @Column(name = "verified_at_sv")
-    private Instant verifiedAtSv;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by_manager")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private User approvedByManager;
-
-    @Column(name = "approved_at_manager")
-    private Instant approvedAtManager;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "verified_by_sv")
+//    @ToString.Exclude
+//    @EqualsAndHashCode.Exclude
+//    private User verifiedBySv;
+//
+//    @Column(name = "verified_at_sv")
+//    private Instant verifiedAtSv;
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "approved_by_manager")
+//    @ToString.Exclude
+//    @EqualsAndHashCode.Exclude
+//    private User approvedByManager;
+//
+//    @Column(name = "approved_at_manager")
+//    private Instant approvedAtManager;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -75,5 +75,11 @@ public class TrainingPlan extends BaseEntity {
     @OneToMany(mappedBy = "trainingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @Builder.Default
-    List<TrainingPlanDetail> details = new ArrayList<>();
+    private List<TrainingPlanDetail> details = new ArrayList<>();
+
+    @OneToMany(mappedBy = "trainingPlan", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @Builder.Default
+    private List<TrainingPlanApproval> approvalLogs = new ArrayList<>();
+
 }

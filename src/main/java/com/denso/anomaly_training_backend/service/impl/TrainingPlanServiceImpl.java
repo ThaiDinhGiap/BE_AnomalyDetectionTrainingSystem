@@ -4,19 +4,19 @@ import com.denso.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.denso.anomaly_training_backend.dto.request.TrainingPlanRequest;
 import com.denso.anomaly_training_backend.dto.response.TrainingPlanInitDataResponse;
 import com.denso.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.denso.anomaly_training_backend.enums.ApprovalAction;
 import com.denso.anomaly_training_backend.enums.TrainingPlanStatus;
 import com.denso.anomaly_training_backend.mapper.MasterDataTrainingPlanMapper;
 import com.denso.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.denso.anomaly_training_backend.model.*;
 import com.denso.anomaly_training_backend.model.Process;
-import com.denso.anomaly_training_backend.repository.GroupRepository;
-import com.denso.anomaly_training_backend.repository.EmployeeRepository;
-import com.denso.anomaly_training_backend.repository.ProcessRepository;
-import com.denso.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.denso.anomaly_training_backend.repository.*;
 import com.denso.anomaly_training_backend.service.TrainingPlanService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +31,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final MasterDataTrainingPlanMapper masterDataMapper;
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanMapper trainingPlanMapper;
+    private final UserRepository userRepository;
+    private final TrainingPlanApprovalRepository approvalRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -56,91 +58,119 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .availableProcesses(masterDataMapper.toProcessResponseList(processes))
                 .build();
     }
-    // =================================================================
-    // API 1: LƯU NHÁP (SAVE DRAFT)
-    // =================================================================
+    // ==================================================================================
+    // 2. SAVE DRAFT
+    // ==================================================================================
     @Override
     @Transactional
     public Long saveDraft(TrainingPlanRequest request) {
-        // Lưu với trạng thái DRAFT -> Chưa gửi đi đâu cả
-        return savePlanInternal(request, TrainingPlanStatus.DRAFT);
-    }
+        // B1: Tạo hoặc Update thông tin chung (Header)
+        TrainingPlan plan = createOrUpdateHeader(request);
 
-    // =================================================================
-    // API 2: GỬI DUYỆT (SUBMIT)
-    // =================================================================
-    @Override
-    @Transactional
-    public Long submitPlan(TrainingPlanRequest request) {
-        // 1. Validate dữ liệu khi Submit
-        if (request.getVerifiedBySvId() == null || request.getApprovedByManagerId() == null) {
-            throw new RuntimeException("Lỗi: Phải chọn Supervisor và Manager trước khi gửi duyệt!");
-        }
-        if (request.getDetails() == null || request.getDetails().isEmpty()) {
-            throw new RuntimeException("Lỗi: Kế hoạch chưa có nội dung chi tiết!");
-        }
+        // B2: Cập nhật chi tiết (Matrix)
+        updateDetails(plan, request.getDetails());
 
-        // 2. Lưu và chuyển trạng thái sang WAITING_SV
-        return savePlanInternal(request, TrainingPlanStatus.WAITING_SV);
-    }
+        // B3: Set cứng trạng thái DRAFT
+        plan.setStatus(TrainingPlanStatus.DRAFT);
 
-    // =================================================================
-    // INTERNAL LOGIC (Dùng chung cho cả Save và Submit)
-    // =================================================================
-    private Long savePlanInternal(TrainingPlanRequest request, TrainingPlanStatus targetStatus) {
-        TrainingPlan trainingPlan;
-
-        // BƯỚC 1: Xác định là Tạo mới hay Update
-        if (request.getId() != null) {
-            trainingPlan = trainingPlanRepository.findById(request.getId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy Plan ID: " + request.getId()));
-
-            // Logic bảo vệ: Nếu đã duyệt (APPROVED) thì không được sửa nữa
-            if (TrainingPlanStatus.APPROVED.equals(trainingPlan.getStatus())) {
-                throw new RuntimeException("Không thể chỉnh sửa kế hoạch đã được phê duyệt!");
-            }
-        } else {
-            trainingPlan = new TrainingPlan();
-            trainingPlan.setCurrentVersion(1); // Phiên bản đầu tiên
-        }
-
-        // BƯỚC 2: Map dữ liệu Header (Title, Group, SV, Manager...)
-        trainingPlanMapper.updateTrainingPlanFromRequest(request, trainingPlan);
-
-        trainingPlan.setStatus(targetStatus);
-
-        // BƯỚC 3: Xử lý Detail
-        if (trainingPlan.getDetails() == null) {
-            trainingPlan.setDetails(new ArrayList<>());
-        } else {
-            trainingPlan.getDetails().clear();
-        }
-
-        if (request.getDetails() != null) {
-            for (TrainingPlanDetailRequest itemReq : request.getDetails()) {
-                // Mapper tự động  Employee, Process và map resultStatus
-                TrainingPlanDetail detail = trainingPlanMapper.toDetailEntity(itemReq);
-                detail.setTrainingPlan(trainingPlan);
-                trainingPlan.getDetails().add(detail);
-            }
-        }
-
-        TrainingPlan savedPlan = trainingPlanRepository.save(trainingPlan);
+        // Save
+        TrainingPlan savedPlan = trainingPlanRepository.save(plan);
         return savedPlan.getId();
     }
 
-    // =================================================================
-    // API 3: XEM CHI TIẾT (GET BY ID)
-    // =================================================================
+    // ==================================================================================
+    // 3. SUBMIT PLAN
+    // ==================================================================================
+    @Override
+    @Transactional
+    public Long submitPlan(TrainingPlanRequest request) {
+        TrainingPlan plan = createOrUpdateHeader(request);
+
+        updateDetails(plan, request.getDetails());
+
+        if (request.getSupervisorId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Supervisor ID is required for submission");
+        }
+        User supervisor = userRepository.findById(request.getSupervisorId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Supervisor not found"));
+
+        plan.setStatus(TrainingPlanStatus.WAITING_SV);
+        plan.setLastRejectReason(null);
+
+        TrainingPlan savedPlan = trainingPlanRepository.save(plan);
+
+        createApprovalLog(savedPlan, supervisor, ApprovalAction.SUBMIT, TrainingPlanStatus.WAITING_SV,
+                "Gửi kế hoạch cho: " + supervisor.getFullName());
+
+        return savedPlan.getId();
+    }
+
+    // ==================================================================================
+    // 4. GET DETAIL
+    // ==================================================================================
     @Override
     @Transactional(readOnly = true)
     public TrainingPlanResponse getTrainingPlanById(Long id) {
-        // 1. Tìm trong DB
-        TrainingPlan trainingPlan = trainingPlanRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy kế hoạch với ID: " + id));
+        TrainingPlan plan = trainingPlanRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Training Plan not found ID: " + id));
+        return trainingPlanMapper.toResponse(plan);
+    }
 
-        // 2. Map sang DTO Response (Bao gồm cả list details)
-        return trainingPlanMapper.toResponse(trainingPlan);
+    /**
+     * Xử lý tạo mới hoặc cập nhật thông tin Header (Title, Date, Group...)
+     */
+    private TrainingPlan createOrUpdateHeader(TrainingPlanRequest request) {
+        TrainingPlan plan;
+        if (request.getId() != null) {
+            // Update
+            plan = trainingPlanRepository.findById(request.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plan not found for update"));
+            trainingPlanMapper.updateTrainingPlanFromRequest(request, plan);
+        } else {
+            plan = trainingPlanMapper.toEntity(request);
+            plan.setCurrentVersion(1); // Set default version
+        }
+        return plan;
+    }
+
+    /**
+     * Xử lý danh sách chi tiết (One-to-Many).
+     * Chiến lược: Xóa hết danh sách cũ và thêm mới (Clear & Add) để đơn giản hóa logic Matrix.
+     * Vì JPA có orphanRemoval = true, việc clear list sẽ tự động xóa row trong DB.
+     */
+    private void updateDetails(TrainingPlan plan, List<TrainingPlanDetailRequest> detailRequests) {
+        if (detailRequests == null) return;
+
+        // Xóa danh sách cũ
+        plan.getDetails().clear();
+
+        // Map và thêm danh sách mới
+        for (TrainingPlanDetailRequest detailReq : detailRequests) {
+            // Dùng Mapper để convert từng dòng request sang entity
+            TrainingPlanDetail detailEntity = trainingPlanMapper.toDetailEntity(detailReq);
+
+            detailEntity.setTrainingPlan(plan);
+
+            // Add vào list của parent
+            plan.getDetails().add(detailEntity);
+        }
+    }
+
+    /**
+     * Tạo bản ghi log vào bảng training_plan_approval
+     */
+    private void createApprovalLog(TrainingPlan plan, User user, ApprovalAction action,
+                                   TrainingPlanStatus status, String comment) {
+        TrainingPlanApproval logEntry = TrainingPlanApproval.builder()
+                .trainingPlan(plan)
+                .processedBy(user)
+                .processedRole(user.getRole().toString())
+                .action(action)
+                .resultingStatus(status)
+                .comment(comment)
+                .planVersion(plan.getCurrentVersion())
+                .build();
+        approvalRepository.save(logEntry);
     }
 
 }
