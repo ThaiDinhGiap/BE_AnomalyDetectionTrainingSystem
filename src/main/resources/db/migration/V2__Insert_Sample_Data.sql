@@ -41,11 +41,11 @@ TRUNCATE TABLE users;
 -- 2. USERS (Full Roles)
 -- ============================================
 INSERT INTO users (id, username, email, password_hash, full_name, role, is_active, created_by) VALUES
-                                                                                                   (1, 'manager', 'manager@denso.com', '{bcrypt}$2a$10$X...', 'Nguyen Van Manager', 'MANAGER', TRUE, 'system'),
-                                                                                                   (2, 'supervisor', 'sup@denso.com', '{bcrypt}$2a$10$X...', 'Tran Van Supervisor', 'SUPERVISOR', TRUE, 'system'),
-                                                                                                   (3, 'tl_prod', 'tl_prod@denso.com', '{bcrypt}$2a$10$X...', 'Le Van TL Product', 'TEAM_LEADER', TRUE, 'system'),
-                                                                                                   (4, 'tl_fi', 'tl_fi@denso.com', '{bcrypt}$2a$10$X...', 'Pham Thi TL FI', 'FINAL_INSPECTION', TRUE, 'system'),
-                                                                                                   (5, 'tl_prod_2', 'tl_prod2@denso.com', '{bcrypt}$2a$10$X...', 'Hoang Van TL 2', 'TEAM_LEADER', TRUE, 'system');
+                                                                                                   (1, 'manager', 'manager@sep490.com', '{bcrypt}$2a$10$X...', 'Nguyen Van Manager', 'MANAGER', TRUE, 'system'),
+                                                                                                   (2, 'supervisor', 'sup@sep490.com', '{bcrypt}$2a$10$X...', 'Tran Van Supervisor', 'SUPERVISOR', TRUE, 'system'),
+                                                                                                   (3, 'tl_prod', 'tl_prod@sep490.com', '{bcrypt}$2a$10$X...', 'Le Van TL Product', 'TEAM_LEADER', TRUE, 'system'),
+                                                                                                   (4, 'tl_fi', 'tl_fi@sep490.com', '{bcrypt}$2a$10$X...', 'Pham Thi TL FI', 'FINAL_INSPECTION', TRUE, 'system'),
+                                                                                                   (5, 'tl_prod_2', 'tl_prod2@sep490.com', '{bcrypt}$2a$10$X...', 'Hoang Van TL 2', 'TEAM_LEADER', TRUE, 'system');
 
 -- ============================================
 -- 3. ORGANIZATION (Section -> Group -> Team)

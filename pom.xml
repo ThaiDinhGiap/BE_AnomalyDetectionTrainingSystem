@@ -8,7 +8,7 @@
         <version>3.4.1</version>
         <relativePath/>
     </parent>
-    <groupId>com.denso</groupId>
+    <groupId>com.sep490</groupId>
     <artifactId>anomaly-training-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>anomaly-training-backend</name>
