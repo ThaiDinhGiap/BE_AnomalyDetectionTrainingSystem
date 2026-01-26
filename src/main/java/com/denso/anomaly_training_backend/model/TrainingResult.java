@@ -28,8 +28,11 @@ public class TrainingResult extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "title", nullable = false)
-    private String title;
+    @Column(name = "form_code", columnDefinition = "text")
+    private String code = "TR_RESULT"; // khi lưu trường này xử lý trong service hãy mặc định rằng bắt đầu bằng TR_RESULT_DateTime_Group_Version_01 tăng dần
+
+    @Column(name = "note", columnDefinition = "text")
+    private String note;
 
     @Column(name = "year", nullable = false)
     private Integer year;
@@ -69,7 +72,7 @@ public class TrainingResult extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private TrainingResultStatus status = TrainingResultStatus.DRAFT;
+    private TrainingResultStatus status = TrainingResultStatus.ON_GOING;
 
     @Column(name = "current_version")
     private Integer currentVersion = 1;

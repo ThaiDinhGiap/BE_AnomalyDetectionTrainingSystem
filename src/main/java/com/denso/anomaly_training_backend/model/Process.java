@@ -53,7 +53,6 @@ public class Process extends BaseEntity {
     @Column(columnDefinition = "text")
     private String description;
 
-    // Persist as TINYINT in DB (migration uses TINYINT). Use explicit columnDefinition and converter.
     @Convert(converter = ProcessClassification.ConverterImpl.class)
     @Column(name = "classification", columnDefinition = "TINYINT", nullable = false)
     @Builder.Default

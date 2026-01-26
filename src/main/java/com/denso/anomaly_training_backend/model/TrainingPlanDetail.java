@@ -67,6 +67,6 @@ public class TrainingPlanDetail extends BaseEntity {
     private String note;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "result_status")
-    private TrainingPlanDetailStatus resultStatus = TrainingPlanDetailStatus.PENDING;
+    @Column(name = "status")
+    private TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
 }
