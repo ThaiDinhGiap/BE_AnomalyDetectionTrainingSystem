@@ -1,7 +1,0 @@
-package com.denso.anomaly_training_backend.service;
-
-import java.util.Map;
-
-public interface EmailTemplateService {
-    String renderTemplate(String templateName, Map<String, Object> variables);
-}

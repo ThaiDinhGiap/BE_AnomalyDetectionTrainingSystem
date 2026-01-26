@@ -1,1 +1,1 @@
-# BACKEND DENSO - Anomaly Detection Training System
+# BACKEND - Anomaly Detection Training System

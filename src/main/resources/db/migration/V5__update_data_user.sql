@@ -6,7 +6,7 @@ SET password_hash = '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6Ra
 
 INSERT INTO users (username, email, password_hash, full_name, role, is_active, created_by)
 VALUES ('admin',
-        'admin@denso.com',
+        'admin@sep490.com',
         '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
         'System Administrator',
         'ADMIN',
