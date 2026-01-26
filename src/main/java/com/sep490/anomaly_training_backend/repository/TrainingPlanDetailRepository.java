@@ -20,7 +20,7 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
             "JOIN FETCH tpd.process p " +
             "JOIN FETCH tpd.trainingPlan tp " +
             "WHERE tpd.plannedDate = :date " +
-            "AND tpd.resultStatus = 'PENDING' " +
+            "AND tpd.status = 'PENDING' " +
             "AND tp.status = 'APPROVED' " +
             "AND tpd.deleteFlag = false")
     List<TrainingPlanDetail> findByPlannedDateAndResultStatusPending(@Param("date") LocalDate date);
@@ -33,7 +33,7 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
             "JOIN FETCH tpd.process p " +
             "JOIN FETCH tpd.trainingPlan tp " +
             "WHERE tpd. plannedDate < :today " +
-            "AND tpd. resultStatus = 'PENDING' " +
+            "AND tpd. status = 'PENDING' " +
             "AND tp. status = 'APPROVED' " +
             "AND tpd.deleteFlag = false " +
             "ORDER BY tpd.plannedDate ASC")

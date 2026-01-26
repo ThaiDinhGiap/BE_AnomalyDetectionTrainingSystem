@@ -75,7 +75,7 @@ public abstract class TrainingPlanMapper {
     @Mapping(target = "employee", source = "employeeId", qualifiedByName = "mapEmployee")
     @Mapping(target = "process", source = "processId", qualifiedByName = "mapProcess")
     @Mapping(target = "trainingPlan", ignore = true)
-    @Mapping(target = "resultStatus", defaultValue = "PENDING")
+    @Mapping(target = "status", ignore = true)
     public abstract TrainingPlanDetail toDetailEntity(TrainingPlanDetailRequest request);
 
     // 3.2 Map Detail Entity -> Response

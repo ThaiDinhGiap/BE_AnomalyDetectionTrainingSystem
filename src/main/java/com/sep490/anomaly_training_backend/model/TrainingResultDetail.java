@@ -60,22 +60,27 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     private GroupProduct groupProduct;
 
-    // 4. Training Topic (Nullable)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "training_topic_id")
+    @JoinColumn(name = "defect_training_content_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingTopic trainingTopic;
+    private DefectTrainingContent defectTrainingContent;
 
     // --- SIMPLE COLUMNS ---
 
-    @Column(name = "actual_date", nullable = false)
+    @Column(name = "training_sample", columnDefinition = "text")
+    private String trainingSample;
+
+    @Column(name = "planned_date")
+    private LocalDate plannedDate;
+
+    @Column(name = "actual_date")
     private LocalDate actualDate;
 
-    @Column(name = "time_in", nullable = false)
+    @Column(name = "time_in")
     private LocalTime timeIn;
 
-    @Column(name = "time_out", nullable = false)
+    @Column(name = "time_out")
     private LocalTime timeOut;
 
     // --- USER SIGNATURES (Should also be Objects) ---

@@ -28,14 +28,17 @@ public class TrainingPlan extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "title", nullable = false)
-    private String title;
-
-    @Column(name = "month_start", nullable = false)
+    @Column(name = "month_start")
     private LocalDate monthStart;
 
-    @Column(name = "month_end", nullable = false)
+    @Column(name = "month_end")
     private LocalDate monthEnd;
+
+    @Column(name = "form_code", columnDefinition = "text")
+    private String code = "TR_PLAN"; // khi lưu trường này xử lý trong service hãy mặc định rằng bắt đầu bằng TR_PLAN_DateTime_Process_Version_UUID(Ngắn) subString)(0, 6)
+
+    @Column(name = "note", columnDefinition = "text")
+    private String note;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
