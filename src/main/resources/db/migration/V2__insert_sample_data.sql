@@ -331,7 +331,7 @@ VALUES (1, 'TR_RESULT_2023', 2023, 1, 'APPROVED_BY_MANAGER', 1, 'Kết quả hu�
 
 INSERT INTO training_result_detail (id, training_result_id, training_plan_detail_id, training_topic_id,
                                     planned_date, actual_date, product_group_id,
-                                    time_in, time_out, training_sample,
+                                    time_in, time_out, training_sample,status,
                                     detection_time, is_pass, remedial_action,
                                     signature_pro_in, signature_fi_in, signature_pro_out, signature_fi_out,
                                     created_by)
@@ -339,56 +339,56 @@ VALUES
 -- NV001 - OP10 (Pass)
 (1, 1, 1, NULL,
  '2023-10-05', '2023-10-05', 1,
- '08:30:00', '08:45:00', 'Mẫu chuẩn OP10',
+ '08:30:00', '08:45:00', 'Mẫu chuẩn OP10','DONE',
  12, TRUE, NULL,
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV001 - OP20 (Pass) - Dùng training topic 1
 (2, 1, 2, 1,
  '2023-10-10', '2023-10-10', 1,
- '09:00:00', '09:18:00', 'Mẫu NG #55',
+ '09:00:00', '09:18:00', 'Mẫu NG #55','DONE',
  18, TRUE, NULL,
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV002 - OP20 (Fail)
 (3, 1, 3, 1,
  '2023-10-12', '2023-10-12', 2,
- '10:00:00', '10:25:00', 'Mẫu NG #55',
+ '10:00:00', '10:25:00', 'Mẫu NG #55','DONE',
  25, FALSE, 'Huấn luyện lại sau 1 tuần. Nguyên nhân: Chưa quen thao tác soi đèn.',
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV005 - OP10 (Pass)
 (4, 1, 4, NULL,
  '2023-10-15', '2023-10-15', 1,
- '14:00:00', '14:12:00', 'Mẫu chuẩn OP10',
+ '14:00:00', '14:12:00', 'Mẫu chuẩn OP10','DONE',
  10, TRUE, NULL,
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV003 - OP30 (Pass)
 (5, 1, 5, 2,
  '2023-11-05', '2023-11-05', 3,
- '08:00:00', '08:20:00', 'Mẫu NG #62',
+ '08:00:00', '08:20:00', 'Mẫu NG #62','DONE',
  15, TRUE, NULL,
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV003 - OP40 (Pass) - Classification 4, không cần FI
 (6, 1, 6, NULL,
  '2023-11-10', '2023-11-10', 1,
- '09:30:00', '09:42:00', 'Mẫu mài chuẩn',
+ '09:30:00', '09:42:00', 'Mẫu mài chuẩn','DONE',
  11, TRUE, NULL,
  5, NULL, 5, NULL, 'tl_prod01'),
 
 -- NV002 - FI (Pass)
 (7, 1, 8, 3,
  '2023-12-05', '2023-12-05', 1,
- '08:00:00', '08:10:00', 'Bộ mẫu chuẩn #01',
+ '08:00:00', '08:10:00', 'Bộ mẫu chuẩn #01','DONE',
  9, TRUE, NULL,
  5, 8, 5, 8, 'tl_prod01'),
 
 -- NV007 - OP30 (Pass)
 (8, 1, 9, 2,
  '2023-12-10', '2023-12-10', 2,
- '10:00:00', '10:18:00', 'Mẫu NG #62',
+ '10:00:00', '10:18:00', 'Mẫu NG #62','DONE',
  16, TRUE, NULL,
  6, 8, 6, 8, 'tl_prod02');
 
@@ -400,7 +400,7 @@ VALUES (2, 'TR_RESULT_2024', 2024, 1, 'ON_GOING', 1, 'Kết quả huấn luyện
 -- Detail cho plan đang pending (chưa có kết quả)
 INSERT INTO training_result_detail (id, training_result_id, training_plan_detail_id, training_topic_id,
                                     planned_date, actual_date, product_group_id,
-                                    time_in, time_out, training_sample,
+                                    time_in, time_out, training_sample,status,
                                     detection_time, is_pass, remedial_action,
                                     signature_pro_in, signature_fi_in, signature_pro_out, signature_fi_out,
                                     created_by)
@@ -408,14 +408,14 @@ VALUES
 -- NV005 - OP20 (Chưa làm)
 (9, 2, 10, 1,
  '2024-01-08', NULL, NULL,
- NULL, NULL, NULL,
+ NULL, NULL, NULL,'PENDING',
  NULL, NULL, NULL,
  NULL, NULL, NULL, NULL, 'tl_prod01'),
 
 -- NV005 - OP30 (Chưa làm)
 (10, 2, 11, 2,
  '2024-01-15', NULL, NULL,
- NULL, NULL, NULL,
+ NULL, NULL, NULL,'PENDING',
  NULL, NULL, NULL,
  NULL, NULL, NULL, NULL, 'tl_prod01');
 

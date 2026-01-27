@@ -1,14 +1,8 @@
 package com.sep490.anomaly_training_backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -85,12 +79,16 @@ public class TrainingResultDetail extends BaseEntity {
     @Column(name = "remedial_action", columnDefinition = "text")
     String remedialAction;
 
+    @Column(columnDefinition = "text")
+    String note;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    @Builder.Default
+    TrainingResultDetailStatus status = TrainingResultDetailStatus.PENDING;
+
     // Signatures
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "signature_pro_in")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    User signatureProIn;
+    Long signatureProIn;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_fi_in")
@@ -98,11 +96,7 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User signatureFiIn;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "signature_pro_out")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    User signatureProOut;
+    Long signatureProOut;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_fi_out")
