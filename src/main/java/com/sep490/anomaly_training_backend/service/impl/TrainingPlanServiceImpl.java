@@ -4,7 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanInitDataResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.mapper.MasterDataTrainingPlanMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
@@ -77,7 +77,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         updateDetails(plan, request.getDetails());
 
         // B3: Set cứng trạng thái DRAFT
-        plan.setStatus(TrainingPlanStatus.DRAFT);
+        plan.setStatus(ReportStatus.DRAFT);
 
         // Save
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
@@ -100,7 +100,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         User supervisor = userRepository.findById(request.getSupervisorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Supervisor not found"));
 
-        plan.setStatus(TrainingPlanStatus.WAITING_SV);
+        plan.setStatus(ReportStatus.WAITING_SV);
 
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
 

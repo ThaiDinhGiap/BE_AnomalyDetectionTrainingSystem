@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class TrainingPlanResponse {
     private LocalDate monthStart;
     private LocalDate monthEnd;
     private String groupName;
-    private TrainingPlanStatus status;
+    private ReportStatus status;
     private Integer currentVersion;
     private String note;
 

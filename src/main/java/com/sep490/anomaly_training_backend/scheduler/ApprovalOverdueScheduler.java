@@ -1,12 +1,9 @@
 package com.sep490.anomaly_training_backend.scheduler;
 
 import com.sep490.anomaly_training_backend.dto.notification.NotificationRequest;
-import com.sep490.anomaly_training_backend.enums.DefectReportStatus;
 import com.sep490.anomaly_training_backend.enums.NotificationChannel;
 import com.sep490.anomaly_training_backend.enums.NotificationType;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingTopicReportStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.DefectReport;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
@@ -80,7 +77,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Plans waiting for SV
         List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(TrainingPlanStatus.WAITING_SV.toString(), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_SV.toString(), threshold);
 
         for (TrainingPlan plan : pendingPlans) {
             Long svId = plan.getGroup().getSupervisor().getId();
@@ -90,7 +87,7 @@ public class ApprovalOverdueScheduler {
 
         // Defect Reports waiting for SV
         List<DefectReport> pendingDefectReports = defectReportRepository
-                .findByStatusAndDeleteFlagFalse(DefectReportStatus.WAITING_SV);
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
 
         for (DefectReport report : pendingDefectReports) {
             if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
@@ -102,7 +99,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Topic Reports waiting for SV
         List<TrainingTopicReport> pendingTopicReports = trainingTopicReportRepository
-                .findByStatusAndDeleteFlagFalse(TrainingTopicReportStatus.WAITING_SV);
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
 
         for (TrainingTopicReport report : pendingTopicReports) {
             if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
@@ -125,7 +122,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Plans waiting for Manager
         List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(TrainingPlanStatus.WAITING_MANAGER.toString(), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER.toString(), threshold);
 
         for (TrainingPlan plan : pendingPlans) {
             Long managerId = plan.getGroup().getSection().getManager().getId();
@@ -135,7 +132,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Results waiting for Manager
         List<TrainingResult> pendingResults = trainingResultRepository
-                .findByStatusAndUpdatedAtBefore(TrainingResultStatus.WAITING_MANAGER.toString(), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER.toString(), threshold);
 
         for (TrainingResult result : pendingResults) {
             Long managerId = result.getGroup().getSection().getManager().getId();
@@ -145,7 +142,7 @@ public class ApprovalOverdueScheduler {
 
         // Defect Reports waiting for Manager
         List<DefectReport> pendingDefectReports = defectReportRepository
-                .findByStatusAndDeleteFlagFalse(DefectReportStatus.WAITING_MANAGER);
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER);
 
         for (DefectReport report : pendingDefectReports) {
             if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
@@ -157,7 +154,7 @@ public class ApprovalOverdueScheduler {
 
         // Training Topic Reports waiting for Manager
         List<TrainingTopicReport> pendingTopicReports = trainingTopicReportRepository
-                .findByStatusAndDeleteFlagFalse(TrainingTopicReportStatus.WAITING_MANAGER);
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER);
 
         for (TrainingTopicReport report : pendingTopicReports) {
             if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
