@@ -738,11 +738,12 @@ CREATE TABLE training_result_detail
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
     training_sample         VARCHAR(255) COMMENT 'Mẫu huấn luyện sử dụng',
-
+    status                  ENUM ('PENDING', 'DONE', 'NEED_SIGN', 'WAITING_SV', 'REJECTED_BY_SV', 'APPROVED') DEFAULT 'PENDING',
     -- Kết quả
     detection_time          INT COMMENT 'Thời gian phát hiện (giây)',
     is_pass                 BOOLEAN COMMENT 'TRUE=Pass, FALSE=Fail',
     remedial_action         TEXT COMMENT 'Đối sách nếu Fail',
+    note                    TEXT COMMENT 'Comment anything',
 
     -- Chữ ký (Ký xác nhận thực hiện test)
     signature_pro_in        BIGINT COMMENT 'TL Sản xuất ký lúc vào',
@@ -760,9 +761,7 @@ CREATE TABLE training_result_detail
     FOREIGN KEY (training_plan_detail_id) REFERENCES training_plan_detail (id),
     FOREIGN KEY (training_topic_id) REFERENCES training_topics (id) ON DELETE SET NULL,
     FOREIGN KEY (product_group_id) REFERENCES product_groups (id),
-    FOREIGN KEY (signature_pro_in) REFERENCES users (id) ON DELETE SET NULL,
     FOREIGN KEY (signature_fi_in) REFERENCES users (id) ON DELETE SET NULL,
-    FOREIGN KEY (signature_pro_out) REFERENCES users (id) ON DELETE SET NULL,
     FOREIGN KEY (signature_fi_out) REFERENCES users (id) ON DELETE SET NULL,
     INDEX idx_result (training_result_id),
     INDEX idx_plan_detail (training_plan_detail_id),
