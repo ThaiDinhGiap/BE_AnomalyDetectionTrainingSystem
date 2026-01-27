@@ -78,6 +78,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/training-plans/**").permitAll()
+                        .requestMatchers("/api/v1/training-topics/**").permitAll()
+                        .requestMatchers("/api/v1/defects/**").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
