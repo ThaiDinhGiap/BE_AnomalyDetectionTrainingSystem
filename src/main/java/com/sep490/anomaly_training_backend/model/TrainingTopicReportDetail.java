@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,35 +21,38 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
-
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for training_topic_report_detail table - Detail rows in training topic reports
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "training_topic_report_detail")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlanDetail extends BaseEntity {
+public class TrainingTopicReportDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_id")
+    @JoinColumn(name = "training_topic_report_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    TrainingPlan trainingPlan;
+    TrainingTopicReport trainingTopicReport;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "training_topic_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Employee employee;
+    TrainingTopic trainingTopic;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "report_type", nullable = false)
+    @Builder.Default
+    ReportType reportType = ReportType.CREATE;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "process_id")
@@ -57,16 +60,20 @@ public class TrainingPlanDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @Column(name = "target_month", nullable = false)
-    LocalDate targetMonth;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "defect_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Defect defect;
 
-    @Column(name = "planned_date", nullable = false)
-    LocalDate plannedDate;
+    @Column(name = "category_name", nullable = false, length = 200)
+    String categoryName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    @Column(name = "training_sample", columnDefinition = "text")
+    String trainingSample;
+
+    @Column(name = "training_detail", nullable = false, columnDefinition = "text")
+    String trainingDetail;
 
     @Column(columnDefinition = "text")
     String note;

@@ -1,10 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +21,9 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+/**
+ * Entity for training_result_detail table - Detail rows in training results (each test)
+ */
 @Entity
 @Table(name = "training_result_detail")
 @Data
@@ -35,101 +35,78 @@ import java.time.LocalTime;
 public class TrainingResultDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
-    // --- REFACTORED RELATIONSHIPS ---
-
-    // 1. Training Result (Parent)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "training_result_id", nullable = false)
-    @ToString.Exclude // Prevent infinite loop / lazy initialization error
-    @EqualsAndHashCode.Exclude
-    private TrainingResult trainingResult;
-
-    // 2. The specific field you asked about
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "training_plan_detail_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "training_result_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingPlanDetail trainingPlanDetail;
+    TrainingResult trainingResult;
 
-    // 3. Product Group
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_group_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "training_plan_detail_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private GroupProduct groupProduct;
+    TrainingPlanDetail trainingPlanDetail;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "defect_training_content_id")
+    @JoinColumn(name = "training_topic_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private DefectTrainingContent defectTrainingContent;
+    TrainingTopic trainingTopic;
 
-    // --- SIMPLE COLUMNS ---
-
-    @Column(name = "training_sample", columnDefinition = "text")
-    private String trainingSample;
-
-    @Column(name = "planned_date")
-    private LocalDate plannedDate;
+    @Column(name = "planned_date", nullable = false)
+    LocalDate plannedDate;
 
     @Column(name = "actual_date")
-    private LocalDate actualDate;
+    LocalDate actualDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_group_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    GroupProduct productGroup;
 
     @Column(name = "time_in")
-    private LocalTime timeIn;
+    LocalTime timeIn;
 
     @Column(name = "time_out")
-    private LocalTime timeOut;
+    LocalTime timeOut;
 
-    // --- USER SIGNATURES (Should also be Objects) ---
+    @Column(name = "training_sample", length = 255)
+    String trainingSample;
 
+    @Column(name = "detection_time")
+    Integer detectionTime;
+
+    @Column(name = "is_pass")
+    Boolean isPass;
+
+    @Column(name = "remedial_action", columnDefinition = "text")
+    String remedialAction;
+
+    // Signatures
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_pro_in")
     @ToString.Exclude
-    private User signatureProIn;
+    @EqualsAndHashCode.Exclude
+    User signatureProIn;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_fi_in")
     @ToString.Exclude
-    private User signatureFiIn;
+    @EqualsAndHashCode.Exclude
+    User signatureFiIn;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_pro_out")
     @ToString.Exclude
-    private User signatureProOut;
+    @EqualsAndHashCode.Exclude
+    User signatureProOut;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "signature_fi_out")
     @ToString.Exclude
-    private User signatureFiOut;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sv_confirmation")
-    @ToString.Exclude
-    private User svConfirmation;
-
-    // --- OTHER FIELDS ---
-
-    @Column(name = "detection_time")
-    private Integer detectionTime;
-
-    @Column(name = "is_pass")
-    private Boolean isPass;
-
-    @Column(name = "remedial_action", columnDefinition = "text")
-    private String remedialAction;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    private TrainingResultDetailStatus status = TrainingResultDetailStatus.DRAFT;
-
-    @Column(name = "current_version")
-    @Builder.Default
-    private Integer currentVersion = 1;
-
-    @Column(name = "last_reject_reason", columnDefinition = "text")
-    private String lastRejectReason;
+    @EqualsAndHashCode.Exclude
+    User signatureFiOut;
 }

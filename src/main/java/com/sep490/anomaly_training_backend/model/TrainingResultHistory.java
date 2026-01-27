@@ -1,7 +1,16 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.RejectLevel;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,8 +20,13 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entity for training_result_history table - History/snapshot of training results
+ */
 @Entity
 @Table(name = "training_result_history")
 @Data
@@ -24,49 +38,38 @@ import java.util.List;
 public class TrainingResultHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_result_id", nullable = false)
+    @JoinColumn(name = "training_result_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingResult trainingResult;
+    TrainingResult trainingResult;
 
-    @Column(name = "title")
-    private String title;
+    @Column(nullable = false)
+    Integer version;
 
-    @Column(name = "version", nullable = false)
-    private Integer version;
+    // Snapshot fields
+    @Column(name = "form_code", length = 50)
+    String formCode;
 
-    @Column(name = "year")
-    private Integer year;
+    @Column
+    Integer year;
 
     @Column(name = "group_id")
-    private Long groupId;
+    Long groupId;
 
-    @Column(name = "group_name")
-    private String groupName;
+    @Column(name = "group_name", length = 100)
+    String groupName;
 
-    @Column(name = "verified_by_sv")
-    private Long verifiedBySvId;
+    @Column(columnDefinition = "text")
+    String note;
 
-    @Column(name = "verified_by_sv_name")
-    private String verifiedBySvName;
+    @Column(name = "recorded_at")
+    LocalDateTime recordedAt;
 
-    @Column(name = "reject_by")
-    private Long rejectedById;
-
-    @Column(name = "reject_by_name")
-    private String rejectedByName;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reject_level")
-    private RejectLevel rejectLevel;
-
-    @Column(name = "reject_reason", columnDefinition = "text")
-    private String rejectReason;
-
-    // Quan hệ để lưu danh sách detail history
-    @OneToMany(mappedBy = "trainingResultHistory", cascade = CascadeType.ALL)
-    List<TrainingResultDetailHistory> historyDetails;
+    @OneToMany(mappedBy = "trainingResultHistory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
+    List<TrainingResultDetailHistory> detailHistories = new ArrayList<>();
 }

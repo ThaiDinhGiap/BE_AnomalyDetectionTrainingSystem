@@ -21,6 +21,9 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+/**
+ * Entity for training_result_detail_history table - History/snapshot of training result details
+ */
 @Entity
 @Table(name = "training_result_detail_history")
 @Data
@@ -32,77 +35,73 @@ import java.time.LocalTime;
 public class TrainingResultDetailHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_result_detail_id", nullable = false)
+    @JoinColumn(name = "training_result_history_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingResultDetail trainingResultDetail;
+    TrainingResultHistory trainingResultHistory;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_result_history_id", nullable = false)
+    @JoinColumn(name = "training_result_detail_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingResultHistory trainingResultHistory;
+    TrainingResultDetail trainingResultDetail;
 
-    @Column(name = "version", nullable = false)
-    private Integer version;
+    // Snapshot fields
+    @Column(name = "training_topic_id")
+    Long trainingTopicId;
+
+    @Column(name = "planned_date")
+    LocalDate plannedDate;
 
     @Column(name = "actual_date")
-    private LocalDate actualDate;
+    LocalDate actualDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_group_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private GroupProduct productGroup;
+    @Column(name = "product_group_id")
+    Long productGroupId;
 
     @Column(name = "time_in")
-    private LocalTime timeIn;
+    LocalTime timeIn;
 
     @Column(name = "time_out")
-    private LocalTime timeOut;
+    LocalTime timeOut;
 
-    @Column(name = "signature_pro_in")
-    private Long signatureProInId;
-
-    @Column(name = "signature_pro_in_name")
-    private String signatureProInName;
-
-    @Column(name = "signature_fi_in")
-    private Long signatureFiInId;
-
-    @Column(name = "signature_fi_in_name")
-    private String signatureFiInName;
-
-    @Column(name = "signature_pro_out")
-    private Long signatureProOutId;
-
-    @Column(name = "signature_pro_out_name")
-    private String signatureProOutName;
-
-    @Column(name = "signature_fi_out")
-    private Long signatureFiOutId;
-
-    @Column(name = "signature_fi_out_name")
-    private String signatureFiOutName;
+    @Column(name = "training_sample", length = 255)
+    String trainingSample;
 
     @Column(name = "detection_time")
-    private Integer detectionTime;
+    Integer detectionTime;
 
     @Column(name = "is_pass")
-    private Boolean isPass;
+    Boolean isPass;
 
     @Column(name = "remedial_action", columnDefinition = "text")
-    private String remedialAction;
+    String remedialAction;
 
-    @Column(name = "reject_by")
-    private Long rejectedById;
+    // Signature snapshots
+    @Column(name = "signature_pro_in")
+    Long signatureProIn;
 
-    @Column(name = "reject_by_name")
-    private String rejectedByName;
+    @Column(name = "signature_pro_in_name", length = 100)
+    String signatureProInName;
 
-    @Column(name = "reject_reason", columnDefinition = "text")
-    private String rejectReason;
+    @Column(name = "signature_fi_in")
+    Long signatureFiIn;
+
+    @Column(name = "signature_fi_in_name", length = 100)
+    String signatureFiInName;
+
+    @Column(name = "signature_pro_out")
+    Long signatureProOut;
+
+    @Column(name = "signature_pro_out_name", length = 100)
+    String signatureProOutName;
+
+    @Column(name = "signature_fi_out")
+    Long signatureFiOut;
+
+    @Column(name = "signature_fi_out_name", length = 100)
+    String signatureFiOutName;
 }

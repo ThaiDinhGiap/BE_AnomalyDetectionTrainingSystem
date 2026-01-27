@@ -1,10 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,26 +22,22 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for employee_skills table - Employee skill certifications
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "employee_skills", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_employee_process", columnNames = {"employee_id", "process_id"})
+})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlanDetail extends BaseEntity {
+public class EmployeeSkill extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    TrainingPlan trainingPlan;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "employee_id")
@@ -57,17 +51,13 @@ public class TrainingPlanDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @Column(name = "target_month", nullable = false)
-    LocalDate targetMonth;
-
-    @Column(name = "planned_date", nullable = false)
-    LocalDate plannedDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "is_qualified")
     @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    Boolean isQualified = true;
 
-    @Column(columnDefinition = "text")
-    String note;
+    @Column(name = "certified_date")
+    LocalDate certifiedDate;
+
+    @Column(name = "expiry_date")
+    LocalDate expiryDate;
 }

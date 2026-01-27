@@ -1,7 +1,19 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +26,9 @@ import lombok.experimental.FieldDefaults;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entity for training_result table - Header for training results
+ */
 @Entity
 @Table(name = "training_result")
 @Data
@@ -25,62 +40,35 @@ import java.util.List;
 public class TrainingResult extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
-    @Column(name = "form_code", columnDefinition = "text")
-    private String code = "TR_RESULT"; // khi lưu trường này xử lý trong service hãy mặc định rằng bắt đầu bằng TR_RESULT_DateTime_Group_Version_01 tăng dần
+    @Column(name = "form_code", length = 50)
+    @Builder.Default
+    String formCode = "TR_RESULT";
 
-    @Column(name = "note", columnDefinition = "text")
-    private String note;
-
-    @Column(name = "year", nullable = false)
-    private Integer year;
+    @Column(nullable = false)
+    Integer year;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Group group;
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "confirm_by_fi")
-//    @ToString.Exclude
-//    @EqualsAndHashCode.Exclude
-//    private User confirmByFi;
-//
-//    @Column(name = "confirm_at_fi")
-//    private Instant confirmAtFi;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "verified_by_sv")
-//    @ToString.Exclude
-//    @EqualsAndHashCode.Exclude
-//    private User verifiedBySv;
-//
-//    @Column(name = "verified_at_sv")
-//    private Instant verifiedAtSv;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "approved_by_manager")
-//    @ToString.Exclude
-//    @EqualsAndHashCode.Exclude
-//    private User approvedByManager;
-//
-//    @Column(name = "approved_at_manager")
-//    private Instant approvedAtManager;
+    Group group;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     @Builder.Default
-    private TrainingResultStatus status = TrainingResultStatus.ON_GOING;
+    TrainingResultStatus status = TrainingResultStatus.ON_GOING;
 
     @Column(name = "current_version")
-    private Integer currentVersion = 1;
+    @Builder.Default
+    Integer currentVersion = 1;
 
-    @Column(name = "last_reject_reason", columnDefinition = "text")
-    private String lastRejectReason;
+    @Column(columnDefinition = "text")
+    String note;
 
-    @OneToMany(mappedBy = "trainingResult", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "trainingResult", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @Builder.Default
-    private List<TrainingResultApproval> approvalLogs = new ArrayList<>();
+    List<TrainingResultDetail> details = new ArrayList<>();
 }

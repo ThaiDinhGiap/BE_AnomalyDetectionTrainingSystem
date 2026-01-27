@@ -11,17 +11,14 @@ import java.util.List;
 @Builder
 public class TrainingPlanResponse {
     private Long id;
-    private String title;
+    private String formCode;
     private LocalDate monthStart;
     private LocalDate monthEnd;
     private String groupName;
     private TrainingPlanStatus status;
     private Integer currentVersion;
-    private String lastRejectReason;
+    private String note;
 
     // Danh sách chi tiết
     private List<TrainingPlanDetailResponse> details;
-
-    // Timeline lịch sử duyệt
-    private List<ApprovalLogDto> approvalLogs;
 }

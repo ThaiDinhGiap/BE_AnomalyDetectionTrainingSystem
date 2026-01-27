@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingTopicReportStatus;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,53 +23,42 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for training_topic_report table - Header for training topic reports
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "training_topic_report")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlanDetail extends BaseEntity {
+public class TrainingTopicReport extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_id")
+    @JoinColumn(name = "group_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    TrainingPlan trainingPlan;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Employee employee;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "process_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Process process;
-
-    @Column(name = "target_month", nullable = false)
-    LocalDate targetMonth;
-
-    @Column(name = "planned_date", nullable = false)
-    LocalDate plannedDate;
+    Group group;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    TrainingTopicReportStatus status = TrainingTopicReportStatus.DRAFT;
 
-    @Column(columnDefinition = "text")
-    String note;
+    @Column(name = "current_version")
+    @Builder.Default
+    Integer currentVersion = 1;
+
+    @OneToMany(mappedBy = "trainingTopicReport", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
+    List<TrainingTopicReportDetail> details = new ArrayList<>();
 }

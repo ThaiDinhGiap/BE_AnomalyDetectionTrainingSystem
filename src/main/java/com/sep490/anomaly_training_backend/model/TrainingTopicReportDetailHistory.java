@@ -19,40 +19,53 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 /**
- * Entity for training_topics table - Master data for approved training topics
+ * Entity for training_topic_report_detail_history table - History/snapshot of training topic report details
  */
 @Entity
-@Table(name = "training_topics")
+@Table(name = "training_topic_report_detail_history")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingTopic extends BaseEntity {
+public class TrainingTopicReportDetailHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "process_id")
+    @JoinColumn(name = "training_topic_report_history_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Process process;
+    TrainingTopicReportHistory trainingTopicReportHistory;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "defect_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Defect defect;
+    // Snapshot fields
+    @Column(name = "training_topic_id")
+    Long trainingTopicId;
 
-    @Column(name = "category_name", nullable = false, length = 200)
+    @Column(name = "report_type", length = 20)
+    String reportType;
+
+    @Column(name = "process_id")
+    Long processId;
+
+    @Column(name = "process_code", length = 20)
+    String processCode;
+
+    @Column(name = "process_name", length = 200)
+    String processName;
+
+    @Column(name = "defect_id")
+    Long defectId;
+
+    @Column(name = "category_name", length = 200)
     String categoryName;
 
     @Column(name = "training_sample", columnDefinition = "text")
     String trainingSample;
 
-    @Column(name = "training_detail", nullable = false, columnDefinition = "text")
+    @Column(name = "training_detail", columnDefinition = "text")
     String trainingDetail;
 
     @Column(columnDefinition = "text")

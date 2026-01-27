@@ -1,10 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,49 +21,51 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for defect_report_detail_history table - History/snapshot of defect report details
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "defect_report_detail_history")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlanDetail extends BaseEntity {
+public class DefectReportDetailHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_id")
+    @JoinColumn(name = "defect_report_history_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    TrainingPlan trainingPlan;
+    DefectReportHistory defectReportHistory;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Employee employee;
+    // Snapshot fields
+    @Column(name = "defect_id")
+    Long defectId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "process_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Process process;
+    @Column(name = "report_type", length = 20)
+    String reportType;
 
-    @Column(name = "target_month", nullable = false)
-    LocalDate targetMonth;
+    @Column(name = "defect_description", columnDefinition = "text")
+    String defectDescription;
 
-    @Column(name = "planned_date", nullable = false)
-    LocalDate plannedDate;
+    @Column(name = "process_id")
+    Long processId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    @Column(name = "process_code", length = 20)
+    String processCode;
+
+    @Column(name = "process_name", length = 200)
+    String processName;
+
+    @Column(name = "detected_date")
+    LocalDate detectedDate;
+
+    @Column(name = "is_escaped")
+    Boolean isEscaped;
 
     @Column(columnDefinition = "text")
     String note;

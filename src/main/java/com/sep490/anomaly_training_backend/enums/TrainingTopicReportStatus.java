@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.enums;
 
-public enum TrainingPlanStatus {
+public enum TrainingTopicReportStatus {
     DRAFT,
     WAITING_SV,
     REJECTED_BY_SV,

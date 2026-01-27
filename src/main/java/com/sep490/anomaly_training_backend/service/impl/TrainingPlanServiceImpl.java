@@ -4,7 +4,6 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanInitDataResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
-import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanStatus;
 import com.sep490.anomaly_training_backend.mapper.MasterDataTrainingPlanMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
@@ -12,13 +11,11 @@ import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanApproval;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanApprovalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
@@ -41,7 +38,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanMapper trainingPlanMapper;
     private final UserRepository userRepository;
-    private final TrainingPlanApprovalRepository approvalRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -105,12 +101,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Supervisor not found"));
 
         plan.setStatus(TrainingPlanStatus.WAITING_SV);
-        plan.setLastRejectReason(null);
 
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
-
-        createApprovalLog(savedPlan, supervisor, ApprovalAction.SUBMIT, TrainingPlanStatus.WAITING_SV,
-                "Gửi kế hoạch cho: " + supervisor.getFullName());
 
         return savedPlan.getId();
     }
@@ -164,23 +156,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             // Add vào list của parent
             plan.getDetails().add(detailEntity);
         }
-    }
-
-    /**
-     * Tạo bản ghi log vào bảng training_plan_approval
-     */
-    private void createApprovalLog(TrainingPlan plan, User user, ApprovalAction action,
-                                   TrainingPlanStatus status, String comment) {
-        TrainingPlanApproval logEntry = TrainingPlanApproval.builder()
-                .trainingPlan(plan)
-                .processedBy(user)
-                .processedRole(user.getRole().toString())
-                .action(action)
-                .resultingStatus(status)
-                .comment(comment)
-                .planVersion(plan.getCurrentVersion())
-                .build();
-        approvalRepository.save(logEntry);
     }
 
 }

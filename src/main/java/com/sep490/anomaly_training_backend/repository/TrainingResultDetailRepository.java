@@ -16,8 +16,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             "JOIN FETCH trd.trainingPlanDetail tpd " +
             "JOIN FETCH tpd.employee " +
             "JOIN FETCH tpd.process " +
-            "WHERE trd.status = :status " +
-            "AND trd.updatedAt < :threshold " +
+            "WHERE trd.updatedAt < :threshold " +
             "AND trd.deleteFlag = false")
     List<TrainingResultDetail> findByStatusAndUpdatedAtBefore(
             @Param("status") String status,

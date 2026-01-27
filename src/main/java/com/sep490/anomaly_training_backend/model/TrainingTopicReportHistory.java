@@ -1,11 +1,8 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,56 +20,47 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entity for training_plan table - Header for training plans
+ * Entity for training_topic_report_history table - History/snapshot of training topic reports
  */
 @Entity
-@Table(name = "training_plan")
+@Table(name = "training_topic_report_history")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlan extends BaseEntity {
+public class TrainingTopicReportHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "form_code", length = 50)
-    @Builder.Default
-    String formCode = "TR_PLAN";
-
-    @Column(name = "month_start", nullable = false)
-    LocalDate monthStart;
-
-    @Column(name = "month_end", nullable = false)
-    LocalDate monthEnd;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id")
+    @JoinColumn(name = "training_topic_report_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Group group;
+    TrainingTopicReport trainingTopicReport;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    TrainingPlanStatus status = TrainingPlanStatus.DRAFT;
+    @Column(nullable = false)
+    Integer version;
 
-    @Column(name = "current_version")
-    @Builder.Default
-    Integer currentVersion = 1;
+    // Snapshot fields
+    @Column(name = "group_id")
+    Long groupId;
 
-    @Column(columnDefinition = "text")
-    String note;
+    @Column(name = "group_name", length = 100)
+    String groupName;
 
-    @OneToMany(mappedBy = "trainingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(name = "recorded_at")
+    LocalDateTime recordedAt;
+
+    @OneToMany(mappedBy = "trainingTopicReportHistory", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @Builder.Default
-    List<TrainingPlanDetail> details = new ArrayList<>();
+    List<TrainingTopicReportDetailHistory> detailHistories = new ArrayList<>();
 }

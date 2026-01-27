@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,32 +24,40 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for defect_report_detail table - Detail rows in defect reports
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "defect_report_detail")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlanDetail extends BaseEntity {
+public class DefectReportDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_id")
+    @JoinColumn(name = "defect_report_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    TrainingPlan trainingPlan;
+    DefectReport defectReport;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "defect_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Employee employee;
+    Defect defect;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "report_type", nullable = false)
+    @Builder.Default
+    ReportType reportType = ReportType.CREATE;
+
+    @Column(name = "defect_description", nullable = false, columnDefinition = "text")
+    String defectDescription;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "process_id")
@@ -57,16 +65,12 @@ public class TrainingPlanDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @Column(name = "target_month", nullable = false)
-    LocalDate targetMonth;
+    @Column(name = "detected_date", nullable = false)
+    LocalDate detectedDate;
 
-    @Column(name = "planned_date", nullable = false)
-    LocalDate plannedDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "is_escaped")
     @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    Boolean isEscaped = false;
 
     @Column(columnDefinition = "text")
     String note;

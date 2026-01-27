@@ -1,10 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +20,9 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 
+/**
+ * Entity for training_plan_detail_history table - History/snapshot of training plan details
+ */
 @Entity
 @Table(name = "training_plan_detail_history")
 @Data
@@ -34,45 +34,42 @@ import java.time.LocalDate;
 public class TrainingPlanDetailHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_plan_history_id", nullable = false)
+    @JoinColumn(name = "training_plan_history_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private TrainingPlanHistory trainingPlanHistory;
+    TrainingPlanHistory trainingPlanHistory;
 
+    // Snapshot fields
     @Column(name = "employee_id")
-    private Long employeeId;
+    Long employeeId;
 
-    @Column(name = "employee_code")
-    private String employeeCode;
+    @Column(name = "employee_code", length = 20)
+    String employeeCode;
 
-    @Column(name = "employee_full_name")
-    private String employeeFullName;
+    @Column(name = "employee_name", length = 100)
+    String employeeName;
 
     @Column(name = "process_id")
-    private Long processId;
+    Long processId;
 
-    @Column(name = "process_code")
-    private String processCode;
+    @Column(name = "process_code", length = 20)
+    String processCode;
 
-    @Column(name = "process_name")
-    private String processName;
+    @Column(name = "process_name", length = 200)
+    String processName;
 
     @Column(name = "target_month")
-    private LocalDate targetMonth;
+    LocalDate targetMonth;
 
     @Column(name = "planned_date")
-    private LocalDate plannedDate;
+    LocalDate plannedDate;
 
-    @Column(name = "actual_date")
-    private LocalDate actualDate;
+    @Column(name = "status", length = 20)
+    String status;
 
-    @Column(name = "note", columnDefinition = "text")
-    private String note;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "result_status")
-    private TrainingPlanDetailStatus resultStatus;
+    @Column(columnDefinition = "text")
+    String note;
 }
