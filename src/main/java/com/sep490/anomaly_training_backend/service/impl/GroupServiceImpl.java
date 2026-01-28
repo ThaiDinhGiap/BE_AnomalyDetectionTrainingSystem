@@ -80,4 +80,14 @@ public class GroupServiceImpl implements GroupService {
                 .map(groupMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<GroupResponse> getGroupByTeamLead(Long teamLeadId) {
+        return groupRepository.findByTeamLeadId(teamLeadId).stream().map(groupMapper::toDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GroupResponse> getGroupsBySupervisor(Long supervisorId) {
+        return groupRepository.findBySupervisorId(supervisorId).stream().map(groupMapper::toDTO).collect(Collectors.toList());
+    }
 }

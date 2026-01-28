@@ -601,8 +601,9 @@ CREATE TABLE training_plan_detail
     training_plan_id BIGINT  NOT NULL,
     employee_id      BIGINT  NOT NULL,
     process_id       BIGINT  NOT NULL,
-    target_month     DATE    NOT NULL COMMENT 'Tháng thực hiện',
-    planned_date     DATE    NOT NULL COMMENT 'Ngày dự kiến',
+    target_month     DATE    COMMENT 'Tháng thực hiện',
+    planned_date     DATE    COMMENT 'Ngày dự kiến',
+    actual_date      DATE    COMMENT 'Ngày thực hiện',
     status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
     note             TEXT,
 
@@ -672,6 +673,7 @@ CREATE TABLE training_plan_detail_history
     process_name             VARCHAR(200),
     target_month             DATE,
     planned_date             DATE,
+    actual_date              DATE,
     status                   VARCHAR(20),
     note                     TEXT,
 

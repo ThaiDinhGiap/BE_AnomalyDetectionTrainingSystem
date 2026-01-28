@@ -67,6 +67,9 @@ public class TrainingPlanDetailHistory extends BaseEntity {
     @Column(name = "planned_date")
     LocalDate plannedDate;
 
+    @Column(name = "actual_date")
+    LocalDate actualDate;
+
     @Column(name = "status", length = 20)
     String status;
 

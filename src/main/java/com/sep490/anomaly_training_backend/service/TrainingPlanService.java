@@ -5,6 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
 
 import java.util.List;
 
@@ -23,4 +24,7 @@ public interface TrainingPlanService {
     List<ProcessResponse> getProcessesByGroup(Long groupId);
 
     void submitPlan(Long planId);
+    List<ProcessResponse> getProcessesByGroup(Long groupId);
+    void submitPlan(Long planId);
+    public void revertToDraft(Long planId);
 }

@@ -57,11 +57,14 @@ public class TrainingPlanDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @Column(name = "target_month", nullable = false)
+    @Column(name = "target_month")
     LocalDate targetMonth;
 
-    @Column(name = "planned_date", nullable = false)
+    @Column(name = "planned_date")
     LocalDate plannedDate;
+
+    @Column(name = "actual_date")
+    LocalDate actualDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
