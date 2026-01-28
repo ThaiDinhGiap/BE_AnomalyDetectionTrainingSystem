@@ -64,9 +64,6 @@ public class DefectReportDetailHistory extends BaseEntity {
     @Column(name = "detected_date")
     LocalDate detectedDate;
 
-    @Column(name = "is_escaped")
-    Boolean isEscaped;
-
     @Column(columnDefinition = "text")
     String note;
 }
