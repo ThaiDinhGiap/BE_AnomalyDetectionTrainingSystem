@@ -43,6 +43,9 @@ public class TrainingPlan extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(columnDefinition = "text")
+    String title;
+
     @Column(name = "form_code", length = 50)
     @Builder.Default
     String formCode = "TR_PLAN";

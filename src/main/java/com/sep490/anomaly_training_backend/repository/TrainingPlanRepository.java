@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long> {
@@ -29,6 +30,8 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
             @Param("status") String status,
             @Param("threshold") LocalDateTime threshold);
 
+    @Query("SELECT p FROM TrainingPlan p LEFT JOIN FETCH p.details WHERE p.id = :id")
+    Optional<TrainingPlan> findByIdWithDetails(Long id);
     @Query("""
                 SELECT tr FROM TrainingPlan tr
                 JOIN tr.group g

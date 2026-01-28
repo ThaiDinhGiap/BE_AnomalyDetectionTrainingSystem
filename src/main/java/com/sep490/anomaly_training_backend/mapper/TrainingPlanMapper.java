@@ -1,103 +1,52 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.Group;
-import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+import java.util.List;
+
+@Mapper(componentModel = "spring")
 public abstract class TrainingPlanMapper {
 
-    @Autowired
-    protected GroupRepository groupRepository;
-    @Autowired
-    protected UserRepository userRepository;
-    @Autowired
-    protected EmployeeRepository employeeRepository;
-    @Autowired
-    protected ProcessRepository processRepository;
-
-    // =========================================================================
-    // 1. MAP REQUEST -> ENTITY (CREATE / UPDATE)
-    // =========================================================================
-
-    // Dùng cho trường hợp Tạo mới (Create)
-    @Mapping(target = "group", source = "groupId", qualifiedByName = "mapGroup")
-    @Mapping(target = "details", ignore = true)      // Xử lý riêng ở Service
-    @Mapping(target = "status", ignore = true)       // Status do Service quản lý
-    @Mapping(target = "currentVersion", ignore = true)
-    public abstract TrainingPlan toEntity(TrainingPlanRequest request);
-
-    // Dùng cho trường hợp Cập nhật (Update existing entity)
-    @Mapping(target = "group", source = "groupId", qualifiedByName = "mapGroup")
+    // --- 1. MAPPING TẠO MỚI (CREATE) ---
+    // Gộp tất cả logic vào đây
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", constant = "DRAFT")
+    @Mapping(target = "currentVersion", constant = "1")
+    @Mapping(target = "formCode", constant = "TR_PLAN")
+    @Mapping(target = "group", ignore = true)
     @Mapping(target = "details", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    public abstract void updateTrainingPlanFromRequest(TrainingPlanRequest request, @MappingTarget TrainingPlan entity);
+    @Mapping(target = "note", ignore = true)
+    public abstract TrainingPlan toEntity(TrainingPlanCreateRequest request);
 
-
-    // =========================================================================
-    // 2. MAP ENTITY -> RESPONSE (GET API)
-    // =========================================================================
-
-    @Mapping(target = "groupName", source = "group.name")
+    // --- 3. MAPPING RESPONSE (HIỂN THỊ RA) ---
+    @Mapping(source = "group.id", target = "groupId")
+    @Mapping(source = "group.name", target = "groupName")
     public abstract TrainingPlanResponse toResponse(TrainingPlan entity);
 
-
-    // =========================================================================
-    // 3. MAP SUB-ENTITIES (DETAIL)
-    // =========================================================================
-
-    // 3.1 Map Detail Request -> Entity
-    @Mapping(target = "employee", source = "employeeId", qualifiedByName = "mapEmployee")
-    @Mapping(target = "process", source = "processId", qualifiedByName = "mapProcess")
-    @Mapping(target = "trainingPlan", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    public abstract TrainingPlanDetail toDetailEntity(TrainingPlanDetailRequest request);
-
-    // 3.2 Map Detail Entity -> Response
-    @Mapping(target = "employeeName", source = "employee.fullName")
-    @Mapping(target = "employeeCode", source = "employee.employeeCode")
-    @Mapping(target = "processName", source = "process.name")
+    @Mapping(source = "employee.id", target = "employeeId")
+    @Mapping(source = "employee.fullName", target = "employeeName")
+    @Mapping(source = "employee.employeeCode", target = "employeeCode")
+    @Mapping(source = "process.id", target = "processId")
+    @Mapping(source = "process.name", target = "processName")
     public abstract TrainingPlanDetailResponse toDetailResponse(TrainingPlanDetail entity);
 
+    public abstract List<TrainingPlanDetailResponse> toDetailResponseList(List<TrainingPlanDetail> list);
 
-    // =========================================================================
-    // 4. HELPER LOOKUP (Giữ nguyên logic cũ)
-    // =========================================================================
-    @Named("mapGroup")
-    protected Group mapGroup(Long id) {
-        if (id == null) return null;
-        return groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Group not found ID: " + id));
-    }
-
-    @Named("mapEmployee")
-    protected Employee mapEmployee(Long id) {
-        if (id == null) return null;
-        return employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found ID: " + id));
-    }
-
-    @Named("mapProcess")
-    protected Process mapProcess(Long id) {
-        if (id == null) return null;
-        return processRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Process not found ID: " + id));
-    }
+    // 1. Map Update Header (Bỏ qua các trường không cho sửa hoặc tự xử lý)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "group", ignore = true)      // Không cho đổi Group
+    @Mapping(target = "monthStart", ignore = true) // Không cho đổi tháng bắt đầu
+    @Mapping(target = "monthEnd", ignore = true)   // Không cho đổi tháng kết thúc
+    @Mapping(target = "status", ignore = true)     // Status xử lý riêng
+    @Mapping(target = "details", ignore = true)    // Details xử lý riêng trong Service
+    @Mapping(target = "currentVersion", ignore = true)
+    @Mapping(target = "formCode", ignore = true)
+    public abstract void updateHeader(@MappingTarget TrainingPlan entity, TrainingPlanUpdateRequest request);
 
 }

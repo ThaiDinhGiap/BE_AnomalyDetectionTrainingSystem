@@ -1,20 +1,20 @@
 package com.sep490.anomaly_training_backend.service;
 
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanRequest;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanInitDataResponse;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+
+import java.util.List;
 
 public interface TrainingPlanService {
 
-    // Lấy dữ liệu khởi tạo (Employees, Processes) để vẽ bảng
-    TrainingPlanInitDataResponse getInitializationData(Long groupId);
-
-    // Lưu nháp (Không validate supervisor, status = DRAFT)
-    Long saveDraft(TrainingPlanRequest request);
-
-    // Gửi duyệt (Validate supervisor, status = WAITING_SV, ghi log)
-    Long submitPlan(TrainingPlanRequest request);
-
-    // Lấy chi tiết + Lịch sử duyệt
-    TrainingPlanResponse getTrainingPlanById(Long id);
+    TrainingPlanResponse createPlan(TrainingPlanCreateRequest request);
+    TrainingPlanResponse getPlanDetail(Long id);
+    List<TrainingPlanResponse> getAllPlans();
+    TrainingPlanResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
+    List<GroupResponse> getMyManagedGroups();
+    public List<ProcessResponse> getProcessesByGroup(Long groupId);
+    public void submitPlan(Long planId);
 }

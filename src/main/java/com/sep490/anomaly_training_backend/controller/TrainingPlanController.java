@@ -1,20 +1,22 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanRequest;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanInitDataResponse;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/training-plans")
@@ -23,92 +25,41 @@ import org.springframework.web.bind.annotation.*;
 public class TrainingPlanController {
 
     private final TrainingPlanService trainingPlanService;
+    private final UserRepository userRepository;
 
-    // =========================================================================
-    // 1. LẤY DỮ LIỆU KHỞI TẠO (Cho màn hình tạo mới)
-    // =========================================================================
-    @Operation(
-            summary = "Lấy dữ liệu khởi tạo cho màn hình Tạo kế hoạch",
-            description = "API này trả về danh sách Nhân viên (Employee) và Quy trình (Process) thuộc Group để Frontend hiển thị lên bảng Matrix."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Lấy dữ liệu thành công",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TrainingPlanInitDataResponse.class))
-            ),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy Group ID", content = @Content)
-    })
-    @GetMapping("/init-data/{groupId}")
-    public ResponseEntity<TrainingPlanInitDataResponse> getInitializationData(
-            @Parameter(description = "ID của nhóm (Group) cần lấy dữ liệu", required = true, example = "1")
-            @PathVariable Long groupId) {
-        return ResponseEntity.ok(trainingPlanService.getInitializationData(groupId));
+    @PostMapping
+    public ResponseEntity<TrainingPlanResponse> createPlan(@Valid @RequestBody TrainingPlanCreateRequest request) {
+        TrainingPlanResponse response = trainingPlanService.createPlan(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // =========================================================================
-    // 2. LƯU NHÁP (SAVE DRAFT)
-    // =========================================================================
-    @Operation(
-            summary = "Lưu nháp kế hoạch (Save Draft)",
-            description = "Lưu tạm thông tin kế hoạch xuống DB với trạng thái 'DRAFT'. Chưa yêu cầu validate các trường bắt buộc (như Supervisor)."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Tạo bản nháp thành công. Trả về ID của kế hoạch vừa tạo.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Long.class, example = "101"))
-            ),
-            @ApiResponse(responseCode = "400", description = "Dữ liệu đầu vào không hợp lệ", content = @Content)
-    })
-    @PostMapping("/draft")
-    public ResponseEntity<Long> saveDraft(@RequestBody TrainingPlanRequest request) {
-        Long planId = trainingPlanService.saveDraft(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(planId);
-    }
-
-    // =========================================================================
-    // 3. GỬI DUYỆT (SUBMIT)
-    // =========================================================================
-    @Operation(
-            summary = "Gửi duyệt kế hoạch (Submit)",
-            description = "Gửi kế hoạch lên Supervisor. Yêu cầu validate đầy đủ dữ liệu (phải chọn Supervisor). Trạng thái sẽ chuyển sang 'WAITING_SV'."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Gửi duyệt thành công. Trả về ID của kế hoạch.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Long.class, example = "101"))
-            ),
-            @ApiResponse(responseCode = "400", description = "Thiếu thông tin bắt buộc (VD: chưa chọn Supervisor)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy dữ liệu liên quan (User, Process...)", content = @Content)
-    })
-    @PostMapping("/submit")
-    public ResponseEntity<Long> submitPlan(@RequestBody TrainingPlanRequest request) {
-        Long planId = trainingPlanService.submitPlan(request);
-        return ResponseEntity.ok(planId);
-    }
-
-    // =========================================================================
-    // 4. XEM CHI TIẾT (GET DETAIL)
-    // =========================================================================
-    @Operation(
-            summary = "Xem chi tiết kế hoạch đào tạo",
-            description = "Lấy toàn bộ thông tin của một kế hoạch, bao gồm cả danh sách ma trận đào tạo và lịch sử duyệt (Approval Logs)."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Lấy thông tin thành công",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = TrainingPlanResponse.class))
-            ),
-            @ApiResponse(responseCode = "404", description = "Không tìm thấy kế hoạch với ID cung cấp", content = @Content)
-    })
     @GetMapping("/{id}")
-    public ResponseEntity<TrainingPlanResponse> getTrainingPlanById(
-            @Parameter(description = "ID của kế hoạch đào tạo", required = true, example = "101")
-            @PathVariable Long id) {
-        TrainingPlanResponse response = trainingPlanService.getTrainingPlanById(id);
+    public ResponseEntity<TrainingPlanResponse> getPlanDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(trainingPlanService.getPlanDetail(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<TrainingPlanResponse>> getAllPlans() {
+        return ResponseEntity.ok(trainingPlanService.getAllPlans());
+    }
+
+    @GetMapping("/my-managed-groups")
+    public ResponseEntity<List<GroupResponse>> getMyGroups() {
+        return ResponseEntity.ok(trainingPlanService.getMyManagedGroups());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TrainingPlanResponse> updateTrainingPlan(
+            @PathVariable Long id,
+            @Valid @RequestBody TrainingPlanUpdateRequest request) {
+
+        TrainingPlanResponse response = trainingPlanService.updatePlan(id, request);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/submit")
+    public ResponseEntity<String> submitPlan(@PathVariable Long id) {
+        trainingPlanService.submitPlan(id);
+        return ResponseEntity.ok("Gửi duyệt kế hoạch thành công!");
     }
 }

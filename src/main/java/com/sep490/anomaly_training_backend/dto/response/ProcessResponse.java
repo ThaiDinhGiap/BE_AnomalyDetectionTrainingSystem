@@ -20,4 +20,13 @@ public class ProcessResponse {
     private String groupName;
 
     private LocalDateTime createdAt;
+
+    public ProcessResponse() {
+    }
+
+    public ProcessResponse(Long id, String code, String name) {
+        this.id = id;
+        this.code = code;
+        this.name = name;
+    }
 }
