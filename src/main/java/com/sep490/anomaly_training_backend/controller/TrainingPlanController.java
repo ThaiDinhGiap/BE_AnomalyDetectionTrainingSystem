@@ -62,4 +62,11 @@ public class TrainingPlanController {
         trainingPlanService.submitPlan(id);
         return ResponseEntity.ok("Gửi duyệt kế hoạch thành công!");
     }
+
+    @PutMapping("/{id}/revert-to-draft")
+    public ResponseEntity<String> revertToDraft(@PathVariable Long id) {
+        trainingPlanService.revertToDraft(id);
+        return ResponseEntity.ok("Đã chuyển kế hoạch về trạng thái nháp thành công!");
+    }
+
 }
