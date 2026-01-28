@@ -6,11 +6,19 @@ import java.util.List;
 
 public interface GroupService {
     GroupResponse createGroup(GroupRequest request);
+
     GroupResponse updateGroup(Long id, GroupRequest request);
+
     void deleteGroup(Long id);
+
     GroupResponse getGroupById(Long id);
+
     List<GroupResponse> getAllGroups();
 
     // Lấy danh sách Group thuộc về 1 Section cụ thể
     List<GroupResponse> getGroupsBySection(Long sectionId);
+
+    List<GroupResponse> getGroupByTeamLead(Long teamLeadId);
+
+    List<GroupResponse> getGroupsBySupervisor(Long teamId);
 }
