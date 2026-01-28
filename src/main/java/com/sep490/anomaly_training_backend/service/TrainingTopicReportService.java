@@ -1,5 +1,10 @@
 package com.sep490.anomaly_training_backend.service;
 
-public class TrainingTopicReportService {
+import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportResponse;
+import java.util.List;
+
+public interface TrainingTopicReportService {
+
+    List<TrainingTopicReportResponse> getTrainingTopicReportsByUser(Long id);
 
 }
