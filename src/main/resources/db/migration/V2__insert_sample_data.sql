@@ -527,3 +527,15 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================================
 -- END OF SAMPLE DATA
 -- ============================================================================
+
+-- ============================================================================
+-- Alter Table
+-- ============================================================================
+ALTER TABLE defects
+DROP COLUMN is_escaped;
+
+ALTER TABLE defect_report_detail
+DROP COLUMN is_escaped;
+
+ALTER TABLE defect_report_detail_history
+DROP COLUMN is_escaped;
