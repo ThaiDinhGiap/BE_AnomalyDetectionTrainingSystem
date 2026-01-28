@@ -271,21 +271,21 @@ INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id
 VALUES (1, 'Kế hoạch huấn luyện Q4/2023 - Line Valve 01','TR_PLAN_2023_Q4', '2023-10-01', '2023-12-31', 1, 'APPROVED', 1,
         'Kế hoạch huấn luyện Q4/2023 - Line Valve 01', 'tl_prod01', '2023-09-25 10:00:00');
 
-INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
+INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date,actual_date, status,
                                   note, created_by)
 VALUES
 -- Tháng 10
-(1, 1, 1, 1, '2023-10-01', '2023-10-05', 'DONE', NULL, 'tl_prod01'),
-(2, 1, 1, 2, '2023-10-01', '2023-10-10', 'DONE', NULL, 'tl_prod01'),
-(3, 1, 2, 2, '2023-10-01', '2023-10-12', 'DONE', NULL, 'tl_prod01'),
+(1, 1, 1, 1, '2023-10-01', '2023-10-05', '2023-10-12',  'DONE', NULL, 'tl_prod01'),
+(2, 1, 1, 2, '2023-10-01', '2023-10-10','2023-10-12', 'DONE', NULL, 'tl_prod01'),
+(3, 1, 2, 2, '2023-10-01', '2023-10-12','2023-10-15', 'DONE', NULL, 'tl_prod01'),
 (4, 1, 5, 1, '2023-10-01', '2023-10-15', 'DONE', NULL, 'tl_prod01'),
 -- Tháng 11
-(5, 1, 3, 3, '2023-11-01', '2023-11-05', 'DONE', NULL, 'tl_prod01'),
-(6, 1, 3, 4, '2023-11-01', '2023-11-10', 'DONE', NULL, 'tl_prod01'),
-(7, 1, 6, 1, '2023-11-01', '2023-11-08', 'MISSED', 'Nghỉ ốm', 'tl_prod01'),
+(5, 1, 3, 3, '2023-11-01', '2023-11-05','2023-11-05', 'DONE', NULL, 'tl_prod01'),
+(6, 1, 3, 4, '2023-11-01', '2023-11-10', '2023-11-12','DONE', NULL, 'tl_prod01'),
+(7, 1, 6, 1, '2023-11-01', '2023-11-08', '2023-12-05', 'MISSED', 'Nghỉ ốm', 'tl_prod01'),
 -- Tháng 12
-(8, 1, 2, 5, '2023-12-01', '2023-12-05', 'DONE', NULL, 'tl_prod01'),
-(9, 1, 7, 3, '2023-12-01', '2023-12-10', 'DONE', NULL, 'tl_prod01');
+(8, 1, 2, 5, '2023-12-01', '2023-12-05', '2023-12-10', 'DONE', NULL, 'tl_prod01'),
+(9, 1, 7, 3, '2023-12-01', '2023-12-10', '2023-12-11', 'DONE', NULL, 'tl_prod01');
 
 -- Plan 2: WAITING_SV (Q1/2024)
 INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
@@ -293,19 +293,19 @@ INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id
 VALUES (2,'Kế hoạch huấn luyện Q1/2024 - Line Valve 01', 'TR_PLAN_2024_Q1', '2024-01-01', '2024-03-31', 1, 'WAITING_SV', 1,
         'Kế hoạch huấn luyện Q1/2024 - Line Valve 01', 'tl_prod01', '2023-12-20 14:00:00');
 
-INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
+INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date,actual_date, status,
                                   note, created_by)
 VALUES
 -- Tháng 1/2024
-(10, 2, 5, 2, '2024-01-01', '2024-01-08', 'PENDING', NULL, 'tl_prod01'),
-(11, 2, 5, 3, '2024-01-01', '2024-01-15', 'PENDING', NULL, 'tl_prod01'),
-(12, 2, 1, 3, '2024-01-01', '2024-01-20', 'PENDING', NULL, 'tl_prod01'),
+(10, 2, 5, 2, '2024-01-01', '2024-01-08','2024-01-15', 'PENDING', NULL, 'tl_prod01'),
+(11, 2, 5, 3, '2024-01-01', '2024-01-15', '2024-01-20','PENDING', NULL, 'tl_prod01'),
+(12, 2, 1, 3, '2024-01-01', '2024-01-20', '2024-01-22',  'PENDING', NULL, 'tl_prod01'),
 -- Tháng 2/2024
-(13, 2, 6, 2, '2024-02-01', '2024-02-05', 'PENDING', NULL, 'tl_prod01'),
-(14, 2, 7, 4, '2024-02-01', '2024-02-12', 'PENDING', NULL, 'tl_prod01'),
+(13, 2, 6, 2, '2024-02-01', '2024-02-05', '2024-02-12','PENDING', NULL, 'tl_prod01'),
+(14, 2, 7, 4, '2024-02-01', '2024-02-12', '2024-02-15','PENDING', NULL, 'tl_prod01'),
 -- Tháng 3/2024
-(15, 2, 8, 1, '2024-03-01', '2024-03-05', 'PENDING', NULL, 'tl_prod01'),
-(16, 2, 8, 2, '2024-03-01', '2024-03-15', 'PENDING', NULL, 'tl_prod01');
+(15, 2, 8, 1, '2024-03-01', '2024-03-05', '2024-03-25','PENDING', NULL, 'tl_prod01'),
+(16, 2, 8, 2, '2024-03-01', '2024-03-15', '2024-03-28','PENDING', NULL, 'tl_prod01');
 
 -- Plan 3: DRAFT
 INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
@@ -313,11 +313,11 @@ INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id
 VALUES (3, 'Kế hoạch Q1/2024 - Line Valve 02 (Đang soạn)','TR_PLAN_2024_Q1_L2', '2024-01-01', '2024-03-31', 2, 'DRAFT', 1,
         'Kế hoạch Q1/2024 - Line Valve 02 (Đang soạn)', 'tl_prod03', '2024-01-05 09:00:00');
 
-INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
+INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date ,actual_date , status,
                                   note, created_by)
-VALUES (17, 3, 10, 6, '2024-01-01', '2024-01-10', 'PENDING', NULL, 'tl_prod03'),
-       (18, 3, 10, 7, '2024-01-01', '2024-01-20', 'PENDING', NULL, 'tl_prod03'),
-       (19, 3, 11, 8, '2024-02-01', '2024-02-15', 'PENDING', NULL, 'tl_prod03');
+VALUES (17, 3, 10, 6, '2024-01-01', '2024-01-10', '2024-01-20', 'PENDING', NULL, 'tl_prod03'),
+       (18, 3, 10, 7, '2024-01-01', '2024-01-20','2024-01-22',  'PENDING', NULL, 'tl_prod03'),
+       (19, 3, 11, 8, '2024-02-01', '2024-02-15','2024-02-18',  'PENDING', NULL, 'tl_prod03');
 
 
 -- ============================================================================
