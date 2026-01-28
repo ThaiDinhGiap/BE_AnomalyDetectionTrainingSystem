@@ -5,14 +5,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class TrainingPlanRequest {
-    private Long id;
+public class TrainingPlanUpdateRequest {
     private String title;
-    private LocalDate monthStart;
-    private LocalDate monthEnd;
-    private Long groupId;
-
-    private Long supervisorId;
+    private String note;
 
     private List<TrainingPlanDetailRequest> details;
 }

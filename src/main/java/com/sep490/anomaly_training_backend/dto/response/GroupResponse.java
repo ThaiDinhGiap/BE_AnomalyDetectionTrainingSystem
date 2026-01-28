@@ -17,4 +17,12 @@ public class GroupResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public GroupResponse() {
+    }
+
+    public GroupResponse(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
 }

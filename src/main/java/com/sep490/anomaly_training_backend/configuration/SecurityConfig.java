@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/api/v1/training-plans/**").permitAll()
+                        .requestMatchers("/api/v1/training-plans/**").hasRole("TEAM_LEADER")
                         .requestMatchers("/api/v1/training-topics/**").permitAll()
                         .requestMatchers("/api/v1/defects/**").permitAll()
                         .anyRequest().authenticated())

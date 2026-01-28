@@ -49,6 +49,9 @@ public class TrainingResultHistory extends BaseEntity {
     @Column(nullable = false)
     Integer version;
 
+    @Column(columnDefinition = "text")
+    String title;
+
     // Snapshot fields
     @Column(name = "form_code", length = 50)
     String formCode;

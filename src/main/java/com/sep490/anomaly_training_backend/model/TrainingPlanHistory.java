@@ -41,6 +41,9 @@ public class TrainingPlanHistory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(columnDefinition = "text")
+    String title;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "training_plan_id")
     @ToString.Exclude

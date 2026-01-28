@@ -564,6 +564,7 @@ CREATE TABLE training_plan
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     form_code       VARCHAR(50)      DEFAULT 'TR_PLAN',
+    title            TEXT,
     month_start     DATE    NOT NULL,
     month_end       DATE    NOT NULL,
     group_id        BIGINT  NOT NULL,
@@ -630,6 +631,7 @@ CREATE TABLE training_plan_history
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
     training_plan_id BIGINT  NOT NULL,
+    title            TEXT,
     version          INT     NOT NULL,
 
     -- Snapshot
@@ -695,6 +697,7 @@ CREATE TABLE training_plan_detail_history
 CREATE TABLE training_result
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title            TEXT,
     form_code       VARCHAR(50)      DEFAULT 'TR_RESULT',
     year            INT     NOT NULL,
     group_id        BIGINT  NOT NULL,
@@ -778,6 +781,7 @@ CREATE TABLE training_result_history
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
     training_result_id BIGINT  NOT NULL,
+    title            TEXT,
     version            INT     NOT NULL,
 
     -- Snapshot

@@ -266,9 +266,9 @@ VALUES (4, 2, NULL, 'CREATE', 4, NULL, 'Kiểm tra độ bóng mài', 'Mẫu chu
 -- ============================================================================
 
 -- Plan 1: APPROVED (Q4/2023)
-INSERT INTO training_plan (id, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
+INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
                            created_at)
-VALUES (1, 'TR_PLAN_2023_Q4', '2023-10-01', '2023-12-31', 1, 'APPROVED', 1,
+VALUES (1, 'Kế hoạch huấn luyện Q4/2023 - Line Valve 01','TR_PLAN_2023_Q4', '2023-10-01', '2023-12-31', 1, 'APPROVED', 1,
         'Kế hoạch huấn luyện Q4/2023 - Line Valve 01', 'tl_prod01', '2023-09-25 10:00:00');
 
 INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
@@ -288,9 +288,9 @@ VALUES
 (9, 1, 7, 3, '2023-12-01', '2023-12-10', 'DONE', NULL, 'tl_prod01');
 
 -- Plan 2: WAITING_SV (Q1/2024)
-INSERT INTO training_plan (id, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
+INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
                            created_at)
-VALUES (2, 'TR_PLAN_2024_Q1', '2024-01-01', '2024-03-31', 1, 'WAITING_SV', 1,
+VALUES (2,'Kế hoạch huấn luyện Q1/2024 - Line Valve 01', 'TR_PLAN_2024_Q1', '2024-01-01', '2024-03-31', 1, 'WAITING_SV', 1,
         'Kế hoạch huấn luyện Q1/2024 - Line Valve 01', 'tl_prod01', '2023-12-20 14:00:00');
 
 INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
@@ -308,9 +308,9 @@ VALUES
 (16, 2, 8, 2, '2024-03-01', '2024-03-15', 'PENDING', NULL, 'tl_prod01');
 
 -- Plan 3: DRAFT
-INSERT INTO training_plan (id, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
+INSERT INTO training_plan (id,title, form_code, month_start, month_end, group_id, status, current_version, note, created_by,
                            created_at)
-VALUES (3, 'TR_PLAN_2024_Q1_L2', '2024-01-01', '2024-03-31', 2, 'DRAFT', 1,
+VALUES (3, 'Kế hoạch Q1/2024 - Line Valve 02 (Đang soạn)','TR_PLAN_2024_Q1_L2', '2024-01-01', '2024-03-31', 2, 'DRAFT', 1,
         'Kế hoạch Q1/2024 - Line Valve 02 (Đang soạn)', 'tl_prod03', '2024-01-05 09:00:00');
 
 INSERT INTO training_plan_detail (id, training_plan_id, employee_id, process_id, target_month, planned_date, status,
@@ -325,8 +325,8 @@ VALUES (17, 3, 10, 6, '2024-01-01', '2024-01-10', 'PENDING', NULL, 'tl_prod03'),
 -- ============================================================================
 
 -- Result 1: APPROVED_BY_MANAGER (2023)
-INSERT INTO training_result (id, form_code, year, group_id, status, current_version, note, created_by, created_at)
-VALUES (1, 'TR_RESULT_2023', 2023, 1, 'APPROVED_BY_MANAGER', 1, 'Kết quả huấn luyện năm 2023 - Line Valve 01',
+INSERT INTO training_result (id,title, form_code, year, group_id, status, current_version, note, created_by, created_at)
+VALUES (1, 'Kết quả huấn luyện năm 2023 - Line Valve 01','TR_RESULT_2023', 2023, 1, 'APPROVED_BY_MANAGER', 1, 'Kết quả huấn luyện năm 2023 - Line Valve 01',
         'tl_prod01', '2023-12-28 16:00:00');
 
 INSERT INTO training_result_detail (id, training_result_id, training_plan_detail_id, training_topic_id,
@@ -393,8 +393,8 @@ VALUES
  6, 8, 6, 8, 'tl_prod02');
 
 -- Result 2: ON_GOING (2024)
-INSERT INTO training_result (id, form_code, year, group_id, status, current_version, note, created_by, created_at)
-VALUES (2, 'TR_RESULT_2024', 2024, 1, 'ON_GOING', 1, 'Kết quả huấn luyện năm 2024 - Line Valve 01', 'tl_prod01',
+INSERT INTO training_result (id,title, form_code, year, group_id, status, current_version, note, created_by, created_at)
+VALUES (2,'Kết quả huấn luyện năm 2024 - Line Valve 01', 'TR_RESULT_2024', 2024, 1, 'ON_GOING', 1, 'Kết quả huấn luyện năm 2024 - Line Valve 01', 'tl_prod01',
         '2024-01-02 08:00:00');
 
 -- Detail cho plan đang pending (chưa có kết quả)

@@ -7,7 +7,6 @@ public enum ReportStatus {
     WAITING_MANAGER,
     REJECTED_BY_MANAGER,
     APPROVED,
-
     ON_GOING,
     DONE
 }
