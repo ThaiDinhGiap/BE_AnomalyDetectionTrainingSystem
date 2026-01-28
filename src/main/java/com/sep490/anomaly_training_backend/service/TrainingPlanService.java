@@ -11,10 +11,16 @@ import java.util.List;
 public interface TrainingPlanService {
 
     TrainingPlanResponse createPlan(TrainingPlanCreateRequest request);
+
     TrainingPlanResponse getPlanDetail(Long id);
+
     List<TrainingPlanResponse> getAllPlans();
+
     TrainingPlanResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
+
     List<GroupResponse> getMyManagedGroups();
-    public List<ProcessResponse> getProcessesByGroup(Long groupId);
-    public void submitPlan(Long planId);
+
+    List<ProcessResponse> getProcessesByGroup(Long groupId);
+
+    void submitPlan(Long planId);
 }
