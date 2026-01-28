@@ -129,7 +129,7 @@ CREATE TABLE approval_actions (
                                   device_info VARCHAR(255),
 
     -- Integrity (hash of canonical content at signing/submitting time)
-                                  content_hash CHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
+                                  content_hash VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
 
     -- BaseEntity fields
                                   delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
