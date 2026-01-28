@@ -708,7 +708,7 @@ CREATE TABLE training_result
         'DONE',
         'WAITING_MANAGER',
         'REJECTED_BY_MANAGER',
-        'APPROVED_BY_MANAGER'
+        'APPROVED'
         )                            DEFAULT 'ON_GOING',
     current_version INT              DEFAULT 1,
     note            TEXT,

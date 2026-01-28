@@ -326,7 +326,7 @@ VALUES (17, 3, 10, 6, '2024-01-01', '2024-01-10', '2024-01-20', 'PENDING', NULL,
 
 -- Result 1: APPROVED_BY_MANAGER (2023)
 INSERT INTO training_result (id,title, form_code, year, group_id, status, current_version, note, created_by, created_at)
-VALUES (1, 'Kết quả huấn luyện năm 2023 - Line Valve 01','TR_RESULT_2023', 2023, 1, 'APPROVED_BY_MANAGER', 1, 'Kết quả huấn luyện năm 2023 - Line Valve 01',
+VALUES (1, 'Kết quả huấn luyện năm 2023 - Line Valve 01','TR_RESULT_2023', 2023, 1, 'APPROVED', 1, 'Kết quả huấn luyện năm 2023 - Line Valve 01',
         'tl_prod01', '2023-12-28 16:00:00');
 
 INSERT INTO training_result_detail (id, training_result_id, training_plan_detail_id, training_topic_id,

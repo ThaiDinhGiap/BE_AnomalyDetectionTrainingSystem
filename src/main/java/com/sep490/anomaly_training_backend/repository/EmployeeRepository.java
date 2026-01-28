@@ -18,6 +18,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     List<Employee> findByTeamId(Long teamId);
 
+    @Query("SELECT e FROM Employee e WHERE e.team.teamLeader.id = :leaderId")
+    List<Employee> findAllByTeamLeaderId(@Param("leaderId") Long leaderId);
+
+    List<Employee> findAllByTeamIdIn(List<Long> teamIds);
 
     @Query("SELECT e FROM Employee e WHERE e.team.group.id = :groupId AND e.status = 'ACTIVE'")
     List<Employee> findAllActiveByGroupId(@Param("groupId") Long groupId);
