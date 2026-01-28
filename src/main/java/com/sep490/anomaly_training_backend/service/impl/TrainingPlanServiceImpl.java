@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
@@ -25,6 +26,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,36 +50,65 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu");
         }
 
-        // 2. Lấy User hiện tại
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        // 3. Lấy tất cả các Team mà user này làm Leader
         List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
 
         if (managedTeams.isEmpty()) {
             throw new IllegalStateException("Bạn không phải là Team Lead của bất kỳ nhóm nào.");
         }
 
-        // 4. KIỂM TRA QUYỀN: User có quản lý cái groupId mà họ gửi lên không?
-        // Logic: Duyệt qua list team quản lý -> xem có team nào thuộc group đó không.
-        Group selectedGroup = managedTeams.stream()
-                .map(Team::getGroup) // Lấy ra list Group từ list Team
-                .filter(g -> g.getId().equals(request.getGroupId())) // So sánh ID
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Bạn không có quyền tạo kế hoạch cho Dây chuyền này (ID: " + request.getGroupId() + ")"));
+        List<Team> validTeams = managedTeams.stream()
+                .filter(t -> t.getGroup() != null && t.getGroup().getId().equals(request.getGroupId()))
+                .toList();
 
-        // 5. Map và Lưu
+        if (validTeams.isEmpty()) {
+            throw new IllegalStateException("Bạn không có quyền tạo kế hoạch cho Dây chuyền này (ID: " + request.getGroupId() + ")");
+        }
+        Group selectedGroup = validTeams.get(0).getGroup();
+
         TrainingPlan trainingPlan = mapper.toEntity(request);
-        trainingPlan.setGroup(selectedGroup); // Gán group đã validate
+        trainingPlan.setGroup(selectedGroup);
         trainingPlan.setCreatedBy(currentUser.getUsername());
-
-        // (Lưu ý: Nếu cần lưu cả Team, bạn phải bắt user chọn TeamId thay vì GroupId.
-        // Ở đây ta theo nghiệp vụ chọn Group nên để Team null hoặc chọn team đầu tiên thuộc group đó)
+        trainingPlan.setStatus(ReportStatus.DRAFT);
+        trainingPlan.setCurrentVersion(1);
 
         TrainingPlan savedPlan = trainingPlanRepository.save(trainingPlan);
-        return mapper.toResponse(savedPlan);
+
+        TrainingPlanResponse response = mapper.toResponse(savedPlan);
+
+        List<Long> validTeamIds = validTeams.stream().map(Team::getId).toList();
+
+        List<Employee> teamMembers = employeeRepository.findAllByTeamIdIn(validTeamIds);
+
+        // B3: Map Employee sang TrainingPlanDetailResponse
+        List<TrainingPlanDetailResponse> prefilledDetails = new ArrayList<>();
+
+        if (teamMembers != null) {
+            for (Employee emp : teamMembers) {
+                TrainingPlanDetailResponse detailRes = new TrainingPlanDetailResponse();
+
+                detailRes.setEmployeeId(emp.getId());
+                detailRes.setEmployeeCode(emp.getEmployeeCode());
+                detailRes.setEmployeeName(emp.getFullName());
+
+
+                detailRes.setId(null);
+                detailRes.setProcessId(null);
+                detailRes.setProcessName(null);
+                detailRes.setPlannedDate(null);
+                detailRes.setStatus(null);
+                detailRes.setNote("");
+
+                prefilledDetails.add(detailRes);
+            }
+        }
+
+        response.setDetails(prefilledDetails);
+
+        return response;
     }
 
     @Override
@@ -126,13 +158,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch ID: " + planId));
 
-        // 2. Validate Trạng thái chung
+        // 2. Validate Trạng thái: Chỉ chặn sửa khi đang chờ duyệt.
+        // Nếu là DRAFT hoặc REJECTED thì sửa thoải mái.
+        // Nếu là APPROVED (trường hợp sửa đổi bổ sung) thì dùng hàm riêng.
         if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
             throw new IllegalStateException("Không thể chỉnh sửa khi đang chờ duyệt.");
         }
 
+        // 3. Cập nhật Header (Title, Note...)
         mapper.updateHeader(plan, request);
 
+        // 4. Cập nhật Details tùy theo trạng thái
         if (ReportStatus.APPROVED.equals(plan.getStatus())) {
             updateDetailsForApproved(plan, request);
         } else {
@@ -144,21 +180,29 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         return mapper.toResponse(savedPlan);
     }
 
+    // --- LOGIC CHO DRAFT/REJECTED (Xóa cũ, tạo mới hoàn toàn) ---
     private void updateDetailsForDraft(TrainingPlan plan, TrainingPlanUpdateRequest request) {
         if (request.getDetails() == null) return;
 
+        // Quan trọng: clear() sẽ kích hoạt orphanRemoval=true để xóa row cũ trong DB
         plan.getDetails().clear();
+
         Long currentGroupId = plan.getGroup().getId();
 
         for (TrainingPlanDetailRequest rowRequest : request.getDetails()) {
+            // Validate Employee & Process 1 lần cho mỗi Row (tối ưu hơn)
             Employee employee = getValidatedEmployee(rowRequest.getEmployeeId());
             Process process = getValidatedProcess(rowRequest.getProcessId(), currentGroupId);
 
             if (rowRequest.getSchedules() != null) {
                 for (ScheduleRequest schedule : rowRequest.getSchedules()) {
+                    // Chỉ lưu những ngày có tích chọn (plannedDay > 0)
                     if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
 
                         TrainingPlanDetail detail = createBaseDetail(plan, employee, process, rowRequest.getNote(), schedule);
+
+                        // Với Draft, trạng thái detail mặc định là OPEN hoặc PENDING
+                        detail.setStatus(TrainingPlanDetailStatus.PENDING);
 
                         plan.getDetails().add(detail);
                     }
@@ -170,34 +214,52 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private void updateDetailsForApproved(TrainingPlan plan, TrainingPlanUpdateRequest request) {
         if (request.getDetails() == null) return;
 
+        // 1. Lưu lại danh sách cũ để đối chiếu trước khi clear
+        List<TrainingPlanDetail> oldDetails = new ArrayList<>(plan.getDetails());
         plan.getDetails().clear();
-        Long currentGroupId = plan.getGroup().getId();
 
         for (TrainingPlanDetailRequest rowRequest : request.getDetails()) {
             Employee employee = getValidatedEmployee(rowRequest.getEmployeeId());
-            Process process = getValidatedProcess(rowRequest.getProcessId(), currentGroupId);
+            Process process = getValidatedProcess(rowRequest.getProcessId(), plan.getGroup().getId());
 
             if (rowRequest.getSchedules() != null) {
                 for (ScheduleRequest schedule : rowRequest.getSchedules()) {
-                    if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
+                    // Lấy trực tiếp ngày người dùng nhập từ Request
+                    LocalDate requestDate = LocalDate.ofEpochDay(schedule.getPlannedDay());
+                    if (requestDate == null) continue;
 
-                        TrainingPlanDetail detail = createBaseDetail(plan, employee, process, rowRequest.getNote(), schedule);
+                    // Tìm xem trong DB đã có dòng này chưa (trùng Nhân viên, Quy trình và Ngày)
+                    Optional<TrainingPlanDetail> existing = oldDetails.stream()
+                            .filter(d -> d.getEmployee().getId().equals(employee.getId())
+                                    && d.getProcess().getId().equals(process.getId())
+                                    && d.getPlannedDate().equals(requestDate))
+                            .findFirst();
 
-                        // APPROVED: Tự động điền ActualDate
-
-                        plan.getDetails().add(detail);
+                    if (existing.isPresent()) {
+                        plan.getDetails().add(existing.get());
+                        oldDetails.remove(existing.get()); // Xóa khỏi danh sách chờ xử lý "Nghỉ"
+                    } else {
+                        // Tạo mới hoàn toàn nếu là ngày mới người dùng vừa thêm
+                        plan.getDetails().add(createBaseDetail(plan, employee, process, rowRequest.getNote(), schedule));
                     }
                 }
             }
         }
+
+        // 2. XỬ LÝ NHỮNG DÒNG BỊ "BỎ RƠI" (Dấu vết của việc dời lịch hoặc nghỉ)
+        for (TrainingPlanDetail old : oldDetails) {
+            // Nếu ngày cũ đã qua (hoặc là hôm nay) mà chưa hề có ngày thực tế (chưa ký đủ)
+            if (!old.getPlannedDate().isAfter(LocalDate.now()) && old.getActualDate() == null) {
+                old.setNote("Nghỉ"); // Đánh dấu nghỉ cho ngày không được thực hiện
+                plan.getDetails().add(old); // Giữ lại trong DB để làm bằng chứng
+            }
+        }
     }
 
-// -------------------------------------------------------------------------
-// CÁC HÀM PHỤ TRỢ (HELPER) ĐỂ TRÁNH LẶP CODE
-// Giúp code gọn gàng, dễ đọc hơn
-// -------------------------------------------------------------------------
+// --- CÁC HÀM HELPER (Giữ nguyên logic của bạn nhưng gọn hơn) ---
 
     private Employee getValidatedEmployee(Long employeeId) {
+        // Nên dùng getReferenceById nếu chỉ cần gán quan hệ (lazy), nhưng findById an toàn hơn để check tồn tại
         return employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException("Nhân viên ID " + employeeId + " không tồn tại"));
     }
@@ -206,24 +268,32 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         Process process = processRepository.findById(processId)
                 .orElseThrow(() -> new EntityNotFoundException("Công đoạn ID " + processId + " không tồn tại"));
 
-        if (!process.getGroup().getId().equals(groupId)) {
+        // Check xem Process có thuộc Group của Plan không (Chặn sai sót data)
+        if (process.getGroup() == null || !process.getGroup().getId().equals(groupId)) {
             throw new IllegalArgumentException("Công đoạn '" + process.getName() + "' không thuộc dây chuyền này.");
         }
         return process;
     }
 
-    // Hàm tạo object detail cơ bản (dùng chung cho cả 2 logic)
     private TrainingPlanDetail createBaseDetail(TrainingPlan plan, Employee employee, Process process, String note, ScheduleRequest schedule) {
         TrainingPlanDetail detailEntity = new TrainingPlanDetail();
+
+        // Gán các quan hệ
         detailEntity.setTrainingPlan(plan);
         detailEntity.setEmployee(employee);
         detailEntity.setProcess(process);
+
+        // Gán thông tin text
         detailEntity.setNote(note);
 
-        LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1);
+        // Xử lý ngày tháng
+        LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1); // Luôn lấy ngày mùng 1 để chuẩn hóa
         detailEntity.setTargetMonth(targetMonth);
 
         try {
+            // Tạo ngày cụ thể từ ngày mùng 1 + số ngày user chọn
+            // Ví dụ: targetMonth = 01/11, plannedDay = 15 => 15/11
+            // Nếu user gửi plannedDay = 31 mà tháng chỉ có 30 ngày => Sẽ throw exception
             LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
             detailEntity.setPlannedDate(plannedDate);
         } catch (DateTimeException e) {
@@ -252,6 +322,14 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Tiêu đề kế hoạch không được để trống.");
         }
+
+        String groupName = plan.getGroup().getName();
+
+        // Ví dụ: groupName = "Line 01" -> prefix = "LINE01"
+        String prefix = groupName.trim().toUpperCase().replace(" ", "");
+        String generatedCode = "TR_PLAN" + prefix + "_" + plan.getCreatedAt() + plan.getId();
+
+        plan.setFormCode(generatedCode);
 
         plan.setStatus(ReportStatus.WAITING_SV);
 

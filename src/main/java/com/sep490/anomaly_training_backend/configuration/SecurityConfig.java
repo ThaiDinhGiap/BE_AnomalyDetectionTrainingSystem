@@ -78,6 +78,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/training-plans/**").hasRole("TEAM_LEADER")
+                        .requestMatchers("/api/v1/training-result/**").hasAnyRole("TEAM_LEADER", "FINAL_INSPECTION")
                         .requestMatchers("/api/v1/training-topics/**").permitAll()
                         .requestMatchers("/api/v1/defects/**").permitAll()
                         .anyRequest().authenticated())
