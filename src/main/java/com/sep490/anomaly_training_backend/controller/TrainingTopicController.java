@@ -1,15 +1,17 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.request.CreateDefectReportRequest;
+import com.sep490.anomaly_training_backend.dto.request.CreateTrainingTopicReportRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingTopicResponse;
-import com.sep490.anomaly_training_backend.model.TrainingTopicReportDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingTopicReportDetailService;
 import com.sep490.anomaly_training_backend.service.TrainingTopicReportService;
 import com.sep490.anomaly_training_backend.service.TrainingTopicService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +45,11 @@ public class TrainingTopicController {
     public ResponseEntity<List<TrainingTopicReportDetailResponse>> getTrainingTopicDetail(@PathVariable Long id){
         List<TrainingTopicReportDetailResponse> list = trainingTopicReportDetailService.getTrainingTopicReportDetails(id);
         return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<Void> createDefectReport(@RequestBody CreateTrainingTopicReportRequest createTrainingTopicReportRequest) {
+        trainingTopicReportService.createTrainingTopicReport(createTrainingTopicReportRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
 
+import com.sep490.anomaly_training_backend.dto.request.CreateDefectReportRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectReportDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectReportResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
@@ -10,6 +11,7 @@ import com.sep490.anomaly_training_backend.service.DefectReportService;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Defect and Defect Report Management", description = "API quản lý quy trình tạo báo cáo ghi nhận lỗi quá khứ cũng như lấy view Defect Banking")
 public class DefectController {
-
     private final DefectService  defectService;
     private final DefectReportService defectReportService;
     private final DefectReportDetailService defectReportDetailService;
@@ -43,5 +44,11 @@ public class DefectController {
     public ResponseEntity<List<DefectReportDetailResponse>> getDefectReportDetail(@PathVariable Long id) {
         List<DefectReportDetailResponse> list = defectReportDetailService.getDefectReportDetails(id);
         return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<Void> createDefectReport(@RequestBody CreateDefectReportRequest createDefectReportRequest) {
+        defectReportService.createDefectReport(createDefectReportRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
