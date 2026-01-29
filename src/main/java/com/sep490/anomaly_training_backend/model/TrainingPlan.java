@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,9 +23,11 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -38,7 +41,7 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingPlan extends BaseEntity {
+public class TrainingPlan extends BaseEntity implements Approvable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -78,4 +81,39 @@ public class TrainingPlan extends BaseEntity {
     @ToString.Exclude
     @Builder.Default
     List<TrainingPlanDetail> details = new ArrayList<>();
+
+    // Approvable implementation
+
+    @Override
+    public ApprovalEntityType getEntityType() {
+        return ApprovalEntityType.TRAINING_PLAN;
+    }
+
+    @Override
+    public Long getGroupId() {
+        return group.getId();
+    }
+
+    @Override
+    public String computeContentHash() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(id).append("|");
+        sb.append(currentVersion).append("|");
+        sb.append(group.getId()).append("|");
+
+        details.stream()
+                .sorted(Comparator.comparing(TrainingPlanDetail::getId))
+                .forEach(tld -> {
+                    sb.append(tld.getId()).append(":");
+                    sb.append(tld.getEmployee().getEmployeeCode()).append(":");
+                    sb.append(tld.getProcess().getName()).append(":");
+                    sb.append(tld.getPlannedDate()).append(";");
+                });
+
+        return DigestUtils.sha256Hex(sb.toString());
+    }
+
+    @Override
+    public void applyApproval() {
+    }
 }

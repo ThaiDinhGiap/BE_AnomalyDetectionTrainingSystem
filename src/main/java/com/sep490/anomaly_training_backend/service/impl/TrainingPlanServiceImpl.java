@@ -1,21 +1,35 @@
 // src/main/java/com/sep490/anomaly_training_backend/service/impl/TrainingPlanServiceImpl.java
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
-import com.sep490.anomaly_training_backend.model.*;
-import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +53,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final TrainingPlanHistoryRepository trainingPlanHistoryRepository;
+    private final ApprovalService approvalService;
 
     @Override
     @Transactional
