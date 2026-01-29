@@ -35,4 +35,5 @@ public interface DefectReportRepository extends JpaRepository<DefectReport, Long
             @Param("status") ReportStatus status,
             @Param("userId") Long userId,
             @Param("role") UserRole role);
+    List<DefectReport> findByGroupIdAndCreatedByAndDeleteFlagFalse(Long groupId, String createdBy);
 }

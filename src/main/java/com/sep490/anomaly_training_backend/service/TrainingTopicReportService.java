@@ -5,6 +5,6 @@ import java.util.List;
 
 public interface TrainingTopicReportService {
 
-    List<TrainingTopicReportResponse> getTrainingTopicReportsByUser(Long id);
+    List<TrainingTopicReportResponse> getTrainingTopicReportsByTeamLeadAndGroup(Long id, String username);
 
 }
