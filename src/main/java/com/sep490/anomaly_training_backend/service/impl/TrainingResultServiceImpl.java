@@ -9,11 +9,21 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResp
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.GroupProduct;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingTopic;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.GroupProductRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingTopicRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
-import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +42,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TrainingResultServiceImpl implements TrainingResultService {
 
-
     private final TrainingResultRepository trainingResultRepository;
     private final TrainingPlanRepository trainingPlanRepository;
     private final GroupProductRepository groupProductRepository;
@@ -42,7 +51,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     @Transactional
-    public TrainingResult generateTrainingResult(Long planId) {
+    public void generateTrainingResult(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Kế hoạch ID: " + planId));
 
@@ -81,8 +90,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         }
 
         result.setDetails(resultDetails);
-
-        return trainingResultRepository.save(result);
+        trainingResultRepository.save(result);
     }
 
     @Override
@@ -106,7 +114,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .map(item -> new TrainingResultOptionResponse(
                         item.getId(),
                         item.getTrainingSample()
-                        ))
+                ))
                 .toList();
     }
 

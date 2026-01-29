@@ -1,22 +1,45 @@
 // src/main/java/com/sep490/anomaly_training_backend/service/impl/TrainingPlanServiceImpl.java
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
-import com.sep490.anomaly_training_backend.model.*;
-import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
+import com.sep490.anomaly_training_backend.service.TrainingResultService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +49,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -42,6 +64,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final TrainingPlanHistoryRepository trainingPlanHistoryRepository;
+    private final ApprovalService approvalService;
+    private final TrainingResultService trainingResultService;
 
     @Override
     @Transactional
@@ -304,62 +328,99 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         return detailEntity;
     }
 
+    // Relate approval methods
+    @Override
+    public void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request) {
+        TrainingPlan plan = getReportById(planId);
+
+        validatePlanForSubmission(plan);
+
+        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getGroup().getName(), planId));
+
+        approvalService.submit(plan, currentUser, request);
+
+        trainingPlanRepository.save(plan);
+    }
+
     @Override
     @Transactional
-    public void submitPlan(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch ID: " + planId));
+    public void submit(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingPlan report = getReportById(reportId);
+        approvalService.submit(report, currentUser, request);
+        trainingPlanRepository.save(report);
+    }
 
+    @Override
+    @Transactional
+    public void revise(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingPlan report = getReportById(reportId);
 
-        if (plan.getStatus() != ReportStatus.DRAFT) {
-            throw new IllegalStateException("Kế hoạch đang ở trạng thái " + plan.getStatus() + ", không thể gửi duyệt.");
+        if (!report.getCreatedBy().equals(currentUser.getUsername())) {
+            throw new BusinessException("Chỉ người tạo mới có thể sửa lại kế hoạch này.");
         }
+        approvalService.revise(report, currentUser, request);
+        trainingPlanRepository.save(report);
+    }
 
+    @Override
+    @Transactional
+    public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
+        TrainingPlan report = getReportById(reportId);
+        approvalService.approve(report, currentUser, req, request);
+        if (report.getStatus() == ReportStatus.APPROVED) {
+            trainingResultService.generateTrainingResult(reportId);
+        }
+        trainingPlanRepository.save(report);
+    }
+
+    @Override
+    @Transactional
+    public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
+        TrainingPlan report = getReportById(reportId);
+        approvalService.reject(report, currentUser, req, request);
+        trainingPlanRepository.save(report);
+    }
+
+    @Override
+    public boolean canApprove(Long reportId, User currentUser) {
+        TrainingPlan report = getReportById(reportId);
+        return approvalService.canApprove(report, currentUser);
+    }
+
+    private TrainingPlan getReportById(Long id) {
+        return trainingPlanRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", id));
+    }
+
+    // private methods
+    private void validatePlanForSubmission(TrainingPlan plan) {
+        // Business rules specific to TrainingPlan
         if (plan.getDetails() == null || plan.getDetails().isEmpty()) {
-            throw new IllegalArgumentException("Kế hoạch chưa có nội dung chi tiết, vui lòng nhập liệu trước khi gửi.");
+            throw new IllegalArgumentException("Kế hoạch chưa có nội dung chi tiết. " +
+                    "Vui lòng nhập ít nhất 1 dòng chi tiết trước khi gửi duyệt.");
         }
 
         if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Tiêu đề kế hoạch không được để trống.");
         }
 
-        String groupName = plan.getGroup().getName();
-
-        // Ví dụ: groupName = "Line 01" -> prefix = "LINE01"
-        String prefix = groupName.trim().toUpperCase().replace(" ", "");
-        String generatedCode = "TR_PLAN" + prefix + "_" + plan.getCreatedAt() + plan.getId();
-
-        plan.setFormCode(generatedCode);
-
-        plan.setStatus(ReportStatus.WAITING_SV);
-
-        // (Tuỳ chọn) Lưu log lịch sử, set ngày gửi...
-        // plan.setSubmittedAt(LocalDateTime.now());
-
-        // 5. Lưu
-        trainingPlanRepository.save(plan);
-    }
-
-    @Override
-    @Transactional
-    public void revertToDraft(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch ID: " + planId));
-
-        if (plan.getStatus() != ReportStatus.REJECTED_BY_SV || plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER) {
-            throw new IllegalStateException("Chỉ có thể chuyển về bản nháp khi kế hoạch đã bị từ chối (REJECTED).");
+        // Validate date range
+        if (plan.getMonthEnd().isBefore(plan.getMonthStart())) {
+            throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu.");
         }
 
-        createHistorySnapshot(plan);
-
-        int currentVersion = (plan.getCurrentVersion() == null) ? 1 : plan.getCurrentVersion();
-        plan.setCurrentVersion(currentVersion + 1);
-
-        plan.setStatus(ReportStatus.DRAFT);
-
-        // plan.setNote("");
-
-        trainingPlanRepository.save(plan);
+        // Validate details have required fields
+        for (TrainingPlanDetail detail : plan.getDetails()) {
+            if (detail.getEmployee() == null) {
+                throw new IllegalArgumentException("Detail thiếu thông tin nhân viên.");
+            }
+            if (detail.getProcess() == null) {
+                throw new IllegalArgumentException("Detail thiếu thông tin công đoạn.");
+            }
+            if (detail.getPlannedDate() == null) {
+                throw new IllegalArgumentException("Detail thiếu ngày dự kiến.");
+            }
+        }
     }
 
     /**
@@ -405,5 +466,4 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         trainingPlanHistoryRepository.save(history);
     }
-
 }
