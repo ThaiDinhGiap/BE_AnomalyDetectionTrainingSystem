@@ -17,7 +17,7 @@ public class TrainingTopicServiceImpl implements TrainingTopicService {
     private final TrainingTopicMapper trainingTopicMapper;
 
     @Override
-    public List<TrainingTopicResponse> getTrainingTopics() {
+    public List<TrainingTopicResponse> getTrainingTopicsByGroup(Long groupId) {
         List<TrainingTopic> listEntity = trainingTopicRepository.findByDeleteFlagFalse();
         return listEntity.stream().map(trainingTopicMapper::toDto).toList();
     }

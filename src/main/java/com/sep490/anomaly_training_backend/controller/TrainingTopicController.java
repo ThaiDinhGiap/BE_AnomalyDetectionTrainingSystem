@@ -1,16 +1,18 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingTopicResponse;
+import com.sep490.anomaly_training_backend.model.TrainingTopicReportDetail;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.service.TrainingTopicReportDetailService;
 import com.sep490.anomaly_training_backend.service.TrainingTopicReportService;
 import com.sep490.anomaly_training_backend.service.TrainingTopicService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,17 +24,24 @@ public class TrainingTopicController {
 
     public final TrainingTopicService trainingTopicService;
     public final TrainingTopicReportService trainingTopicReportService;
+    public final TrainingTopicReportDetailService trainingTopicReportDetailService;
 
     @GetMapping("/")
-    public ResponseEntity<List<TrainingTopicResponse>> getTrainingTopic(){
-        List<TrainingTopicResponse> list = trainingTopicService.getTrainingTopics();
+    public ResponseEntity<List<TrainingTopicResponse>> getTrainingTopicByGroup(@RequestParam("groupId") Long groupId){
+        List<TrainingTopicResponse> list = trainingTopicService.getTrainingTopicsByGroup(groupId);
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("/report/{id}")
-    public ResponseEntity<List<TrainingTopicReportResponse>> getTrainingTopicReport(@PathVariable Long id){
-        List<TrainingTopicReportResponse> list = trainingTopicReportService.getTrainingTopicReportsByUser(id);
+    @GetMapping("/report")
+    public ResponseEntity<List<TrainingTopicReportResponse>> getTrainingTopicReportByGroup(@RequestParam("groupId") Long groupId,
+                                                                                           @AuthenticationPrincipal User currentUser){
+        List<TrainingTopicReportResponse> list = trainingTopicReportService.getTrainingTopicReportsByTeamLeadAndGroup(groupId, "tl_prod01");
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<List<TrainingTopicReportDetailResponse>> getTrainingTopicDetail(@PathVariable Long id){
+        List<TrainingTopicReportDetailResponse> list = trainingTopicReportDetailService.getTrainingTopicReportDetails(id);
+        return ResponseEntity.ok(list);
+    }
 }

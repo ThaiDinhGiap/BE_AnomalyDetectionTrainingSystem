@@ -5,5 +5,5 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingTopicResponse;
 import java.util.List;
 
 public interface TrainingTopicService {
-    List<TrainingTopicResponse> getTrainingTopics();
+    List<TrainingTopicResponse> getTrainingTopicsByGroup(Long groupId);
 }

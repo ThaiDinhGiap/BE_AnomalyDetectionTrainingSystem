@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.model.TrainingTopic;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,5 +14,12 @@ public interface TrainingTopicRepository extends JpaRepository<TrainingTopic, Lo
     List<TrainingTopic> findByProcessIdAndDeleteFlagFalse(Long processId);
 
     List<TrainingTopic> findByDefectIdAndDeleteFlagFalse(Long defectId);
+
     List<TrainingTopic> findByProcessId(Long processId);
+
+    @Query("SELECT t FROM TrainingTopic t " +
+            "join t.process p " +
+            "join p.group g " +
+            "where g.id = :groupId and t.deleteFlag = false")
+    List<TrainingTopic> findByGroupIdAndDeleteFlagFalse(Long trainingId);
 }
