@@ -15,6 +15,8 @@ public interface TrainingTopicRepository extends JpaRepository<TrainingTopic, Lo
 
     List<TrainingTopic> findByDefectIdAndDeleteFlagFalse(Long defectId);
 
+    List<TrainingTopic> findByProcessId(Long processId);
+
     @Query("SELECT t FROM TrainingTopic t " +
             "join t.process p " +
             "join p.group g " +
