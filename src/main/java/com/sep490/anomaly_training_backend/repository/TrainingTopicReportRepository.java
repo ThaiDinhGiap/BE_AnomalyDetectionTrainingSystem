@@ -18,6 +18,10 @@ public interface TrainingTopicReportRepository extends JpaRepository<TrainingTop
 
     List<TrainingTopicReport> findByStatusAndDeleteFlagFalse(ReportStatus status);
 
+    List<TrainingTopicReport> findByGroupIdAndCreatedByAndDeleteFlagFalse(@Param("groupId") Long groupId,
+                                                        @Param("createdBy") String createdBy);
+
+
     @Query("""
                 SELECT tr FROM TrainingTopicReport tr
                 JOIN tr.group g
