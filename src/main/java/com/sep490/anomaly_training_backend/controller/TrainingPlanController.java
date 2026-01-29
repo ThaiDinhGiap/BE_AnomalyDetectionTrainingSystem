@@ -88,7 +88,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Gửi duyệt kế hoạch", description = "Chuyển trạng thái kế hoạch từ DRAFT sang SUBMITTED.")
     @PutMapping("/{id}/submit")
-    public ResponseEntity<String> submitPlan(
+    public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             HttpServletRequest request) {
@@ -97,8 +97,8 @@ public class TrainingPlanController {
     }
 
     @Operation(summary = "Hoàn duyệt (Chuyển về Nháp)", description = "Chuyển kế hoạch từ trạng thái chờ duyệt về lại trạng thái Nháp để chỉnh sửa.")
-    @PutMapping("/{id}/revert-to-draft")
-    public ResponseEntity<String> revertToDraft(
+    @PutMapping("/{id}/revise")
+    public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             HttpServletRequest request
