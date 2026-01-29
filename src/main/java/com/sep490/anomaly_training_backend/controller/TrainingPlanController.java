@@ -1,22 +1,31 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -79,15 +88,63 @@ public class TrainingPlanController {
 
     @Operation(summary = "Gửi duyệt kế hoạch", description = "Chuyển trạng thái kế hoạch từ DRAFT sang SUBMITTED.")
     @PutMapping("/{id}/submit")
-    public ResponseEntity<String> submitPlan(@PathVariable Long id) {
-        trainingPlanService.submitPlan(id);
+    public ResponseEntity<String> submitPlan(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        trainingPlanService.submitPlanForApproval(id, currentUser, request);
         return ResponseEntity.ok("Gửi duyệt kế hoạch thành công!");
     }
 
     @Operation(summary = "Hoàn duyệt (Chuyển về Nháp)", description = "Chuyển kế hoạch từ trạng thái chờ duyệt về lại trạng thái Nháp để chỉnh sửa.")
     @PutMapping("/{id}/revert-to-draft")
-    public ResponseEntity<String> revertToDraft(@PathVariable Long id) {
-        trainingPlanService.revertToDraft(id);
+    public ResponseEntity<String> revertToDraft(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        trainingPlanService.revise(id, currentUser, request);
         return ResponseEntity.ok("Đã chuyển kế hoạch về trạng thái nháp thành công!");
+    }
+
+    @Operation(summary = "Kiểm tra quyền phê duyệt kế hoạch của người dùng")
+    @GetMapping("/{id}/permission")
+    public ResponseEntity<Boolean> getApprovePermission(
+            @AuthenticationPrincipal User currentUser,
+            @Parameter(description = "ID của kế hoạch") @PathVariable Long id) {
+        return ResponseEntity.ok(trainingPlanService.canApprove(id, currentUser));
+    }
+
+    @Operation(summary = "Phê duyệt kế hoạch", description = "Duyệt kế hoạch huấn luyện. Chỉ những người có thẩm quyền mới có thể thực hiện.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Phê duyệt thành công"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền phê duyệt"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy kế hoạch")
+    })
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<String> approvePlan(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ApproveRequest approveRequest,
+            HttpServletRequest request) {
+
+        trainingPlanService.approve(id, currentUser, approveRequest, request);
+        return ResponseEntity.ok("Kế hoạch đã được phê duyệt thành công!");
+    }
+
+    @Operation(summary = "Từ chối kế hoạch", description = "Từ chối và yêu cầu chỉnh sửa lại kế hoạch.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Đã từ chối kế hoạch"),
+            @ApiResponse(responseCode = "400", description = "Lý do từ chối không hợp lệ")
+    })
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<String> rejectPlan(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody RejectRequest rejectRequest,
+            HttpServletRequest request) {
+
+        trainingPlanService.reject(id, currentUser, rejectRequest, request);
+        return ResponseEntity.ok("Kế hoạch đã bị từ chối!");
     }
 }

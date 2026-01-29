@@ -214,7 +214,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     private void validateApprover(Approvable entity, User currentUser, ApprovalFlowStep step) {
         // Check role
         if (currentUser.getRole() != step.getApproverRole()) {
-            throw new BusinessException("Bạn kh��ng có quyền duyệt ở bước này. Yêu cầu role: " + step.getApproverRole());
+            throw new BusinessException("Bạn không có quyền duyệt ở bước này. Yêu cầu role: " + step.getApproverRole());
         }
 
         // Check org hierarchy
