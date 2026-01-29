@@ -34,6 +34,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryReposit
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
+import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -64,6 +65,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final TeamRepository teamRepository;
     private final TrainingPlanHistoryRepository trainingPlanHistoryRepository;
     private final ApprovalService approvalService;
+    private final TrainingResultService trainingResultService;
 
     @Override
     @Transactional
@@ -365,6 +367,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
+        if (report.getStatus() == ReportStatus.APPROVED) {
+            trainingResultService.generateTrainingResult(reportId);
+        }
         trainingPlanRepository.save(report);
     }
 
