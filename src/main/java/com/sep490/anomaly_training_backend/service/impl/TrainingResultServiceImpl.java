@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
@@ -9,6 +11,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResp
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
+import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.model.GroupProduct;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
@@ -24,7 +27,9 @@ import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingTopicRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +53,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingTopicRepository trainingTopicRepository;
     private final UserRepository userRepository;
     private final TrainingResultDetailRepository detailRepository;
+    private final ApprovalService approvalService;
 
     @Override
     @Transactional
@@ -424,4 +430,41 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 //        trainingResultRepository.save(result);
     }
 
+    // Relate approval methods
+    @Override
+    public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
+        TrainingResultDetail detail = getDetailtById(resultId);
+        approvalService.submit(detail, currentUser, request);
+    }
+
+    @Override
+    public void submit(Long reportId, User currentUser, HttpServletRequest request) {
+
+    }
+
+    @Override
+    public void revise(Long reportId, User currentUser, HttpServletRequest request) {
+
+    }
+
+    @Override
+    public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
+
+    }
+
+    @Override
+    public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
+
+    }
+
+    @Override
+    public boolean canApprove(Long reportId, User currentUser) {
+        return false;
+    }
+
+    // private methods
+    private TrainingResultDetail getDetailtById(Long id) {
+        return detailRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TrainingResultDetail", "id", id));
+    }
 }

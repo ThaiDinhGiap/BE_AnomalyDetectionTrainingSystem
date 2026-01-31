@@ -1,8 +1,19 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +22,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -26,7 +38,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingResultDetail extends BaseEntity {
+public class TrainingResultDetail extends BaseEntity implements Approvable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -103,4 +115,43 @@ public class TrainingResultDetail extends BaseEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     User signatureFiOut;
+
+    @Override
+    public ApprovalEntityType getEntityType() {
+        return ApprovalEntityType.TRAINING_RESULT;
+    }
+
+    @Override
+    public void setStatus(ReportStatus status) {
+
+    }
+
+    @Override
+    public Integer getCurrentVersion() {
+        return 0;
+    }
+
+    @Override
+    public void setCurrentVersion(Integer version) {
+
+    }
+
+    @Override
+    public Long getGroupId() {
+        return trainingResult.getGroup().getId();
+    }
+
+    @Override
+    public String computeContentHash() {
+        String hash = id + "|" +
+                trainingResult.getId() + "|" +
+                trainingPlanDetail.getId() + "|" +
+                plannedDate + "|" +
+                actualDate + "|";
+        return DigestUtils.sha256Hex(hash);
+    }
+
+    @Override
+    public void applyApproval() {
+    }
 }

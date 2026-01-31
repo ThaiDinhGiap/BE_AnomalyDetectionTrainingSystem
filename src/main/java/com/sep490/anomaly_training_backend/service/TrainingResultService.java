@@ -1,10 +1,14 @@
 package com.sep490.anomaly_training_backend.service;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.model.User;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
@@ -24,4 +28,17 @@ public interface TrainingResultService {
     TrainingResultDetailResponse getTrainingResultDetail(Long id);
 
     void submitResult(Long resultId);
+
+    // Relate approval methods
+    void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request);
+
+    void submit(Long reportId, User currentUser, HttpServletRequest request);
+
+    void revise(Long reportId, User currentUser, HttpServletRequest request);
+
+    void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request);
+
+    void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request);
+
+    boolean canApprove(Long reportId, User currentUser);
 }

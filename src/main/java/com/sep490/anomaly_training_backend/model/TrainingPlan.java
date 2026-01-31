@@ -82,7 +82,7 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     @Builder.Default
     List<TrainingPlanDetail> details = new ArrayList<>();
 
-    // Approvable implementation
+    // Approval implementation
 
     @Override
     public ApprovalEntityType getEntityType() {
