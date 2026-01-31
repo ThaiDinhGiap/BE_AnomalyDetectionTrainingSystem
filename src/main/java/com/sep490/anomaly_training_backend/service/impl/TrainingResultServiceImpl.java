@@ -9,7 +9,6 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResp
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.model.GroupProduct;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -240,7 +239,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setActualDate(today);
                     if (detail.getTrainingPlanDetail() != null) {
                         detail.getTrainingPlanDetail().setActualDate(today);
-                        detail.getTrainingPlanDetail().setStatus(TrainingPlanDetailStatus.DONE);
+                        detail.getTrainingPlanDetail().setStatus(ReportStatus.DONE);
                     }
                 }
             }

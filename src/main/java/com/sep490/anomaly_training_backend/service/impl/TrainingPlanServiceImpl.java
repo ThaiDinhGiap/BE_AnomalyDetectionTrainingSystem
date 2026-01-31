@@ -13,7 +13,6 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
@@ -226,7 +225,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         TrainingPlanDetail detail = createBaseDetail(plan, employee, process, rowRequest.getNote(), schedule);
 
                         // Với Draft, trạng thái detail mặc định là OPEN hoặc PENDING
-                        detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                        detail.setStatus(ReportStatus.PENDING);
 
                         plan.getDetails().add(detail);
                     }
