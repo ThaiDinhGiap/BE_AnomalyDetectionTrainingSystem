@@ -10,7 +10,6 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultListRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.model.GroupProduct;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -89,7 +88,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 resultDetail.setPlannedDate(planDetail.getPlannedDate());
 
-                resultDetail.setStatus(TrainingResultDetailStatus.PENDING);
+                resultDetail.setStatus(ReportStatus.PENDING);
 
                 resultDetails.add(resultDetail);
             }
@@ -233,7 +232,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     else if (isFiUser) detail.setSignatureFiOut(currentUser);
                 }
 
-                detail.setStatus(TrainingResultDetailStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING);
                 detailsToSave.add(detail);
 
                 if (isFullSigned(detail)) {

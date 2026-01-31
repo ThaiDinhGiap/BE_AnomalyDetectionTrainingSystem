@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -97,7 +96,7 @@ public class TrainingResultDetail extends BaseEntity implements Approvable {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    TrainingResultDetailStatus status = TrainingResultDetailStatus.PENDING;
+    ReportStatus status = ReportStatus.PENDING;
 
     // Signatures
     Long signatureProIn;
@@ -116,14 +115,11 @@ public class TrainingResultDetail extends BaseEntity implements Approvable {
     @EqualsAndHashCode.Exclude
     User signatureFiOut;
 
+    // Approval implementation
+
     @Override
     public ApprovalEntityType getEntityType() {
         return ApprovalEntityType.TRAINING_RESULT;
-    }
-
-    @Override
-    public void setStatus(ReportStatus status) {
-
     }
 
     @Override
