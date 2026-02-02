@@ -32,10 +32,12 @@ public class DefectReportServiceImpl implements DefectReportService {
     @Override
     public List<DefectReportResponse> getDefectReportByTeamLeadAndGroup(Long id, String username) {
         List<DefectReportResponse> result = new ArrayList<>();
+
         List<DefectReport> listEntity = defectReportRepository.findByGroupIdAndCreatedByAndDeleteFlagFalse(id, username);
         for (DefectReport entity : listEntity) {
             result.add(defectReportMapper.toResponse(entity, userRepository));
         }
+
         return result;
     }
 
@@ -50,14 +52,16 @@ public class DefectReportServiceImpl implements DefectReportService {
     }
 
     private void createDefectReportDetailRequest(List<CreateDefectReportDetailRequest> defectReportDetailList, DefectReport report) {
-        for(CreateDefectReportDetailRequest detailRequest : defectReportDetailList) {
+        for (CreateDefectReportDetailRequest detailRequest : defectReportDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             DefectReportDetail  entity = new DefectReportDetail();
             entity.setDefectReport(report);
-            if(detailRequest.getDefectId()!=null) {
+
+            if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
+
             entity.setReportType(detailRequest.getReportType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);

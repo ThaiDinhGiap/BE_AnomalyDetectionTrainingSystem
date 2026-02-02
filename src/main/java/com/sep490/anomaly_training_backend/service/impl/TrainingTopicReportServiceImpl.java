@@ -34,9 +34,11 @@ public class TrainingTopicReportServiceImpl implements TrainingTopicReportServic
     public List<TrainingTopicReportResponse> getTrainingTopicReportsByTeamLeadAndGroup(Long id, String username) {
         List<TrainingTopicReport> entityList= trainingTopicReportRepository.findByGroupIdAndCreatedByAndDeleteFlagFalse(id, username);
         List<TrainingTopicReportResponse> trainingTopicReportResponses = new ArrayList<>();
+
         for (TrainingTopicReport entity : entityList) {
             trainingTopicReportResponses.add(trainingTopicReportMapper.toResponse(entity, userRepository));
         }
+
         return  trainingTopicReportResponses;
     }
 
@@ -56,11 +58,12 @@ public class TrainingTopicReportServiceImpl implements TrainingTopicReportServic
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             TrainingTopicReportDetail entity = new TrainingTopicReportDetail();
             entity.setTrainingTopicReport(report);
-            if(detailRequest.getTrainingTopicId()!=null) {
+            if (detailRequest.getTrainingTopicId() != null) {
                 TrainingTopic trainingTopic = trainingTopicRepository.findById(detailRequest.getTrainingTopicId()).orElse(null);
                 entity.setTrainingTopic(trainingTopic);
             }
-            if(detailRequest.getDefectId()!=null) {
+
+            if (detailRequest.getDefectId()!=null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
