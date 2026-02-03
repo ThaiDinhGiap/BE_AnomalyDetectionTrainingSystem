@@ -124,12 +124,12 @@ public class TrainingResultDetail extends BaseEntity implements Approvable {
 
     @Override
     public Integer getCurrentVersion() {
-        return 0;
+        return trainingResult.getCurrentVersion();
     }
 
     @Override
     public void setCurrentVersion(Integer version) {
-
+        trainingResult.setCurrentVersion(version);
     }
 
     @Override
