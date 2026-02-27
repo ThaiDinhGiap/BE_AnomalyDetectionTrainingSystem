@@ -48,6 +48,8 @@ DROP TABLE IF EXISTS modules;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS approval_flow_steps;
+DROP TABLE IF EXISTS approval_actions;
 
 
 -- ============================================================================
@@ -744,7 +746,7 @@ CREATE TABLE training_plans
     title           TEXT,
     month_start     DATE,
     month_end       DATE,
-    group_id        BIGINT,
+    team_id        BIGINT,
     line_id         BIGINT COMMENT 'Dây chuyền áp dụng',
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
@@ -758,9 +760,9 @@ CREATE TABLE training_plans
     updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
-    FOREIGN KEY (group_id) REFERENCES `groups` (id),
+    FOREIGN KEY (team_id) REFERENCES `teams` (id),
     FOREIGN KEY (line_id) REFERENCES product_lines (id),
-    INDEX idx_training_plans_group (group_id),
+    INDEX idx_training_plans_team (team_id),
     INDEX idx_training_plans_line (line_id),
     INDEX idx_training_plans_status (status),
     INDEX idx_training_plans_month_range (month_start, month_end),
@@ -816,7 +818,7 @@ CREATE TABLE training_plan_history
     form_code        VARCHAR(50),
     month_start      DATE,
     month_end        DATE,
-    group_id         BIGINT,
+    team_id         BIGINT,
     line_id          BIGINT,
     note             TEXT,
     recorded_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
@@ -877,7 +879,7 @@ CREATE TABLE training_results
     title            TEXT,
     form_code        VARCHAR(50),
     year             INT     NOT NULL,
-    group_id         BIGINT  NOT NULL,
+    team_id         BIGINT  NOT NULL,
     line_id          BIGINT COMMENT 'Dây chuyền áp dụng',
     status           ENUM ('ON_GOING', 'DONE', 'WAITING_MANAGER',
         'REJECTED_BY_MANAGER', 'APPROVED')
@@ -892,10 +894,10 @@ CREATE TABLE training_results
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id),
-    FOREIGN KEY (group_id) REFERENCES `groups` (id),
+    FOREIGN KEY (team_id) REFERENCES `teams` (id),
     FOREIGN KEY (line_id) REFERENCES product_lines (id),
     INDEX idx_training_results_plan (training_plan_id),
-    INDEX idx_training_results_group (group_id),
+    INDEX idx_training_results_team (team_id),
     INDEX idx_training_results_year (year),
     INDEX idx_training_results_status (status),
     INDEX idx_training_results_delete_flag (delete_flag)
@@ -980,7 +982,7 @@ CREATE TABLE training_result_history
 
     -- Snapshot
     year               INT,
-    group_id           BIGINT,
+    team_id           BIGINT,
     line_id            BIGINT,
     status_at_time     VARCHAR(50),
     note               TEXT,
@@ -1326,6 +1328,120 @@ CREATE TABLE training_sample_reviews
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE approval_flow_steps
+(
+    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+    entity_type   VARCHAR(50)                    NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
+    step_order    INT                            NOT NULL,
+    approver_role ENUM ('SUPERVISOR', 'MANAGER') NOT NULL,
+    is_active     BOOLEAN                        NOT NULL DEFAULT TRUE,
+
+    delete_flag   BOOLEAN                        NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP                               DEFAULT CURRENT_TIMESTAMP,
+    created_by    VARCHAR(255),
+    updated_at    TIMESTAMP                               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by    VARCHAR(255),
+
+    UNIQUE KEY uk_approval_flow_steps_entity_order (entity_type, step_order),
+    INDEX idx_approval_flow_steps_entity_active (entity_type, is_active),
+    INDEX idx_approval_flow_steps_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE approval_actions
+(
+    id                     BIGINT PRIMARY KEY AUTO_INCREMENT,
+    entity_type            VARCHAR(50)                                                                NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
+    entity_id              BIGINT                                                                     NOT NULL,
+
+    entity_version         INT                                                                        NOT NULL,
+
+    -- Step order convention:
+    --   -1 = REVISE (TL)
+    --    0 = SUBMIT (TL)
+    --    1 = SV approve/reject
+    --    2 = MG approve/reject
+    step_order             INT                                                                        NOT NULL,
+    required_role          ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
+    action                 ENUM ('REVISE', 'SUBMIT', 'APPROVE', 'REJECT')                             NOT NULL,
+
+    performed_by_user_id   BIGINT                                                                     NOT NULL,
+    performed_by_username  VARCHAR(50)                                                                NOT NULL,
+    performed_by_full_name VARCHAR(100)                                                               NOT NULL,
+    performed_by_role      ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
+
+    comment                TEXT,
+
+    performed_at           TIMESTAMP                                                                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Audit environment
+    ip_address             VARCHAR(45),
+    user_agent             TEXT,
+    device_info            VARCHAR(255),
+    content_hash VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
+
+    -- BaseEntity fields
+    delete_flag            BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
+    created_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
+    created_by             VARCHAR(255),
+    updated_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by             VARCHAR(255),
+
+    CONSTRAINT fk_approval_actions_user
+        FOREIGN KEY (performed_by_user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    -- Ensures:
+    --   - Only one SUBMIT per entity_version (step_order=0)
+    --   - Only one REVISE record per entity_version (step_order=-1) (optional but fine)
+    --   - Only one decision per step per version (step_order=1,2)
+    UNIQUE KEY uk_approval_actions_entity_version_step (entity_type, entity_id, entity_version, step_order),
+
+    INDEX idx_approval_actions_entity (entity_type, entity_id),
+    INDEX idx_approval_actions_user (performed_by_user_id),
+    INDEX idx_approval_actions_action (action),
+    INDEX idx_approval_actions_performed_at (performed_at),
+    INDEX idx_approval_actions_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+
+CREATE TABLE user_signature_pins
+(
+    id                BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    -- @OneToOne relationship with User
+    user_id           BIGINT                                     NOT NULL,
+
+    -- Security fields
+    pin_hash          VARCHAR(255)                               NOT NULL COMMENT 'BCrypt/Argon2 hash of the PIN',
+    failed_attempts   INT                                        NOT NULL DEFAULT 0,
+    locked_until      TIMESTAMP                                  NULL,
+    last_changed_at   TIMESTAMP                                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at        TIMESTAMP                                  NULL,
+
+    -- BaseEntity fields
+    delete_flag            BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
+    created_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
+    created_by             VARCHAR(255),
+    updated_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by             VARCHAR(255),
+
+    -- Foreign Key to Users table
+    CONSTRAINT fk_user_signature_pins_user
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+
+    -- Constraints & Indexes
+    -- Ensures one PIN record per User (OneToOne)
+    UNIQUE KEY uk_user_signature_pins_user (user_id),
+
+    -- Standard indexing for queries
+    INDEX idx_user_signature_pins_delete_flag (delete_flag)
+
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
 

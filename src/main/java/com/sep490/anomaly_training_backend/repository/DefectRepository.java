@@ -9,16 +9,16 @@ import java.util.List;
 public interface DefectRepository extends JpaRepository<Defect, Long> {
     List<Defect> findByDeleteFlagFalse();
 
-    @Query("SELECT d FROM Defect d " +
-            "join d.process p " +
-            "join p.group g " +
-            "where g.id = :groupId and d.deleteFlag = false")
+//    @Query("SELECT d FROM Defect d " +
+//            "join d.process p " +
+//            "join p.group g " +
+//            "where g.id = :groupId and d.deleteFlag = false")
     List<Defect> findAllByGroupAndDeleteFlagFalse(@Param("groupId") Long groupId);
 
-    @Query("SELECT d FROM Defect d " +
-            "join d.process p " +
-            "join p.group g " +
-            "join g.supervisor s " +
-            "where s.id = :supervisorId and d.deleteFlag = false")
+//    @Query("SELECT d FROM Defect d " +
+//            "join d.process p " +
+//            "join p.group g " +
+//            "join g.supervisor s " +
+//            "where s.id = :supervisorId and d.deleteFlag = false")
     List<Defect> findAllBySupervisorAndDeleteFlagFalse(@Param("supervisorId")Long supervisorId);
 }

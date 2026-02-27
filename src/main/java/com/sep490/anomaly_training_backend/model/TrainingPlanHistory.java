@@ -62,8 +62,8 @@ public class TrainingPlanHistory extends BaseEntity {
     @Column(name = "month_end")
     LocalDate monthEnd;
 
-    @Column(name = "group_id")
-    Long groupId;
+    @Column(name = "team_id")
+    Long team_id;
 
     @Column(name = "line_id")
     Long lineId;

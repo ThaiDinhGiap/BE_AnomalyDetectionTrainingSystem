@@ -8,9 +8,9 @@ import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
-import com.sep490.anomaly_training_backend.repository.DefectReportRepository;
+//import com.sep490.anomaly_training_backend.repository.DefectReportRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingTopicReportRepository;
+//import com.sep490.anomaly_training_backend.repository.TrainingTopicReportRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +27,8 @@ import java.util.List;
 @Slf4j
 public class ApprovalQueryServiceImpl implements ApprovalQueryService {
 
-    private final DefectReportRepository defectReportRepo;
-    private final TrainingTopicReportRepository topicReportRepo;
+//    private final DefectReportRepository defectReportRepo;
+//    private final TrainingTopicReportRepository topicReportRepo;
     private final TrainingPlanRepository planRepo;
     private final ApprovalActionRepository actionRepo;
 
@@ -84,39 +84,41 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     }
 
     private List<PendingApprovalResponse> getPendingDefectReports(User currentUser, ReportStatus status) {
-        return defectReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
-                .stream()
-                .map(report -> PendingApprovalResponse.builder()
-                        .entityType(ApprovalEntityType.DEFECT_REPORT)
-                        .entityId(report.getId())
-                        .entityName("Defect Report #" + report.getId())
-                        .status(report.getStatus())
-                        .currentVersion(report.getCurrentVersion())
-                        .submittedByUsername(report.getCreatedBy())
-                        .submittedAt(Instant.from(report.getCreatedAt()))
-                        .groupId(report.getGroup().getId())
-                        .groupName(report.getGroup().getName())
-                        .detailCount(report.getDetails().size())
-                        .build())
-                .toList();
+//        return defectReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
+//                .stream()
+//                .map(report -> PendingApprovalResponse.builder()
+//                        .entityType(ApprovalEntityType.DEFECT_REPORT)
+//                        .entityId(report.getId())
+//                        .entityName("Defect Report #" + report.getId())
+//                        .status(report.getStatus())
+//                        .currentVersion(report.getCurrentVersion())
+//                        .submittedByUsername(report.getCreatedBy())
+//                        .submittedAt(Instant.from(report.getCreatedAt()))
+//                        .groupId(report.getGroup().getId())
+//                        .groupName(report.getGroup().getName())
+//                        .detailCount(report.getDetails().size())
+//                        .build())
+//                .toList();
+        return new ArrayList<>();
     }
 
     private List<PendingApprovalResponse> getPendingTopicReports(User currentUser, ReportStatus status) {
-        return topicReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
-                .stream()
-                .map(report -> PendingApprovalResponse.builder()
-                        .entityType(ApprovalEntityType.TRAINING_TOPIC_REPORT)
-                        .entityId(report.getId())
-                        .entityName("Training Topic Report #" + report.getId())
-                        .status(report.getStatus())
-                        .currentVersion(report.getCurrentVersion())
-                        .submittedByUsername(report.getCreatedBy())
-                        .submittedAt(Instant.from(report.getCreatedAt()))
-                        .groupId(report.getGroup().getId())
-                        .groupName(report.getGroup().getName())
-                        .detailCount(report.getDetails().size())
-                        .build())
-                .toList();
+//        return topicReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
+//                .stream()
+//                .map(report -> PendingApprovalResponse.builder()
+//                        .entityType(ApprovalEntityType.TRAINING_TOPIC_REPORT)
+//                        .entityId(report.getId())
+//                        .entityName("Training Topic Report #" + report.getId())
+//                        .status(report.getStatus())
+//                        .currentVersion(report.getCurrentVersion())
+//                        .submittedByUsername(report.getCreatedBy())
+//                        .submittedAt(Instant.from(report.getCreatedAt()))
+//                        .groupId(report.getGroup().getId())
+//                        .groupName(report.getGroup().getName())
+//                        .detailCount(report.getDetails().size())
+//                        .build())
+//                .toList();
+        return new ArrayList<>();
     }
 
     private List<PendingApprovalResponse> getPendingPlans(User currentUser, ReportStatus status) {
@@ -126,12 +128,12 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
                         .entityType(ApprovalEntityType.TRAINING_PLAN)
                         .entityId(plan.getId())
                         .entityName(plan.getFormCode())
-                        .status(plan.getStatus())
+//                        .status(plan.getStatus())
                         .currentVersion(plan.getCurrentVersion())
                         .submittedByUsername(plan.getCreatedBy())
                         .submittedAt(Instant.from(plan.getCreatedAt()))
-                        .groupId(plan.getGroup().getId())
-                        .groupName(plan.getGroup().getName())
+//                        .groupId(plan.getGroup().getId())
+//                        .groupName(plan.getGroup().getName())
                         .detailCount(plan.getDetails().size())
                         .build())
                 .toList();
@@ -148,7 +150,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
                 .performedByFullName(log.getPerformedByFullName())
                 .performedByRole(log.getPerformedByRole())
                 .comment(log.getComment())
-                .rejectReason(log.getRejectReason())
+//                .rejectReason(log.getRejectReason())
                 .performedAt(log.getPerformedAt())
                 .ipAddress(log.getIpAddress())
                 .build();

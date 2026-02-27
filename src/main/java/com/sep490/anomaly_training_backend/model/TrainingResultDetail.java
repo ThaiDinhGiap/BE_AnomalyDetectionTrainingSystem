@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,7 +20,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,7 +36,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingResultDetail extends BaseEntity implements Approvable {
+public class TrainingResultDetail extends BaseEntity  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -147,37 +145,43 @@ public class TrainingResultDetail extends BaseEntity implements Approvable {
 
     // Approval implementation
 
-    @Override
-    public ApprovalEntityType getEntityType() {
-        return ApprovalEntityType.TRAINING_RESULT;
-    }
-
-    @Override
-    public Integer getCurrentVersion() {
-        return trainingResult.getCurrentVersion();
-    }
-
-    @Override
-    public void setCurrentVersion(Integer version) {
-        trainingResult.setCurrentVersion(version);
-    }
-
-    @Override
-    public Long getGroupId() {
-        return trainingResult.getGroup().getId();
-    }
-
-    @Override
-    public String computeContentHash() {
-        String hash = id + "|" +
-                trainingResult.getId() + "|" +
-                trainingPlanDetail.getId() + "|" +
-                plannedDate + "|" +
-                actualDate + "|";
-        return DigestUtils.sha256Hex(hash);
-    }
-
-    @Override
-    public void applyApproval() {
-    }
+//    @Override
+//    public ApprovalEntityType getEntityType() {
+//        return ApprovalEntityType.TRAINING_RESULT;
+//    }
+//
+//    @Override
+//    public void setStatus(ProposalStatus status) {
+//
+//    }
+//
+//    @Override
+//    public Integer getCurrentVersion() {
+//        return trainingResult.getCurrentVersion();
+//    }
+//
+//    @Override
+//    public void setCurrentVersion(Integer version) {
+//        trainingResult.setCurrentVersion(version);
+//    }
+//
+//    @Override
+//    public Long getGroupId() {
+////        return trainingResult.getGroup().getId();
+//    return  trainingResult.getTeam().getId();
+//    }
+//
+//    @Override
+//    public String computeContentHash() {
+//        String hash = id + "|" +
+//                trainingResult.getId() + "|" +
+//                trainingPlanDetail.getId() + "|" +
+//                plannedDate + "|" +
+//                actualDate + "|";
+//        return DigestUtils.sha256Hex(hash);
+//    }
+//
+//    @Override
+//    public void applyApproval() {
+//    }
 }

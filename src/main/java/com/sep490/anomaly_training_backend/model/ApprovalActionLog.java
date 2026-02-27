@@ -74,9 +74,6 @@ public class ApprovalActionLog extends BaseEntity {
     @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
-    @Column(name = "reject_reason", columnDefinition = "TEXT")
-    private String rejectReason;
-
     @Column(name = "performed_at", nullable = false)
     private Instant performedAt;
 

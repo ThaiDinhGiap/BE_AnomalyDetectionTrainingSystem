@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,14 +29,14 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     /**
      * Tìm plans theo status và thời gian cập nhật (để check overdue)
      */
-    @Query("SELECT tp FROM TrainingPlan tp " +
-            "JOIN FETCH tp.group g " +
-            "JOIN FETCH g.supervisor " +
-            "JOIN FETCH g.section s " +
-            "JOIN FETCH s.manager " +
-            "WHERE tp.status = :status " +
-            "AND tp.updatedAt < :threshold " +
-            "AND tp.deleteFlag = false")
+//    @Query("SELECT tp FROM TrainingPlan tp " +
+//            "JOIN FETCH tp.team g " +
+//            "JOIN FETCH g.supervisor " +
+//            "JOIN FETCH g.section s " +
+//            "JOIN FETCH s.manager " +
+//            "WHERE tp.status = :status " +
+//            "AND tp.updatedAt < :threshold " +
+//            "AND tp.deleteFlag = false")
     List<TrainingPlan> findByStatusAndUpdatedAtBefore(
             @Param("status") ProposalStatus status,
             @Param("threshold") LocalDateTime threshold);
@@ -43,21 +44,21 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     @Query("SELECT p FROM TrainingPlan p LEFT JOIN FETCH p.details WHERE p.id = :id")
     Optional<TrainingPlan> findByIdWithDetails(@Param("id") Long id);
 
-    @Query("""
-                SELECT tr FROM TrainingPlan tr
-                JOIN tr.group g
-                JOIN g.section s
-                WHERE tr.status = :status
-                AND tr.deleteFlag = false
-                AND (
-                    (:role = 'SUPERVISOR' AND g.supervisor.id = :userId)
-                    OR
-                    (:role = 'MANAGER' AND s.manager.id = :userId)
-                )
-                ORDER BY tr.createdAt ASC
-            """)
+//    @Query("""
+//                SELECT tr FROM TrainingPlan tr
+//                JOIN tr.group g
+//                JOIN g.section s
+//                WHERE tr.status = :status
+//                AND tr.deleteFlag = false
+//                AND (
+//                    (:role = 'SUPERVISOR' AND g.supervisor.id = :userId)
+//                    OR
+//                    (:role = 'MANAGER' AND s.manager.id = :userId)
+//                )
+//                ORDER BY tr.createdAt ASC
+//            """)
     List<TrainingPlan> findPendingForApprover(
-            @Param("status") ProposalStatus status,
+            @Param("status") ReportStatus status,
             @Param("userId") Long userId,
             @Param("role") UserRole role);
 }

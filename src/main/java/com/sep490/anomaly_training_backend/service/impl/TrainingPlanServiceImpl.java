@@ -13,6 +13,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
@@ -94,7 +95,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         Group selectedGroup = validTeams.get(0).getGroup();
 
         TrainingPlan trainingPlan = mapper.toEntity(request);
-        trainingPlan.setGroup(selectedGroup);
         trainingPlan.setCreatedBy(currentUser.getUsername());
         trainingPlan.setStatus(ProposalStatus.DRAFT);
         trainingPlan.setCurrentVersion(1);
@@ -209,7 +209,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         // Quan trọng: clear() sẽ kích hoạt orphanRemoval=true để xóa row cũ trong DB
         plan.getDetails().clear();
 
-        Long currentGroupId = plan.getGroup().getId();
+//        Long currentGroupId = plan.getGroup().getId();
+        Long currentGroupId = 0L;
 
         for (TrainingPlanDetailRequest rowRequest : request.getDetails()) {
             // Validate Employee & Process 1 lần cho mỗi Row (tối ưu hơn)
@@ -242,7 +243,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         for (TrainingPlanDetailRequest rowRequest : request.getDetails()) {
             Employee employee = getValidatedEmployee(rowRequest.getEmployeeId());
-            Process process = getValidatedProcess(rowRequest.getProcessId(), plan.getGroup().getId());
+//            Process process = getValidatedProcess(rowRequest.getProcessId(), plan.getGroup().getId());
+            Process process = getValidatedProcess(rowRequest.getProcessId(), 0L);
+
 
             if (rowRequest.getSchedules() != null) {
                 for (ScheduleRequest schedule : rowRequest.getSchedules()) {
@@ -331,7 +334,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         validatePlanForSubmission(plan);
 
-        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getGroup().getName(), planId));
+//        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getGroup().getName(), planId));
+        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, "plan.getGroup().getName()", planId));
+
 
         approvalService.submit(plan, currentUser, request);
 
@@ -432,9 +437,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .monthEnd(plan.getMonthEnd())
                 .note(plan.getNote())
                 .recordedAt(LocalDateTime.now())
-                .groupId(plan.getGroup() != null ? plan.getGroup().getId() : null)
+//                .groupId(plan.getGroup() != null ? plan.getGroup().getId() : null)
                 .lineId(plan.getLine() != null ? plan.getLine().getId() : null)
-                .detailHistory(new ArrayList<>())
+//                .detailHistory(new ArrayList<>())
                 .build();
 
         // 2. Map Details (TrainingPlanDetail -> TrainingPlanDetailHistory)
@@ -452,7 +457,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         .note(detail.getNote())
                         .build();
 
-                history.getDetailHistory().add(detailHistory);
+//                history.getDetailHistory().add(detailHistory);
             }
         }
 

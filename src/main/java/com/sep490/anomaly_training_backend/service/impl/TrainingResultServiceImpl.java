@@ -8,21 +8,22 @@ import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultReque
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
-import com.sep490.anomaly_training_backend.model.GroupProduct;
+import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.TrainingTopic;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.GroupProductRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingTopicRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
@@ -47,8 +48,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     private final TrainingResultRepository trainingResultRepository;
     private final TrainingPlanRepository trainingPlanRepository;
-    private final GroupProductRepository groupProductRepository;
-    private final TrainingTopicRepository trainingTopicRepository;
     private final UserRepository userRepository;
     private final TrainingResultDetailRepository detailRepository;
     private final ApprovalService approvalService;
@@ -59,20 +58,20 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Kế hoạch ID: " + planId));
 
-        if (!ReportStatus.APPROVED.equals(plan.getStatus())) {
+        if (!TrainingResultStatus.APPROVED.equals(plan.getStatus())) {
             throw new IllegalStateException("Chỉ được tạo kết quả cho các kế hoạch ĐÃ DUYỆT (APPROVED).");
         }
 
         TrainingResult result = new TrainingResult();
 
-        result.setGroup(plan.getGroup());
+//        result.setGroup(plan.getGroup());
         result.setYear(plan.getMonthStart().getYear());
         result.setTitle("Báo cáo kết quả - " + plan.getTitle());
-        result.setStatus(ReportStatus.ON_GOING);
+        result.setStatus(TrainingResultStatus.ON_GOING);
         result.setCurrentVersion(1);
 
-        String groupCode = plan.getGroup().getName().toUpperCase().replaceAll("\\s+", "");
-        result.setFormCode("TR_RESULT_" + groupCode + "_" + result.getYear());
+//        String groupCode = plan.getGroup().getName().toUpperCase().replaceAll("\\s+", "");
+//        result.setFormCode("TR_RESULT_" + groupCode + "_" + result.getYear());
 
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
 
@@ -87,7 +86,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 resultDetail.setPlannedDate(planDetail.getPlannedDate());
 
-                resultDetail.setStatus(ReportStatus.PENDING);
+//                resultDetail.setStatus(ProposalStatus.DRAFT);
 
                 resultDetails.add(resultDetail);
             }
@@ -99,153 +98,155 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultOptionResponse> getProductGroupsByLine(Long groupId) {
-        List<GroupProduct> list = groupProductRepository.findByGroupId(groupId);
-
-        return list.stream()
-                .map(item -> new TrainingResultOptionResponse(
-                        item.getId(),
-                        item.getProductCode()
-                ))
-                .toList();
+//        List<GroupProduct> list = groupProductRepository.findByGroupId(groupId);
+//
+//        return list.stream()
+//                .map(item -> new TrainingResultOptionResponse(
+//                        item.getId(),
+//                        item.getProductCode()
+//                ))
+//                .toList();
+        return new ArrayList<>();
     }
 
     // 2. Lấy Training Topic theo Công đoạn
     @Override
     public List<TrainingResultOptionResponse> getTrainingTopicsByProcess(Long processId) {
-        List<TrainingTopic> list = trainingTopicRepository.findByProcessId(processId);
-
-        return list.stream()
-                .map(item -> new TrainingResultOptionResponse(
-                        item.getId(),
-                        item.getTrainingSample()
-                ))
-                .toList();
+//        List<TrainingTopic> list = trainingTopicRepository.findByProcessId(processId);
+//
+//        return list.stream()
+//                .map(item -> new TrainingResultOptionResponse(
+//                        item.getId(),
+//                        item.getTrainingSample()
+//                ))
+//                .toList();
+        return new ArrayList<>();
     }
 
     @Override
     @Transactional
     public void updateResult(UpdateTrainingResultRequest request) {
-        if (request == null) return;
-
-        // 1. Lấy User hiện tại
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        String userRole = currentUser.getRole().toString();
-        boolean isFiUser = "FINAL_INSPECTION".equalsIgnoreCase(userRole);
-        boolean isProUser = "TEAM_LEADER".equalsIgnoreCase(userRole);
-
-        // =================================================================
-        // PHẦN 1: XỬ LÝ HEADER (TrainingResult)
-        // =================================================================
-        TrainingResult header = trainingResultRepository.findById(request.getId())
-                .orElseThrow(() -> new RuntimeException("Header not found ID: " + request.getId()));
-
-        if (isProUser) {
-            if (request.getTitle() != null) header.setTitle(request.getTitle());
-            if (request.getNote() != null) header.setNote(request.getNote());
-        }
-
-        if (request.getStatus() != null) {
-            header.setStatus(request.getStatus());
-        }
-
-        trainingResultRepository.save(header);
-
-        // =================================================================
-        // PHẦN 2: XỬ LÝ DETAILS
-        // =================================================================
-        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
-            List<TrainingResultDetail> detailsToSave = new ArrayList<>();
-
-            for (UpdateResultDetailRequest reqDetail : request.getDetails()) {
-                TrainingResultDetail detail = detailRepository.findById(reqDetail.getId())
-                        .orElseThrow(() -> new RuntimeException("Detail not found ID: " + reqDetail.getId()));
-
-                // A. Cập nhật ngày thực tế
-                if (detail.getActualDate() == null) {
-                    detail.setActualDate(LocalDate.now());
-                }
-
-                // B. Cập nhật thông tin cấu hình (Topic, Group...) trước để lấy Process chuẩn
-                if (isProUser) {
-                    if (reqDetail.getProductGroupId() != null) {
-                        detail.setProductGroup(groupProductRepository.findById(reqDetail.getProductGroupId()).orElse(null));
-                    }
-                    // Update Topic
-                    if (reqDetail.getTrainingTopicId() != null) {
-                        detail.setTrainingTopic(trainingTopicRepository.findById(reqDetail.getTrainingTopicId()).orElseThrow());
-                        detail.setTrainingSample(null);
-                    } else if (reqDetail.getTrainingSample() != null && !reqDetail.getTrainingSample().isBlank()) {
-                        detail.setTrainingTopic(null);
-                        detail.setTrainingSample(reqDetail.getTrainingSample());
-                    }
-
-                    // Update text fields
-                    if (reqDetail.getDetectionTime() != null) detail.setDetectionTime(reqDetail.getDetectionTime());
-                    if (reqDetail.getRemedialAction() != null) detail.setRemedialAction(reqDetail.getRemedialAction());
-                    if (reqDetail.getNote() != null) detail.setNote(reqDetail.getNote());
-                }
-
-                // C. Cập nhật Giờ (TimeIn/TimeOut)
-                if (reqDetail.getTimeIn() != null) detail.setTimeIn(reqDetail.getTimeIn());
-                if (reqDetail.getTimeOut() != null) detail.setTimeOut(reqDetail.getTimeOut());
-
-                // =================================================================
-                // D. LOGIC TỰ ĐỘNG TÍNH PASS/FAIL
-                // =================================================================
-                if (detail.getTimeIn() != null && detail.getTimeOut() != null) {
-                    // Chỉ tính toán nếu detail có liên kết với TrainingTopic -> Process
-                    if (detail.getTrainingTopic() != null && detail.getTrainingTopic().getProcess() != null) {
-                        Process process = detail.getTrainingTopic().getProcess();
-
-                        // Kiểm tra xem Process có set thời gian chuẩn không
-                        if (process.getStandardTimeJt() != null) {
-                            // 1. Tính thời gian thực tế (Giây)
-                            long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut()).toSeconds();
-
-                            // 2. Lấy thời gian chuẩn
-                            double standardSeconds = process.getStandardTimeJt().doubleValue();
-
-                            // 3. So sánh: Thực tế <= Chuẩn => PASS
-                            boolean autoPass = actualSeconds <= standardSeconds;
-                            detail.setIsPass(autoPass);
-                        }
-                    }
-                }
-
-                // E. Ghi đè thủ công (Nếu User gửi isPass lên thì ưu tiên lấy của User)
-                if (isProUser && reqDetail.getIsPass() != null) {
-                    detail.setIsPass(reqDetail.getIsPass());
-                }
-
-                // F. Xử lý ký (Signature)
-                if (Boolean.TRUE.equals(reqDetail.getIsSignIn())) {
-                    if (isProUser) detail.setSignatureProIn(currentUser.getId());
-                    else if (isFiUser) detail.setSignatureFiIn(currentUser);
-                }
-
-                if (Boolean.TRUE.equals(reqDetail.getIsSignOut())) {
-                    if (isProUser) detail.setSignatureProOut(currentUser.getId());
-                    else if (isFiUser) detail.setSignatureFiOut(currentUser);
-                }
-
-                detail.setStatus(ReportStatus.PENDING);
-                detailsToSave.add(detail);
-
-                if (isFullSigned(detail)) {
-                    LocalDate today = LocalDate.now();
-                    detail.setActualDate(today);
-                    if (detail.getTrainingPlanDetail() != null) {
-                        detail.getTrainingPlanDetail().setActualDate(today);
-                        detail.getTrainingPlanDetail().setStatus(ReportStatus.DONE);
-                    }
-                }
-            }
-
-            detailRepository.saveAll(detailsToSave);
-        }
+//        if (request == null) return;
+//
+//        // 1. Lấy User hiện tại
+//        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User currentUser = userRepository.findByUsername(currentUsername)
+//                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+//
+//        String userRole = currentUser.getRole().toString();
+//        boolean isFiUser = "FINAL_INSPECTION".equalsIgnoreCase(userRole);
+//        boolean isProUser = "TEAM_LEADER".equalsIgnoreCase(userRole);
+//
+//        // =================================================================
+//        // PHẦN 1: XỬ LÝ HEADER (TrainingResult)
+//        // =================================================================
+//        TrainingResult header = trainingResultRepository.findById(request.getId())
+//                .orElseThrow(() -> new RuntimeException("Header not found ID: " + request.getId()));
+//
+//        if (isProUser) {
+//            if (request.getTitle() != null) header.setTitle(request.getTitle());
+//            if (request.getNote() != null) header.setNote(request.getNote());
+//        }
+//
+//        if (request.getStatus() != null) {
+//            header.setStatus(request.getStatus());
+//        }
+//
+//        trainingResultRepository.save(header);
+//
+//        // =================================================================
+//        // PHẦN 2: XỬ LÝ DETAILS
+//        // =================================================================
+//        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+//            List<TrainingResultDetail> detailsToSave = new ArrayList<>();
+//
+//            for (UpdateResultDetailRequest reqDetail : request.getDetails()) {
+//                TrainingResultDetail detail = detailRepository.findById(reqDetail.getId())
+//                        .orElseThrow(() -> new RuntimeException("Detail not found ID: " + reqDetail.getId()));
+//
+//                // A. Cập nhật ngày thực tế
+//                if (detail.getActualDate() == null) {
+//                    detail.setActualDate(LocalDate.now());
+//                }
+//
+//                // B. Cập nhật thông tin cấu hình (Topic, Group...) trước để lấy Process chuẩn
+//                if (isProUser) {
+//                    if (reqDetail.getProductGroupId() != null) {
+//                        detail.setProductGroup(groupProductRepository.findById(reqDetail.getProductGroupId()).orElse(null));
+//                    }
+//                    // Update Topic
+//                    if (reqDetail.getTrainingTopicId() != null) {
+//                        detail.setTrainingTopic(trainingTopicRepository.findById(reqDetail.getTrainingTopicId()).orElseThrow());
+//                        detail.setTrainingSample(null);
+//                    } else if (reqDetail.getTrainingSample() != null && !reqDetail.getTrainingSample().isBlank()) {
+//                        detail.setTrainingTopic(null);
+//                        detail.setTrainingSample(reqDetail.getTrainingSample());
+//                    }
+//
+//                    // Update text fields
+//                    if (reqDetail.getDetectionTime() != null) detail.setDetectionTime(reqDetail.getDetectionTime());
+//                    if (reqDetail.getRemedialAction() != null) detail.setRemedialAction(reqDetail.getRemedialAction());
+//                    if (reqDetail.getNote() != null) detail.setNote(reqDetail.getNote());
+//                }
+//
+//                // C. Cập nhật Giờ (TimeIn/TimeOut)
+//                if (reqDetail.getTimeIn() != null) detail.setTimeIn(reqDetail.getTimeIn());
+//                if (reqDetail.getTimeOut() != null) detail.setTimeOut(reqDetail.getTimeOut());
+//
+//                // =================================================================
+//                // D. LOGIC TỰ ĐỘNG TÍNH PASS/FAIL
+//                // =================================================================
+//                if (detail.getTimeIn() != null && detail.getTimeOut() != null) {
+//                    // Chỉ tính toán nếu detail có liên kết với TrainingTopic -> Process
+//                    if (detail.getTrainingTopic() != null && detail.getTrainingTopic().getProcess() != null) {
+//                        Process process = detail.getTrainingTopic().getProcess();
+//
+//                        // Kiểm tra xem Process có set thời gian chuẩn không
+//                        if (process.getStandardTimeJt() != null) {
+//                            // 1. Tính thời gian thực tế (Giây)
+//                            long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut()).toSeconds();
+//
+//                            // 2. Lấy thời gian chuẩn
+//                            double standardSeconds = process.getStandardTimeJt().doubleValue();
+//
+//                            // 3. So sánh: Thực tế <= Chuẩn => PASS
+//                            boolean autoPass = actualSeconds <= standardSeconds;
+//                            detail.setIsPass(autoPass);
+//                        }
+//                    }
+//                }
+//
+//                // E. Ghi đè thủ công (Nếu User gửi isPass lên thì ưu tiên lấy của User)
+//                if (isProUser && reqDetail.getIsPass() != null) {
+//                    detail.setIsPass(reqDetail.getIsPass());
+//                }
+//
+//                // F. Xử lý ký (Signature)
+//                if (Boolean.TRUE.equals(reqDetail.getIsSignIn())) {
+//                    if (isProUser) detail.setSignatureProIn(currentUser.getId());
+//                    else if (isFiUser) detail.setSignatureFiIn(currentUser);
+//                }
+//
+//                if (Boolean.TRUE.equals(reqDetail.getIsSignOut())) {
+//                    if (isProUser) detail.setSignatureProOut(currentUser.getId());
+//                    else if (isFiUser) detail.setSignatureFiOut(currentUser);
+//                }
+//
+//                detail.setStatus(ReportStatus.PENDING);
+//                detailsToSave.add(detail);
+//
+//                if (isFullSigned(detail)) {
+//                    LocalDate today = LocalDate.now();
+//                    detail.setActualDate(today);
+//                    if (detail.getTrainingPlanDetail() != null) {
+//                        detail.getTrainingPlanDetail().setActualDate(today);
+//                        detail.getTrainingPlanDetail().setStatus(TrainingResultDetailStatus.DONE);
+//                    }
+//                }
+//            }
+//
+//            detailRepository.saveAll(detailsToSave);
+//        }
     }
 
     private boolean isFullSigned(TrainingResultDetail detail) {
@@ -346,7 +347,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         // 1. Map Header
         response.setId(result.getId());
-        if (result.getGroup() != null) response.setLineName(result.getGroup().getName());
+//        if (result.getGroup() != null) response.setLineName(result.getGroup().getName());
         if (result.getCreatedBy() != null) response.setCreatedByName(result.getCreatedBy());
 
         List<TrainingResultDetailResponse.DetailRowDto> detailDtos = new ArrayList<>();
@@ -357,13 +358,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             row.setId(detail.getId());
             row.setActualDate(detail.getActualDate());
 
-
-            if (detail.getTrainingTopic() != null) {
-                row.setTrainingSample(detail.getTrainingTopic().getTrainingSample());
-            }
-            if (detail.getProductGroup() != null) {
-                row.setProductCode(detail.getProductGroup().getProductCode());
-            }
+//need fix
+//            if (detail.getTrainingTopic() != null) {
+//                row.setTrainingSample(detail.getTrainingTopic().getTrainingSample());
+//            }
+//            if (detail.getProductGroup() != null) {
+//                row.setProductCode(detail.getProductGroup().getProductCode());
+//            }
 
 
             if (detail.getTrainingPlanDetail().getEmployee() != null) {
@@ -381,7 +382,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
             if (detail.getSignatureProIn() != null) {
 
-                User proIn = userRepository.findById(detail.getSignatureProIn()).orElse(null);
+                User proIn = userRepository.findById(detail.getSignatureProIn().getId()).orElse(null);
                 if (proIn != null) row.setSignatureProInName(proIn.getFullName());
             }
 
@@ -390,7 +391,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
 
             if (detail.getSignatureProOut() != null) {
-                User proOut = userRepository.findById(detail.getSignatureProOut()).orElse(null);
+                User proOut = userRepository.findById(detail.getSignatureProOut().getId()).orElse(null);
                 if (proOut != null) row.setSignatureProOutName(proOut.getFullName());
             }
 
@@ -411,7 +412,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findById(resultId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kết quả ID: " + resultId));
 
-        if (result.getStatus() == ReportStatus.ON_GOING) {
+        if (result.getStatus() == TrainingResultStatus.ON_GOING) {
             throw new IllegalStateException("Kết quả này đã được gửi duyệt trước đó.");
         }
 
@@ -432,7 +433,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
         TrainingResultDetail detail = getDetailtById(resultId);
-        approvalService.submit(detail, currentUser, request);
+//        approvalService.submit(detail, currentUser, request);
     }
 
     @Override

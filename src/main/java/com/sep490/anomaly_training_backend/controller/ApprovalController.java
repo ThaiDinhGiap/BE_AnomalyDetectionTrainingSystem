@@ -99,7 +99,7 @@ public class ApprovalController {
                 .performedByFullName(log.getPerformedByFullName())
                 .performedByRole(log.getPerformedByRole())
                 .comment(log.getComment())
-                .rejectReason(log.getRejectReason())
+//                .rejectReason(log.getRejectReason())
                 .performedAt(log.getPerformedAt())
                 .ipAddress(log.getIpAddress())
                 .build();
