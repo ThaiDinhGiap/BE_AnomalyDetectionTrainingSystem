@@ -1,12 +1,8 @@
-============================================================================
 -- ANOMALY TRAINING SYSTEM - CORE DATABASE SCHEMA
-============================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
 
-============================================================================
 -- DROP ALL TABLES (đúng thứ tự dependency ngược)
-============================================================================
 
 DROP TABLE IF EXISTS approval_detail_comments;
 DROP TABLE IF EXISTS approval_required_actions;
@@ -62,22 +58,22 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users
 (
     id                BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username          VARCHAR(50)  NOT NULL UNIQUE,
-    email             VARCHAR(100) NOT NULL UNIQUE,
+    username          VARCHAR(50)                                                                NOT NULL UNIQUE,
+    email             VARCHAR(100)                                                               NOT NULL UNIQUE,
     password_hash     VARCHAR(255),
-    full_name         VARCHAR(100) NOT NULL,
+    full_name         VARCHAR(100)                                                               NOT NULL,
     role              ENUM ('ADMIN', 'MANAGER', 'SUPERVISOR', 'TEAM_LEADER', 'FINAL_INSPECTION') NOT NULL,
-    is_active         BOOLEAN DEFAULT TRUE,
+    is_active         BOOLEAN                                                                             DEFAULT TRUE,
 
     -- OAuth support
-    oauth_provider    ENUM ('LOCAL', 'MICROSOFT') DEFAULT 'LOCAL',
+    oauth_provider    ENUM ('LOCAL', 'MICROSOFT')                                                         DEFAULT 'LOCAL',
     oauth_provider_id VARCHAR(255),
 
     -- BaseEntity
-    delete_flag       BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at        TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag       BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
+    created_at        TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
     created_by        VARCHAR(255),
-    updated_at        TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by        VARCHAR(255),
 
     INDEX idx_users_role (role),
@@ -96,14 +92,14 @@ CREATE TABLE refresh_tokens
     user_id     BIGINT       NOT NULL,
     token       VARCHAR(500) NOT NULL,
     expires_at  TIMESTAMP    NOT NULL,
-    revoked     BOOLEAN DEFAULT FALSE,
+    revoked     BOOLEAN               DEFAULT FALSE,
     device_info VARCHAR(255),
     ip_address  VARCHAR(45),
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
@@ -119,16 +115,16 @@ CREATE TABLE refresh_tokens
 CREATE TABLE roles
 (
     id           BIGINT PRIMARY KEY AUTO_INCREMENT,
-    role_code    VARCHAR(50)   NOT NULL UNIQUE,
+    role_code    VARCHAR(50) NOT NULL UNIQUE,
     display_name NVARCHAR(100),
     description  NVARCHAR(500),
-    is_system    BOOLEAN NOT NULL DEFAULT FALSE,
-    is_active    BOOLEAN NOT NULL DEFAULT TRUE,
+    is_system    BOOLEAN     NOT NULL DEFAULT FALSE,
+    is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
 
-    delete_flag  BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag  BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by   VARCHAR(255),
-    updated_at   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by   VARCHAR(255),
 
     INDEX idx_roles_delete_flag (delete_flag)
@@ -144,12 +140,12 @@ CREATE TABLE modules
     module_code  VARCHAR(50)   NOT NULL UNIQUE,
     display_name NVARCHAR(200) NOT NULL,
     description  NVARCHAR(500),
-    sort_order   INT DEFAULT 0,
+    sort_order   INT                    DEFAULT 0,
 
-    delete_flag  BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag  BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMP              DEFAULT CURRENT_TIMESTAMP,
     created_by   VARCHAR(255),
-    updated_at   TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by   VARCHAR(255),
 
     INDEX idx_modules_delete_flag (delete_flag)
@@ -166,14 +162,14 @@ CREATE TABLE permissions
     display_name    NVARCHAR(200) NOT NULL,
     description     NVARCHAR(500),
     module_id       BIGINT,
-    action          VARCHAR(50) NOT NULL,
-    sort_order      INT DEFAULT 0,
-    is_system       BOOLEAN NOT NULL DEFAULT TRUE,
+    action          VARCHAR(50)   NOT NULL,
+    sort_order      INT                    DEFAULT 0,
+    is_system       BOOLEAN       NOT NULL DEFAULT TRUE,
 
-    delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag     BOOLEAN       NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP              DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     CONSTRAINT fk_permissions_module FOREIGN KEY (module_id) REFERENCES modules (id),
@@ -213,14 +209,14 @@ CREATE TABLE role_permissions
 -- 1.8 SECTIONS (Xưởng/Bộ phận)
 CREATE TABLE sections
 (
-    id         BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name       VARCHAR(100) NOT NULL,
-    manager_id BIGINT       NOT NULL,
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name        VARCHAR(100) NOT NULL,
+    manager_id  BIGINT       NOT NULL,
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     FOREIGN KEY (manager_id) REFERENCES users (id),
@@ -239,10 +235,10 @@ CREATE TABLE `groups`
     name          VARCHAR(100) NOT NULL,
     supervisor_id BIGINT       NOT NULL,
 
-    delete_flag   BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag   BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
-    updated_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
     FOREIGN KEY (section_id) REFERENCES sections (id),
@@ -263,10 +259,10 @@ CREATE TABLE teams
     name           VARCHAR(100) NOT NULL,
     team_leader_id BIGINT       NOT NULL,
 
-    delete_flag    BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag    BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by     VARCHAR(255),
-    updated_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by     VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
@@ -288,10 +284,10 @@ CREATE TABLE employees
     team_id       BIGINT       NOT NULL,
     status        ENUM ('ACTIVE', 'MATERNITY_LEAVE', 'RESIGNED') DEFAULT 'ACTIVE',
 
-    delete_flag   BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag   BOOLEAN      NOT NULL                          DEFAULT FALSE,
+    created_at    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
-    updated_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
     FOREIGN KEY (team_id) REFERENCES teams (id),
@@ -307,14 +303,14 @@ CREATE TABLE employees
 -- 1.12 PRODUCT LINES (Dòng sản phẩm)
 CREATE TABLE product_lines
 (
-    id       BIGINT PRIMARY KEY AUTO_INCREMENT,
-    group_id BIGINT       NOT NULL,
-    name     VARCHAR(100) NOT NULL,
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    group_id    BIGINT       NOT NULL,
+    name        VARCHAR(100) NOT NULL,
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
@@ -333,15 +329,15 @@ CREATE TABLE processes
     code             VARCHAR(20)  NOT NULL,
     name             VARCHAR(200) NOT NULL,
     description      TEXT,
-    classification   TINYINT NOT NULL DEFAULT 4
+    classification   TINYINT      NOT NULL DEFAULT 4
         COMMENT '1,2,3=Quan trọng cần FI ký, 4=Thường',
     standard_time_jt DECIMAL(10, 2)
         COMMENT 'Thời gian tiêu chuẩn (giây)',
 
-    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
@@ -357,14 +353,14 @@ CREATE TABLE processes
 CREATE TABLE products
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code        VARCHAR(50)  NOT NULL UNIQUE COMMENT 'Mã sản phẩm (VD: 0750)',
+    code        VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã sản phẩm (VD: 0750)',
     name        VARCHAR(255) COMMENT 'Tên sản phẩm',
-    description TEXT         COMMENT 'Mô tả',
+    description TEXT COMMENT 'Mô tả',
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     INDEX idx_products_delete_flag (delete_flag)
@@ -377,14 +373,14 @@ CREATE TABLE products
 CREATE TABLE product_process
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_id       BIGINT NOT NULL,
-    process_id       BIGINT NOT NULL,
+    product_id       BIGINT  NOT NULL,
+    process_id       BIGINT  NOT NULL,
     standard_time_jt DECIMAL(10, 2),
 
     delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
@@ -400,16 +396,16 @@ CREATE TABLE product_process
 CREATE TABLE employee_skills
 (
     id             BIGINT PRIMARY KEY AUTO_INCREMENT,
-    employee_id    BIGINT NOT NULL,
-    process_id     BIGINT NOT NULL,
-    is_qualified   BOOLEAN DEFAULT TRUE,
+    employee_id    BIGINT  NOT NULL,
+    process_id     BIGINT  NOT NULL,
+    is_qualified   BOOLEAN          DEFAULT TRUE,
     certified_date DATE,
     expiry_date    DATE,
 
     delete_flag    BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at     TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by     VARCHAR(255),
-    updated_at     TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by     VARCHAR(255),
 
     FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE CASCADE,
@@ -430,16 +426,16 @@ CREATE TABLE employee_skills
 CREATE TABLE defects
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    defect_description TEXT   NOT NULL,
-    process_id         BIGINT NOT NULL,
-    detected_date      DATE   NOT NULL,
-    is_escaped         BOOLEAN DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
+    defect_description TEXT    NOT NULL,
+    process_id         BIGINT  NOT NULL,
+    detected_date      DATE    NOT NULL,
+    is_escaped         BOOLEAN          DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
     note               TEXT,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     FOREIGN KEY (process_id) REFERENCES processes (id),
@@ -455,17 +451,17 @@ CREATE TABLE defects
 CREATE TABLE defect_proposals
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id BIGINT NOT NULL,
+    product_line_id BIGINT  NOT NULL,
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
                                      DEFAULT 'DRAFT',
-    current_version INT DEFAULT 1,
+    current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
@@ -481,22 +477,22 @@ CREATE TABLE defect_proposals
 CREATE TABLE defect_proposal_details
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    defect_proposal_id BIGINT NOT NULL,
+    defect_proposal_id BIGINT                              NOT NULL,
     defect_id          BIGINT COMMENT 'NULL=CREATE mới, có giá trị=UPDATE/DELETE defect đã có',
     proposal_type      ENUM ('CREATE', 'UPDATE', 'DELETE') NOT NULL DEFAULT 'CREATE',
-    defect_description TEXT   NOT NULL,
-    process_id         BIGINT NOT NULL,
-    detected_date      DATE   NOT NULL,
-    is_escaped         BOOLEAN DEFAULT FALSE,
+    defect_description TEXT                                NOT NULL,
+    process_id         BIGINT                              NOT NULL,
+    detected_date      DATE                                NOT NULL,
+    is_escaped         BOOLEAN                                      DEFAULT FALSE,
     note               TEXT,
     origin_cause       VARCHAR(255),
     outflow_cause      VARCHAR(255),
     cause_point        VARCHAR(255),
 
-    delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     FOREIGN KEY (defect_proposal_id) REFERENCES defect_proposals (id) ON DELETE CASCADE,
@@ -516,18 +512,18 @@ CREATE TABLE defect_proposal_details
 CREATE TABLE defect_proposal_history
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    defect_proposal_id BIGINT NOT NULL,
-    version            INT    NOT NULL,
+    defect_proposal_id BIGINT  NOT NULL,
+    version            INT     NOT NULL,
 
     -- Snapshot
     product_line_id    BIGINT,
     form_code          VARCHAR(255),
-    recorded_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recorded_at        TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     FOREIGN KEY (defect_proposal_id) REFERENCES defect_proposals (id) ON DELETE CASCADE,
@@ -543,7 +539,7 @@ CREATE TABLE defect_proposal_history
 CREATE TABLE defect_proposal_detail_history
 (
     id                         BIGINT PRIMARY KEY AUTO_INCREMENT,
-    defect_proposal_history_id BIGINT NOT NULL,
+    defect_proposal_history_id BIGINT  NOT NULL,
 
     -- Snapshot
     defect_id                  BIGINT,
@@ -560,9 +556,9 @@ CREATE TABLE defect_proposal_detail_history
     cause_point                VARCHAR(255),
 
     delete_flag                BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                 TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by                 VARCHAR(255),
-    updated_at                 TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                 VARCHAR(255),
 
     FOREIGN KEY (defect_proposal_history_id) REFERENCES defect_proposal_history (id) ON DELETE CASCADE,
@@ -586,18 +582,18 @@ CREATE TABLE training_samples
     defect_id            BIGINT,
     category_name        VARCHAR(200) NOT NULL COMMENT 'Hạng mục huấn luyện',
     training_description TEXT         NOT NULL COMMENT 'Nội dung huấn luyện',
-    product_id           BIGINT       COMMENT 'Mã sản phẩm áp dụng',
-    sample_code          VARCHAR(20)  COMMENT 'Mã mẫu (M1.1.1)',
-    has_physical_sample  BOOLEAN DEFAULT TRUE,
-    process_order        INT NOT NULL COMMENT 'Thứ tự công đoạn',
-    category_order       INT NOT NULL COMMENT 'Thứ tự hạng mục trong công đoạn',
-    content_order        INT NOT NULL COMMENT 'Thứ tự nội dung trong hạng mục',
+    product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
+    sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
+    has_physical_sample  BOOLEAN               DEFAULT TRUE,
+    process_order        INT          NOT NULL COMMENT 'Thứ tự công đoạn',
+    category_order       INT          NOT NULL COMMENT 'Thứ tự hạng mục trong công đoạn',
+    content_order        INT          NOT NULL COMMENT 'Thứ tự nội dung trong hạng mục',
     note                 TEXT,
 
-    delete_flag          BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag          BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by           VARCHAR(255),
-    updated_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by           VARCHAR(255),
 
     FOREIGN KEY (process_id) REFERENCES processes (id),
@@ -618,17 +614,17 @@ CREATE TABLE training_samples
 CREATE TABLE training_sample_proposals
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id BIGINT NOT NULL,
+    product_line_id BIGINT  NOT NULL,
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
                                      DEFAULT 'DRAFT',
-    current_version INT DEFAULT 1,
+    current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
@@ -644,21 +640,21 @@ CREATE TABLE training_sample_proposals
 CREATE TABLE training_sample_proposal_details
 (
     id                          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_sample_proposal_id BIGINT NOT NULL,
+    training_sample_proposal_id BIGINT                              NOT NULL,
     training_sample_id          BIGINT COMMENT 'NULL=CREATE mới, có giá trị=UPDATE/DELETE sample đã có',
     proposal_type               ENUM ('CREATE', 'UPDATE', 'DELETE') NOT NULL,
-    process_id                  BIGINT NOT NULL,
+    process_id                  BIGINT                              NOT NULL,
     product_id                  BIGINT COMMENT 'Mã sản phẩm áp dụng',
     defect_id                   BIGINT COMMENT 'Link đến lỗi quá khứ',
-    category_name               VARCHAR(200) NOT NULL,
+    category_name               VARCHAR(200)                        NOT NULL,
     training_sample_code        VARCHAR(20),
-    training_description        TEXT NOT NULL,
+    training_description        TEXT                                NOT NULL,
     note                        TEXT,
 
-    delete_flag                 BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag                 BOOLEAN                             NOT NULL DEFAULT FALSE,
+    created_at                  TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
     created_by                  VARCHAR(255),
-    updated_at                  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                  TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                  VARCHAR(255),
 
     FOREIGN KEY (training_sample_proposal_id) REFERENCES training_sample_proposals (id) ON DELETE CASCADE,
@@ -680,17 +676,17 @@ CREATE TABLE training_sample_proposal_details
 CREATE TABLE training_sample_proposal_history
 (
     id                          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_sample_proposal_id BIGINT NOT NULL,
-    version                     INT    NOT NULL,
+    training_sample_proposal_id BIGINT  NOT NULL,
+    version                     INT     NOT NULL,
 
     -- Snapshot
     product_line_id             BIGINT,
-    recorded_at                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recorded_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
 
     delete_flag                 BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at                  TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by                  VARCHAR(255),
-    updated_at                  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                  TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                  VARCHAR(255),
 
     FOREIGN KEY (training_sample_proposal_id) REFERENCES training_sample_proposals (id) ON DELETE CASCADE,
@@ -706,7 +702,7 @@ CREATE TABLE training_sample_proposal_history
 CREATE TABLE training_sample_proposal_detail_history
 (
     id                                  BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_sample_proposal_history_id BIGINT NOT NULL,
+    training_sample_proposal_history_id BIGINT  NOT NULL,
 
     -- Snapshot
     training_sample_id                  BIGINT,
@@ -722,9 +718,9 @@ CREATE TABLE training_sample_proposal_detail_history
     note                                TEXT,
 
     delete_flag                         BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                          TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at                          TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by                          VARCHAR(255),
-    updated_at                          TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                          TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                          VARCHAR(255),
 
     FOREIGN KEY (training_sample_proposal_history_id)
@@ -744,7 +740,7 @@ CREATE TABLE training_sample_proposal_detail_history
 CREATE TABLE training_plans
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    form_code       VARCHAR(50) DEFAULT 'TR_PLAN',
+    form_code       VARCHAR(50)      DEFAULT 'TR_PLAN',
     title           TEXT,
     month_start     DATE,
     month_end       DATE,
@@ -752,14 +748,14 @@ CREATE TABLE training_plans
     line_id         BIGINT COMMENT 'Dây chuyền áp dụng',
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
-                                DEFAULT 'DRAFT',
-    current_version INT DEFAULT 1,
+                                     DEFAULT 'DRAFT',
+    current_version INT              DEFAULT 1,
     note            TEXT,
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
@@ -778,19 +774,19 @@ CREATE TABLE training_plans
 CREATE TABLE training_plan_details
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_id BIGINT NOT NULL,
-    employee_id      BIGINT NOT NULL,
-    process_id       BIGINT NOT NULL,
-    target_month     DATE   COMMENT 'Tháng thực hiện',
-    planned_date     DATE   COMMENT 'Ngày dự kiến',
-    actual_date      DATE   COMMENT 'Ngày thực hiện',
+    training_plan_id BIGINT  NOT NULL,
+    employee_id      BIGINT  NOT NULL,
+    process_id       BIGINT  NOT NULL,
+    target_month     DATE COMMENT 'Tháng thực hiện',
+    planned_date     DATE COMMENT 'Ngày dự kiến',
+    actual_date      DATE COMMENT 'Ngày thực hiện',
     status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
     note             TEXT,
 
-    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN NOT NULL                   DEFAULT FALSE,
+    created_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
@@ -812,9 +808,9 @@ CREATE TABLE training_plan_details
 CREATE TABLE training_plan_history
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_id BIGINT NOT NULL,
+    training_plan_id BIGINT  NOT NULL,
     title            TEXT,
-    version          INT    NOT NULL,
+    version          INT     NOT NULL,
 
     -- Snapshot
     form_code        VARCHAR(50),
@@ -823,12 +819,12 @@ CREATE TABLE training_plan_history
     group_id         BIGINT,
     line_id          BIGINT,
     note             TEXT,
-    recorded_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recorded_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
 
     delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
@@ -844,7 +840,7 @@ CREATE TABLE training_plan_history
 CREATE TABLE training_plan_detail_history
 (
     id                       BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_history_id BIGINT NOT NULL,
+    training_plan_history_id BIGINT  NOT NULL,
 
     -- Snapshot
     employee_id              BIGINT,
@@ -856,9 +852,9 @@ CREATE TABLE training_plan_detail_history
     note                     TEXT,
 
     delete_flag              BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at               TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at               TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by               VARCHAR(255),
-    updated_at               TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by               VARCHAR(255),
 
     FOREIGN KEY (training_plan_history_id) REFERENCES training_plan_history (id) ON DELETE CASCADE,
@@ -880,19 +876,19 @@ CREATE TABLE training_results
     training_plan_id BIGINT COMMENT 'Link tới kế hoạch gốc',
     title            TEXT,
     form_code        VARCHAR(50),
-    year             INT    NOT NULL,
-    group_id         BIGINT NOT NULL,
+    year             INT     NOT NULL,
+    group_id         BIGINT  NOT NULL,
     line_id          BIGINT COMMENT 'Dây chuyền áp dụng',
     status           ENUM ('ON_GOING', 'DONE', 'WAITING_MANAGER',
         'REJECTED_BY_MANAGER', 'APPROVED')
                                       DEFAULT 'ON_GOING',
-    current_version  INT DEFAULT 1,
+    current_version  INT              DEFAULT 1,
     note             TEXT,
 
     delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id),
@@ -912,20 +908,20 @@ CREATE TABLE training_results
 CREATE TABLE training_result_details
 (
     id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_result_id      BIGINT NOT NULL,
-    training_plan_detail_id BIGINT NOT NULL COMMENT 'Link về kế hoạch',
+    training_result_id      BIGINT  NOT NULL,
+    training_plan_detail_id BIGINT  NOT NULL COMMENT 'Link về kế hoạch',
 
     -- Định danh ai làm gì
-    employee_id             BIGINT NOT NULL,
-    process_id              BIGINT NOT NULL,
+    employee_id             BIGINT  NOT NULL,
+    process_id              BIGINT  NOT NULL,
     training_sample_id      BIGINT COMMENT 'Mẫu huấn luyện sử dụng (từ danh sách)',
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
-    classification          INT    COMMENT 'Phân loại công đoạn',
+    classification          INT COMMENT 'Phân loại công đoạn',
     training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
 
     -- Thời gian thực tế
-    planned_date            DATE NOT NULL,
+    planned_date            DATE    NOT NULL,
     actual_date             DATE,
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',
@@ -935,9 +931,9 @@ CREATE TABLE training_result_details
                                              DEFAULT 'PENDING',
 
     -- Kết quả
-    detection_time          INT     COMMENT 'Thời gian phát hiện (giây)',
+    detection_time          INT COMMENT 'Thời gian phát hiện (giây)',
     is_pass                 BOOLEAN COMMENT 'TRUE=Pass, FALSE=Fail',
-    note                    TEXT    COMMENT 'Ghi chú',
+    note                    TEXT COMMENT 'Ghi chú',
 
     -- Huấn luyện lại
     is_retrained            BOOLEAN COMMENT 'Có phải đây là huấn luyện lại?',
@@ -949,9 +945,9 @@ CREATE TABLE training_result_details
     signature_fi_out        BIGINT COMMENT 'TL Kiểm tra ký lúc ra (nullable nếu classification=4)',
 
     delete_flag             BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at              TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at              TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by              VARCHAR(255),
-    updated_at              TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by              VARCHAR(255),
 
     FOREIGN KEY (training_result_id) REFERENCES training_results (id) ON DELETE CASCADE,
@@ -990,9 +986,9 @@ CREATE TABLE training_result_history
     note               TEXT,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     FOREIGN KEY (training_result_id) REFERENCES training_results (id) ON DELETE CASCADE,
@@ -1033,9 +1029,9 @@ CREATE TABLE training_result_detail_history
     signature_fi_out_name      VARCHAR(100),
 
     delete_flag                BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                 TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by                 VARCHAR(255),
-    updated_at                 TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                 VARCHAR(255),
 
     FOREIGN KEY (training_result_history_id) REFERENCES training_result_history (id) ON DELETE CASCADE,
@@ -1058,10 +1054,10 @@ CREATE TABLE notification_templates
     body_template    TEXT         NOT NULL,
     description      VARCHAR(500),
 
-    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     INDEX idx_notification_templates_delete_flag (delete_flag)
@@ -1075,18 +1071,18 @@ CREATE TABLE notification_settings
 (
     id                    BIGINT PRIMARY KEY AUTO_INCREMENT,
     template_code         VARCHAR(50) NOT NULL,
-    is_enabled            BOOLEAN DEFAULT TRUE,
-    remind_before_days    INT     DEFAULT 3,
-    is_persistent         BOOLEAN DEFAULT FALSE,
-    remind_interval_hours INT     DEFAULT 24,
-    max_reminders         INT     DEFAULT 5,
-    preferred_send_time   TIME    DEFAULT '08:00:00',
+    is_enabled            BOOLEAN              DEFAULT TRUE,
+    remind_before_days    INT                  DEFAULT 3,
+    is_persistent         BOOLEAN              DEFAULT FALSE,
+    remind_interval_hours INT                  DEFAULT 24,
+    max_reminders         INT                  DEFAULT 5,
+    preferred_send_time   TIME                 DEFAULT '08:00:00',
     escalate_after_days   INT,
 
-    delete_flag           BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at            TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag           BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at            TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by            VARCHAR(255),
-    updated_at            TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by            VARCHAR(255),
 
     FOREIGN KEY (template_code) REFERENCES notification_templates (code) ON DELETE CASCADE,
@@ -1110,16 +1106,16 @@ CREATE TABLE notification_queue
     subject              VARCHAR(255) NOT NULL,
     body                 TEXT         NOT NULL,
     status               ENUM ('PENDING', 'SENDING', 'SENT', 'FAILED') DEFAULT 'PENDING',
-    retry_count          INT DEFAULT 0,
-    max_retries          INT DEFAULT 3,
+    retry_count          INT                                           DEFAULT 0,
+    max_retries          INT                                           DEFAULT 3,
     error_message        TEXT,
-    scheduled_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    sent_at              TIMESTAMP NULL,
+    scheduled_at         TIMESTAMP                                     DEFAULT CURRENT_TIMESTAMP,
+    sent_at              TIMESTAMP    NULL,
 
-    delete_flag          BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag          BOOLEAN      NOT NULL                         DEFAULT FALSE,
+    created_at           TIMESTAMP                                     DEFAULT CURRENT_TIMESTAMP,
     created_by           VARCHAR(255),
-    updated_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP                                     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by           VARCHAR(255),
 
     FOREIGN KEY (recipient_user_id) REFERENCES users (id),
@@ -1144,10 +1140,10 @@ CREATE TABLE reject_reasons
     category_name VARCHAR(100) NOT NULL COMMENT 'Nhóm lý do (VD: Dữ liệu, Quy trình, Nội dung)',
     reason_name   VARCHAR(255) NOT NULL COMMENT 'Tên lý do (VD: Thiếu dữ liệu, Sai quy trình)',
 
-    delete_flag   BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag   BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
-    updated_at    TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
     INDEX idx_reject_reasons_delete_flag (delete_flag)
@@ -1162,10 +1158,10 @@ CREATE TABLE required_actions
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
     action_name VARCHAR(255) NOT NULL COMMENT 'Tên hành động (VD: Chỉnh sửa và gửi lại)',
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     INDEX idx_required_actions_delete_flag (delete_flag)
@@ -1178,13 +1174,13 @@ CREATE TABLE required_actions
 CREATE TABLE approval_action_reject_reasons
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    approval_action_id BIGINT NOT NULL,
-    reject_reason_id   BIGINT NOT NULL,
+    approval_action_id BIGINT  NOT NULL,
+    reject_reason_id   BIGINT  NOT NULL,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     CONSTRAINT fk_aarr_approval_action
@@ -1204,13 +1200,13 @@ CREATE TABLE approval_action_reject_reasons
 CREATE TABLE approval_required_actions
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    approval_action_id BIGINT NOT NULL,
-    required_action_id BIGINT NOT NULL,
+    approval_action_id BIGINT  NOT NULL,
+    required_action_id BIGINT  NOT NULL,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     CONSTRAINT fk_ara_approval_action
@@ -1230,10 +1226,10 @@ CREATE TABLE approval_required_actions
 CREATE TABLE approval_detail_comments
 (
     id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
-    approval_action_id   BIGINT NOT NULL,
-    entity_id            BIGINT NOT NULL COMMENT 'ID dòng detail bị góp ý',
-    performed_by_user_id BIGINT NOT NULL,
-    entity_version       INT    NOT NULL,
+    approval_action_id   BIGINT    NOT NULL,
+    entity_id            BIGINT    NOT NULL COMMENT 'ID dòng detail bị góp ý',
+    performed_by_user_id BIGINT    NOT NULL,
+    entity_version       INT       NOT NULL,
     comment_description  TEXT,
     performed_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -1243,10 +1239,10 @@ CREATE TABLE approval_detail_comments
     device_info          VARCHAR(255),
     content_hash         VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot',
 
-    delete_flag          BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag          BOOLEAN   NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
     created_by           VARCHAR(255),
-    updated_at           TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by           VARCHAR(255),
 
     CONSTRAINT fk_adc_approval_action
@@ -1271,17 +1267,17 @@ CREATE TABLE approval_detail_comments
 CREATE TABLE training_sample_review_configs
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id BIGINT NOT NULL,
-    trigger_month   INT    NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
-    trigger_day     INT    NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
-    due_days        INT    NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
+    product_line_id BIGINT  NOT NULL,
+    trigger_month   INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
+    trigger_day     INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
+    due_days        INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
     assignee_id     BIGINT COMMENT 'TL phụ trách review (mặc định)',
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
@@ -1298,22 +1294,22 @@ CREATE TABLE training_sample_review_configs
 CREATE TABLE training_sample_reviews
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    config_id       BIGINT NOT NULL,
-    product_line_id BIGINT NOT NULL,
-    review_year     INT    NOT NULL COMMENT 'Năm review (2026)',
-    due_date        DATE   NOT NULL COMMENT 'Hạn chót phải hoàn thành',
-    completed_date  DATE   COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
-    reviewed_by     BIGINT NOT NULL COMMENT 'TL thực hiện review',
+    config_id       BIGINT    NOT NULL,
+    product_line_id BIGINT    NOT NULL,
+    review_year     INT       NOT NULL COMMENT 'Năm review (2026)',
+    due_date        DATE      NOT NULL COMMENT 'Hạn chót phải hoàn thành',
+    completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    reviewed_by     BIGINT    NOT NULL COMMENT 'TL thực hiện review',
     result          ENUM ('PENDING', 'NO_CHANGE', 'CHANGE_PROPOSED', 'OVERDUE')
-                           NOT NULL DEFAULT 'PENDING',
-    sample_snapshot JSON   COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
+                              NOT NULL DEFAULT 'PENDING',
+    sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
     confirmed_at    TIMESTAMP NULL COMMENT 'Thời điểm SV xác nhận',
 
-    delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP,
+    delete_flag     BOOLEAN   NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (config_id) REFERENCES training_sample_review_configs (id),
