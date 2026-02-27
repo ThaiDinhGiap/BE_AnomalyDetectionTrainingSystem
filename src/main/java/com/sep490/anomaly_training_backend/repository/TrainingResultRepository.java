@@ -31,14 +31,14 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     @Query("SELECT tr FROM TrainingResult tr LEFT JOIN FETCH tr.details WHERE tr.id = :id")
     Optional<TrainingResult> findByIdWithDetails(@Param("id") Long id);
 
-    @Query("SELECT tr FROM TrainingResult tr " +
-            "JOIN FETCH tr.group g " +
-            "JOIN FETCH g.supervisor " +
-            "JOIN FETCH g.section s " +
-            "JOIN FETCH s.manager " +
-            "WHERE tr.status = :status " +
-            "AND tr.updatedAt < :threshold " +
-            "AND tr.deleteFlag = false")
+//    @Query("SELECT tr FROM TrainingResult tr " +
+//            "JOIN FETCH tr.group g " +
+//            "JOIN FETCH g.supervisor " +
+//            "JOIN FETCH g.section s " +
+//            "JOIN FETCH s.manager " +
+//            "WHERE tr.status = :status " +
+//            "AND tr.updatedAt < :threshold " +
+//            "AND tr.deleteFlag = false")
     List<TrainingResult> findByStatusAndUpdatedAtBefore(
             @Param("status") TrainingResultStatus status,
             @Param("threshold") LocalDateTime threshold);

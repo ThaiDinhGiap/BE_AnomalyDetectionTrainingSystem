@@ -21,15 +21,12 @@ public abstract class TrainingPlanMapper {
     @Mapping(target = "status", ignore = true)  // Will be set by builder default
     @Mapping(target = "currentVersion", constant = "1")
     @Mapping(target = "formCode", constant = "TR_PLAN")
-    @Mapping(target = "group", ignore = true)
     @Mapping(target = "line", ignore = true)
     @Mapping(target = "details", ignore = true)
     @Mapping(target = "note", ignore = true)
     public abstract TrainingPlan toEntity(TrainingPlanCreateRequest request);
 
     // --- 3. MAPPING RESPONSE (HIỂN THỊ RA) ---
-    @Mapping(source = "group.id", target = "groupId")
-    @Mapping(source = "group.name", target = "groupName")
     @Mapping(source = "line.id", target = "lineId")
     @Mapping(source = "line.name", target = "lineName")
     public abstract TrainingPlanResponse toResponse(TrainingPlan entity);
@@ -45,7 +42,6 @@ public abstract class TrainingPlanMapper {
 
     // 1. Map Update Header (Bỏ qua các trường không cho sửa hoặc tự xử lý)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "group", ignore = true)      // Không cho đổi Group
     @Mapping(target = "line", ignore = true)       // Không cho đổi Line
     @Mapping(target = "monthStart", ignore = true) // Không cho đổi tháng bắt đầu
     @Mapping(target = "monthEnd", ignore = true)   // Không cho đổi tháng kết thúc

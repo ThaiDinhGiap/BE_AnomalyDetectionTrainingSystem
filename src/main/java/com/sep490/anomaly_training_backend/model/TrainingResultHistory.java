@@ -54,8 +54,8 @@ public class TrainingResultHistory extends BaseEntity {
     @Column
     Integer year;
 
-    @Column(name = "group_id")
-    Long groupId;
+    @Column(name = "team_id")
+    Long team_id;
 
     @Column(name = "line_id")
     Long lineId;

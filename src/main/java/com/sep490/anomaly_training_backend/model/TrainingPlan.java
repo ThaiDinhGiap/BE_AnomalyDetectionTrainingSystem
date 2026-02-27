@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,10 +61,10 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     LocalDate monthEnd;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
+    @JoinColumn(name = "team_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Group group;
+    Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "line_id")
@@ -96,8 +97,13 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     }
 
     @Override
+    public void setStatus(ProposalStatus status) {
+
+    }
+
+    @Override
     public Long getGroupId() {
-        return group.getId();
+        return team.getId();
     }
 
     @Override
@@ -105,7 +111,7 @@ public class TrainingPlan extends BaseEntity implements Approvable {
         StringBuilder sb = new StringBuilder();
         sb.append(id).append("|");
         sb.append(currentVersion).append("|");
-        sb.append(group.getId()).append("|");
+        sb.append(team.getId()).append("|");
 
         details.stream()
                 .sorted(Comparator.comparing(TrainingPlanDetail::getId))

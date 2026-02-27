@@ -2,10 +2,7 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.enums.ApprovalAction;
-import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.UserRole;
+import com.sep490.anomaly_training_backend.enums.*;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
@@ -41,7 +38,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
         // 1. Validate status
-        if (entity.getStatus() != ReportStatus.DRAFT) {
+        if (entity.getStatus() != ProposalStatus.DRAFT) {
             throw new BusinessException("Chỉ có thể submit khi ở trạng thái DRAFT");
         }
 
@@ -50,7 +47,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         // 3. Update entity status
         ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
-        entity.setStatus(pendingStatus);
+//        entity.setStatus(pendingStatus);
 
         // 4. Log action
         logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.TEAM_LEADER,
@@ -66,15 +63,15 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional
     public void revise(Approvable entity, User currentUser, HttpServletRequest request) {
         // 1. Validate status
-        if (!isRejectedStatus(entity.getStatus())) {
-            throw new BusinessException("Chỉ có thể revise khi bị từ chối");
-        }
+//        if (!isRejectedStatus(entity.getStatus())) {
+//            throw new BusinessException("Chỉ có thể revise khi bị từ chối");
+//        }
 
         // 2. Increment version
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         // 3. Set status back to DRAFT
-        entity.setStatus(ReportStatus.DRAFT);
+//        entity.setStatus(ReportStatus.DRAFT);
 
         // 4. Log action (với version mới)
         logAction(entity, ApprovalAction.REVISE, -1, UserRole.TEAM_LEADER,
@@ -108,14 +105,14 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (nextStep != null) {
             // Còn step tiếp theo
             ReportStatus nextPendingStatus = mapRoleToPendingStatus(nextStep.getApproverRole());
-            entity.setStatus(nextPendingStatus);
+//            entity.setStatus(nextPendingStatus);
 
             log.info("Approved {} id={} version={} by {} -> next: {}",
                     entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
                     currentUser.getUsername(), nextPendingStatus);
         } else {
             // Đây là step cuối -> APPROVED
-            entity.setStatus(ReportStatus.APPROVED);
+//            entity.setStatus(ReportStatus.APPROVED);
 
             // Apply report (tạo/update/delete master data)
             entity.applyApproval();
@@ -151,7 +148,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         // 6. Set rejected status
         ReportStatus rejectedStatus = mapRoleToRejectedStatus(currentStep.getApproverRole());
-        entity.setStatus(rejectedStatus);
+//        entity.setStatus(rejectedStatus);
 
         log.info("Rejected {} id={} version={} by {} reason={}",
                 entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
@@ -191,7 +188,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private ApprovalFlowStep getCurrentStep(Approvable entity) {
-        ReportStatus status = entity.getStatus();
+        ProposalStatus status = entity.getStatus();
 
         if (!isWaitingStatus(status)) {
             throw new BusinessException("Report không ở trạng thái chờ duyệt: " + status);
@@ -238,7 +235,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .performedByFullName(performer.getFullName())
                 .performedByRole(performer.getRole())
                 .comment(comment)
-                .rejectReason(rejectReason)
+//                .rejectReason(rejectReason)
                 .performedAt(Instant.now())
                 .ipAddress(getClientIp(request))
                 .userAgent(request != null ? request.getHeader("User-Agent") : null)
@@ -266,7 +263,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         };
     }
 
-    private UserRole mapStatusToRole(ReportStatus status) {
+    private UserRole mapStatusToRole(ProposalStatus status) {
         return switch (status) {
             case WAITING_SV -> UserRole.SUPERVISOR;
             case WAITING_MANAGER -> UserRole.MANAGER;
@@ -274,12 +271,12 @@ public class ApprovalServiceImpl implements ApprovalService {
         };
     }
 
-    private boolean isWaitingStatus(ReportStatus status) {
-        return status == ReportStatus.WAITING_SV || status == ReportStatus.WAITING_MANAGER;
+    private boolean isWaitingStatus(ProposalStatus status) {
+        return status == ProposalStatus.WAITING_SV || status == ProposalStatus.WAITING_MANAGER;
     }
 
-    private boolean isRejectedStatus(ReportStatus status) {
-        return status == ReportStatus.REJECTED_BY_SV || status == ReportStatus.REJECTED_BY_MANAGER;
+    private boolean isRejectedStatus(ProposalStatus status) {
+        return status == ProposalStatus.REJECTED_BY_SV || status == ProposalStatus.REJECTED_BY_MANAGER;
     }
 
     private String getClientIp(HttpServletRequest request) {

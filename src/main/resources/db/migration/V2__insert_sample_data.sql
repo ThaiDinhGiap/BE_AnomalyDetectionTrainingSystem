@@ -188,7 +188,7 @@ VALUES (1, 1, 'CREATE', 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ', 'Mẫu NG 
 -- ============================================================================
 
 -- Training Plans
-INSERT INTO training_plans (id, form_code, title, month_start, month_end, group_id, line_id, status, current_version,
+INSERT INTO training_plans (id, form_code, title, month_start, month_end, team_id, line_id, status, current_version,
                             note, created_by)
 VALUES (1, 'TR_PLAN_2023_Q4', 'Kế hoạch huấn luyện Q4/2023 - Line Tiện', '2023-10-01', '2023-12-31', 1, 1, 'APPROVED',
         1, 'Kế hoạch định kỳ', 'tl_prod01');
@@ -201,7 +201,7 @@ VALUES (1, 1, 1, 1, '2023-10-01', '2023-10-05', '2023-10-12', 'DONE', 'tl_prod01
        (3, 1, 2, 1, '2023-10-01', '2023-10-12', '2023-10-15', 'DONE', 'tl_prod01');
 
 -- Training Results
-INSERT INTO training_results (id, training_plan_id, title, form_code, year, group_id, line_id, status, current_version,
+INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version,
                               note, created_by)
 VALUES (1, 1, 'Kết quả huấn luyện năm 2023 - Line Tiện', 'TR_RESULT_2023', 2023, 1, 1, 'APPROVED', 1,
         'Đã được phê duyệt', 'tl_prod01');

@@ -32,7 +32,7 @@ import java.util.List;
 @Entity
 @Table(name = "training_results")
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = {"trainingPlan", "group", "line", "details"})
+//@EqualsAndHashCode(callSuper = true, exclude = {"trainingPlan", "group", "line", "details"})
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -56,10 +56,11 @@ public class TrainingResult extends BaseEntity {
     @Column(nullable = false)
     Integer year;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
     @ToString.Exclude
-    Group group;
+    @EqualsAndHashCode.Exclude
+    Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "line_id")
