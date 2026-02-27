@@ -48,6 +48,10 @@ public class Defect extends BaseEntity {
     @Column(name = "detected_date", nullable = false)
     LocalDate detectedDate;
 
+    @Column(name = "is_escaped")
+    @Builder.Default
+    Boolean isEscaped = false;
+
     @Column(columnDefinition = "text")
     String note;
 }

@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,7 @@ import java.util.List;
 @Entity
 @Table(name = "training_result_history")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"trainingResult", "detailHistories"})
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -40,36 +39,33 @@ public class TrainingResultHistory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "training_result_id")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     TrainingResult trainingResult;
 
-    @Column(nullable = false)
+    @Column
     Integer version;
 
     @Column(columnDefinition = "text")
     String title;
 
     // Snapshot fields
-    @Column(name = "form_code", length = 50)
-    String formCode;
-
     @Column
     Integer year;
 
     @Column(name = "group_id")
     Long groupId;
 
-    @Column(name = "group_name", length = 100)
-    String groupName;
+    @Column(name = "line_id")
+    Long lineId;
+
+    @Column(name = "status_at_time", length = 50)
+    String statusAtTime;
 
     @Column(columnDefinition = "text")
     String note;
 
-    @Column(name = "recorded_at")
-    LocalDateTime recordedAt;
 
     @OneToMany(mappedBy = "trainingResultHistory", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude

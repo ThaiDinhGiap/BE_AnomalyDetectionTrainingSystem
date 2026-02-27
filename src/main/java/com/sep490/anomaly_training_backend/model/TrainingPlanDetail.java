@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,10 +24,10 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 
 /**
- * Entity for training_plan_detail table - Detail rows in training plans
+ * Entity for training_plan_details table - Detail rows in training plans
  */
 @Entity
-@Table(name = "training_plan_detail")
+@Table(name = "training_plan_details")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -69,7 +69,7 @@ public class TrainingPlanDetail extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ReportStatus status = ReportStatus.PENDING;
+    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
 
     @Column(columnDefinition = "text")
     String note;

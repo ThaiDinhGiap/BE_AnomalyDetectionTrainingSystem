@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "processes", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_group_code", columnNames = {"group_id", "code"})
+        @UniqueConstraint(name = "uk_processes_product_line_code", columnNames = {"product_line_id", "code"})
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -39,10 +39,10 @@ public class Process extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id")
+    @JoinColumn(name = "product_line_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Group group;
+    private ProductLine productLine;
 
     @Column(nullable = false, length = 20)
     private String code;

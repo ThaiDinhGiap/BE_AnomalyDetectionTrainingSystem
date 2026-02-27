@@ -31,7 +31,7 @@ import java.util.List;
 @Entity
 @Table(name = "training_plan_history")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"trainingPlan", "detailHistory"})
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -47,7 +47,6 @@ public class TrainingPlanHistory extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "training_plan_id")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     TrainingPlan trainingPlan;
 
     @Column(nullable = false)
@@ -66,8 +65,8 @@ public class TrainingPlanHistory extends BaseEntity {
     @Column(name = "group_id")
     Long groupId;
 
-    @Column(name = "group_name", length = 100)
-    String groupName;
+    @Column(name = "line_id")
+    Long lineId;
 
     @Column(columnDefinition = "text")
     String note;

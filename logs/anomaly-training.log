@@ -1,0 +1,102 @@
+2026-02-04 22:49:33.462 INFO  [background-preinit] [] [] o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-02-04 22:49:33.499 INFO  [restartedMain] [] [] c.s.a.AnomalyTrainingBackendApplication - Starting AnomalyTrainingBackendApplication using Java 21.0.8 with PID 95258 (/home/giap-thaidinh/DENSO/anomaly-training-backend/target/classes started by giap-thaidinh in /home/giap-thaidinh/DENSO/anomaly-training-backend)
+2026-02-04 22:49:33.500 INFO  [restartedMain] [] [] c.s.a.AnomalyTrainingBackendApplication - The following 1 profile is active: "prod"
+2026-02-04 22:49:33.540 INFO  [restartedMain] [] [] o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-02-04 22:49:33.540 INFO  [restartedMain] [] [] o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-02-04 22:49:34.340 INFO  [restartedMain] [] [] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-02-04 22:49:34.458 INFO  [restartedMain] [] [] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 112 ms. Found 33 JPA repository interfaces.
+2026-02-04 22:49:35.226 INFO  [restartedMain] [] [] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-02-04 22:49:35.236 INFO  [restartedMain] [] [] o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-02-04 22:49:35.237 INFO  [restartedMain] [] [] o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-02-04 22:49:35.237 INFO  [restartedMain] [] [] o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-02-04 22:49:35.267 INFO  [restartedMain] [] [] o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-02-04 22:49:35.267 INFO  [restartedMain] [] [] o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1727 ms
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Scanning for classpath resources at 'classpath:db/callback' ...
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Determining location urls for classpath:db/callback using ClassLoader TomcatEmbeddedWebappClassLoader
+  context: ROOT
+  delegate: true
+----------> Parent Classloader:
+org.springframework.boot.devtools.restart.classloader.RestartClassLoader@a1c2dd4
+ ...
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Unable to resolve location classpath:db/callback.
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Scanning for classpath resources at 'classpath:db/migration' ...
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Determining location urls for classpath:db/migration using ClassLoader TomcatEmbeddedWebappClassLoader
+  context: ROOT
+  delegate: true
+----------> Parent Classloader:
+org.springframework.boot.devtools.restart.classloader.RestartClassLoader@a1c2dd4
+ ...
+2026-02-04 22:49:35.566 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Scanning URL: file:/home/giap-thaidinh/DENSO/anomaly-training-backend/target/classes/db/migration
+2026-02-04 22:49:35.567 DEBUG [restartedMain] [] [] o.f.c.i.s.c.FileSystemClassPathLocationScanner - Scanning starting at classpath root in filesystem: /home/giap-thaidinh/DENSO/anomaly-training-backend/target/classes/
+2026-02-04 22:49:35.567 DEBUG [restartedMain] [] [] o.f.c.i.s.c.FileSystemClassPathLocationScanner - Scanning for resources in path: /home/giap-thaidinh/DENSO/anomaly-training-backend/target/classes/db/migration (db/migration)
+2026-02-04 22:49:35.568 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Found resource: db/migration/V1__init.sql
+2026-02-04 22:49:35.568 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Found resource: db/migration/V2__insert_sample_data.sql
+2026-02-04 22:49:35.568 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Found resource: db/migration/V3__e_sign_approval_core.sql
+2026-02-04 22:49:35.569 DEBUG [restartedMain] [] [] o.f.c.i.s.classpath.ClassPathScanner - Scanning for classes at classpath:db/migration
+2026-02-04 22:49:35.573 INFO  [restartedMain] [] [] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-02-04 22:49:35.827 INFO  [restartedMain] [] [] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1c263fe9
+2026-02-04 22:49:35.828 INFO  [restartedMain] [] [] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-02-04 22:49:35.854 DEBUG [restartedMain] [] [] o.f.c.i.r.ResourceNameValidator - Validating V3__e_sign_approval_core.sql
+2026-02-04 22:49:35.855 DEBUG [restartedMain] [] [] o.f.c.i.r.ResourceNameValidator - Validating V2__insert_sample_data.sql
+2026-02-04 22:49:35.855 DEBUG [restartedMain] [] [] o.f.c.i.r.ResourceNameValidator - Validating V1__init.sql
+2026-02-04 22:49:35.862 INFO  [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - Database: jdbc:mysql://localhost:3306/anomaly_training (MySQL 8.0)
+2026-02-04 22:49:35.862 DEBUG [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - Database Type: MySQL
+2026-02-04 22:49:35.862 DEBUG [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - Driver: MySQL Connector/J mysql-connector-j-9.1.0 (Revision: cf2917ea44ae2e43a4514a33771035aa99de73bf)
+2026-02-04 22:49:35.862 DEBUG [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - DDL Transactions Supported: false
+2026-02-04 22:49:35.863 DEBUG [restartedMain] [] [] o.f.c.i.s.SchemaHistoryFactory - Schemas: 
+2026-02-04 22:49:35.863 DEBUG [restartedMain] [] [] o.f.c.i.s.SchemaHistoryFactory - Default schema: null
+2026-02-04 22:49:35.883 DEBUG [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - Scanning for script callbacks ...
+2026-02-04 22:49:35.884 DEBUG [restartedMain] [] [] o.f.c.i.c.SqlScriptCallbackFactory - Scanning for SQL callbacks ...
+2026-02-04 22:49:35.889 DEBUG [restartedMain] [] [] o.f.core.internal.command.DbValidate - Validating migrations ...
+2026-02-04 22:49:35.891 DEBUG [restartedMain] [] [] o.f.c.a.c.ClassicConfiguration - CherryPickConfigurationExtension not found
+2026-02-04 22:49:35.898 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V3__e_sign_approval_core.sql (filename: V3__e_sign_approval_core.sql)
+2026-02-04 22:49:35.898 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V2__insert_sample_data.sql (filename: V2__insert_sample_data.sql)
+2026-02-04 22:49:35.898 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V1__init.sql (filename: V1__init.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V3__e_sign_approval_core.sql (filename: V3__e_sign_approval_core.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V2__insert_sample_data.sql (filename: V2__insert_sample_data.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V1__init.sql (filename: V1__init.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V3__e_sign_approval_core.sql (filename: V3__e_sign_approval_core.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V2__insert_sample_data.sql (filename: V2__insert_sample_data.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V1__init.sql (filename: V1__init.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V3__e_sign_approval_core.sql (filename: V3__e_sign_approval_core.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V2__insert_sample_data.sql (filename: V2__insert_sample_data.sql)
+2026-02-04 22:49:35.899 DEBUG [restartedMain] [] [] o.f.core.internal.scanner.Scanner - Filtering out resource: db/migration/V1__init.sql (filename: V1__init.sql)
+2026-02-04 22:49:35.915 INFO  [restartedMain] [] [] o.f.core.internal.command.DbValidate - Successfully validated 3 migrations (execution time 00:00.024s)
+2026-02-04 22:49:35.918 DEBUG [restartedMain] [] [] o.f.core.internal.command.DbSchemas - Skipping creation of existing schema: `anomaly_training`
+2026-02-04 22:49:35.926 DEBUG [restartedMain] [] [] o.f.c.a.c.ClassicConfiguration - CherryPickConfigurationExtension not found
+2026-02-04 22:49:35.930 INFO  [restartedMain] [] [] o.f.core.internal.command.DbMigrate - Current version of schema `anomaly_training`: 3
+2026-02-04 22:49:35.933 INFO  [restartedMain] [] [] o.f.core.internal.command.DbMigrate - Schema `anomaly_training` is up to date. No migration necessary.
+2026-02-04 22:49:35.941 DEBUG [restartedMain] [] [] org.flywaydb.core.FlywayExecutor - Memory usage: 56 of 104M
+2026-02-04 22:49:36.021 INFO  [restartedMain] [] [] o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-02-04 22:49:36.059 INFO  [restartedMain] [] [] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.4.Final
+2026-02-04 22:49:36.083 INFO  [restartedMain] [] [] o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-02-04 22:49:36.276 INFO  [restartedMain] [] [] o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-02-04 22:49:36.338 INFO  [restartedMain] [] [] o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0.45
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-02-04 22:49:37.772 INFO  [restartedMain] [] [] o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-02-04 22:49:37.834 INFO  [restartedMain] [] [] o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-02-04 22:49:38.688 INFO  [restartedMain] [] [] o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-02-04 22:49:40.475 INFO  [restartedMain] [] [] o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer$InitializeAuthenticationProviderManagerConfigurer - Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-02-04 22:49:40.475 WARN  [restartedMain] [] [] o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-02-04 22:49:42.433 WARN  [restartedMain] [] [] o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-02-04 22:49:43.926 INFO  [restartedMain] [] [] o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2026-02-04 22:49:43.988 INFO  [restartedMain] [] [] o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-02-04 22:49:44.000 INFO  [restartedMain] [] [] o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-02-04 22:49:44.003 INFO  [restartedMain] [] [] o.s.a.r.c.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2026-02-04 22:49:44.041 INFO  [restartedMain] [] [] o.s.a.r.c.CachingConnectionFactory - Created new connection: rabbitConnectionFactory#4f99a504:0/SimpleConnection@6309ee4d [delegate=amqp://guest@127.0.0.1:5672/, localPort=38972]
+2026-02-04 22:49:44.106 INFO  [restartedMain] [] [] c.s.a.AnomalyTrainingBackendApplication - Started AnomalyTrainingBackendApplication in 11.203 seconds (process running for 11.805)
+2026-02-04 22:49:57.235 INFO  [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] o.s.a.r.l.SimpleMessageListenerContainer - Waiting for workers to finish.
+2026-02-04 22:49:57.238 INFO  [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#1-4] [] [] o.s.a.r.l.SimpleMessageListenerContainer - Waiting for workers to finish.
+2026-02-04 22:49:58.086 INFO  [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] [] [] o.s.a.r.l.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2026-02-04 22:49:58.101 INFO  [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#1-4] [] [] o.s.a.r.l.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2026-02-04 22:49:58.102 INFO  [SpringApplicationShutdownHook] [] [] o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-02-04 22:49:58.104 INFO  [tomcat-shutdown] [] [] o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-02-04 22:49:58.127 INFO  [SpringApplicationShutdownHook] [] [] o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-02-04 22:49:58.129 INFO  [SpringApplicationShutdownHook] [] [] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-02-04 22:49:58.136 INFO  [SpringApplicationShutdownHook] [] [] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

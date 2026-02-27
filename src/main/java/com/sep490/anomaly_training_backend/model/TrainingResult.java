@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,12 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entity for training_result table - Header for training results
+ * Entity for training_results table - Header for training results
  */
 @Entity
-@Table(name = "training_result")
+@Table(name = "training_results")
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"trainingPlan", "group", "line", "details"})
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -42,12 +42,16 @@ public class TrainingResult extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "training_plan_id")
+    @ToString.Exclude
+    TrainingPlan trainingPlan;
+
     @Column(columnDefinition = "text")
     String title;
 
     @Column(name = "form_code", length = 50)
-    @Builder.Default
-    String formCode = "TR_RESULT";
+    String formCode;
 
     @Column(nullable = false)
     Integer year;
@@ -55,13 +59,17 @@ public class TrainingResult extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     Group group;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "line_id")
+    @ToString.Exclude
+    ProductLine line;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ReportStatus status = ReportStatus.ON_GOING;
+    TrainingResultStatus status = TrainingResultStatus.ON_GOING;
 
     @Column(name = "current_version")
     @Builder.Default

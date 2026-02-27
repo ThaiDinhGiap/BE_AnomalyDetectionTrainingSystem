@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -37,39 +38,46 @@ public class TrainingResultDetailHistory extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "training_result_history_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     TrainingResultHistory trainingResultHistory;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "training_result_detail_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    TrainingResultDetail trainingResultDetail;
+    @Column(name = "training_result_detail_id")
+    Long trainingResultDetailId;
 
-    // Snapshot fields
-    @Column(name = "training_topic_id")
-    Long trainingTopicId;
+    // Snapshot IDs
+    @Column(name = "employee_id")
+    Long employeeId;
 
-    @Column(name = "planned_date")
-    LocalDate plannedDate;
+    @Column(name = "process_id")
+    Long processId;
+
+    @Column(name = "training_sample_id")
+    Long trainingSampleId;
+
+    @Column(name = "product_id")
+    Long productId;
+
+    // Snapshot test data
+    @Column
+    Integer classification;
+
+    @Column(name = "cycle_time_standard")
+    BigDecimal cycleTimeStandard;
 
     @Column(name = "actual_date")
     LocalDate actualDate;
 
-    @Column(name = "product_group_id")
-    Long productGroupId;
-
     @Column(name = "time_in")
     LocalTime timeIn;
 
+    @Column(name = "time_start_op")
+    LocalTime timeStartOp;
+
     @Column(name = "time_out")
     LocalTime timeOut;
-
-    @Column(name = "training_sample", length = 255)
-    String trainingSample;
 
     @Column(name = "detection_time")
     Integer detectionTime;
@@ -77,30 +85,15 @@ public class TrainingResultDetailHistory extends BaseEntity {
     @Column(name = "is_pass")
     Boolean isPass;
 
-    @Column(name = "remedial_action", columnDefinition = "text")
-    String remedialAction;
-
-    // Signature snapshots
-    @Column(name = "signature_pro_in")
-    Long signatureProIn;
-
+    // Signature name snapshots
     @Column(name = "signature_pro_in_name", length = 100)
     String signatureProInName;
-
-    @Column(name = "signature_fi_in")
-    Long signatureFiIn;
 
     @Column(name = "signature_fi_in_name", length = 100)
     String signatureFiInName;
 
-    @Column(name = "signature_pro_out")
-    Long signatureProOut;
-
     @Column(name = "signature_pro_out_name", length = 100)
     String signatureProOutName;
-
-    @Column(name = "signature_fi_out")
-    Long signatureFiOut;
 
     @Column(name = "signature_fi_out_name", length = 100)
     String signatureFiOutName;

@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.dto.response;
 
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -16,8 +17,8 @@ public class ProcessResponse {
 
     private BigDecimal standardTimeJt;
 
-    private Long groupId;
-    private String groupName;
+    private Long productLineId;
+    private String productLineName;
 
     private LocalDateTime createdAt;
 

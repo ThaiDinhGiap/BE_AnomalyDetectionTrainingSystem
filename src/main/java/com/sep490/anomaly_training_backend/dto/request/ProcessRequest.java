@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 public class ProcessRequest {
-    private Long groupId;
+    private Long productLineId;
     private String code;
     private String name;
 

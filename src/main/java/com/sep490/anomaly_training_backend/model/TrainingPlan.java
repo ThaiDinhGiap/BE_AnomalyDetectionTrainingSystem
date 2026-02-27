@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,7 +34,7 @@ import java.util.List;
  * Entity for training_plan table - Header for training plans
  */
 @Entity
-@Table(name = "training_plan")
+@Table(name = "training_plans")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
@@ -53,22 +53,28 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     @Builder.Default
     String formCode = "TR_PLAN";
 
-    @Column(name = "month_start", nullable = false)
+    @Column(name = "month_start")
     LocalDate monthStart;
 
-    @Column(name = "month_end", nullable = false)
+    @Column(name = "month_end")
     LocalDate monthEnd;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     Group group;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "line_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    ProductLine line;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ReportStatus status = ReportStatus.DRAFT;
+    ProposalStatus status = ProposalStatus.DRAFT;
 
     @Column(name = "current_version")
     @Builder.Default
