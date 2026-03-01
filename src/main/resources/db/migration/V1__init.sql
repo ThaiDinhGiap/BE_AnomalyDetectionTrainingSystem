@@ -920,6 +920,7 @@ CREATE TABLE training_result_details
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
     classification          INT COMMENT 'Phân loại công đoạn',
     training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
+    sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
 
     -- Thời gian thực tế
@@ -1014,6 +1015,8 @@ CREATE TABLE training_result_detail_history
     training_sample_id         BIGINT,
     product_id                 BIGINT,
 
+    training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
+    sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     -- Snapshot dữ liệu test
     classification             INT,
     cycle_time_standard        DECIMAL(10, 2),
