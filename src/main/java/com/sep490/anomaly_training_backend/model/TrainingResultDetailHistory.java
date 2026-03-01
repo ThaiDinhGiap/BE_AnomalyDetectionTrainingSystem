@@ -60,6 +60,11 @@ public class TrainingResultDetailHistory extends BaseEntity {
     @Column(name = "product_id")
     Long productId;
 
+    @Column(name = "training_topic", length = 255)
+    String trainingTopic;
+
+    @Column(name = "sample_code", length = 20)
+    String sampleCode;
     // Snapshot test data
     @Column
     Integer classification;
