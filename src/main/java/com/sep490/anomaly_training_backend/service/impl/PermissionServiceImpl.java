@@ -2,6 +2,8 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.response.ModulePermissionResponse;
 import com.sep490.anomaly_training_backend.dto.response.PermissionResponse;
+import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserPermissionResponse;
 import com.sep490.anomaly_training_backend.model.Module;
 import com.sep490.anomaly_training_backend.model.Permission;
 import com.sep490.anomaly_training_backend.model.Role;
@@ -11,8 +13,11 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.PermissionService;
 import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.sep490.anomaly_training_backend.exception.BusinessException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,6 +68,7 @@ public class PermissionServiceImpl implements PermissionService {
                             .displayName(p.getDisplayName())
                             .description(p.getDescription())
                             .action(p.getAction())
+                            .sortOrder(p.getSortOrder())
                             .build())
                     .collect(Collectors.toList());
             result.add(ModulePermissionResponse.builder()
@@ -73,6 +79,33 @@ public class PermissionServiceImpl implements PermissionService {
                     .build());
         }
         return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserPermissionResponse getUserPermissionDetail(Long userId) {
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
+                .orElseThrow(() -> new BusinessException("User not found: " + userId, HttpStatus.NOT_FOUND));
+        List<RoleResponse> roles = user.getRoles() == null ? List.of() :
+                user.getRoles().stream()
+                        .filter(r -> !r.isDeleteFlag())
+                        .map(r -> RoleResponse.builder()
+                                .id(r.getId())
+                                .roleCode(r.getRoleCode())
+                                .displayName(r.getDisplayName())
+                                .description(r.getDescription())
+                                .isSystem(r.getIsSystem())
+                                .isActive(r.getIsActive())
+                                .permissionCount(r.getPermissions() != null ? r.getPermissions().size() : 0)
+                                .userCount(0)
+                                .build())
+                        .collect(Collectors.toList());
+        return UserPermissionResponse.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .roles(roles)
+                .permissionsByModule(buildPermissionMap(user))
+                .build();
     }
 
     private Map<String, List<String>> buildPermissionMap(User user) {

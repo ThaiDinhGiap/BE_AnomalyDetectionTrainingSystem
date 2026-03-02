@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.response.ModulePermissionResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserPermissionResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -18,4 +19,7 @@ public interface PermissionService {
 
     /** Get all modules with their permissions (for role management UI) */
     List<ModulePermissionResponse> getAllModulesWithPermissions();
+
+    /** Get detailed permissions for a specific user including roles */
+    UserPermissionResponse getUserPermissionDetail(Long userId);
 }
