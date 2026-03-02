@@ -77,10 +77,6 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/api/v1/training-plans/**").hasRole("TEAM_LEADER")
-                        .requestMatchers("/api/v1/training-result/**").hasAnyRole("TEAM_LEADER", "FINAL_INSPECTION")
-                        .requestMatchers("/api/v1/training-topics/**").hasAnyRole("TEAM_LEADER", "SUPERVISOR")
-                        .requestMatchers("/api/v1/defects/**").hasAnyRole("TEAM_LEADER", "SUPERVISOR")
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
