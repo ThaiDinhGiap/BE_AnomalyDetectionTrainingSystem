@@ -9,11 +9,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PermissionResponse {
+public class RoleResponse {
     private Long id;
-    private String permissionCode;
+    private String roleCode;
     private String displayName;
     private String description;
-    private String action;
-    private Integer sortOrder;
+    private Boolean isSystem;
+    private Boolean isActive;
+    private int permissionCount;
+    private int userCount;
 }

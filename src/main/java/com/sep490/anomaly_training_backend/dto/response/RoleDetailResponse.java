@@ -5,15 +5,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PermissionResponse {
+public class RoleDetailResponse {
     private Long id;
-    private String permissionCode;
+    private String roleCode;
     private String displayName;
     private String description;
-    private String action;
-    private Integer sortOrder;
+    private Boolean isSystem;
+    private Boolean isActive;
+    private int permissionCount;
+    private int userCount;
+    private List<PermissionResponse> permissions;
 }
