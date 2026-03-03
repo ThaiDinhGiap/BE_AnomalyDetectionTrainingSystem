@@ -154,7 +154,7 @@ public class TrainingResultDetail extends BaseEntity {
 //    }
 //
 //    @Override
-//    public void setStatus(ProposalStatus status) {
+//    public void setStatus(ReportStatus status) {
 //
 //    }
 //

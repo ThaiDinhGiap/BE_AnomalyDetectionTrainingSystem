@@ -3,6 +3,8 @@ package com.sep490.anomaly_training_backend.repository;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,4 +18,15 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
     List<TrainingSampleProposal> findByProductLineIdAndStatus(Long productLineId, ReportStatus status);
 
     List<TrainingSampleProposal> findByDeleteFlagFalse();
+
+    @Query("""
+    SELECT t
+    FROM TrainingSampleProposal t
+    WHERE t.productLine.id = :productLineId
+      AND t.createdBy = :username
+      AND t.deleteFlag = false
+    """)
+    List<TrainingSampleProposal> findByProductLineIdAndCreatedByAndDeleteFlagFalse(
+            @Param("productLineId") Long productLineId,
+            @Param("username") String username);
 }

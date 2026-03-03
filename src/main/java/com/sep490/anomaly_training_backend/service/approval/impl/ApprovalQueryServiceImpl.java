@@ -8,7 +8,7 @@ import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
-//import com.sep490.anomaly_training_backend.repository.DefectReportRepository;
+//import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 //import com.sep490.anomaly_training_backend.repository.TrainingTopicReportRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
@@ -27,7 +27,7 @@ import java.util.List;
 @Slf4j
 public class ApprovalQueryServiceImpl implements ApprovalQueryService {
 
-//    private final DefectReportRepository defectReportRepo;
+//    private final DefectProposalRepository DefectProposalRepo;
 //    private final TrainingTopicReportRepository topicReportRepo;
     private final TrainingPlanRepository planRepo;
     private final ApprovalActionRepository actionRepo;
@@ -44,7 +44,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
         }
 
         if (entityType == null || entityType == ApprovalEntityType.DEFECT_REPORT) {
-            result.addAll(getPendingDefectReports(currentUser, targetStatus));
+            result.addAll(getPendingDefectProposals(currentUser, targetStatus));
         }
 
         if (entityType == null || entityType == ApprovalEntityType.TRAINING_TOPIC_REPORT) {
@@ -83,8 +83,8 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
         };
     }
 
-    private List<PendingApprovalResponse> getPendingDefectReports(User currentUser, ReportStatus status) {
-//        return defectReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
+    private List<PendingApprovalResponse> getPendingDefectProposals(User currentUser, ReportStatus status) {
+//        return DefectProposalRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
 //                .stream()
 //                .map(report -> PendingApprovalResponse.builder()
 //                        .entityType(ApprovalEntityType.DEFECT_REPORT)

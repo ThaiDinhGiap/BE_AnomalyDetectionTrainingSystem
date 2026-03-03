@@ -1,13 +1,13 @@
 package com.sep490.anomaly_training_backend.controller;
 
 
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectReportRequest;
-import com.sep490.anomaly_training_backend.dto.response.DefectReportDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectReportResponse;
+import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.DefectReportDetailService;
-import com.sep490.anomaly_training_backend.service.DefectReportService;
+import com.sep490.anomaly_training_backend.service.DefectProposalDetailService;
+import com.sep490.anomaly_training_backend.service.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,8 @@ import java.util.List;
 @Tag(name = "Defect and Defect Report Management", description = "API quản lý quy trình tạo báo cáo ghi nhận lỗi quá khứ cũng như lấy view Defect Banking")
 public class DefectController {
     private final DefectService  defectService;
-    private final DefectReportService defectReportService;
-    private final DefectReportDetailService defectReportDetailService;
+    private final DefectProposalService defectProposalService;
+    private final DefectProposalDetailService defectProposalDetailService;
 
     @GetMapping("/")
     public ResponseEntity<List<DefectResponse>> getDefectByGroup(@RequestParam("groupId")Long groupId) {
@@ -33,22 +33,22 @@ public class DefectController {
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("/report")
-    public ResponseEntity<List<DefectReportResponse>> getDefectReportByGroup(@RequestParam("groupId")Long groupId,
+    @GetMapping("/proposal")
+    public ResponseEntity<List<DefectProposalResponse>> getDefectProposalByGroup(@RequestParam("groupId")Long groupId,
                                                                        @AuthenticationPrincipal User currentUser) {
-        List<DefectReportResponse> list = defectReportService.getDefectReportByTeamLeadAndGroup(groupId, currentUser.getUsername());
+        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndGroup(groupId, currentUser.getUsername());
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/detail/{id}")
-    public ResponseEntity<List<DefectReportDetailResponse>> getDefectReportDetail(@PathVariable Long id) {
-        List<DefectReportDetailResponse> list = defectReportDetailService.getDefectReportDetails(id);
+    public ResponseEntity<List<DefectProposalDetailResponse>> getDefectProposalDetail(@PathVariable Long id) {
+        List<DefectProposalDetailResponse> list = defectProposalDetailService.getDefectProposalDetails(id);
         return ResponseEntity.ok(list);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Void> createDefectReport(@RequestBody CreateDefectReportRequest createDefectReportRequest) {
-        defectReportService.createDefectReport(createDefectReportRequest);
+    public ResponseEntity<Void> createDefectProposal(@RequestBody CreateDefectProposalRequest createDefectProposalRequest) {
+        defectProposalService.createDefectProposal(createDefectProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

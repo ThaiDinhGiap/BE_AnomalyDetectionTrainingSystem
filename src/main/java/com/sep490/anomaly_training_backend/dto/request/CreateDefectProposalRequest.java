@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class CreateDefectReportRequest {
+public class CreateDefectProposalRequest {
     Long groupId;
-    List<CreateDefectReportDetailRequest> defectReportDetail;
+    List<CreateDefectProposalDetailRequest> DefectProposalDetail;
 }

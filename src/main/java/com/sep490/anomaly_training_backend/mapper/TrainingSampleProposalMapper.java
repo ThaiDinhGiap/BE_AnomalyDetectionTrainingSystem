@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.response.TrainingTopicReportResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +12,15 @@ import java.util.Objects;
 
 @Mapper(componentModel = "spring")
 @RequiredArgsConstructor
-public abstract class TrainingTopicReportMapper {
+public abstract class TrainingSampleProposalMapper {
 
 //    @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "createdDate", source = "updatedAt")
     @Mapping(target = "teamLeadId", source = "createdBy", qualifiedByName = "usernameToId")
     @Mapping(target = "teamLeadName", source = "createdBy", qualifiedByName = "usernameToName")
-    public abstract TrainingTopicReportResponse toResponse(TrainingSampleProposal entity,
-                                                           @Context UserRepository userRepository);
+    @Mapping(target = "productLineName", source = "productLine.name")
+    public abstract TrainingSampleProposalResponse toResponse(TrainingSampleProposal entity,
+                                                              @Context UserRepository userRepository);
 
     @Named("usernameToId")
     protected Long usernameToId(String username, @Context UserRepository userRepository) {

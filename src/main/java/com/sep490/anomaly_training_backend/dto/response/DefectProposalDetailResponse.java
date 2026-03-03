@@ -1,16 +1,16 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.enums.ReportType;
+import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
 
 @Data
 @Builder
-public class DefectReportDetailResponse {
+public class DefectProposalDetailResponse {
     Long id;
-    ReportType reportType;
-    String defectReportDescription;
+    ProposalType proposalType;
+    String defectProposalDescription;
     String processName;
     LocalDate detectedDate;
     String note;

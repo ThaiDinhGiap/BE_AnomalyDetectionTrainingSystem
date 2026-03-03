@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class TrainingTopicReportResponse {
+public class TrainingSampleProposalResponse {
     Long id;
-    String groupName;
+    String productLineName;
     ReportStatus status;
     Long teamLeadId;
     String teamLeadName;

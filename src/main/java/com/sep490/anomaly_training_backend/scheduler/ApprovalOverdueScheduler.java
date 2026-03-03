@@ -83,14 +83,14 @@ public class ApprovalOverdueScheduler {
         }
 
         // Defect Reports waiting for SV
-//        List<DefectReport> pendingDefectReports = defectReportRepository
+//        List<DefectProposal> pendingDefectProposals = DefectProposalRepository
 //                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
 
-//        for (DefectReport report : pendingDefectReports) {
+//        for (DefectProposal report : pendingDefectProposals) {
 //            if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
 //                Long svId = report.getGroup().getSupervisor().getId();
 //                supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
-//                        .addDefectReport(report);
+//                        .addDefectProposal(report);
 //            }
 //        }
 
@@ -140,14 +140,14 @@ public class ApprovalOverdueScheduler {
         }
 
         // Defect Reports waiting for Manager
-//        List<DefectReport> pendingDefectReports = defectReportRepository
+//        List<DefectProposal> pendingDefectProposals = DefectProposalRepository
 //                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER);
 //
-//        for (DefectReport report : pendingDefectReports) {
+//        for (DefectProposal report : pendingDefectProposals) {
 //            if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
 //                Long managerId = report.getGroup().getSection().getManager().getId();
 //                managerPendings.computeIfAbsent(managerId, k -> new PendingApprovalSummary())
-//                        .addDefectReport(report);
+//                        .addDefectProposal(report);
 //            }
 //        }
 //
@@ -210,8 +210,8 @@ public class ApprovalOverdueScheduler {
         if (!summary.getTrainingResults().isEmpty()) {
             sb.append("- Kết quả huấn luyện: ").append(summary.getTrainingResults().size()).append(" kết quả\n");
         }
-//        if (!summary.getDefectReports().isEmpty()) {
-//            sb.append("- Báo cáo lỗi: ").append(summary.getDefectReports().size()).append(" báo cáo\n");
+//        if (!summary.getDefectProposals().isEmpty()) {
+//            sb.append("- Báo cáo lỗi: ").append(summary.getDefectProposals().size()).append(" báo cáo\n");
 //        }
 //        if (!summary.getTrainingTopicReports().isEmpty()) {
 //            sb.append("- Mẫu huấn luyện: ").append(summary.getTrainingTopicReports().size()).append(" báo cáo\n");
