@@ -33,7 +33,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/training-plans")
 @RequiredArgsConstructor
-@Tag(name = "01. Training Plan Management", description = "API for creating, updating and approving training plans")
+@Tag(name = "Training Plan Management", description = "API for creating, updating and approving training plans")
 public class TrainingPlanController {
 
     private final TrainingPlanService trainingPlanService;

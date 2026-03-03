@@ -746,7 +746,7 @@ CREATE TABLE training_plans
     title           TEXT,
     month_start     DATE,
     month_end       DATE,
-    team_id        BIGINT,
+    team_id         BIGINT,
     line_id         BIGINT COMMENT 'Dây chuyền áp dụng',
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
@@ -818,7 +818,7 @@ CREATE TABLE training_plan_history
     form_code        VARCHAR(50),
     month_start      DATE,
     month_end        DATE,
-    team_id         BIGINT,
+    team_id          BIGINT,
     line_id          BIGINT,
     note             TEXT,
     recorded_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
@@ -879,7 +879,7 @@ CREATE TABLE training_results
     title            TEXT,
     form_code        VARCHAR(50),
     year             INT     NOT NULL,
-    team_id         BIGINT  NOT NULL,
+    team_id          BIGINT  NOT NULL,
     line_id          BIGINT COMMENT 'Dây chuyền áp dụng',
     status           ENUM ('ON_GOING', 'DONE', 'WAITING_MANAGER',
         'REJECTED_BY_MANAGER', 'APPROVED')
@@ -920,7 +920,7 @@ CREATE TABLE training_result_details
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
     classification          INT COMMENT 'Phân loại công đoạn',
     training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
-    sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
+    sample_code             VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
 
     -- Thời gian thực tế
@@ -983,7 +983,7 @@ CREATE TABLE training_result_history
 
     -- Snapshot
     year               INT,
-    team_id           BIGINT,
+    team_id            BIGINT,
     line_id            BIGINT,
     status_at_time     VARCHAR(50),
     note               TEXT,
@@ -1015,8 +1015,8 @@ CREATE TABLE training_result_detail_history
     training_sample_id         BIGINT,
     product_id                 BIGINT,
 
-    training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
-    sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
+    training_topic             VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
+    sample_code                VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     -- Snapshot dữ liệu test
     classification             INT,
     cycle_time_standard        DECIMAL(10, 2),
@@ -1382,7 +1382,7 @@ CREATE TABLE approval_actions
     ip_address             VARCHAR(45),
     user_agent             TEXT,
     device_info            VARCHAR(255),
-    content_hash VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
+    content_hash           VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
 
     -- BaseEntity fields
     delete_flag            BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
@@ -1405,43 +1405,6 @@ CREATE TABLE approval_actions
     INDEX idx_approval_actions_action (action),
     INDEX idx_approval_actions_performed_at (performed_at),
     INDEX idx_approval_actions_delete_flag (delete_flag)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
-
-CREATE TABLE user_signature_pins
-(
-    id                BIGINT PRIMARY KEY AUTO_INCREMENT,
-
-    -- @OneToOne relationship with User
-    user_id           BIGINT                                     NOT NULL,
-
-    -- Security fields
-    pin_hash          VARCHAR(255)                               NOT NULL COMMENT 'BCrypt/Argon2 hash of the PIN',
-    failed_attempts   INT                                        NOT NULL DEFAULT 0,
-    locked_until      TIMESTAMP                                  NULL,
-    last_changed_at   TIMESTAMP                                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    expires_at        TIMESTAMP                                  NULL,
-
-    -- BaseEntity fields
-    delete_flag            BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
-    created_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
-    created_by             VARCHAR(255),
-    updated_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by             VARCHAR(255),
-
-    -- Foreign Key to Users table
-    CONSTRAINT fk_user_signature_pins_user
-        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
-
-    -- Constraints & Indexes
-    -- Ensures one PIN record per User (OneToOne)
-    UNIQUE KEY uk_user_signature_pins_user (user_id),
-
-    -- Standard indexing for queries
-    INDEX idx_user_signature_pins_delete_flag (delete_flag)
-
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
