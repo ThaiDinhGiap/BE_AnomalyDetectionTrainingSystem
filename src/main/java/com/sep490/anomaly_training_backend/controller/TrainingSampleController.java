@@ -1,29 +1,23 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalDetailService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
@@ -39,15 +33,15 @@ public class TrainingSampleController {
     @Operation(summary = "Lấy danh sách mẫu huấn luyện theo nhóm")
     @GetMapping("/")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
-    public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingTopicByGroup(@RequestParam("productLineId") Long productLineId) {
+    public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy danh sách đề xuất mẫu huấn luyện theo nhóm")
+    @Operation(summary = "Lấy danh sách đề xuất mẫu huấn luyện theo dây truyền")
     @GetMapping("/proposal")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
-    public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingTopicReportByGroup(
+    public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingSampleReportByProductLine(
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
         List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalsByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
@@ -57,7 +51,7 @@ public class TrainingSampleController {
     @Operation(summary = "Lấy chi tiết đề xuất mẫu huấn luyện")
     @GetMapping("/detail/{id}")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
-    public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingTopicDetail(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingSampleDetail(@PathVariable Long id) {
         List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
@@ -70,9 +64,18 @@ public class TrainingSampleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
-    @PostMapping("/delete/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteTrainingSampleProposal(@PathVariable("id") Long id){
         trainingSampleProposalService.deleteTrainingSampleProposal(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('training_sample.edit', 'ROLE_TEAM_LEADER')")
+    public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingPlan(
+            @Parameter(description = "ID của đề xuất mẫu huấn luyện cần sửa") @PathVariable Long id,
+            @Valid @RequestBody TrainingSampleProposalUpdateRequest request) throws BadRequestException {
+        TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request);
+        return ResponseEntity.ok(response);
     }
 }

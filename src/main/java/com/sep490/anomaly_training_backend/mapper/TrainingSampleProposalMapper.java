@@ -14,11 +14,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public abstract class TrainingSampleProposalMapper {
 
-//    @Mapping(target = "groupName", source = "group.name")
+    @Mapping(target = "productLineName", source = "productLine.name")
     @Mapping(target = "createdDate", source = "updatedAt")
     @Mapping(target = "teamLeadId", source = "createdBy", qualifiedByName = "usernameToId")
     @Mapping(target = "teamLeadName", source = "createdBy", qualifiedByName = "usernameToName")
-    @Mapping(target = "productLineName", source = "productLine.name")
     public abstract TrainingSampleProposalResponse toResponse(TrainingSampleProposal entity,
                                                               @Context UserRepository userRepository);
 

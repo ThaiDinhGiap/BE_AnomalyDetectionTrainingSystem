@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -37,7 +38,7 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingSampleProposal extends BaseEntity {
+public class TrainingSampleProposal extends BaseEntity implements Approvable{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -63,4 +64,24 @@ public class TrainingSampleProposal extends BaseEntity {
     @ToString.Exclude
     @Builder.Default
     List<TrainingSampleProposalDetail> details = new ArrayList<>();
+
+    @Override
+    public ApprovalEntityType getEntityType() {
+        return null;
+    }
+
+    @Override
+    public Long getGroupId() {
+        return 0L;
+    }
+
+    @Override
+    public String computeContentHash() {
+        return "";
+    }
+
+    @Override
+    public void applyApproval() {
+
+    }
 }

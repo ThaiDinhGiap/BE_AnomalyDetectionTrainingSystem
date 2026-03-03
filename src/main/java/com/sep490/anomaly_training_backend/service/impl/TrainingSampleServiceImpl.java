@@ -18,8 +18,8 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final TrainingSampleMapper trainingSampleMapper;
 
     @Override
-    public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long groupId) {
-        List<TrainingSample> listEntity = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse();
+    public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId) {
+        List<TrainingSample> listEntity = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
         return listEntity.stream().map(trainingSampleMapper::toDto).toList();
     }
 }
