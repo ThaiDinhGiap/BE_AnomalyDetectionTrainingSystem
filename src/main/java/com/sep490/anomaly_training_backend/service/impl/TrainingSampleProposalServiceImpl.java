@@ -3,7 +3,7 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -44,7 +44,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId()).get();
         TrainingSampleProposal proposal = new TrainingSampleProposal();
         proposal.setProductLine(productLine);
-        proposal.setStatus(ProposalStatus.DRAFT);
+        proposal.setStatus(ReportStatus.DRAFT);
         TrainingSampleProposal newProposal = trainingSampleProposalRepository.save(proposal);
         createTrainingSampleProposalDetailRequest(proposalRequest.getTrainingSampleProposalDetail(), newProposal);
     }

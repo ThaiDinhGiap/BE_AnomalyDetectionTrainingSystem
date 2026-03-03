@@ -78,7 +78,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 resultDetail.setPlannedDate(planDetail.getPlannedDate());
 
-//                resultDetail.setStatus(ProposalStatus.DRAFT);
+//                resultDetail.setStatus(ReportStatus.DRAFT);
 
                 resultDetails.add(resultDetail);
             }
