@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class DefectReportResponse {
+public class DefectProposalResponse {
     Long id;
     ReportStatus status;
     String groupName;

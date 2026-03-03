@@ -1,17 +1,16 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectReportDetailRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectReportRequest;
-import com.sep490.anomaly_training_backend.dto.response.DefectReportResponse;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.mapper.DefectReportMapper;
+import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
-import com.sep490.anomaly_training_backend.service.DefectReportService;
+import com.sep490.anomaly_training_backend.service.DefectProposalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,37 +19,37 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class DefectReportServiceImpl implements DefectReportService {
-    private final DefectProposalRepository defectReportRepository;
+public class DefectProposalServiceImpl implements DefectProposalService {
+    private final DefectProposalRepository DefectProposalRepository;
     private final DefectRepository defectRepository;
-    private final DefectReportMapper defectReportMapper;
+    private final DefectProposalMapper defectProposalMapper;
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
     private final ProcessRepository processRepository;
-    private final DefectProposalDetailRepository defectReportDetailRepository;
+    private final DefectProposalDetailRepository DefectProposalDetailRepository;
 
     @Override
-    public List<DefectReportResponse> getDefectReportByTeamLeadAndGroup(Long id, String username) {
-        List<DefectReportResponse> result = new ArrayList<>();
-//        List<DefectProposal> listEntity = defectReportRepository.findByGroupIdAndCreatedByAndDeleteFlagFalse(id, username);
+    public List<DefectProposalResponse> getDefectProposalByTeamLeadAndGroup(Long id, String username) {
+        List<DefectProposalResponse> result = new ArrayList<>();
+//        List<DefectProposal> listEntity = DefectProposalRepository.findByGroupIdAndCreatedByAndDeleteFlagFalse(id, username);
 //        for (DefectProposal entity : listEntity) {
-//            result.add(defectReportMapper.toResponse(entity, userRepository));
+//            result.add(DefectProposalMapper.toResponse(entity, userRepository));
 //        }
         return result;
     }
 
     @Override
-    public void createDefectReport(CreateDefectReportRequest reportRequest) {
+    public void createDefectProposal(CreateDefectProposalRequest reportRequest) {
         Group group = groupRepository.findById(reportRequest.getGroupId()).get();
         DefectProposal report = new DefectProposal();
 //        report.setProductLine();
 //        report.setStatus(ReportStatus.DRAFT);
-        DefectProposal mewReport = defectReportRepository.save(report);
-        createDefectReportDetailRequest(reportRequest.getDefectReportDetail(), mewReport);
+        DefectProposal mewReport = DefectProposalRepository.save(report);
+        createDefectProposalDetailRequest(reportRequest.getDefectProposalDetail(), mewReport);
     }
 
-    private void createDefectReportDetailRequest(List<CreateDefectReportDetailRequest> defectReportDetailList, DefectProposal report) {
-        for(CreateDefectReportDetailRequest detailRequest : defectReportDetailList) {
+    private void createDefectProposalDetailRequest(List<CreateDefectProposalDetailRequest> DefectProposalDetailList, DefectProposal report) {
+        for(CreateDefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             DefectProposalDetail  entity = new DefectProposalDetail();
             entity.setDefectProposal(report);
@@ -58,12 +57,12 @@ public class DefectReportServiceImpl implements DefectReportService {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
-//            entity.setProposalType(detailRequest.getReportType());
+//            entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
-            defectReportDetailRepository.save(entity);
+            DefectProposalDetailRepository.save(entity);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.response.DefectReportResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +13,12 @@ import java.util.Objects;
 
 @Mapper(componentModel = "spring")
 @RequiredArgsConstructor
-public abstract class DefectReportMapper {
+public abstract class DefectProposalMapper {
 
     @Mapping(target = "createdDate", source = "updatedAt")
     @Mapping(target = "teamLeadId", source = "createdBy", qualifiedByName = "usernameToId")
     @Mapping(target = "teamLeadName", source = "createdBy", qualifiedByName = "usernameToName")
-    public abstract DefectReportResponse toResponse(DefectProposal entity, @Context UserRepository userRepository);
+    public abstract DefectProposalResponse toResponse(DefectProposal entity, @Context UserRepository userRepository);
 
     @Named("usernameToId")
     protected Long usernameToId(String username, @Context UserRepository userRepository) {
