@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.dto.scoring.PriorityPolicyResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.service.scoring.PriorityPolicyService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,14 +38,18 @@ public class PriorityPolicyController {
 
     private final PriorityPolicyService policyService;
 
+    @Operation(summary = "Tạo chính sách ưu tiên mới")
     @PostMapping("/")
+    @PreAuthorize("hasAnyAuthority('policy.create', 'ROLE_ADMIN', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> createPolicy(
             @Valid @RequestBody PriorityPolicyRequest request) {
         PriorityPolicyResponse response = policyService.createPolicy(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Tạo chính sách thành công", response));
     }
 
+    @Operation(summary = "Cập nhật chính sách ưu tiên")
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('policy.edit', 'ROLE_ADMIN', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> updatePolicy(
             @PathVariable Long id,
             @Valid @RequestBody PriorityPolicyRequest request) {
@@ -51,13 +57,17 @@ public class PriorityPolicyController {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật chính sách thành công", response));
     }
 
+    @Operation(summary = "Lấy chi tiết chính sách ưu tiên theo ID")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('policy.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> getPolicy(@PathVariable Long id) {
         PriorityPolicyResponse response = policyService.getPolicy(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Operation(summary = "Lấy danh sách chính sách ưu tiên (có phân trang)")
     @GetMapping("/")
+    @PreAuthorize("hasAnyAuthority('policy.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<ApiResponse<Page<PriorityPolicyListResponse>>> listPolicies(
             @RequestParam(required = false) PolicyEntityType entityType,
             @RequestParam(required = false) PolicyStatus status,
@@ -66,25 +76,33 @@ public class PriorityPolicyController {
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
+    @Operation(summary = "Kích hoạt chính sách ưu tiên")
     @PostMapping("/{id}/activate")
+    @PreAuthorize("hasAnyAuthority('policy.activate', 'ROLE_ADMIN', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> activatePolicy(@PathVariable Long id) {
         policyService.activatePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Kích hoạt chính sách thành công", null));
     }
 
+    @Operation(summary = "Lưu trữ chính sách ưu tiên")
     @PostMapping("/{id}/archive")
+    @PreAuthorize("hasAnyAuthority('policy.archive', 'ROLE_ADMIN', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> archivePolicy(@PathVariable Long id) {
         policyService.archivePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Lưu trữ chính sách thành công", null));
     }
 
+    @Operation(summary = "Xóa chính sách ưu tiên")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('policy.delete', 'ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deletePolicy(@PathVariable Long id) {
         policyService.deletePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa chính sách thành công", null));
     }
 
+    @Operation(summary = "Lấy danh sách metric khả dụng theo loại thực thể")
     @GetMapping("/metrics")
+    @PreAuthorize("hasAnyAuthority('policy.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<ApiResponse<List<ComputedMetricResponse>>> getAvailableMetrics(
             @RequestParam PolicyEntityType entityType) {
         List<ComputedMetricResponse> metrics = policyService.getAvailableMetrics(entityType);

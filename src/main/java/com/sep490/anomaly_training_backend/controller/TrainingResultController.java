@@ -8,15 +8,20 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResp
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -30,6 +35,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Lấy danh sách nhóm sản phẩm theo Group ID")
     @GetMapping("/product-groups")
+    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProductGroups(
             @Parameter(description = "ID của nhóm huấn luyện (Line)") @RequestParam("groupId") Long groupId
     ) {
@@ -38,6 +44,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Lấy danh sách hạng mục huấn luyện theo Process ID")
     @GetMapping("/topics")
+    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getTrainingTopics(
             @Parameter(description = "ID của quy trình (Process)") @RequestParam("processId") Long processId
     ) {
@@ -53,6 +60,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ hoặc lỗi logic tính toán")
     })
     @PutMapping("/update")
+    @PreAuthorize("hasAnyAuthority('training_result.edit', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<?> updateTrainingResult(
             @RequestBody UpdateTrainingResultRequest request
     ) {
@@ -74,6 +82,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Lỗi dữ liệu đầu vào")
     })
     @PutMapping("/fi-sign")
+    @PreAuthorize("hasAnyAuthority('training_result.fi_sign', 'ROLE_FINAL_INSPECTION')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
         try {
             trainingResultService.signDetailsByFi(requests);
@@ -87,12 +96,14 @@ public class TrainingResultController {
 
     @Operation(summary = "Lấy danh sách tất cả bản ghi kết quả (Overview)")
     @GetMapping("/list-all")
+    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
     public ResponseEntity<List<TrainingResultListResponse>> getAllResults() {
         return ResponseEntity.ok(trainingResultService.getAllTrainingResults());
     }
 
     @Operation(summary = "Lấy chi tiết kết quả huấn luyện theo ID")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetail(
             @Parameter(description = "ID của Training Result Header") @PathVariable Long id
     ) {
