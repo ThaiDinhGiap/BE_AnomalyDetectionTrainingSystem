@@ -83,6 +83,9 @@ public class TrainingResultDetail extends BaseEntity  {
     @Column(name = "training_topic", length = 255)
     String trainingTopic;
 
+    @Column(name = "sample_code", length = 20)
+    String sampleCode;
+
     @Column(name = "cycle_time_standard")
     BigDecimal cycleTimeStandard;
 

@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
 import com.sep490.anomaly_training_backend.enums.UserRole;
 import jakarta.persistence.Column;
@@ -21,7 +22,11 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +38,7 @@ import java.util.Set;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class User extends BaseEntity {
+public class User extends BaseEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -75,4 +80,61 @@ public class User extends BaseEntity {
     @ToString.Exclude
     @Builder.Default
     Set<Role> roles = new HashSet<>();
+
+    @Override
+    @JsonIgnore
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+
+        // Legacy ENUM role (backward compatibility)
+        if (role != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        }
+
+        // Dynamic roles + permissions from DB
+        if (roles != null) {
+            for (Role r : roles) {
+                if (Boolean.TRUE.equals(r.getIsActive())) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + r.getRoleCode()));
+                    if (r.getPermissions() != null) {
+                        for (Permission p : r.getPermissions()) {
+                            authorities.add(new SimpleGrantedAuthority(p.getPermissionCode()));
+                        }
+                    }
+                }
+            }
+        }
+
+        return authorities;
+    }
+
+    @Override
+    @JsonIgnore
+    public String getPassword() {
+        return passwordHash;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isEnabled() {
+        return Boolean.TRUE.equals(isActive) && !isDeleteFlag();
+    }
 }

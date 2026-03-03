@@ -8,6 +8,8 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "permissions", ignore = true)
     UserResponse toDTO(User user);
 
     @Mapping(target = "passwordHash", ignore = true)

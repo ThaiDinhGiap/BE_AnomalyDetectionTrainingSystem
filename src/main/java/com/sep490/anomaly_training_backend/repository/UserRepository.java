@@ -20,6 +20,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmailAndDeleteFlagFalse(String email);
 
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.username = :username AND u.deleteFlag = false")
+    Optional<User> findByUsernameWithRolesAndPermissions(@Param("username") String username);
+
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.email = :email AND u.deleteFlag = false")
+    Optional<User> findByEmailWithRolesAndPermissions(@Param("email") String email);
+
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.id = :id AND u.deleteFlag = false")
+    Optional<User> findByIdWithRolesAndPermissions(@Param("id") Long id);
+
     Optional<User> findByOauthProviderAndOauthProviderIdAndDeleteFlagFalse(OAuthProvider oauthProvider, String oauthProviderId);
 
     boolean existsByUsernameAndDeleteFlagFalse(String username);

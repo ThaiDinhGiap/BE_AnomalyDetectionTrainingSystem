@@ -1,0 +1,19 @@
+package com.sep490.anomaly_training_backend.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ModulePermissionResponse {
+    private Long moduleId;
+    private String moduleCode;
+    private String displayName;
+    private List<PermissionResponse> permissions;
+}
