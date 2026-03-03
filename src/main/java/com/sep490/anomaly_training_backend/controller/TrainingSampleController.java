@@ -29,14 +29,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/training-samples")
 @RequiredArgsConstructor
-@Tag(name = "Training Sample Management", description = "API quản lý mẫu huấn luyện và đề xuất xây dựng mẫu")
+@Tag(name = "Training Sample Management", description = "API for managing training samples and sample proposals")
 public class TrainingSampleController {
 
     public final TrainingSampleService trainingSampleService;
     public final TrainingSampleProposalService trainingSampleProposalService;
     public final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
 
-    @Operation(summary = "Lấy danh sách mẫu huấn luyện theo nhóm")
+    @Operation(summary = "Get training samples by group")
     @GetMapping("/")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingTopicByGroup(@RequestParam("groupId") Long groupId) {
@@ -44,7 +44,7 @@ public class TrainingSampleController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy danh sách đề xuất mẫu huấn luyện theo nhóm")
+    @Operation(summary = "Get training sample proposals by group")
     @GetMapping("/proposal")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingTopicReportByGroup(
@@ -54,7 +54,7 @@ public class TrainingSampleController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy chi tiết đề xuất mẫu huấn luyện")
+    @Operation(summary = "Get training sample proposal details")
     @GetMapping("/detail/{id}")
     @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingTopicDetail(@PathVariable Long id) {
@@ -62,7 +62,7 @@ public class TrainingSampleController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Tạo đề xuất mẫu huấn luyện mới")
+    @Operation(summary = "Create new training sample proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAnyAuthority('training_sample.create', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody CreateTrainingSampleProposalRequest createTrainingSampleProposalRequest) {

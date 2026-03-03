@@ -22,19 +22,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@Tag(name = "User Role Management", description = "API gán vai trò cho người dùng")
+@Tag(name = "User Role Management", description = "API for assigning roles to users")
 public class UserRoleController {
 
     private final UserRoleService userRoleService;
 
-    @Operation(summary = "Lấy danh sách vai trò của người dùng")
+    @Operation(summary = "Get user roles")
     @GetMapping("/{userId}/roles")
     @PreAuthorize("hasAuthority('user.view')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getUserRoles(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success(userRoleService.getUserRoles(userId)));
     }
 
-    @Operation(summary = "Gán vai trò cho người dùng (thay thế toàn bộ)")
+    @Operation(summary = "Assign roles to user (replace all)")
     @PutMapping("/{userId}/roles")
     @PreAuthorize("hasAuthority('user.assign_role')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> assignRoles(

@@ -22,25 +22,25 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/permissions")
 @RequiredArgsConstructor
-@Tag(name = "Permission Management", description = "API quản lý phân quyền và kiểm tra quyền người dùng")
+@Tag(name = "Permission Management", description = "API for managing permissions and user authorization")
 public class PermissionController {
 
     private final PermissionService permissionService;
 
-    @Operation(summary = "Lấy quyền của người dùng hiện tại theo module")
+    @Operation(summary = "Get current user permissions by module")
     @GetMapping("/me")
     public ResponseEntity<Map<String, List<String>>> getMyPermissions(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(permissionService.getUserPermissions(user.getId()));
     }
 
-    @Operation(summary = "Lấy tất cả module cùng quyền (dùng cho UI cấu hình vai trò)")
+    @Operation(summary = "Get all modules with permissions (for role configuration UI)")
     @GetMapping("/modules")
     @PreAuthorize("hasAuthority('role.view')")
     public ResponseEntity<List<ModulePermissionResponse>> getAllModulesWithPermissions() {
         return ResponseEntity.ok(permissionService.getAllModulesWithPermissions());
     }
 
-    @Operation(summary = "Lấy quyền của người dùng cụ thể theo ID")
+    @Operation(summary = "Get permissions of a specific user by ID")
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasAuthority('user.view')")
     public ResponseEntity<ApiResponse<UserPermissionResponse>> getUserPermissions(@PathVariable Long userId) {

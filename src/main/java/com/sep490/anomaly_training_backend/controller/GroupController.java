@@ -18,11 +18,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/groups")
-@Tag(name = "Group Management", description = "API quản lý nhóm/tổ sản xuất")
+@Tag(name = "Group Management", description = "API for managing production groups/teams")
 public class GroupController {
     private final GroupService groupService;
 
-    @Operation(summary = "Lấy danh sách groups theo Team Leader")
+    @Operation(summary = "Get groups by Team Leader ID")
     @GetMapping("/team-lead/{id}")
     @PreAuthorize("hasAnyAuthority('group.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getByTeamLead(@PathVariable Long id) {
@@ -30,7 +30,7 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success(results));
     }
 
-    @Operation(summary = "Lấy danh sách groups theo Supervisor")
+    @Operation(summary = "Get groups by Supervisor ID")
     @GetMapping("/supervisor/{id}")
     @PreAuthorize("hasAnyAuthority('group.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getBySupervisor(@PathVariable Long id) {

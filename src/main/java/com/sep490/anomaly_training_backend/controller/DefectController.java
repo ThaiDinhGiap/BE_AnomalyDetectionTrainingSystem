@@ -29,13 +29,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/defects")
 @RequiredArgsConstructor
-@Tag(name = "Defect Management", description = "API quản lý lỗi quá khứ và đề xuất ghi nhận lỗi")
+@Tag(name = "Defect Management", description = "API for managing past defects and defect proposals")
 public class DefectController {
     private final DefectService defectService;
     private final DefectProposalService defectProposalService;
     private final DefectProposalDetailService defectProposalDetailService;
 
-    @Operation(summary = "Lấy danh sách lỗi theo nhóm (Defect Banking)")
+    @Operation(summary = "Get defects by group (Defect Banking)")
     @GetMapping("/")
     @PreAuthorize("hasAnyAuthority('defect.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByGroup(@RequestParam("groupId") Long groupId) {
@@ -43,7 +43,7 @@ public class DefectController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy danh sách đề xuất ghi nhận lỗi theo nhóm")
+    @Operation(summary = "Get defect proposals by group")
     @GetMapping("/proposal")
     @PreAuthorize("hasAnyAuthority('defect.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByGroup(
@@ -53,7 +53,7 @@ public class DefectController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy chi tiết đề xuất ghi nhận lỗi")
+    @Operation(summary = "Get defect proposal details")
     @GetMapping("/detail/{id}")
     @PreAuthorize("hasAnyAuthority('defect.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<DefectProposalDetailResponse>>> getDefectProposalDetail(@PathVariable Long id) {
@@ -61,7 +61,7 @@ public class DefectController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Tạo đề xuất ghi nhận lỗi mới")
+    @Operation(summary = "Create new defect proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAnyAuthority('defect.create', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody CreateDefectProposalRequest createDefectProposalRequest) {

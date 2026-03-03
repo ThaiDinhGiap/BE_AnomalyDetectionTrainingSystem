@@ -25,7 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/approvals")
 @RequiredArgsConstructor
-@Tag(name = "Approval Management", description = "Quản lý phê duyệt các báo cáo/kế hoạch")
+@Tag(name = "Approval Management", description = "Manage approval workflow for reports and plans")
 public class ApprovalController {
 
     private final ApprovalService approvalService;
@@ -34,7 +34,7 @@ public class ApprovalController {
     // ==================== PENDING LIST ====================
 
     @GetMapping("/pending")
-    @Operation(summary = "Lấy danh sách báo cáo chờ phê duyệt của user hiện tại")
+    @Operation(summary = "Get pending approvals for current user")
     @PreAuthorize("hasAnyAuthority('approval.view', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<List<PendingApprovalResponse>>> getPendingApprovals(
             @AuthenticationPrincipal User currentUser,
@@ -46,7 +46,7 @@ public class ApprovalController {
     }
 
     @GetMapping("/pending/count")
-    @Operation(summary = "Đếm số báo cáo chờ phê duyệt")
+    @Operation(summary = "Count pending approvals")
     @PreAuthorize("hasAnyAuthority('approval.view', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
     public ResponseEntity<ApiResponse<Long>> getPendingCount(
             @AuthenticationPrincipal User currentUser) {
@@ -59,7 +59,7 @@ public class ApprovalController {
     // ==================== HISTORY ====================
 
     @GetMapping("/history/{entityType}/{entityId}")
-    @Operation(summary = "Lấy lịch sử phê duyệt của một báo cáo")
+    @Operation(summary = "Get approval history for a report")
     @PreAuthorize("hasAnyAuthority('approval.view_history', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<ApprovalHistoryResponse>>> getApprovalHistory(
             @PathVariable ApprovalEntityType entityType,
@@ -81,7 +81,7 @@ public class ApprovalController {
     }
 
     @GetMapping("/my-actions")
-    @Operation(summary = "Lấy lịch sử các hành động của user hiện tại")
+    @Operation(summary = "Get action history of current user")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ApprovalHistoryResponse>>> getMyActions(
             @AuthenticationPrincipal User currentUser,
@@ -107,7 +107,7 @@ public class ApprovalController {
                 .performedByFullName(log.getPerformedByFullName())
                 .performedByRole(log.getPerformedByRole())
                 .comment(log.getComment())
-//                .rejectReason(log.getRejectReason())
+//              .rejectReason(log.getRejectReason())
                 .performedAt(log.getPerformedAt())
                 .ipAddress(log.getIpAddress())
                 .build();

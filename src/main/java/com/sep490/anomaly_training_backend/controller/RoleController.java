@@ -28,26 +28,26 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
-@Tag(name = "Role Management", description = "API quản lý vai trò và phân quyền cho vai trò")
+@Tag(name = "Role Management", description = "API for managing roles and role permissions")
 public class RoleController {
 
     private final RoleManagementService roleManagementService;
 
-    @Operation(summary = "Lấy danh sách tất cả vai trò")
+    @Operation(summary = "Get all roles")
     @GetMapping
     @PreAuthorize("hasAuthority('role.view')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.getAllRoles()));
     }
 
-    @Operation(summary = "Lấy chi tiết vai trò theo ID")
+    @Operation(summary = "Get role details by ID")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('role.view')")
     public ResponseEntity<ApiResponse<RoleDetailResponse>> getRoleById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.getRoleById(id)));
     }
 
-    @Operation(summary = "Tạo mới vai trò")
+    @Operation(summary = "Create new role")
     @PostMapping
     @PreAuthorize("hasAuthority('role.create')")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(@Valid @RequestBody RoleRequest request) {
@@ -55,7 +55,7 @@ public class RoleController {
                 .body(ApiResponse.success(roleManagementService.createRole(request)));
     }
 
-    @Operation(summary = "Cập nhật vai trò")
+    @Operation(summary = "Update role")
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('role.edit')")
     public ResponseEntity<ApiResponse<RoleResponse>> updateRole(
@@ -64,7 +64,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.updateRole(id, request)));
     }
 
-    @Operation(summary = "Xoá mềm vai trò (chỉ vai trò không phải hệ thống)")
+    @Operation(summary = "Soft delete role (non-system roles only)")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('role.delete')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Long id) {
@@ -72,7 +72,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "Gán quyền cho vai trò (thay thế toàn bộ)")
+    @Operation(summary = "Assign permissions to role (replace all)")
     @PutMapping("/{id}/permissions")
     @PreAuthorize("hasAuthority('role.assign_permission')")
     public ResponseEntity<ApiResponse<RoleDetailResponse>> assignPermissions(
@@ -81,7 +81,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.assignPermissions(id, request)));
     }
 
-    @Operation(summary = "Lấy danh sách quyền của vai trò")
+    @Operation(summary = "Get role permissions")
     @GetMapping("/{id}/permissions")
     @PreAuthorize("hasAuthority('role.view')")
     public ResponseEntity<ApiResponse<List<PermissionResponse>>> getRolePermissions(@PathVariable Long id) {
