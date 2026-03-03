@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Dữ liệu đầu vào không hợp lệ")
     })
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('training_plan.create', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<TrainingPlanResponse> createPlan(@Valid @RequestBody TrainingPlanCreateRequest request) {
         TrainingPlanResponse response = trainingPlanService.createPlan(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -50,6 +52,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Lấy chi tiết kế hoạch theo ID")
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('training_plan.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<TrainingPlanResponse> getPlanDetail(
             @Parameter(description = "ID của kế hoạch") @PathVariable Long id) {
         return ResponseEntity.ok(trainingPlanService.getPlanDetail(id));
@@ -57,12 +60,14 @@ public class TrainingPlanController {
 
     @Operation(summary = "Lấy danh sách tất cả kế hoạch huấn luyện")
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('training_plan.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<List<TrainingPlanResponse>> getAllPlans() {
         return ResponseEntity.ok(trainingPlanService.getAllPlans());
     }
 
     @Operation(summary = "Lấy danh sách các nhóm (Line) do User hiện tại quản lý")
     @GetMapping("/my-managed-groups")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<GroupResponse>> getMyGroups() {
         return ResponseEntity.ok(trainingPlanService.getMyManagedGroups());
     }
@@ -78,6 +83,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Lỗi logic khi cập nhật lịch trình")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('training_plan.edit', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<TrainingPlanResponse> updateTrainingPlan(
             @Parameter(description = "ID của kế hoạch cần sửa") @PathVariable Long id,
             @Valid @RequestBody TrainingPlanUpdateRequest request) {
@@ -88,6 +94,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Gửi duyệt kế hoạch", description = "Chuyển trạng thái kế hoạch từ DRAFT sang SUBMITTED.")
     @PutMapping("/{id}/submit")
+    @PreAuthorize("hasAnyAuthority('training_plan.submit', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -98,6 +105,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Hoàn duyệt (Chuyển về Nháp)", description = "Chuyển kế hoạch từ trạng thái chờ duyệt về lại trạng thái Nháp để chỉnh sửa.")
     @PutMapping("/{id}/revise")
+    @PreAuthorize("hasAnyAuthority('training_plan.revise', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -109,6 +117,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Kiểm tra quyền phê duyệt kế hoạch của người dùng")
     @GetMapping("/{id}/permission")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Boolean> getApprovePermission(
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "ID của kế hoạch") @PathVariable Long id) {
@@ -122,6 +131,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "404", description = "Không tìm thấy kế hoạch")
     })
     @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAnyAuthority('training_plan.approve', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
     public ResponseEntity<String> approvePlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -138,6 +148,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Lý do từ chối không hợp lệ")
     })
     @PutMapping("/{id}/reject")
+    @PreAuthorize("hasAnyAuthority('training_plan.reject', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
     public ResponseEntity<String> rejectPlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
