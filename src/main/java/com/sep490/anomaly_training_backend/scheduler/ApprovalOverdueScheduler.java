@@ -1,7 +1,9 @@
 package com.sep490.anomaly_training_backend.scheduler;
 
 import com.sep490.anomaly_training_backend.dto.notification.NotificationRequest;
-import com.sep490.anomaly_training_backend.enums.*;
+import com.sep490.anomaly_training_backend.enums.NotificationChannel;
+import com.sep490.anomaly_training_backend.enums.NotificationType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.User;
@@ -31,7 +33,7 @@ public class ApprovalOverdueScheduler {
 
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingResultRepository trainingResultRepository;
-//    private final DefectProposalRepository DefectProposalRepository;
+    //    private final DefectReportRepository defectReportRepository;
 //    private final TrainingTopicReportRepository trainingTopicReportRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
@@ -71,11 +73,11 @@ public class ApprovalOverdueScheduler {
 
         // Training Plans waiting for SV
         List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ProposalStatus.valueOf(ReportStatus.WAITING_SV.toString()), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_SV, threshold);
 
         for (TrainingPlan plan : pendingPlans) {
 //            Long svId = plan.getGroup().getSupervisor().getId();
-                Long svId = 0L;
+            Long svId = 0L;
             supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
                     .addTrainingPlan(plan);
         }
@@ -117,18 +119,18 @@ public class ApprovalOverdueScheduler {
 
         // Training Plans waiting for Manager
         List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ProposalStatus.valueOf(ReportStatus.WAITING_MANAGER.toString()), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER, threshold);
 
         for (TrainingPlan plan : pendingPlans) {
 //            Long managerId = plan.getGroup().getSection().getManager().getId();
-                Long managerId = 0L;
+            Long managerId = 0L;
             managerPendings.computeIfAbsent(managerId, k -> new PendingApprovalSummary())
                     .addTrainingPlan(plan);
         }
 
         // Training Results waiting for Manager
         List<TrainingResult> pendingResults = trainingResultRepository
-                .findByStatusAndUpdatedAtBefore(TrainingResultStatus.valueOf(ReportStatus.WAITING_MANAGER.toString()), threshold);
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER, threshold);
 
         for (TrainingResult result : pendingResults) {
 //            Long managerId = result.getGroup().getSection().getManager().getId();
@@ -227,7 +229,7 @@ public class ApprovalOverdueScheduler {
     private static class PendingApprovalSummary {
         private final List<TrainingPlan> trainingPlans = new ArrayList<>();
         private final List<TrainingResult> trainingResults = new ArrayList<>();
-//        private final List<DefectProposal> DefectProposals = new ArrayList<>();
+//        private final List<DefectReport> defectReports = new ArrayList<>();
 //        private final List<TrainingTopicReport> trainingTopicReports = new ArrayList<>();
 
         public void addTrainingPlan(TrainingPlan plan) {
@@ -238,8 +240,8 @@ public class ApprovalOverdueScheduler {
             trainingResults.add(result);
         }
 
-//        public void addDefectProposal(DefectProposal report) {
-//            DefectProposals.add(report);
+//        public void addDefectReport(DefectReport report) {
+//            defectReports.add(report);
 //        }
 //
 //        public void addTrainingTopicReport(TrainingTopicReport report) {
@@ -254,8 +256,8 @@ public class ApprovalOverdueScheduler {
             return trainingResults;
         }
 
-//        public List<DefectProposal> getDefectProposals() {
-//            return DefectProposals;
+//        public List<DefectReport> getDefectReports() {
+//            return defectReports;
 //        }
 //
 //        public List<TrainingTopicReport> getTrainingTopicReports() {
@@ -263,7 +265,7 @@ public class ApprovalOverdueScheduler {
 //        }
 
 //        public int getTotalCount() {
-//            return trainingPlans.size() + trainingResults.size() + DefectProposals.size() + trainingTopicReports.size();
+//            return trainingPlans.size() + trainingResults.size() + defectReports.size() + trainingTopicReports.size();
 //        }
     }
 }

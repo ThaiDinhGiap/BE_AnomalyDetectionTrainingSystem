@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,7 +36,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingResultDetail extends BaseEntity  {
+public class TrainingResultDetail extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -107,7 +107,7 @@ public class TrainingResultDetail extends BaseEntity  {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    TrainingResultDetailStatus status = TrainingResultDetailStatus.PENDING;
+    ReportStatus status = ReportStatus.PENDING;
 
     @Column(name = "detection_time")
     Integer detectionTime;

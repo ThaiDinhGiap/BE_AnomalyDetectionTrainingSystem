@@ -2,7 +2,10 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.enums.*;
+import com.sep490.anomaly_training_backend.enums.ApprovalAction;
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
@@ -12,7 +15,6 @@ import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.approval.PinService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,6 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     private final ApprovalFlowStepRepository flowStepRepo;
     private final ApprovalActionRepository actionRepo;
-    private final PinService pinService;
     private final ApprovalRouteService routeService;
 
     // ==================== SUBMIT ====================
@@ -38,7 +39,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
         // 1. Validate status
-        if (entity.getStatus() != ProposalStatus.DRAFT) {
+        if (entity.getStatus() != ReportStatus.DRAFT) {
             throw new BusinessException("Chỉ có thể submit khi ở trạng thái DRAFT");
         }
 
@@ -86,9 +87,6 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void approve(Approvable entity, User currentUser, ApproveRequest req, HttpServletRequest request) {
-        // 1. Verify PIN
-        pinService.verifyPin(currentUser, req.getPin());
-
         // 2. Get current step from status
         ApprovalFlowStep currentStep = getCurrentStep(entity);
 
@@ -132,9 +130,6 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
             throw new BusinessException("Vui lòng nhập lý do từ chối");
         }
-
-        // 2. Verify PIN
-        pinService.verifyPin(currentUser, req.getPin());
 
         // 3. Get current step
         ApprovalFlowStep currentStep = getCurrentStep(entity);
@@ -188,7 +183,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private ApprovalFlowStep getCurrentStep(Approvable entity) {
-        ProposalStatus status = entity.getStatus();
+        ReportStatus status = entity.getStatus();
 
         if (!isWaitingStatus(status)) {
             throw new BusinessException("Report không ở trạng thái chờ duyệt: " + status);
@@ -263,7 +258,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         };
     }
 
-    private UserRole mapStatusToRole(ProposalStatus status) {
+    private UserRole mapStatusToRole(ReportStatus status) {
         return switch (status) {
             case WAITING_SV -> UserRole.SUPERVISOR;
             case WAITING_MANAGER -> UserRole.MANAGER;
@@ -271,12 +266,12 @@ public class ApprovalServiceImpl implements ApprovalService {
         };
     }
 
-    private boolean isWaitingStatus(ProposalStatus status) {
-        return status == ProposalStatus.WAITING_SV || status == ProposalStatus.WAITING_MANAGER;
+    private boolean isWaitingStatus(ReportStatus status) {
+        return status == ReportStatus.WAITING_SV || status == ReportStatus.WAITING_MANAGER;
     }
 
-    private boolean isRejectedStatus(ProposalStatus status) {
-        return status == ProposalStatus.REJECTED_BY_SV || status == ProposalStatus.REJECTED_BY_MANAGER;
+    private boolean isRejectedStatus(ReportStatus status) {
+        return status == ReportStatus.REJECTED_BY_SV || status == ReportStatus.REJECTED_BY_MANAGER;
     }
 
     private String getClientIp(HttpServletRequest request) {

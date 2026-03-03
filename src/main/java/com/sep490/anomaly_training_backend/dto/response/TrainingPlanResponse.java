@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -23,7 +23,7 @@ public class TrainingPlanResponse {
     private Long lineId;
     private String lineName;
 
-    private ProposalStatus status;
+    private ReportStatus status;
     private Integer currentVersion;
     private String note;
 

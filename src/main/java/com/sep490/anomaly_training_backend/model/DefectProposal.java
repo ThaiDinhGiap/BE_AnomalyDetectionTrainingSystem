@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,7 +50,7 @@ public class DefectProposal extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ProposalStatus status = ProposalStatus.DRAFT;
+    ReportStatus status = ReportStatus.DRAFT;
 
     @Column(name = "current_version")
     @Builder.Default
