@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
-import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -70,7 +70,7 @@ public class TrainingResult extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    TrainingResultStatus status = TrainingResultStatus.ON_GOING;
+    ReportStatus status = ReportStatus.ON_GOING;
 
     @Column(name = "current_version")
     @Builder.Default

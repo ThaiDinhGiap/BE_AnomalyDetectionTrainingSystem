@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 
 /**
@@ -13,9 +12,9 @@ public interface Approvable {
 
     ApprovalEntityType getEntityType();
 
-    ProposalStatus getStatus();
+    ReportStatus getStatus();
 
-    void setStatus(ProposalStatus status);
+    void setStatus(ReportStatus status);
 
     Integer getCurrentVersion();
 

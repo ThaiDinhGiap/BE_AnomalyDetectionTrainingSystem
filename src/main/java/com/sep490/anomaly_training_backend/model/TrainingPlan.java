@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -75,7 +74,7 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ProposalStatus status = ProposalStatus.DRAFT;
+    ReportStatus status = ReportStatus.DRAFT;
 
     @Column(name = "current_version")
     @Builder.Default
@@ -97,13 +96,13 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     }
 
     @Override
-    public void setStatus(ProposalStatus status) {
-
+    public void setStatus(ReportStatus status) {
+        this.status = status;
     }
 
     @Override
     public Long getGroupId() {
-        return team.getId();
+        return team.getGroup().getId();
     }
 
     @Override

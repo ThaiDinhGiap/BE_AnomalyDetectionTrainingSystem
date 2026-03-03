@@ -12,7 +12,6 @@ import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
@@ -96,7 +95,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         TrainingPlan trainingPlan = mapper.toEntity(request);
         trainingPlan.setCreatedBy(currentUser.getUsername());
-        trainingPlan.setStatus(ProposalStatus.DRAFT);
+        trainingPlan.setStatus(ReportStatus.DRAFT);
         trainingPlan.setCurrentVersion(1);
 
         TrainingPlan savedPlan = trainingPlanRepository.save(trainingPlan);
@@ -183,7 +182,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         // 2. Validate Trạng thái: Chỉ chặn sửa khi đang chờ duyệt.
         // Nếu là DRAFT hoặc REJECTED thì sửa thoải mái.
         // Nếu là APPROVED (trường hợp sửa đổi bổ sung) thì dùng hàm riêng.
-        if (plan.getStatus() == ProposalStatus.WAITING_SV || plan.getStatus() == ProposalStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
             throw new IllegalStateException("Không thể chỉnh sửa khi đang chờ duyệt.");
         }
 
@@ -191,7 +190,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         mapper.updateHeader(plan, request);
 
         // 4. Cập nhật Details tùy theo trạng thái
-        if (ProposalStatus.APPROVED.equals(plan.getStatus())) {
+        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
             updateDetailsForApproved(plan, request);
         } else {
             updateDetailsForDraft(plan, request);
@@ -368,7 +367,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
-        if (report.getStatus() == ProposalStatus.APPROVED) {
+        if (report.getStatus() == ReportStatus.APPROVED) {
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);

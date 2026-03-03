@@ -3,23 +3,16 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingResultDetailStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingResultStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
@@ -34,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +50,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy Kế hoạch ID: " + planId));
 
-        if (!TrainingResultStatus.APPROVED.equals(plan.getStatus())) {
+        if (!ReportStatus.APPROVED.equals(plan.getStatus())) {
             throw new IllegalStateException("Chỉ được tạo kết quả cho các kế hoạch ĐÃ DUYỆT (APPROVED).");
         }
 
@@ -67,7 +59,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 //        result.setGroup(plan.getGroup());
         result.setYear(plan.getMonthStart().getYear());
         result.setTitle("Báo cáo kết quả - " + plan.getTitle());
-        result.setStatus(TrainingResultStatus.ON_GOING);
+        result.setStatus(ReportStatus.ON_GOING);
         result.setCurrentVersion(1);
 
 //        String groupCode = plan.getGroup().getName().toUpperCase().replaceAll("\\s+", "");
@@ -412,7 +404,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findById(resultId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kết quả ID: " + resultId));
 
-        if (result.getStatus() == TrainingResultStatus.ON_GOING) {
+        if (result.getStatus() == ReportStatus.ON_GOING) {
             throw new IllegalStateException("Kết quả này đã được gửi duyệt trước đó.");
         }
 

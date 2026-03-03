@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
-import com.sep490.anomaly_training_backend.enums.ProposalStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -11,9 +11,9 @@ import java.util.List;
 public interface DefectProposalRepository extends JpaRepository<DefectProposal, Long> {
     List<DefectProposal> findByProductLineId(Long productLineId);
 
-    List<DefectProposal> findByStatus(ProposalStatus status);
+    List<DefectProposal> findByStatus(ReportStatus status);
 
-    List<DefectProposal> findByProductLineIdAndStatus(Long productLineId, ProposalStatus status);
+    List<DefectProposal> findByProductLineIdAndStatus(Long productLineId, ReportStatus status);
 
     List<DefectProposal> findByDeleteFlagFalse();
 }
