@@ -30,8 +30,8 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     private final ProcessRepository processRepository;
 
     @Override
-    public List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndGroup(Long id, String username) {
-        List<TrainingSampleProposal> entityList= trainingSampleProposalRepository.findByProductLineIdAndCreatedByAndDeleteFlagFalse(id, username);
+    public List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username) {
+        List<TrainingSampleProposal> entityList= trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(id, username);
         List<TrainingSampleProposalResponse> trainingSampleProposalResponses = new ArrayList<>();
         for (TrainingSampleProposal entity : entityList) {
             trainingSampleProposalResponses.add(trainingSampleProposalMapper.toResponse(entity, userRepository));
@@ -49,17 +49,27 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         createTrainingSampleProposalDetailRequest(proposalRequest.getTrainingSampleProposalDetail(), newProposal);
     }
 
+    @Override
+    public void deleteTrainingSampleProposal(Long id) {
+        TrainingSampleProposal entity = trainingSampleProposalRepository.findById(id).orElseThrow(
+                                        () -> new RuntimeException("Training Sample Proposal not found"));
+        if (entity != null) {
+            entity.setDeleteFlag(true);
+        }
+        trainingSampleProposalRepository.save(entity);
+    }
 
-    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> ProposalDetailList, TrainingSampleProposal Proposal) {
-        for(CreateTrainingSampleProposalDetailRequest detailRequest : ProposalDetailList) {
+
+    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal Proposal) {
+        for (CreateTrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
             entity.setTrainingSampleProposal(Proposal);
-            if(detailRequest.getTrainingSampleId()!=null) {
+            if (detailRequest.getTrainingSampleId()!=null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
             }
-            if(detailRequest.getDefectId()!=null) {
+            if (detailRequest.getDefectId()!=null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }

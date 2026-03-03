@@ -26,7 +26,7 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
       AND t.createdBy = :username
       AND t.deleteFlag = false
     """)
-    List<TrainingSampleProposal> findByProductLineIdAndCreatedByAndDeleteFlagFalse(
+    List<TrainingSampleProposal> findByProductLineIdAndCreatedBy(
             @Param("productLineId") Long productLineId,
             @Param("username") String username);
 }

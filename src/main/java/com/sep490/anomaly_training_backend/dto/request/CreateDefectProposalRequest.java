@@ -8,5 +8,5 @@ import java.util.List;
 @Builder
 public class CreateDefectProposalRequest {
     Long groupId;
-    List<CreateDefectProposalDetailRequest> DefectProposalDetail;
+    List<CreateDefectProposalDetailRequest> defectProposalDetail;
 }

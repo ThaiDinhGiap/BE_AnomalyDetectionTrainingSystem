@@ -29,7 +29,7 @@ public class DefectServiceImpl implements DefectService {
     }
 
     @Override
-    public List<DefectResponse> getDefectByGroup(Long groupId) {
+    public List<DefectResponse> getDefectByProductLine(Long groupId) {
         return defectRepository.findAllByGroupAndDeleteFlagFalse(groupId)
                 .stream()
                 .map(defectMapper::toDto).toList();

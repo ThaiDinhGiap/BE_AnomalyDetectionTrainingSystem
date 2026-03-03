@@ -7,6 +7,6 @@ import java.util.List;
 public interface DefectService {
     List<DefectResponse> getDefectBySupervisor(Long userId);
 
-    List<DefectResponse> getDefectByGroup(Long groupId);
+    List<DefectResponse> getDefectByProductLine(Long productLineId);
 
 }

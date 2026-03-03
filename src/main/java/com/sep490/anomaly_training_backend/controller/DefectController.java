@@ -28,15 +28,15 @@ public class DefectController {
     private final DefectProposalDetailService defectProposalDetailService;
 
     @GetMapping("/")
-    public ResponseEntity<List<DefectResponse>> getDefectByGroup(@RequestParam("groupId")Long groupId) {
-        List<DefectResponse> list = defectService.getDefectByGroup(groupId);
+    public ResponseEntity<List<DefectResponse>> getDefectByProductLine(@RequestParam("productLineId")Long productLineId) {
+        List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/proposal")
-    public ResponseEntity<List<DefectProposalResponse>> getDefectProposalByGroup(@RequestParam("groupId")Long groupId,
+    public ResponseEntity<List<DefectProposalResponse>> getDefectProposalByProductLine(@RequestParam("productLineId")Long productLineId,
                                                                        @AuthenticationPrincipal User currentUser) {
-        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndGroup(groupId, currentUser.getUsername());
+        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(list);
     }
 
@@ -48,7 +48,9 @@ public class DefectController {
 
     @PostMapping("/create")
     public ResponseEntity<Void> createDefectProposal(@RequestBody CreateDefectProposalRequest createDefectProposalRequest) {
-        defectProposalService.createDefectProposal(createDefectProposalRequest);
+        defectProposalService.createDefectProposalDraft(createDefectProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+
 }

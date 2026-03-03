@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/training-samples")
 @RequiredArgsConstructor
-@Tag(name = "Training Topic and Its Report Management", description = "API quản lý quy trình tạo báo cáo ghi xây dựng mẫu huấn luyện và view mẫu huấn luyện")
+@Tag(name = "Training Sample and Its Report Management", description = "API quản lý quy trình tạo báo cáo ghi xây dựng mẫu huấn luyện và view mẫu huấn luyện")
 public class TrainingSampleController {
 
     public final TrainingSampleService trainingSampleService;
@@ -28,20 +28,20 @@ public class TrainingSampleController {
     public final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
 
     @GetMapping("/")
-    public ResponseEntity<List<TrainingSampleResponse>> getTrainingTopicByGroup(@RequestParam("groupId") Long groupId){
-        List<TrainingSampleResponse> list = trainingSampleService.getTrainingTopicsByGroup(groupId);
+    public ResponseEntity<List<TrainingSampleResponse>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId){
+        List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/proposal")
-    public ResponseEntity<List<TrainingSampleProposalResponse>> getTrainingTopicReportByGroup(@RequestParam("groupId") Long groupId,
-                                                                                              @AuthenticationPrincipal User currentUser){
-        List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalsByTeamLeadAndGroup(groupId, "tl_prod01");
+    public ResponseEntity<List<TrainingSampleProposalResponse>> getTrainingSampleProposalByProductLine(@RequestParam("productLineId") Long productLineId,
+                                                                                                        @AuthenticationPrincipal User currentUser){
+        List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalsByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/detail/{id}")
-    public ResponseEntity<List<TrainingSampleProposalDetailResponse>> getTrainingTopicDetail(@PathVariable Long id){
+    public ResponseEntity<List<TrainingSampleProposalDetailResponse>> getTrainingSampleDetail(@PathVariable Long id){
         List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
         return ResponseEntity.ok(list);
     }
@@ -50,5 +50,11 @@ public class TrainingSampleController {
     public ResponseEntity<Void> createDefectProposal(@RequestBody CreateTrainingSampleProposalRequest createTrainingSampleProposalRequest) {
         trainingSampleProposalService.createTrainingSampleProposal(createTrainingSampleProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteTrainingSampleProposal(@PathVariable("id") Long id){
+        trainingSampleProposalService.deleteTrainingSampleProposal(id);
+        return ResponseEntity.noContent().build();
     }
 }

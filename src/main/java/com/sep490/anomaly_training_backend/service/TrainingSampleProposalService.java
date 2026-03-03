@@ -6,8 +6,10 @@ import java.util.List;
 
 public interface TrainingSampleProposalService {
 
-    List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndGroup(Long id, String username);
+    List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username);
 
     void createTrainingSampleProposal(CreateTrainingSampleProposalRequest createTrainingSampleProposalRequest);
+
+    void deleteTrainingSampleProposal(Long id);
 
 }
