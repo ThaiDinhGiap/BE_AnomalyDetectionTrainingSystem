@@ -35,7 +35,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Get product groups by Group ID")
     @GetMapping("/product-groups")
-    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProductGroups(
             @Parameter(description = "Training group (Line) ID") @RequestParam("groupId") Long groupId
     ) {
@@ -44,7 +44,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Get training topics by Process ID")
     @GetMapping("/topics")
-    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getTrainingTopics(
             @Parameter(description = "Process ID") @RequestParam("processId") Long processId
     ) {
@@ -60,7 +60,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid data or calculation logic error")
     })
     @PutMapping("/update")
-    @PreAuthorize("hasAnyAuthority('training_result.edit', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<?> updateTrainingResult(
             @RequestBody UpdateTrainingResultRequest request
     ) {
@@ -82,7 +82,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/fi-sign")
-    @PreAuthorize("hasAnyAuthority('training_result.fi_sign', 'ROLE_FINAL_INSPECTION')")
+    @PreAuthorize("hasAuthority('training_result.fi_sign')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
         try {
             trainingResultService.signDetailsByFi(requests);
@@ -96,14 +96,14 @@ public class TrainingResultController {
 
     @Operation(summary = "Get all training result records (Overview)")
     @GetMapping("/list-all")
-    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultListResponse>> getAllResults() {
         return ResponseEntity.ok(trainingResultService.getAllTrainingResults());
     }
 
     @Operation(summary = "Get training result details by ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('training_result.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetail(
             @Parameter(description = "Training Result Header ID") @PathVariable Long id
     ) {

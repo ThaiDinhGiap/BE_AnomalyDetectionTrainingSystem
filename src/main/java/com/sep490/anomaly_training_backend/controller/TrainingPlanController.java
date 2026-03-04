@@ -44,7 +44,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('training_plan.create', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.create')")
     public ResponseEntity<TrainingPlanResponse> createPlan(@Valid @RequestBody TrainingPlanCreateRequest request) {
         TrainingPlanResponse response = trainingPlanService.createPlan(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -52,7 +52,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Get training plan details by ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('training_plan.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<TrainingPlanResponse> getPlanDetail(
             @Parameter(description = "Plan ID") @PathVariable Long id) {
         return ResponseEntity.ok(trainingPlanService.getPlanDetail(id));
@@ -60,7 +60,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Get all training plans")
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('training_plan.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<TrainingPlanResponse>> getAllPlans() {
         return ResponseEntity.ok(trainingPlanService.getAllPlans());
     }
@@ -83,7 +83,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Schedule update logic error")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('training_plan.edit', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<TrainingPlanResponse> updateTrainingPlan(
             @Parameter(description = "Plan ID to update") @PathVariable Long id,
             @Valid @RequestBody TrainingPlanUpdateRequest request) {
@@ -94,7 +94,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Submit plan for approval", description = "Change plan status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAnyAuthority('training_plan.submit', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.submit')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -105,7 +105,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Revise plan (Return to Draft)", description = "Move plan from pending approval back to Draft status for editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAnyAuthority('training_plan.revise', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_plan.revise')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -131,7 +131,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "404", description = "Plan not found")
     })
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAnyAuthority('training_plan.approve', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('training_plan.approve')")
     public ResponseEntity<String> approvePlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -148,7 +148,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAnyAuthority('training_plan.reject', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('training_plan.reject')")
     public ResponseEntity<String> rejectPlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

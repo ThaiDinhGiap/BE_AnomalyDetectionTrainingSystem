@@ -29,7 +29,7 @@ public class AdminController {
 
 
     @GetMapping("/sections")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
     }
@@ -133,56 +133,56 @@ public class AdminController {
     // ====================== DELETE ======================
 
     @DeleteMapping("/sections/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteSection(@PathVariable Long id) {
         sectionService.deleteSection(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/groups/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteGroup(@PathVariable Long id) {
         groupService.deleteGroup(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/teams/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.deleteTeam(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/employees/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/product-lines/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteProductLine(@PathVariable Long id) {
         productLineService.deleteProductLine(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/processes/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteProcess(@PathVariable Long id) {
         processService.deleteProcess(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/employee-skills/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteEmployeeSkill(@PathVariable Long id) {
         employeeSkillService.deleteEmployeeSkill(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/users/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.delete','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.delete')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

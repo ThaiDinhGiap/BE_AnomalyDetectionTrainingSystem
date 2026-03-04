@@ -35,7 +35,7 @@ public class ApprovalController {
 
     @GetMapping("/pending")
     @Operation(summary = "Get pending approvals for current user")
-    @PreAuthorize("hasAnyAuthority('approval.view', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('approval.view')")
     public ResponseEntity<ApiResponse<List<PendingApprovalResponse>>> getPendingApprovals(
             @AuthenticationPrincipal User currentUser,
             @RequestParam(required = false) ApprovalEntityType entityType) {
@@ -47,7 +47,7 @@ public class ApprovalController {
 
     @GetMapping("/pending/count")
     @Operation(summary = "Count pending approvals")
-    @PreAuthorize("hasAnyAuthority('approval.view', 'ROLE_SUPERVISOR', 'ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('approval.view')")
     public ResponseEntity<ApiResponse<Long>> getPendingCount(
             @AuthenticationPrincipal User currentUser) {
 
@@ -60,7 +60,7 @@ public class ApprovalController {
 
     @GetMapping("/history/{entityType}/{entityId}")
     @Operation(summary = "Get approval history for a report")
-    @PreAuthorize("hasAnyAuthority('approval.view_history', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('approval.view_history')")
     public ResponseEntity<ApiResponse<List<ApprovalHistoryResponse>>> getApprovalHistory(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId,
