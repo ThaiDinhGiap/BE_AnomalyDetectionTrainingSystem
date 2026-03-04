@@ -17,6 +17,8 @@ public abstract class EmployeeMapper {
     // 1. Entity -> DTO
     @Mapping(target = "teamId", source = "team.id")
     @Mapping(target = "teamName", source = "team.name")
+    @Mapping(target = "groupName", source = "team.group.name")
+    @Mapping(target = "sectionName", source = "team.group.section.name")
     public abstract EmployeeResponse toDTO(Employee employee);
 
     // 2. DTO -> Entity (Create)

@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.mapper;
 
 import com.sep490.anomaly_training_backend.dto.request.UserRequest;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import org.mapstruct.*;
@@ -11,6 +12,8 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "permissions", ignore = true)
     UserResponse toDTO(User user);
+
+    UserDashboard toUserDashboard(User user);
 
     @Mapping(target = "passwordHash", ignore = true)
     User toEntity(UserRequest dto);

@@ -15,6 +15,9 @@ public class EmployeeResponse {
     private Long teamId;
     private String teamName;
 
+    private String groupName;
+    private String sectionName;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

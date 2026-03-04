@@ -157,25 +157,38 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
 
-    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal Proposal) {
+    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
         for (CreateTrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
-            Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
-            TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
-            entity.setTrainingSampleProposal(Proposal);
-            if (detailRequest.getTrainingSampleId()!=null) {
-                TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
-                entity.setTrainingSample(trainingSample);
+            for (Long productId: detailRequest.getProductId()) {
+                Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
+                TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
+                entity.setTrainingSampleProposal(proposal);
+                if (detailRequest.getTrainingSampleId() != null) {
+                    TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
+                    entity.setTrainingSample(trainingSample);
+                }
+
+                if (detailRequest.getDefectId() != null) {
+                    Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
+                    entity.setDefect(defect);
+                }
+
+                if (detailRequest.getProductId() != null) {
+                    Product product= productRepository.findById(productId).orElse(null);
+                    entity.setProduct(product);
+                    entity.setTrainingDescription(detailRequest.getTrainingDescription() + "(" + productId + ")");
+                }
+
+                else {
+                    entity.setTrainingDescription(detailRequest.getTrainingDescription());
+                }
+                entity.setProposalType(detailRequest.getProposalType());
+                entity.setCategoryName(detailRequest.getCategoryName());
+                entity.setProcess(process);
+                entity.setTrainingSampleCode(detailRequest.getTrainingSampleCode());
+                entity.setNote(detailRequest.getNote());
+                trainingSampleProposalDetailRepository.save(entity);
             }
-            if (detailRequest.getDefectId()!=null) {
-                Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
-                entity.setDefect(defect);
-            }
-            entity.setProposalType(detailRequest.getProposalType());
-            entity.setCategoryName(detailRequest.getCategoryName());
-            entity.setProcess(process);
-            entity.setTrainingDescription(detailRequest.getTrainingDescription());
-            entity.setNote(detailRequest.getNote());
-            trainingSampleProposalDetailRepository.save(entity);
         }
     }
     private TrainingSampleProposalDetail mapToEntity(

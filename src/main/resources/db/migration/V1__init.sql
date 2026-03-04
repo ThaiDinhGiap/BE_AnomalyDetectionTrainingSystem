@@ -66,7 +66,7 @@ CREATE TABLE users
     full_name         VARCHAR(100)                                                               NOT NULL,
     role              ENUM ('ADMIN', 'MANAGER', 'SUPERVISOR', 'TEAM_LEADER', 'FINAL_INSPECTION') NOT NULL,
     is_active         BOOLEAN                                                                             DEFAULT TRUE,
-
+    employee_code VARCHAR(20)  NOT NULL UNIQUE,
     -- OAuth support
     oauth_provider    ENUM ('LOCAL', 'MICROSOFT')                                                         DEFAULT 'LOCAL',
     oauth_provider_id VARCHAR(255),

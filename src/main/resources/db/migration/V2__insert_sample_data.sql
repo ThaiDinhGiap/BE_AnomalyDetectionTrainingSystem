@@ -10,35 +10,49 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- PART 1: USERS & ROLES
 -- ============================================================================
 -- Password: Password@123 (BCrypt encoded)
-INSERT INTO users (id, username, email, password_hash, full_name, role, is_active, created_by)
+INSERT INTO users
+(id, username, email, password_hash, full_name, role, is_active, created_by, employee_code)
 VALUES
 -- Admin
-(1, 'admin', 'admin@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO', 'Quản Trị Hệ Thống',
- 'ADMIN', TRUE, 'system'),
+(1, 'admin', 'admin@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Quản Trị Hệ Thống', 'ADMIN', TRUE, 'system', 'EMP000'),
 
 -- Manager
-(2, 'manager01', 'manager01@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Nguyễn Văn Quản Lý', 'MANAGER', TRUE, 'system'),
+(2, 'manager01', 'manager01@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Nguyễn Văn Quản Lý', 'MANAGER', TRUE, 'system', 'EMP001'),
 
 -- Supervisors
-(3, 'supervisor01', 'supervisor01@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Trần Văn Giám Sát', 'SUPERVISOR', TRUE, 'system'),
-(4, 'supervisor02', 'supervisor02@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Lê Thị Giám Sát', 'SUPERVISOR', TRUE, 'system'),
+(3, 'supervisor01', 'supervisor01@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Trần Văn Giám Sát', 'SUPERVISOR', TRUE, 'system', 'EMP002'),
+
+(4, 'supervisor02', 'supervisor02@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Lê Thị Giám Sát', 'SUPERVISOR', TRUE, 'system', 'EMP003'),
 
 -- Team Leaders (Production)
-(5, 'tl_prod01', 'tl_prod01@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Phạm Văn Trưởng Ca 1', 'TEAM_LEADER', TRUE, 'system'),
-(6, 'tl_prod02', 'tl_prod02@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Hoàng Văn Trưởng Ca 2', 'TEAM_LEADER', TRUE, 'system'),
-(7, 'tl_prod03', 'tl_prod03@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Võ Thị Trưởng Ca 3', 'TEAM_LEADER', TRUE, 'system'),
+(5, 'tl_prod01', 'tl_prod01@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Phạm Văn Trưởng Ca 1', 'TEAM_LEADER', TRUE, 'system', 'EMP004'),
+
+(6, 'tl_prod02', 'tl_prod02@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Hoàng Văn Trưởng Ca 2', 'TEAM_LEADER', TRUE, 'system', 'EMP005'),
+
+(7, 'tl_prod03', 'tl_prod03@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Võ Thị Trưởng Ca 3', 'TEAM_LEADER', TRUE, 'system', 'EMP006'),
 
 -- Final Inspection
-(8, 'tl_fi01', 'tl_fi01@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Đỗ Văn Kiểm Tra 1', 'FINAL_INSPECTION', TRUE, 'system'),
-(9, 'tl_fi02', 'tl_fi02@congty.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
- 'Ngô Thị Kiểm Tra 2', 'FINAL_INSPECTION', TRUE, 'system');
+(8, 'tl_fi01', 'tl_fi01@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Đỗ Văn Kiểm Tra 1', 'FINAL_INSPECTION', TRUE, 'system', 'EMP007'),
+
+(9, 'tl_fi02', 'tl_fi02@congty.com',
+ '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+ 'Ngô Thị Kiểm Tra 2', 'FINAL_INSPECTION', TRUE, 'system', 'EMP008');
 
 -- Bổ sung một số Role và Module cơ bản
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
