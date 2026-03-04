@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class ProcessResponse {
@@ -29,5 +30,13 @@ public class ProcessResponse {
         this.id = id;
         this.code = code;
         this.name = name;
+    }
+    private List<EmployeeSkillResponse> skillsProcess;
+
+    public List<EmployeeSkillResponse> getSkillsProcess() {
+        return skillsProcess;
+    }
+    public void setSkillsProcess(List<EmployeeSkillResponse> skillsProcess) {
+        this.skillsProcess = skillsProcess;
     }
 }

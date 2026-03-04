@@ -6,6 +6,5 @@ import lombok.Data;
 @Data
 public class SectionRequest {
     private String name;
-
     private Long managerId;
 }

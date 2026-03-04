@@ -55,6 +55,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false, length = 100, unique = true)
     String email;
 
+    @Column(name = "employee_code", nullable = false, unique = true, length = 20)
+    private String employeeCode;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     UserRole role;

@@ -6,8 +6,12 @@ import java.util.List;
 
 public interface SectionService {
     SectionResponse createSection(SectionRequest request);
+
     SectionResponse updateSection(Long id, SectionRequest request);
+
     void deleteSection(Long id);
+
     SectionResponse getSectionById(Long id);
+
     List<SectionResponse> getAllSections();
 }

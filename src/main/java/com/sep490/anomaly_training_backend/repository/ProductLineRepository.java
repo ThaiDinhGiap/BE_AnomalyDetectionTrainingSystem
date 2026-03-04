@@ -11,4 +11,6 @@ public interface ProductLineRepository extends JpaRepository<ProductLine, Long> 
     List<ProductLine> findByGroupId(Long groupId);
 
     List<ProductLine> findByGroupIdAndDeleteFlagFalse(Long groupId);
+
+    List<ProductLine> findByDeleteFlagFalse();
 }

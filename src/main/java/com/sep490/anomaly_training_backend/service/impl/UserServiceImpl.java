@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.UserRequest;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.mapper.UserMapper;
@@ -70,5 +71,10 @@ public class UserServiceImpl implements UserService {
                 .filter(u -> !u.isDeleteFlag())
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserDashboard> getAllUserDashboard() {
+        return userRepository.getByDeleteFlagFalse().stream().map(userMapper::toUserDashboard).toList();
     }
 }

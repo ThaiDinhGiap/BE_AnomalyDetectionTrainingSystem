@@ -34,5 +34,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsernameAndDeleteFlagFalse(String username);
 
     boolean existsByEmailAndDeleteFlagFalse(String email);
+
+    List<User> getByDeleteFlagFalse();
 }
 
