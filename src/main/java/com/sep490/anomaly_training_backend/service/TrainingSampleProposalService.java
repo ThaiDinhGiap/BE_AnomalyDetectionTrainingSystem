@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.service;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
@@ -21,4 +23,12 @@ public interface TrainingSampleProposalService {
 
     void revise(Long id, User currentUser, HttpServletRequest request);
 
+    // Relate approval methods
+    void submit(Long proposalId, User currentUser, HttpServletRequest request);
+
+    void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request);
+
+    void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request);
+
+    boolean canApprove(Long proposalId, User currentUser);
 }
