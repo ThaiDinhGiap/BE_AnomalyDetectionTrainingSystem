@@ -13,4 +13,7 @@ public class DefectResponse {
     String processName;
     LocalDate detectedDate;
     String note;
+    String originCause;
+    String outflowCause;
+    String causePoint;
 }

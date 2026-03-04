@@ -123,7 +123,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setOriginCause(item.getOriginCause());
             entity.setOutflowCause(item.getOutflowCause());
             entity.setCausePoint(item.getCausePoint());
-            entity.setDeleteFlag(item.getDeleteFlag());
+            entity.setDeleteFlag(item.getDeleteFlag() != null && item.getDeleteFlag());
             defectProposalDetailRepository.save(entity);
         }
         defectProposalRepository.save(proposal);
@@ -158,15 +158,20 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             DefectProposalDetail  entity = new DefectProposalDetail();
             entity.setDefectProposal(proposal);
-            if(detailRequest.getDefectId()!=null) {
+
+            if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
+
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
+            entity.setOriginCause(detailRequest.getOriginCause());
+            entity.setOutflowCause(detailRequest.getOutflowCause());
+            entity.setCausePoint(detailRequest.getCausePoint());
             defectProposalDetailRepository.save(entity);
         }
     }
@@ -249,7 +254,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         response.setOriginCause(entity.getOriginCause());
         response.setOutflowCause(entity.getOutflowCause());
         response.setCausePoint(entity.getCausePoint());
-
+        response.setDeleteFlag(entity.isDeleteFlag());
         return response;
     }
 

@@ -31,21 +31,22 @@ public class DefectController {
     private final DefectProposalService defectProposalService;
     private final DefectProposalDetailService defectProposalDetailService;
 
-    @Operation(summary = "Lấy danh sách lỗi theo nhóm (Defect Banking)")
+    @Operation(summary = "Lấy danh sách lỗi theo dây chuyền (Defect Banking)")
     @GetMapping("/")
     @PreAuthorize("hasAnyAuthority('defect.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
-    public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByGroup(@RequestParam("productLineId")Long productLineId) {
+    public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProductLine(@RequestParam("productLineId")Long productLineId) {
         List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
-    @Operation(summary = "Lấy danh sách đề xuất ghi nhận lỗi theo nhóm")
+    @Operation(summary = "Lấy danh sách đề xuất ghi nhận lỗi theo dây chuyền")
     @GetMapping("/proposal")
     @PreAuthorize("hasAnyAuthority('defect.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByGroup(
             @RequestParam("productLineId")Long productLineId,
             @AuthenticationPrincipal User currentUser) {
-        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
+
+            List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -63,15 +64,17 @@ public class DefectController {
         defectProposalService.createDefectProposalDraft(createDefectProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
+
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasAnyAuthority('defect.delete', 'ROLE_TEAM_LEADER')")
     public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id){
         defectProposalService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     @PreAuthorize("hasAnyAuthority('defect.edit', 'ROLE_TEAM_LEADER')")
-    public ResponseEntity<DefectProposalUpdateResponse> updateTrainingPlan(
+    public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID của đề xuất mẫu lỗi quá khứ cần sửa") @PathVariable Long id,
             @Valid @RequestBody DefectProposalUpdateRequest request) throws BadRequestException {
         DefectProposalUpdateResponse response = defectProposalService.updateDefectProposal(id, request);

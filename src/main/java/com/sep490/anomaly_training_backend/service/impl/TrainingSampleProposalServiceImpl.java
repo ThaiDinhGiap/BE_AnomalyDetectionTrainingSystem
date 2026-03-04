@@ -119,7 +119,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 //Update or delete existing
                 TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
                 entity.setId(item.getId());
-                entity.setDeleteFlag(item.getDeleteFlag());
+                entity.setDeleteFlag(item.getDeleteFlag() != null && item.getDeleteFlag());
                 trainingSampleProposalDetailRepository.save(entity);
             }
 
@@ -173,8 +173,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             entity.setProposalType(detailRequest.getProposalType());
             entity.setCategoryName(detailRequest.getCategoryName());
             entity.setProcess(process);
-            entity.setTrainingDescription(detailRequest.getTrainingDetail());
-            entity.setTrainingDescription(detailRequest.getTrainingSample());
+            entity.setTrainingDescription(detailRequest.getTrainingDescription());
             entity.setNote(detailRequest.getNote());
             trainingSampleProposalDetailRepository.save(entity);
         }

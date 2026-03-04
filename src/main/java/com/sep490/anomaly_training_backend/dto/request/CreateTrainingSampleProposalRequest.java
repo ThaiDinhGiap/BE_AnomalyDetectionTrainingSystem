@@ -8,5 +8,5 @@ import java.util.List;
 @Builder
 public class CreateTrainingSampleProposalRequest {
     Long productLineId;
-    List<CreateTrainingSampleProposalDetailRequest> TrainingSampleProposalDetail;
+    List<CreateTrainingSampleProposalDetailRequest> trainingSampleProposalDetail;
 }

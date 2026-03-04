@@ -19,8 +19,6 @@ import java.util.List;
 public class DefectProposalDetailServiceImpl implements DefectProposalDetailService {
     private final DefectProposalDetailRepository defectProposalDetailRepository;
     private final DefectProposalDetailMapper defectProposalDetailMapper;
-    private final DefectRepository defectRepository;
-    private final ProcessRepository processRepository;
 
     @Override
     public List<DefectProposalDetailResponse> getDefectProposalDetails(Long defectProposalId) {

@@ -20,4 +20,7 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
     List<TrainingSampleReview> findByDueDateBeforeAndResultEquals(LocalDate dueDate, TrainingSampleReviewResult result);
 
     List<TrainingSampleReview> findByConfigId(Long configId);
+
+    List<TrainingSampleReview> findByProductLineId(Long productLineId);
+
 }

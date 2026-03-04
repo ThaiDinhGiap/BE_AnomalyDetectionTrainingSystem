@@ -54,4 +54,13 @@ public class Defect extends BaseEntity {
 
     @Column(columnDefinition = "text")
     String note;
+
+    @Column(name = "origin_cause", length = 255)
+    String originCause;
+
+    @Column(name = "outflow_cause", length = 255)
+    String outflowCause;
+
+    @Column(name = "cause_point", length = 255)
+    String causePoint;
 }

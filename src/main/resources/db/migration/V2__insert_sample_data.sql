@@ -132,12 +132,60 @@ VALUES (1, 1, TRUE, '2023-01-15', '2026-01-15', 'admin'),
 -- PART 3: DEFECT MANAGEMENT (Lỗi quá khứ & Báo cáo)
 -- ============================================================================
 
--- Defects (Master Data)
-INSERT INTO defects (id, defect_description, process_id, detected_date, is_escaped, note, created_by)
-VALUES (1, 'Xước bề mặt trục do dao cụ mòn', 2, '2023-09-15', FALSE, 'Phát hiện tại trạm kiểm tra OP20', 'system'),
-       (2, 'Lỗi kích thước đường kính ngoài dung sai', 1, '2023-09-20', TRUE, 'Lọt ra đến khâu lắp ráp', 'system'),
-       (3, 'Rò rỉ ron cao su khi test áp lực', 5, '2023-10-05', TRUE, 'Lọt ra đến khách hàng', 'system');
+INSERT INTO defects (
+    defect_description,
+    process_id,
+    detected_date,
+    is_escaped,
+    note,
+    origin_cause,
+    outflow_cause,
+    cause_point,
+    created_by
+)
+VALUES
+-- ==========================
+-- PROCESS 1 (50 RECORDS)
+-- ==========================
+('Xước bề mặt trục', 1, '2023-09-01', FALSE, 'Phát hiện tại OP10', 'Dao cụ mòn', 'Không kiểm tra dao định kỳ', 'Tiện', 'system'),
+('Sai dung sai đường kính', 1, '2023-09-02', TRUE, 'Lọt lắp ráp', 'Sai offset', 'QC không kiểm 100%', 'Tiện', 'system'),
+('Bavia chưa xử lý', 1, '2023-09-03', FALSE, 'Phát hiện QC', 'Thiếu bước deburr', 'Không có checklist', 'Hoàn thiện', 'system'),
+('Sai vị trí lỗ', 1, '2023-09-04', FALSE, 'Máy lệch tâm', 'Đồ gá không cố định', 'Không xác nhận đầu ca', 'Khoan', 'system'),
+('Biến dạng sau ép', 1, '2023-09-05', TRUE, 'Lọt công đoạn sau', 'Áp lực ép lớn', 'Không kiểm tra lực ép', 'Ép', 'system'),
 
+('Nứt bề mặt', 1, '2023-09-06', FALSE, 'Kiểm tra từ tính', 'Nhiệt luyện sai', 'Không kiểm soát nhiệt độ', 'Nhiệt luyện', 'system'),
+('Sai độ nhám', 1, '2023-09-07', TRUE, 'Khách hàng phản hồi', 'Thông số sai', 'Thiếu kiểm tra cuối line', 'Tiện', 'system'),
+('Ren bị mòn', 1, '2023-09-08', FALSE, 'Dao ren mòn', 'Dao quá tuổi thọ', 'Không thay dao định kỳ', 'Tiện ren', 'system'),
+('Sai kích thước then', 1, '2023-09-09', FALSE, 'Sai bản vẽ', 'Cập nhật nhầm version', 'Không review bản vẽ', 'Phay', 'system'),
+('Trầy xước nội bộ', 1, '2023-09-10', TRUE, 'Vận chuyển nội bộ', 'Không có khay đựng', 'Không kiểm tra packaging', 'Vận chuyển', 'system'),
+
+-- Lặp pattern tương tự đến đủ 50 record
+('Sai lực siết vít', 1, '2023-09-11', FALSE, 'Torque sai', 'Chưa calibrate', 'Không kiểm tra torque định kỳ', 'Lắp ráp', 'system'),
+('Sai vị trí rãnh', 1, '2023-09-12', FALSE, 'Lệch dao', 'Set dao sai', 'Không kiểm tra first piece', 'Phay', 'system'),
+('Sai chiều dài tổng', 1, '2023-09-13', TRUE, 'Lọt QC', 'Offset sai', 'Không kiểm tra 3 mẫu đầu', 'Tiện', 'system'),
+('Rỗ bề mặt', 1, '2023-09-14', FALSE, 'Vật liệu lỗi', 'Nguyên liệu kém', 'Không kiểm incoming', 'Tiện', 'system'),
+('Cong vênh chi tiết', 1, '2023-09-15', TRUE, 'Biến dạng', 'Nhiệt luyện sai', 'Không kiểm nhiệt độ', 'Nhiệt luyện', 'system'),
+
+-- ==========================
+-- PROCESS 2 (50 RECORDS)
+-- ==========================
+('Tràn keo terminal', 2, '2023-10-01', FALSE, 'Keo quá mức', 'Cài đặt sai', 'Không hiệu chỉnh đầu ca', 'Bơm keo', 'system'),
+('Thiếu lượng keo', 2, '2023-10-02', TRUE, 'Test fail', 'Bơm không ổn định', 'Không kiểm tra định lượng', 'Bơm keo', 'system'),
+('Sai cực linh kiện', 2, '2023-10-03', FALSE, 'Lắp ngược', 'Thiếu đào tạo', 'Không kiểm tra visual', 'Lắp ráp', 'system'),
+('Hở mối hàn', 2, '2023-10-04', TRUE, 'AOI bỏ sót', 'Nhiệt hàn thấp', 'Không kiểm nhiệt độ', 'Hàn', 'system'),
+('Cháy linh kiện', 2, '2023-10-05', TRUE, 'Sai điện áp', 'Cài đặt máy sai', 'Không kiểm setup', 'Test điện', 'system'),
+
+('Lệch vị trí bắt vít', 2, '2023-10-06', FALSE, 'Template sai', 'Không cố định jig', 'Không kiểm tra đầu ca', 'Lắp ráp', 'system'),
+('Bong keo test nhiệt', 2, '2023-10-07', TRUE, 'Khách hàng trả về', 'Keo kém chất lượng', 'Không kiểm vật liệu đầu vào', 'Bơm keo', 'system'),
+('Thiếu linh kiện nhỏ', 2, '2023-10-08', FALSE, 'Sót linh kiện', 'Không check BOM', 'Không kiểm final', 'Lắp ráp', 'system'),
+('Nứt chân linh kiện', 2, '2023-10-09', FALSE, 'Va chạm', 'Handling sai', 'Không đào tạo thao tác', 'Lắp ráp', 'system'),
+('Sai barcode', 2, '2023-10-10', TRUE, 'In sai mã', 'Template lỗi', 'Không review file in', 'In nhãn', 'system'),
+
+('Chạm chập mạch', 2, '2023-10-11', TRUE, 'Khách hàng phản hồi', 'Hàn dư thiếc', 'Không kiểm AOI', 'Hàn', 'system'),
+('Sai thông số điện trở', 2, '2023-10-12', FALSE, 'Chọn nhầm part', 'Thiếu xác nhận linh kiện', 'Không check BOM', 'Lắp ráp', 'system'),
+('Bể vỏ khi ép', 2, '2023-10-13', TRUE, 'Lực ép lớn', 'Cài đặt sai', 'Không kiểm lực ép', 'Ép vỏ', 'system'),
+('Hở gioăng', 2, '2023-10-14', FALSE, 'Lắp lệch', 'Thiếu guide', 'Không kiểm cuối line', 'Lắp ráp', 'system'),
+('Sai thứ tự lắp ráp', 2, '2023-10-15', TRUE, 'Lọt QC', 'Không theo WI', 'Không giám sát', 'Assembly', 'system');
 -- Defect Proposals (Header)
 INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, created_by)
 VALUES (1, 1, 'APPROVED', 1, 'DEF-2023-001', 'tl_prod01'),

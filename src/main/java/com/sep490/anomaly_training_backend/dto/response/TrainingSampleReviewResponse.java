@@ -18,12 +18,12 @@ import java.time.LocalDateTime;
 public class TrainingSampleReviewResponse {
     Long id;
     Long productLine;
-    Long productName;
     Integer reviewYear;
     LocalDate dueDate;
     LocalDate completedDate;
+    String reviewedBy;
     TrainingSampleReviewResult result;
     String sampleSnapshot;
-    Long confirmedBy;
+    String confirmedBy;
     LocalDateTime confirmedAt;
 }

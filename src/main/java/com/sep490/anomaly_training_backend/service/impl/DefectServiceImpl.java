@@ -29,8 +29,8 @@ public class DefectServiceImpl implements DefectService {
     }
 
     @Override
-    public List<DefectResponse> getDefectByProductLine(Long groupId) {
-        return defectRepository.findAllByGroupAndDeleteFlagFalse(groupId)
+    public List<DefectResponse> getDefectByProductLine(Long productLineId) {
+        return defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId)
                 .stream()
                 .map(defectMapper::toDto).toList();
     }

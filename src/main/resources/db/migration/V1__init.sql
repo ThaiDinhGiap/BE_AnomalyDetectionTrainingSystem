@@ -432,6 +432,9 @@ CREATE TABLE defects
     process_id         BIGINT  NOT NULL,
     detected_date      DATE    NOT NULL,
     is_escaped         BOOLEAN          DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
+    origin_cause       VARCHAR(255),
+    outflow_cause      VARCHAR(255),
+    cause_point        VARCHAR(255),
     note               TEXT,
 
     delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
