@@ -8,9 +8,9 @@ import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
-//import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
-//import com.sep490.anomaly_training_backend.repository.TrainingTopicReportRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +27,8 @@ import java.util.List;
 @Slf4j
 public class ApprovalQueryServiceImpl implements ApprovalQueryService {
 
-//    private final DefectProposalRepository DefectProposalRepo;
-//    private final TrainingTopicReportRepository topicReportRepo;
+    private final DefectProposalRepository defectProposalRepository;
+    private final TrainingSampleProposalRepository trainingSampleProposalRepository;
     private final TrainingPlanRepository planRepo;
     private final ApprovalActionRepository actionRepo;
 
@@ -43,12 +43,12 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
             return result;
         }
 
-        if (entityType == null || entityType == ApprovalEntityType.DEFECT_REPORT) {
+        if (entityType == null || entityType == ApprovalEntityType.DEFECT_PROPOSAL) {
             result.addAll(getPendingDefectProposals(currentUser, targetStatus));
         }
 
-        if (entityType == null || entityType == ApprovalEntityType.TRAINING_TOPIC_REPORT) {
-            result.addAll(getPendingTopicReports(currentUser, targetStatus));
+        if (entityType == null || entityType == ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL) {
+            result.addAll(getPendingSampleProposals(currentUser, targetStatus));
         }
 
         if (entityType == null || entityType == ApprovalEntityType.TRAINING_PLAN) {
@@ -84,56 +84,54 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     }
 
     private List<PendingApprovalResponse> getPendingDefectProposals(User currentUser, ReportStatus status) {
-//        return DefectProposalRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
-//                .stream()
-//                .map(report -> PendingApprovalResponse.builder()
-//                        .entityType(ApprovalEntityType.DEFECT_REPORT)
-//                        .entityId(report.getId())
-//                        .entityName("Defect Report #" + report.getId())
-//                        .status(report.getStatus())
-//                        .currentVersion(report.getCurrentVersion())
-//                        .submittedByUsername(report.getCreatedBy())
-//                        .submittedAt(Instant.from(report.getCreatedAt()))
-//                        .groupId(report.getGroup().getId())
-//                        .groupName(report.getGroup().getName())
-//                        .detailCount(report.getDetails().size())
-//                        .build())
-//                .toList();
-        return new ArrayList<>();
+        return defectProposalRepository.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
+                .stream()
+                .map(report -> PendingApprovalResponse.builder()
+                        .entityType(ApprovalEntityType.DEFECT_PROPOSAL)
+                        .entityId(report.getId())
+                        .entityName("Defect Report #" + report.getId())
+                        .status(report.getStatus())
+                        .currentVersion(report.getCurrentVersion())
+                        .submittedByUsername(report.getCreatedBy())
+                        .submittedAt(Instant.from(report.getCreatedAt()))
+                        .lineId(report.getProductLine().getId())
+                        .lineName(report.getProductLine().getName())
+                        .detailCount(report.getDetails().size())
+                        .build())
+                .toList();
     }
 
-    private List<PendingApprovalResponse> getPendingTopicReports(User currentUser, ReportStatus status) {
-//        return topicReportRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
-//                .stream()
-//                .map(report -> PendingApprovalResponse.builder()
-//                        .entityType(ApprovalEntityType.TRAINING_TOPIC_REPORT)
-//                        .entityId(report.getId())
-//                        .entityName("Training Topic Report #" + report.getId())
-//                        .status(report.getStatus())
-//                        .currentVersion(report.getCurrentVersion())
-//                        .submittedByUsername(report.getCreatedBy())
-//                        .submittedAt(Instant.from(report.getCreatedAt()))
-//                        .groupId(report.getGroup().getId())
-//                        .groupName(report.getGroup().getName())
-//                        .detailCount(report.getDetails().size())
-//                        .build())
-//                .toList();
-        return new ArrayList<>();
+    private List<PendingApprovalResponse> getPendingSampleProposals(User currentUser, ReportStatus status) {
+        return trainingSampleProposalRepository.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
+                .stream()
+                .map(proposal -> PendingApprovalResponse.builder()
+                        .entityType(ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL)
+                        .entityId(proposal.getId())
+                        .entityName("Training Sample Proposal #" + proposal.getId())
+                        .status(proposal.getStatus())
+                        .currentVersion(proposal.getCurrentVersion())
+                        .submittedByUsername(proposal.getCreatedBy())
+                        .submittedAt(Instant.from(proposal.getCreatedAt()))
+                        .lineId(proposal.getProductLine().getId())
+                        .lineName(proposal.getProductLine().getName())
+                        .detailCount(proposal.getDetails().size())
+                        .build())
+                .toList();
     }
 
     private List<PendingApprovalResponse> getPendingPlans(User currentUser, ReportStatus status) {
-        return planRepo.findPendingForApprover(status, currentUser.getId(), currentUser.getRole())
+        return planRepo.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
                 .stream()
                 .map(plan -> PendingApprovalResponse.builder()
                         .entityType(ApprovalEntityType.TRAINING_PLAN)
                         .entityId(plan.getId())
                         .entityName(plan.getFormCode())
-//                        .status(plan.getStatus())
+                        .status(plan.getStatus())
                         .currentVersion(plan.getCurrentVersion())
                         .submittedByUsername(plan.getCreatedBy())
                         .submittedAt(Instant.from(plan.getCreatedAt()))
-//                        .groupId(plan.getGroup().getId())
-//                        .groupName(plan.getGroup().getName())
+                        .lineId(plan.getLine().getId())
+                        .lineName(plan.getLine().getName())
                         .detailCount(plan.getDetails().size())
                         .build())
                 .toList();

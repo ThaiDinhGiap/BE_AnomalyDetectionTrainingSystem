@@ -62,7 +62,7 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
                 )
                 ORDER BY tr.createdAt ASC
             """)
-    List<TrainingPlan> findPendingForApprover(
+    List<TrainingPlan> findPendingForApprove(
             @Param("status") ReportStatus status,
             @Param("userId") Long userId,
             @Param("role") UserRole role);

@@ -333,8 +333,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         validatePlanForSubmission(plan);
 
-//        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getGroup().getName(), planId));
-        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, "plan.getGroup().getName()", planId));
+        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getLine().getName(), planId));
 
 
         approvalService.submit(plan, currentUser, request);
@@ -356,7 +355,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan report = getReportById(reportId);
 
         if (!report.getCreatedBy().equals(currentUser.getUsername())) {
-            throw new BusinessException("Chỉ người tạo mới có thể sửa lại kế hoạch này.");
+            throw new BusinessException("Only author can edit on this proposal");
         }
         approvalService.revise(report, currentUser, request);
         trainingPlanRepository.save(report);
@@ -396,29 +395,29 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private void validatePlanForSubmission(TrainingPlan plan) {
         // Business rules specific to TrainingPlan
         if (plan.getDetails() == null || plan.getDetails().isEmpty()) {
-            throw new IllegalArgumentException("Kế hoạch chưa có nội dung chi tiết. " +
-                    "Vui lòng nhập ít nhất 1 dòng chi tiết trước khi gửi duyệt.");
+            throw new IllegalArgumentException("Plan dont have details." +
+                    "Please enter 1 detail line at least before submit.");
         }
 
         if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Tiêu đề kế hoạch không được để trống.");
+            throw new IllegalArgumentException("Plan's title cant be empty.");
         }
 
         // Validate date range
         if (plan.getMonthEnd().isBefore(plan.getMonthStart())) {
-            throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu.");
+            throw new IllegalArgumentException("Month End can be before Month Start.");
         }
 
         // Validate details have required fields
         for (TrainingPlanDetail detail : plan.getDetails()) {
             if (detail.getEmployee() == null) {
-                throw new IllegalArgumentException("Detail thiếu thông tin nhân viên.");
+                throw new IllegalArgumentException("Detail lack of Employee Information.");
             }
             if (detail.getProcess() == null) {
-                throw new IllegalArgumentException("Detail thiếu thông tin công đoạn.");
+                throw new IllegalArgumentException("Detail lack of Process Information.");
             }
             if (detail.getPlannedDate() == null) {
-                throw new IllegalArgumentException("Detail thiếu ngày dự kiến.");
+                throw new IllegalArgumentException("Detail lack of Planned Date.");
             }
         }
     }
@@ -436,9 +435,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .monthEnd(plan.getMonthEnd())
                 .note(plan.getNote())
                 .recordedAt(LocalDateTime.now())
-//                .groupId(plan.getGroup() != null ? plan.getGroup().getId() : null)
                 .lineId(plan.getLine() != null ? plan.getLine().getId() : null)
-//                .detailHistory(new ArrayList<>())
+                .lineId(plan.getLine() != null ? plan.getLine().getId() : null)
+                .detailHistories(new ArrayList<>())
                 .build();
 
         // 2. Map Details (TrainingPlanDetail -> TrainingPlanDetailHistory)
@@ -456,7 +455,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         .note(detail.getNote())
                         .build();
 
-//                history.getDetailHistory().add(detailHistory);
+                history.getDetailHistories().add(detailHistory);
             }
         }
 

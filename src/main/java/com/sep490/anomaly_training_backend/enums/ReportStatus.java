@@ -11,5 +11,6 @@ public enum ReportStatus {
     DONE,
     NEED_SIGN,
     PENDING,
-    MISS
+    MISS,
+    REVISE
 }

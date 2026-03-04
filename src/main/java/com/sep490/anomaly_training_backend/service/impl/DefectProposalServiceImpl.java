@@ -1,9 +1,11 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
@@ -11,9 +13,18 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +73,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
     @Override
     public void deleteDefectProposal(Long id) {
-        DefectProposal  entity = defectProposalRepository.findById(id).orElse(null);
+        DefectProposal entity = defectProposalRepository.findById(id).orElse(null);
         if (entity != null) {
             entity.setDeleteFlag(true);
             defectProposalRepository.save(entity);
@@ -143,6 +155,37 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         return response;
     }
 
+    // Approval Methods
+    @Override
+    public void submit(Long proposalId, User currentUser, HttpServletRequest request) {
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        if (!proposal.getCreatedBy().equals(currentUser.getUsername())) {
+            throw new BusinessException("Only author can submit this proposal");
+        }
+        approvalService.submit(proposal, currentUser, request);
+        defectProposalRepository.save(proposal);
+    }
+
+    @Override
+    public void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request) {
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        approvalService.approve(proposal, currentUser, req, request);
+        defectProposalRepository.save(proposal);
+    }
+
+    @Override
+    public void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request) {
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        approvalService.reject(proposal, currentUser, req, request);
+        defectProposalRepository.save(proposal);
+    }
+
+    @Override
+    public boolean canApprove(Long proposalId, User currentUser) {
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        return approvalService.canApprove(proposal, currentUser);
+    }
+
     @Override
     public void revise(Long id, User currentUser, HttpServletRequest request) {
         DefectProposal proposal = defectProposalRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
@@ -154,9 +197,9 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
 
     private void createDefectProposalDetailRequest(List<CreateDefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal) {
-        for(CreateDefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
+        for (CreateDefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
-            DefectProposalDetail  entity = new DefectProposalDetail();
+            DefectProposalDetail entity = new DefectProposalDetail();
             entity.setDefectProposal(proposal);
 
             if (detailRequest.getDefectId() != null) {

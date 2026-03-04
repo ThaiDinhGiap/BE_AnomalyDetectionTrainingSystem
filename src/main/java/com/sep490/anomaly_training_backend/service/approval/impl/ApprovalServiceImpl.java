@@ -48,7 +48,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         // 3. Update entity status
         ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
-//        entity.setStatus(pendingStatus);
+        entity.setStatus(pendingStatus);
 
         // 4. Log action
         logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.TEAM_LEADER,
@@ -64,15 +64,15 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional
     public void revise(Approvable entity, User currentUser, HttpServletRequest request) {
         // 1. Validate status
-//        if (!isRejectedStatus(entity.getStatus())) {
-//            throw new BusinessException("Chỉ có thể revise khi bị từ chối");
-//        }
+        if (!isRejectedStatus(entity.getStatus())) {
+            throw new BusinessException("Only revise when report is in rejected status. Current status: " + entity.getStatus());
+        }
 
         // 2. Increment version
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         // 3. Set status back to DRAFT
-//        entity.setStatus(ReportStatus.DRAFT);
+        entity.setStatus(ReportStatus.DRAFT);
 
         // 4. Log action (với version mới)
         logAction(entity, ApprovalAction.REVISE, -1, UserRole.TEAM_LEADER,
@@ -103,14 +103,14 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (nextStep != null) {
             // Còn step tiếp theo
             ReportStatus nextPendingStatus = mapRoleToPendingStatus(nextStep.getApproverRole());
-//            entity.setStatus(nextPendingStatus);
+            entity.setStatus(nextPendingStatus);
 
             log.info("Approved {} id={} version={} by {} -> next: {}",
                     entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
                     currentUser.getUsername(), nextPendingStatus);
         } else {
             // Đây là step cuối -> APPROVED
-//            entity.setStatus(ReportStatus.APPROVED);
+            entity.setStatus(ReportStatus.APPROVED);
 
             // Apply report (tạo/update/delete master data)
             entity.applyApproval();
@@ -143,7 +143,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         // 6. Set rejected status
         ReportStatus rejectedStatus = mapRoleToRejectedStatus(currentStep.getApproverRole());
-//        entity.setStatus(rejectedStatus);
+        entity.setStatus(rejectedStatus);
 
         log.info("Rejected {} id={} version={} by {} reason={}",
                 entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
@@ -230,7 +230,6 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .performedByFullName(performer.getFullName())
                 .performedByRole(performer.getRole())
                 .comment(comment)
-//                .rejectReason(rejectReason)
                 .performedAt(Instant.now())
                 .ipAddress(getClientIp(request))
                 .userAgent(request != null ? request.getHeader("User-Agent") : null)

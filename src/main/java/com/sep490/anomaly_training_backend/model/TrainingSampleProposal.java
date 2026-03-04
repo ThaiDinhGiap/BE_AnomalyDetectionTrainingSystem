@@ -23,8 +23,10 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -38,7 +40,7 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingSampleProposal extends BaseEntity implements Approvable{
+public class TrainingSampleProposal extends BaseEntity implements Approvable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -67,17 +69,29 @@ public class TrainingSampleProposal extends BaseEntity implements Approvable{
 
     @Override
     public ApprovalEntityType getEntityType() {
-        return null;
+        return ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL;
     }
 
     @Override
     public Long getGroupId() {
-        return 0L;
+        return productLine.getGroup().getId();
     }
 
     @Override
     public String computeContentHash() {
-        return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(id).append("|");
+        sb.append(currentVersion).append("|");
+
+        details.stream()
+                .sorted(Comparator.comparing(TrainingSampleProposalDetail::getId))
+                .forEach(spd -> {
+                    sb.append(spd.getId()).append(":");
+                    sb.append(spd.getTrainingSampleCode()).append(":");
+                    sb.append(spd.getProcess()).append(";");
+                });
+
+        return DigestUtils.sha256Hex(sb.toString());
     }
 
     @Override

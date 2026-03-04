@@ -6,19 +6,19 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class ReportUtils {
-    public static String generateFormCode(ApprovalEntityType entityType, String groupName, Long entityId) {
-        String prefix = groupName.trim().toUpperCase().replace(" ", "");
+    public static String generateFormCode(ApprovalEntityType entityType, String productLineName, Long entityId) {
+        String prefix = productLineName.trim().toUpperCase().replace(" ", "");
 
         // Format: TR_PLAN_LINE01_20250129_123
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         String dateStr = LocalDate.now().format(formatter);
 
         switch (entityType) {
-            case DEFECT_REPORT:
-                prefix = "DEFECT_RP_" + prefix;
+            case DEFECT_PROPOSAL:
+                prefix = "DEFECT_PR_" + prefix;
                 break;
-            case TRAINING_TOPIC_REPORT:
-                prefix = "TOPIC_RP_" + prefix;
+            case TRAINING_SAMPLE_PROPOSAL:
+                prefix = "SAMPLE_PR_" + prefix;
                 break;
             case TRAINING_RESULT:
                 prefix = "TR_RESULT_" + prefix;
