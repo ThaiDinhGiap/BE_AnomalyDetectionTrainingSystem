@@ -29,14 +29,14 @@ public class TrainingSampleReviewController {
 
     @Operation(summary = "Lấy danh sách cấu hình lịch sắp xếp hàng năm")
     @GetMapping("/config/{productLineId}")
-    @PreAuthorize("hasAnyAuthority('training_sample_review.view', 'ROLE_SUPERVISOR')")
+    @PreAuthorize("hasAuthority('training_sample_review.view')")
     public ResponseEntity<List<TrainingSampleReviewConfigResponse>> getTrainingSampleReviewConfigByProductLine(@PathVariable("productLineId") Long productLineId) {
         List<TrainingSampleReviewConfigResponse> response = trainingSampleReviewConfigService.getTrainingSampleReviewConfigByProductLine(productLineId);
         return ResponseEntity.ok(response);
     }
     @Operation(summary = "Lấy danh sách kết quả rà soát hàng năm")
     @GetMapping("/report/{productLineId}")
-    @PreAuthorize("hasAnyAuthority('training_sample_review.view', 'ROLE_SUPERVISOR')")
+    @PreAuthorize("hasAuthority('training_sample_review.view')")
     public ResponseEntity<List<TrainingSampleReviewResponse>> getTrainingSampleReviewByProductLine(@PathVariable("productLineId") Long productLineId) {
         List<TrainingSampleReviewResponse> response = trainingSampleReviewService.getTrainingSampleReviewByProductLine(productLineId);
         return ResponseEntity.ok(response);
@@ -44,7 +44,7 @@ public class TrainingSampleReviewController {
 
     @Operation(summary = "Xác nhận hoàn thành rà soát mẫu huấn luyện hàng năm")
     @GetMapping("/confirm")
-    @PreAuthorize("hasAnyAuthority('training_sample_review.edit', 'ROLE_TEAMLEAD')")
+    @PreAuthorize("hasAuthority('training_sample_review.edit')")
     public ResponseEntity<TrainingSampleReviewResponse> confirmCompleteReviewTrainingSample(@AuthenticationPrincipal User currentUser,
                                                                                             @RequestBody TrainingSampleReviewRequest request) {
         TrainingSampleReviewResponse response = trainingSampleReviewService.confirmReview(currentUser, request);

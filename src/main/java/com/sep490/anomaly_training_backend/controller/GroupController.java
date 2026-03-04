@@ -24,7 +24,7 @@ public class GroupController {
 
     @Operation(summary = "Get groups by Team Leader ID")
     @GetMapping("/team-lead/{id}")
-    @PreAuthorize("hasAnyAuthority('group.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('group.view')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getByTeamLead(@PathVariable Long id) {
         List<GroupResponse> results = groupService.getGroupByTeamLead(id);
         return ResponseEntity.ok(ApiResponse.success(results));
@@ -32,7 +32,7 @@ public class GroupController {
 
     @Operation(summary = "Get groups by Supervisor ID")
     @GetMapping("/supervisor/{id}")
-    @PreAuthorize("hasAnyAuthority('group.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR')")
+    @PreAuthorize("hasAuthority('group.view')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getBySupervisor(@PathVariable Long id) {
         List<GroupResponse> results = groupService.getGroupsBySupervisor(id);
         return ResponseEntity.ok(ApiResponse.success(results));

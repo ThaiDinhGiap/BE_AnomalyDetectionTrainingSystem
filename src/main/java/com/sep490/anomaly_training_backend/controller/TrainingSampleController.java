@@ -32,7 +32,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training samples by group")
     @GetMapping("/")
-    @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
@@ -40,7 +40,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training sample proposals by group")
     @GetMapping("/proposal")
-    @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingSampleReportByProductLine(
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
@@ -50,7 +50,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training sample proposal details")
     @GetMapping("/detail/{id}")
-    @PreAuthorize("hasAnyAuthority('training_sample.view', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingSampleDetail(@PathVariable Long id) {
         List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
         return ResponseEntity.ok(ApiResponse.success(list));
@@ -58,7 +58,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Create new training sample proposal")
     @PostMapping("/create")
-    @PreAuthorize("hasAnyAuthority('training_sample.create', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_sample.create')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody CreateTrainingSampleProposalRequest createTrainingSampleProposalRequest) {
         trainingSampleProposalService.createTrainingSampleProposal(createTrainingSampleProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
@@ -71,7 +71,7 @@ public class TrainingSampleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('training_sample.edit', 'ROLE_TEAM_LEADER')")
+    @PreAuthorize("hasAuthority('training_sample.edit')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingPlan(
             @Parameter(description = "ID của đề xuất mẫu huấn luyện cần sửa") @PathVariable Long id,
             @Valid @RequestBody TrainingSampleProposalUpdateRequest request) throws BadRequestException {
