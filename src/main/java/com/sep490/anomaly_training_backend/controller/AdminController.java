@@ -35,37 +35,37 @@ public class AdminController {
     }
 
     @GetMapping("/group/{sectionId}")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(@PathVariable Long sectionId) {
         return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
     }
 
     @GetMapping("/team/{groupId}")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(@PathVariable Long groupId) {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
 
     @GetMapping("/member/{teamId}")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByTeam(@PathVariable Long teamId) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByTeam(teamId)));
     }
 
     @GetMapping("/product-lines")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAnyAuthority('admin.view','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.view')")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
@@ -73,43 +73,43 @@ public class AdminController {
     // ====================== CREATE ======================
 
     @PostMapping("/sections")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(sectionService.createSection(request)));
     }
 
     @PostMapping("/groups")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
     }
 
     @PostMapping("/teams")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
         return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
     }
 
     @PostMapping("/employees")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(@RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
     }
 
     @PostMapping("/product-lines")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLine(@RequestBody ProductLineRequest request) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(request)));
     }
 
     @PostMapping("/processes")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<ProcessResponse>> createProcess(@RequestBody ProcessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(processService.createProcess(request)));
     }
 
     @PostMapping("/employee-skills")
-    @PreAuthorize("hasAnyAuthority('admin.create','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.create')")
     public ResponseEntity<ApiResponse<EmployeeSkillResponse>> createSkill(@RequestBody EmployeeSkillRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.createEmployeeSkill(request)));
     }
@@ -117,7 +117,7 @@ public class AdminController {
     // ====================== UPDATE ======================
 
     @PutMapping("/sections/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.edit','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.edit')")
     public ResponseEntity<ApiResponse<SectionResponse>> updateSection(
             @PathVariable Long id,
             @RequestBody SectionRequest request) {
@@ -125,7 +125,7 @@ public class AdminController {
     }
 
     @PutMapping("/groups/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.edit','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.edit')")
     public ResponseEntity<ApiResponse<GroupResponse>> updateGroup(
             @PathVariable Long id,
             @RequestBody GroupRequest request) {
@@ -133,7 +133,7 @@ public class AdminController {
     }
 
     @PutMapping("/teams/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.edit','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.edit')")
     public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(
             @PathVariable Long id,
             @RequestBody TeamRequest request) {
@@ -141,7 +141,7 @@ public class AdminController {
     }
 
     @PutMapping("/employees/{id}")
-    @PreAuthorize("hasAnyAuthority('admin.edit','ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('admin.edit')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @PathVariable Long id,
             @RequestBody EmployeeRequest request) {
