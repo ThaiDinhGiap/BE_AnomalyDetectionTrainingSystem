@@ -117,7 +117,7 @@ public class TrainingPlan extends BaseEntity implements Approvable {
                 .forEach(tld -> {
                     sb.append(tld.getId()).append(":");
                     sb.append(tld.getEmployee().getEmployeeCode()).append(":");
-                    sb.append(tld.getProcess().getName()).append(":");
+//                    sb.append(tld.getProcess().getName()).append(":");
                     sb.append(tld.getPlannedDate()).append(";");
                 });
 

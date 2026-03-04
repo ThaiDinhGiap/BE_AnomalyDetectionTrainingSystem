@@ -362,8 +362,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             if (detail.getTrainingPlanDetail().getEmployee() != null) {
                 row.setEmployeeName(detail.getTrainingPlanDetail().getEmployee().getFullName());
                 row.setEmployeeCode(detail.getTrainingPlanDetail().getEmployee().getEmployeeCode());
-                row.setProcessName(detail.getTrainingPlanDetail().getProcess().getName());
-                row.setClassification(String.valueOf(detail.getTrainingPlanDetail().getProcess().getClassification()));
+//                row.setProcessName(detail.getTrainingPlanDetail().getProcess().getName());
+//                row.setClassification(String.valueOf(detail.getTrainingPlanDetail().getProcess().getClassification()));
             }
 
             row.setTimeIn(detail.getTimeIn());

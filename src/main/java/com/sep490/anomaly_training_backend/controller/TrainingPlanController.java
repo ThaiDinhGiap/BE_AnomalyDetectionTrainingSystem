@@ -3,8 +3,13 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
@@ -20,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,12 +71,12 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.getAllPlans());
     }
 
-    @Operation(summary = "Get groups (Lines) managed by current user")
-    @GetMapping("/my-managed-groups")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<GroupResponse>> getMyGroups() {
-        return ResponseEntity.ok(trainingPlanService.getMyManagedGroups());
-    }
+//    @Operation(summary = "Get groups (Lines) managed by current user")
+//    @GetMapping("/my-managed-groups")
+//    @PreAuthorize("isAuthenticated()")
+//    public ResponseEntity<List<GroupResponse>> getMyGroups() {
+//        return ResponseEntity.ok(trainingPlanService.getMyManagedGroups());
+//    }
 
     @Operation(
             summary = "Update training plan content",
@@ -91,6 +97,94 @@ public class TrainingPlanController {
         TrainingPlanResponse response = trainingPlanService.updatePlan(id, request);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Delete training plan", description = "Delete a training plan. Only DRAFT or REJECTED plans can be deleted.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Plan not found"),
+            @ApiResponse(responseCode = "400", description = "Cannot delete approved/submitted plan")
+    })
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('training_plan.delete')")
+    public ResponseEntity<String> deletePlan(
+            @Parameter(description = "Plan ID to delete") @PathVariable Long id) {
+        trainingPlanService.deletePlan(id);
+        return ResponseEntity.ok("Training plan deleted successfully!");
+    }
+
+    @Operation(summary = "Delete training plan detail", description = "Delete a specific detail row from the training plan")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Detail deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Detail not found"),
+            @ApiResponse(responseCode = "400", description = "Cannot delete detail from approved/submitted plan")
+    })
+    @DeleteMapping("/{planId}/details/{detailId}")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
+    public ResponseEntity<String> deleteDetail(
+            @Parameter(description = "Plan ID") @PathVariable Long planId,
+            @Parameter(description = "Detail ID to delete") @PathVariable Long detailId) {
+        trainingPlanService.deleteDetail(planId, detailId);
+        return ResponseEntity.ok("Training plan detail deleted successfully!");
+    }
+
+    // ==================== DETAIL MANAGEMENT ====================
+
+    @Operation(summary = "Add detail to training plan", description = "Add a new detail row (employee + process + schedule) to an existing training plan.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Detail added successfully"),
+            @ApiResponse(responseCode = "404", description = "Plan not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid detail data or plan is in pending approval status")
+    })
+    @PostMapping("/{planId}/details")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
+    public ResponseEntity<TrainingPlanDetailResponse> addDetail(
+            @Parameter(description = "Plan ID") @PathVariable Long planId,
+            @Valid @RequestBody TrainingPlanDetailRequest request) {
+        TrainingPlanDetailResponse response = trainingPlanService.addDetail(planId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "Update a specific detail in training plan", description = "Update employee, process, schedule or note of a detail row.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Detail updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Plan or detail not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid data or plan is in pending approval status")
+    })
+    @PutMapping("/{planId}/details/{detailId}")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
+    public ResponseEntity<TrainingPlanDetailResponse> updateDetail(
+            @Parameter(description = "Plan ID") @PathVariable Long planId,
+            @Parameter(description = "Detail ID to update") @PathVariable Long detailId,
+            @Valid @RequestBody TrainingPlanDetailRequest request) {
+        TrainingPlanDetailResponse response = trainingPlanService.updateDetail(planId, detailId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Get employees not yet in the plan", description = "Returns list of employees in the same group who have not been added to this plan.")
+    @GetMapping("/{planId}/employees-not-in-plan")
+    @PreAuthorize("hasAuthority('training_plan.view')")
+    public ResponseEntity<List<EmployeeResponse>> getEmployeesNotInPlan(
+            @Parameter(description = "Plan ID") @PathVariable Long planId) {
+        return ResponseEntity.ok(trainingPlanService.getEmployeesNotInPlan(planId));
+    }
+
+    @Operation(summary = "Get product lines by group", description = "Returns list of product lines belonging to a specific group (dây chuyền).")
+    @GetMapping("/product-lines-by-group/{groupId}")
+    @PreAuthorize("hasAuthority('training_plan.view')")
+    public ResponseEntity<List<ProductLineResponse>> getProductLinesByGroup(
+            @Parameter(description = "Group ID") @PathVariable Long groupId) {
+        return ResponseEntity.ok(trainingPlanService.getProductLinesByGroupId(groupId));
+    }
+
+    @Operation(summary = "Get processes by product line", description = "Returns list of processes belonging to a specific product line.")
+    @GetMapping("/processes-by-line/{productLineId}")
+    @PreAuthorize("hasAuthority('training_plan.view')")
+    public ResponseEntity<List<ProcessResponse>> getProcessesByProductLine(
+            @Parameter(description = "Product Line ID") @PathVariable Long productLineId) {
+        return ResponseEntity.ok(trainingPlanService.getProcessesByProductLine(productLineId));
+    }
+
+    // ==================== APPROVAL WORKFLOW ====================
 
     @Operation(summary = "Submit plan for approval", description = "Change plan status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")

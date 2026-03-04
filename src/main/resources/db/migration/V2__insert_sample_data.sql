@@ -248,36 +248,172 @@ VALUES (1, 1, 'CREATE', 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ', 'Mẫu NG 
 -- ============================================================================
 -- PART 5: TRAINING PLAN & RESULTS (Kế hoạch & Kết quả huấn luyện)
 -- ============================================================================
+-- Plan 1: APPROVED  — team 1, line 1 (Tiện CNC), tl_prod01 — có 2 versions history
+-- Plan 2: DRAFT     — team 1, line 1 (Tiện CNC), tl_prod01
+-- Plan 3: WAITING_SV — team 2, line 2 (Phay CNC), tl_prod02
+-- Plan 4: REJECTED_BY_SV — team 3, line 3 (Lắp Ráp), tl_prod03
+-- Plan 5: APPROVED  — team 2, line 2 (Phay CNC), tl_prod02 — hoàn thành hết
 
--- Training Plans
-INSERT INTO training_plans (id, form_code, title, month_start, month_end, team_id, line_id, status, current_version,
-                            note, created_by)
-VALUES (1, 'TR_PLAN_2023_Q4', 'Kế hoạch huấn luyện Q4/2023 - Line Tiện', '2023-10-01', '2023-12-31', 1, 1, 'APPROVED',
-        1, 'Kế hoạch định kỳ', 'tl_prod01');
+INSERT INTO training_plans (id, form_code, title, month_start, month_end, team_id, line_id, status, current_version, note, created_by)
+VALUES
+(1, 'TR_PLAN_TIEN_001', 'Kế hoạch huấn luyện T3/2026 - Line Tiện CNC',
+ '2026-03-01', '2026-03-31', 1, 1, 'APPROVED', 2,
+ 'Đã duyệt. NV001 có 2 lần thêm (2 batch khác nhau).', 'tl_prod01'),
+(2, 'TR_PLAN_TIEN_002', 'Kế hoạch huấn luyện T4/2026 - Line Tiện CNC',
+ '2026-04-01', '2026-04-30', 1, 1, 'DRAFT', 1,
+ 'Đang soạn thảo, chưa submit.', 'tl_prod01'),
+(3, 'TR_PLAN_PHAY_001', 'Kế hoạch huấn luyện T3/2026 - Line Phay CNC',
+ '2026-03-01', '2026-03-31', 2, 2, 'WAITING_SV', 1,
+ 'Đã submit, chờ Supervisor duyệt.', 'tl_prod02'),
+(4, 'TR_PLAN_LAP_001', 'Kế hoạch huấn luyện T3/2026 - Line Lắp Ráp',
+ '2026-03-01', '2026-03-31', 3, 3, 'REJECTED_BY_SV', 1,
+ 'Bị SV trả lại vì thiếu lịch cho NV007.', 'tl_prod03'),
+(5, 'TR_PLAN_PHAY_002', 'Kế hoạch huấn luyện T2/2026 - Line Phay CNC',
+ '2026-02-01', '2026-02-28', 2, 2, 'APPROVED', 1,
+ 'Tháng 2, đã duyệt và hoàn thành.', 'tl_prod02');
 
--- Training Plan Details
-INSERT INTO training_plan_details (id, training_plan_id, employee_id, process_id, target_month, planned_date,
-                                   actual_date, status, created_by)
-VALUES (1, 1, 1, 1, '2023-10-01', '2023-10-05', '2023-10-12', 'DONE', 'tl_prod01'),
-       (2, 1, 1, 2, '2023-10-01', '2023-10-10', '2023-10-12', 'DONE', 'tl_prod01'),
-       (3, 1, 2, 1, '2023-10-01', '2023-10-12', '2023-10-15', 'DONE', 'tl_prod01');
+-- ===== PLAN 1 DETAILS (APPROVED) — team 1, employees 1,2,3 =====
+-- NV001 lần 1 (batch): 3 ngày
+-- NV001 lần 2 (batch khác): 2 ngày → row khác trên FE
+-- NV002: 2 ngày
+-- NV003: 2 ngày (1 MISSED)
+INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by)
+VALUES
+(1,  1, 1, 'batch-p1-nv001-1', '2026-03-01', '2026-03-05', '2026-03-05', 'DONE',    'NV001 lần 1 - ngày 5',  'tl_prod01'),
+(2,  1, 1, 'batch-p1-nv001-1', '2026-03-01', '2026-03-12', '2026-03-12', 'DONE',    'NV001 lần 1 - ngày 12', 'tl_prod01'),
+(3,  1, 1, 'batch-p1-nv001-1', '2026-03-01', '2026-03-19', NULL,         'PENDING', 'NV001 lần 1 - ngày 19', 'tl_prod01'),
+(4,  1, 1, 'batch-p1-nv001-2', '2026-03-01', '2026-03-22', NULL,         'PENDING', 'NV001 lần 2 - ngày 22', 'tl_prod01'),
+(5,  1, 1, 'batch-p1-nv001-2', '2026-03-01', '2026-03-28', NULL,         'PENDING', 'NV001 lần 2 - ngày 28', 'tl_prod01'),
+(6,  1, 2, 'batch-p1-nv002-1', '2026-03-01', '2026-03-06', '2026-03-06', 'DONE',    'NV002 - ngày 6',        'tl_prod01'),
+(7,  1, 2, 'batch-p1-nv002-1', '2026-03-01', '2026-03-20', NULL,         'PENDING', 'NV002 - ngày 20',       'tl_prod01'),
+(8,  1, 3, 'batch-p1-nv003-1', '2026-03-01', '2026-03-03', NULL,         'MISSED',  '[Đã nghỉ] NV003 ngày 3','tl_prod01'),
+(9,  1, 3, 'batch-p1-nv003-1', '2026-03-01', '2026-03-15', NULL,         'PENDING', 'NV003 - ngày 15',       'tl_prod01');
 
--- Training Results
-INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version,
-                              note, created_by)
-VALUES (1, 1, 'Kết quả huấn luyện năm 2023 - Line Tiện', 'TR_RESULT_2023', 2023, 1, 1, 'APPROVED', 1,
-        'Đã được phê duyệt', 'tl_prod01');
+-- ===== PLAN 2 DETAILS (DRAFT) — team 1, employees 1,2,3 =====
+INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month, planned_date, status, note, created_by)
+VALUES
+(10, 2, 1, 'batch-p2-nv001-1', '2026-04-01', '2026-04-05', 'PENDING', 'NV001 - ngày 5/4',  'tl_prod01'),
+(11, 2, 1, 'batch-p2-nv001-1', '2026-04-01', '2026-04-15', 'PENDING', 'NV001 - ngày 15/4', 'tl_prod01'),
+(12, 2, 2, 'batch-p2-nv002-1', '2026-04-01', '2026-04-10', 'PENDING', 'NV002 - ngày 10/4', 'tl_prod01'),
+(13, 2, 3, 'batch-p2-nv003-1', '2026-04-01', '2026-04-08', 'PENDING', 'NV003 - ngày 8/4',  'tl_prod01'),
+(14, 2, 3, 'batch-p2-nv003-1', '2026-04-01', '2026-04-22', 'PENDING', 'NV003 - ngày 22/4', 'tl_prod01');
 
--- Training Result Details
+-- ===== PLAN 3 DETAILS (WAITING_SV) — team 2, employees 4,5 =====
+INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month, planned_date, status, note, created_by)
+VALUES
+(15, 3, 4, 'batch-p3-nv004-1', '2026-03-01', '2026-03-07', 'PENDING', 'NV004 - ngày 7',  'tl_prod02'),
+(16, 3, 4, 'batch-p3-nv004-1', '2026-03-01', '2026-03-14', 'PENDING', 'NV004 - ngày 14', 'tl_prod02'),
+(17, 3, 4, 'batch-p3-nv004-1', '2026-03-01', '2026-03-21', 'PENDING', 'NV004 - ngày 21', 'tl_prod02'),
+(18, 3, 5, 'batch-p3-nv005-1', '2026-03-01', '2026-03-10', 'PENDING', 'NV005 - ngày 10', 'tl_prod02'),
+(19, 3, 5, 'batch-p3-nv005-1', '2026-03-01', '2026-03-24', 'PENDING', 'NV005 - ngày 24', 'tl_prod02');
+
+-- ===== PLAN 4 DETAILS (REJECTED) — team 3, employee 7 =====
+INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month, planned_date, status, note, created_by)
+VALUES
+(20, 4, 7, 'batch-p4-nv007-1', '2026-03-01', '2026-03-10', 'PENDING', 'NV007 - ngày 10', 'tl_prod03'),
+(21, 4, 7, 'batch-p4-nv007-1', '2026-03-01', '2026-03-20', 'PENDING', 'NV007 - ngày 20', 'tl_prod03');
+
+-- ===== PLAN 5 DETAILS (APPROVED, hoàn thành) — team 2, employees 4,5 =====
+INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by)
+VALUES
+(22, 5, 4, 'batch-p5-nv004-1', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV004 - ngày 5/2',  'tl_prod02'),
+(23, 5, 4, 'batch-p5-nv004-1', '2026-02-01', '2026-02-18', '2026-02-18', 'DONE', 'NV004 - ngày 18/2', 'tl_prod02'),
+(24, 5, 5, 'batch-p5-nv005-1', '2026-02-01', '2026-02-10', '2026-02-10', 'DONE', 'NV005 - ngày 10/2', 'tl_prod02'),
+(25, 5, 5, 'batch-p5-nv005-1', '2026-02-01', '2026-02-25', '2026-02-25', 'DONE', 'NV005 - ngày 25/2', 'tl_prod02');
+
+-- ===== TRAINING PLAN HISTORY (Snapshot cho APPROVED plans) =====
+-- Plan 1: version 1 (gốc), version 2 (sau reschedule)
+-- Plan 5: version 1
+INSERT INTO training_plan_history (id, training_plan_id, title, version, form_code, month_start, month_end, team_id, line_id, note, recorded_at, created_by)
+VALUES
+(1, 1, 'Kế hoạch huấn luyện T3/2026 - Line Tiện CNC', 1, 'TR_PLAN_TIEN_001',
+ '2026-03-01', '2026-03-31', 1, 1, 'Bản gốc trước reschedule', '2026-03-01 08:00:00', 'tl_prod01'),
+(2, 1, 'Kế hoạch huấn luyện T3/2026 - Line Tiện CNC', 2, 'TR_PLAN_TIEN_001',
+ '2026-03-01', '2026-03-31', 1, 1, 'Sau reschedule: NV003 dời, NV001 thêm lần 2', '2026-03-04 10:30:00', 'tl_prod01'),
+(3, 5, 'Kế hoạch huấn luyện T2/2026 - Line Phay CNC', 1, 'TR_PLAN_PHAY_002',
+ '2026-02-01', '2026-02-28', 2, 2, 'Bản gốc, hoàn thành', '2026-02-01 08:00:00', 'tl_prod02');
+
+-- ===== PLAN 1 DETAIL HISTORY — Version 1 (bản gốc, NV003 lên lịch ngày 3 và 10) =====
+INSERT INTO training_plan_detail_history (id, training_plan_history_id, batch_id, employee_id, target_month, planned_date, actual_date, status, note, created_by)
+VALUES
+(1, 1, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-05', NULL, 'PENDING', 'NV001 lần 1 - ngày 5',  'tl_prod01'),
+(2, 1, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-12', NULL, 'PENDING', 'NV001 lần 1 - ngày 12', 'tl_prod01'),
+(3, 1, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-19', NULL, 'PENDING', 'NV001 lần 1 - ngày 19', 'tl_prod01'),
+(4, 1, 'batch-p1-nv002-1', 2, '2026-03-01', '2026-03-06', NULL, 'PENDING', 'NV002 - ngày 6',        'tl_prod01'),
+(5, 1, 'batch-p1-nv002-1', 2, '2026-03-01', '2026-03-20', NULL, 'PENDING', 'NV002 - ngày 20',       'tl_prod01'),
+(6, 1, 'batch-p1-nv003-1', 3, '2026-03-01', '2026-03-03', NULL, 'PENDING', 'NV003 - ngày 3 (gốc)',  'tl_prod01'),
+(7, 1, 'batch-p1-nv003-1', 3, '2026-03-01', '2026-03-10', NULL, 'PENDING', 'NV003 - ngày 10 (gốc)', 'tl_prod01');
+
+-- ===== PLAN 1 DETAIL HISTORY — Version 2 (sau reschedule) =====
+INSERT INTO training_plan_detail_history (id, training_plan_history_id, batch_id, employee_id, target_month, planned_date, actual_date, status, note, created_by)
+VALUES
+(8,  2, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-05', '2026-03-05', 'DONE',    'NV001 lần 1 - ngày 5',  'tl_prod01'),
+(9,  2, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-12', '2026-03-12', 'DONE',    'NV001 lần 1 - ngày 12', 'tl_prod01'),
+(10, 2, 'batch-p1-nv001-1', 1, '2026-03-01', '2026-03-19', NULL,         'PENDING', 'NV001 lần 1 - ngày 19', 'tl_prod01'),
+(11, 2, 'batch-p1-nv001-2', 1, '2026-03-01', '2026-03-22', NULL,         'PENDING', 'NV001 lần 2 - ngày 22', 'tl_prod01'),
+(12, 2, 'batch-p1-nv001-2', 1, '2026-03-01', '2026-03-28', NULL,         'PENDING', 'NV001 lần 2 - ngày 28', 'tl_prod01'),
+(13, 2, 'batch-p1-nv002-1', 2, '2026-03-01', '2026-03-06', '2026-03-06', 'DONE',    'NV002 - ngày 6',        'tl_prod01'),
+(14, 2, 'batch-p1-nv002-1', 2, '2026-03-01', '2026-03-20', NULL,         'PENDING', 'NV002 - ngày 20',       'tl_prod01'),
+(15, 2, 'batch-p1-nv003-1', 3, '2026-03-01', '2026-03-03', NULL,         'MISSED',  '[Đã nghỉ] NV003 ngày 3','tl_prod01'),
+(16, 2, 'batch-p1-nv003-1', 3, '2026-03-01', '2026-03-15', NULL,         'PENDING', 'NV003 - ngày 15 (dời)', 'tl_prod01');
+
+-- ===== PLAN 5 DETAIL HISTORY — Version 1 =====
+INSERT INTO training_plan_detail_history (id, training_plan_history_id, batch_id, employee_id, target_month, planned_date, actual_date, status, note, created_by)
+VALUES
+(17, 3, 'batch-p5-nv004-1', 4, '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV004 - ngày 5/2',  'tl_prod02'),
+(18, 3, 'batch-p5-nv004-1', 4, '2026-02-01', '2026-02-18', '2026-02-18', 'DONE', 'NV004 - ngày 18/2', 'tl_prod02'),
+(19, 3, 'batch-p5-nv005-1', 5, '2026-02-01', '2026-02-10', '2026-02-10', 'DONE', 'NV005 - ngày 10/2', 'tl_prod02'),
+(20, 3, 'batch-p5-nv005-1', 5, '2026-02-01', '2026-02-25', '2026-02-25', 'DONE', 'NV005 - ngày 25/2', 'tl_prod02');
+
+-- ===== TRAINING RESULTS =====
+INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
+VALUES
+(1, 1, 'Kết quả huấn luyện T3/2026 - Line Tiện', 'TR_RESULT_TIEN_001', 2026, 1, 1, 'ON_GOING', 1, 'Đang ghi nhận', 'tl_prod01'),
+(2, 5, 'Kết quả huấn luyện T2/2026 - Line Phay', 'TR_RESULT_PHAY_002', 2026, 2, 2, 'APPROVED', 1, 'Hoàn thành',    'tl_prod02');
+
+-- ===== TRAINING RESULT DETAILS — Plan 1 =====
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, process_id,
-                                     training_sample_id, product_id, classification, cycle_time_standard, planned_date,
-                                     actual_date, time_in, time_start_op, time_out, status, detection_time, is_pass,
-                                     note, is_retrained, signature_pro_in, signature_fi_in, signature_pro_out,
-                                     signature_fi_out, created_by)
-VALUES (1, 1, 1, 1, 2, 1, 2, 15.00, '2023-10-05', '2023-10-12', '08:00:00', '08:05:00', '08:10:00', 'APPROVED', 12,
-        TRUE, 'Thao tác tốt', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-       (2, 2, 1, 2, 1, 1, 1, 20.00, '2023-10-10', '2023-10-12', '09:00:00', '09:02:00', '09:15:00', 'APPROVED', 18,
-        TRUE, 'Soi đèn đúng góc độ', FALSE, 5, 8, 5, 8, 'tl_prod01');
+    training_sample_id, product_id, classification, cycle_time_standard,
+    planned_date, actual_date, time_in, time_start_op, time_out, status,
+    detection_time, is_pass, note, is_retrained,
+    signature_pro_in, signature_fi_in, signature_pro_out, signature_fi_out, created_by)
+VALUES
+-- NV001 lần 1 ngày 5: DONE
+(1, 1, 1, 1, 2, 1, 2, 15.00,
+ '2026-03-05','2026-03-05','08:00:00','08:03:00','08:18:00','APPROVED',14,TRUE,'Thao tác OP10 tốt',FALSE,5,8,5,8,'tl_prod01'),
+-- NV001 lần 1 ngày 12: DONE
+(1, 2, 1, 2, 1, 1, 1, 20.00,
+ '2026-03-12','2026-03-12','09:00:00','09:02:00','09:22:00','APPROVED',19,TRUE,'Soi đèn đúng góc',FALSE,5,8,5,8,'tl_prod01'),
+-- NV001 lần 1 ngày 19: PENDING
+(1, 3, 1, 1, NULL, NULL, NULL, NULL,
+ '2026-03-19',NULL,NULL,NULL,NULL,'PENDING',NULL,NULL,'Chờ ngày 19/3',FALSE,NULL,NULL,NULL,NULL,'tl_prod01'),
+-- NV001 lần 2 ngày 22: PENDING
+(1, 4, 1, 2, NULL, NULL, NULL, NULL,
+ '2026-03-22',NULL,NULL,NULL,NULL,'PENDING',NULL,NULL,'Chờ ngày 22/3',FALSE,NULL,NULL,NULL,NULL,'tl_prod01'),
+-- NV001 lần 2 ngày 28: PENDING
+(1, 5, 1, 1, NULL, NULL, NULL, NULL,
+ '2026-03-28',NULL,NULL,NULL,NULL,'PENDING',NULL,NULL,'Chờ ngày 28/3',FALSE,NULL,NULL,NULL,NULL,'tl_prod01'),
+-- NV002 ngày 6: DONE
+(1, 6, 2, 1, 2, 1, 2, 15.00,
+ '2026-03-06','2026-03-06','08:30:00','08:33:00','08:48:00','APPROVED',13,TRUE,'NV002 chuẩn',FALSE,5,8,5,8,'tl_prod01'),
+-- NV002 ngày 20: PENDING
+(1, 7, 2, 1, NULL, NULL, NULL, NULL,
+ '2026-03-20',NULL,NULL,NULL,NULL,'PENDING',NULL,NULL,'Chờ ngày 20/3',FALSE,NULL,NULL,NULL,NULL,'tl_prod01'),
+-- NV003 ngày 15: PENDING
+(1, 9, 3, 1, NULL, NULL, NULL, NULL,
+ '2026-03-15',NULL,NULL,NULL,NULL,'PENDING',NULL,NULL,'Chờ ngày 15/3',FALSE,NULL,NULL,NULL,NULL,'tl_prod01');
+
+-- ===== TRAINING RESULT DETAILS — Plan 5 (tất cả DONE) =====
+INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, process_id,
+    training_sample_id, product_id, classification, cycle_time_standard,
+    planned_date, actual_date, time_in, time_start_op, time_out, status,
+    detection_time, is_pass, note, is_retrained,
+    signature_pro_in, signature_fi_in, signature_pro_out, signature_fi_out, created_by)
+VALUES
+(2,22,4,3,NULL,2,3,18.00,'2026-02-05','2026-02-05','08:00:00','08:02:00','08:20:00','APPROVED',16,TRUE,'NV004 OK',FALSE,6,9,6,9,'tl_prod02'),
+(2,23,4,3,NULL,2,3,18.00,'2026-02-18','2026-02-18','09:00:00','09:03:00','09:21:00','APPROVED',17,TRUE,'NV004 lần 2',FALSE,6,9,6,9,'tl_prod02'),
+(2,24,5,3,NULL,2,3,18.00,'2026-02-10','2026-02-10','10:00:00','10:02:00','10:20:00','APPROVED',15,TRUE,'NV005 tốt',FALSE,6,9,6,9,'tl_prod02'),
+(2,25,5,3,NULL,2,3,18.00,'2026-02-25','2026-02-25','08:30:00','08:32:00','08:50:00','APPROVED',16,TRUE,'NV005 lần 2',FALSE,6,9,6,9,'tl_prod02');
 
 
 -- ============================================================================

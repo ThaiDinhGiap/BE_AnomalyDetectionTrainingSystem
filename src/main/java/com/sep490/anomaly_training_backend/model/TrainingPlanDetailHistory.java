@@ -46,10 +46,6 @@ public class TrainingPlanDetailHistory extends BaseEntity {
     @Column(name = "employee_id")
     Long employeeId;
 
-    @Column(name = "process_id")
-    Long processId;
-
-
     @Column(name = "target_month")
     LocalDate targetMonth;
 
@@ -61,6 +57,9 @@ public class TrainingPlanDetailHistory extends BaseEntity {
 
     @Column(name = "status", length = 20)
     String status;
+
+    @Column(name = "batch_id", length = 36)
+    String batchId;
 
     @Column(columnDefinition = "text")
     String note;
