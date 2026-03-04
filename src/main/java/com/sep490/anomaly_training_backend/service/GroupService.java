@@ -14,6 +14,7 @@ public interface GroupService {
     GroupResponse getGroupById(Long id);
 
     List<GroupResponse> getAllGroups();
+    List<GroupResponse> getMyManagedGroups();
 
     // Lấy danh sách Group thuộc về 1 Section cụ thể
     List<GroupResponse> getGroupsBySection(Long sectionId);

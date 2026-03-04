@@ -3,9 +3,13 @@ package com.sep490.anomaly_training_backend.service;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,9 +26,21 @@ public interface TrainingPlanService {
 
     TrainingPlanResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
 
+    void deletePlan(Long id);
+
+    void deleteDetail(Long planId, Long detailId);
+
     List<GroupResponse> getMyManagedGroups();
 
-    List<ProcessResponse> getProcessesByGroup(Long groupId);
+    List<ProcessResponse> getProcessesByProductLine(Long productLineId);
+
+    List<ProductLineResponse> getProductLinesByGroupId(Long groupId);
+
+    TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request);
+
+    TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request);
+
+    List<EmployeeResponse> getEmployeesNotInPlan(Long planId);
 
     // Relate approval methods
     void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request);

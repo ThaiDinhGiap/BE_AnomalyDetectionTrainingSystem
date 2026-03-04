@@ -37,4 +37,11 @@ public class GroupController {
         List<GroupResponse> results = groupService.getGroupsBySupervisor(id);
         return ResponseEntity.ok(ApiResponse.success(results));
     }
+
+    @Operation(summary = "Get groups (Lines) managed by current user")
+    @GetMapping("/my-managed-groups")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<GroupResponse>> getMyGroups() {
+        return ResponseEntity.ok(groupService.getMyManagedGroups());
+    }
 }
