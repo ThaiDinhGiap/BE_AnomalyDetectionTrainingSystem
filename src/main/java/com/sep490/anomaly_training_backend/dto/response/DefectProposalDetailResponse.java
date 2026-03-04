@@ -14,4 +14,7 @@ public class DefectProposalDetailResponse {
     String processName;
     LocalDate detectedDate;
     String note;
+    String originCause;
+    String outflowCause;
+    String causePoint;
 }

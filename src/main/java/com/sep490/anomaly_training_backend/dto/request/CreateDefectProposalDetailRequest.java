@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
 import com.sep490.anomaly_training_backend.enums.ProposalType;
+import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
@@ -14,4 +15,7 @@ public class CreateDefectProposalDetailRequest {
     Long processId;
     LocalDate detectedDate;
     String note;
+    String originCause;
+    String outflowCause;
+    String causePoint;
 }

@@ -17,7 +17,7 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
             "join p.productLine l " +
             "join l.group g " +
             "where g.id = :groupId and d.deleteFlag = false")
-    List<Defect> findAllByGroupAndDeleteFlagFalse(@Param("groupId") Long groupId);
+    List<Defect> findAllByProductLineAndDeleteFlagFalse(@Param("groupId") Long groupId);
 
     @Query("SELECT d FROM Defect d " +
             "join d.process p " +
