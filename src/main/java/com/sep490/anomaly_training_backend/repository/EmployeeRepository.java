@@ -26,5 +26,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT e FROM Employee e WHERE e.team.group.id = :groupId AND e.status = 'ACTIVE'")
     List<Employee> findAllActiveByGroupId(@Param("groupId") Long groupId);
 
+    @Query("SELECT e FROM Employee e WHERE e.team.id = :teamId AND e.status = 'ACTIVE'")
+    List<Employee> findAllActiveByTeamId(@Param("teamId") Long teamId);
+
 }
 
