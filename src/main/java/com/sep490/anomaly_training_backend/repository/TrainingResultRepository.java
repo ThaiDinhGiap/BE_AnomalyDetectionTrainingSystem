@@ -19,6 +19,8 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
 
     List<TrainingResult> findByLineId(Long lineId);
 
+    List<TrainingResult> findByLineIdAndDeleteFlagFalse(Long lineId);
+
     List<TrainingResult> findByYear(Integer year);
 
     List<TrainingResult> findByStatus(ReportStatus status);

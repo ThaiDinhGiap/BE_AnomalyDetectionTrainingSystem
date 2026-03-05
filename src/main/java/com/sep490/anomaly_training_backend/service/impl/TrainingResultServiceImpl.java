@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
@@ -11,10 +12,14 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
@@ -43,6 +48,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final UserRepository userRepository;
     private final TrainingResultDetailRepository detailRepository;
     private final ApprovalService approvalService;
+    private final TeamRepository teamRepository;
+    private final ProductLineRepository productLineRepository;
 
     @Override
     @Transactional
@@ -293,16 +300,49 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults() {
+        List<TrainingResult> entities = trainingResultRepository.findByDeleteFlagFalse();
+        return mapToListResponse(entities);
+    }
 
-        List<TrainingResult> entities = trainingResultRepository.findAll();
+    @Override
+    public List<TrainingResultListResponse> getResultsByLine(Long lineId) {
+        List<TrainingResult> entities = trainingResultRepository.findByLineIdAndDeleteFlagFalse(lineId);
+        return mapToListResponse(entities);
+    }
 
+    @Override
+    public List<ProductLineResponse> getMyProductLines() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<Team> teams = teamRepository.findByTeamLeader_Username(username)
+                .map(List::of)
+                .orElse(List.of());
+
+        return teams.stream()
+                .map(team -> team.getGroup().getId())
+                .distinct()
+                .flatMap(groupId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId).stream())
+                .map(pl -> ProductLineResponse.builder()
+                        .id(pl.getId())
+                        .groupId(pl.getGroup().getId())
+                        .name(pl.getName())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<TrainingResultListResponse> mapToListResponse(List<TrainingResult> entities) {
         DateTimeFormatter monthYearFormatter = DateTimeFormatter.ofPattern("MM/yyyy");
 
         return entities.stream().map(entity -> {
             TrainingResultListResponse dto = new TrainingResultListResponse();
             dto.setId(entity.getId());
+            dto.setTitle(entity.getTitle());
             dto.setCreatedAt(entity.getCreatedAt());
             dto.setApprovedAt(entity.getUpdatedAt());
+
+            if (entity.getLine() != null) {
+                dto.setLineId(entity.getLine().getId());
+                dto.setLineName(entity.getLine().getName());
+            }
 
             if (entity.getStatus() != null) {
                 dto.setStatus(entity.getStatus().toString());
@@ -312,16 +352,17 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 dto.setCreatedBy(entity.getCreatedBy());
             }
 
-            if (entity.getDetails() != null && !entity.getDetails().isEmpty()) {
-                String monthListStr = entity.getDetails().stream()
-                        .map(TrainingResultDetail::getActualDate)
-                        .filter(Objects::nonNull)
-                        .map(date -> date.format(monthYearFormatter))
-                        .distinct()
-                        .sorted()
-                        .collect(Collectors.joining(", "));
-
-                dto.setMonthList(monthListStr);
+            // Lấy monthList từ plan monthStart/monthEnd
+            TrainingPlan plan = entity.getTrainingPlan();
+            if (plan != null && plan.getMonthStart() != null && plan.getMonthEnd() != null) {
+                List<String> months = new ArrayList<>();
+                java.time.LocalDate cursor = plan.getMonthStart().withDayOfMonth(1);
+                java.time.LocalDate end = plan.getMonthEnd().withDayOfMonth(1);
+                while (!cursor.isAfter(end)) {
+                    months.add(cursor.format(monthYearFormatter));
+                    cursor = cursor.plusMonths(1);
+                }
+                dto.setMonthList(String.join(", ", months));
             } else {
                 dto.setMonthList("");
             }

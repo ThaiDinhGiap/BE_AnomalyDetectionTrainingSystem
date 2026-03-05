@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
@@ -99,6 +100,23 @@ public class TrainingResultController {
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultListResponse>> getAllResults() {
         return ResponseEntity.ok(trainingResultService.getAllTrainingResults());
+    }
+
+    @Operation(summary = "Get product lines managed by current user",
+            description = "Returns list of product lines that belong to the group of the current Team Leader's team. Used for the line dropdown filter.")
+    @GetMapping("/my-lines")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<ProductLineResponse>> getMyProductLines() {
+        return ResponseEntity.ok(trainingResultService.getMyProductLines());
+    }
+
+    @Operation(summary = "Get training results by product line (dây chuyền)",
+            description = "Returns list of training results filtered by the selected product line.")
+    @GetMapping("/by-line/{lineId}")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultListResponse>> getResultsByLine(
+            @Parameter(description = "Product Line ID") @PathVariable Long lineId) {
+        return ResponseEntity.ok(trainingResultService.getResultsByLine(lineId));
     }
 
     @Operation(summary = "Get training result details by ID")
