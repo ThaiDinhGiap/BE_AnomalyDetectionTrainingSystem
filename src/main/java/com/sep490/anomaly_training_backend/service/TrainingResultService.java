@@ -34,6 +34,12 @@ public interface TrainingResultService {
 
     void submitResult(Long resultId);
 
+    List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
+
+    void rejectDetail(Long detailId, String reason);
+
+    void retrainDetail(Long detailId);
+
     // Relate approval methods
     void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request);
 
