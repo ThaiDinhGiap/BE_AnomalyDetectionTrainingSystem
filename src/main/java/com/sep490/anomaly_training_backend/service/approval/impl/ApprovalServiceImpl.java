@@ -17,6 +17,7 @@ import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
 import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final ApprovalRouteService routeService;
     private final RejectReasonRepository rejectReasonRepo;
     private final RequiredActionRepository requiredActionRepo;
+    private final ApprovalHandlerRegistry handlerRegistry;
 
     // ==================== SUBMIT ====================
 
@@ -102,7 +104,8 @@ public class ApprovalServiceImpl implements ApprovalService {
                     currentUser.getUsername(), nextPendingStatus);
         } else {
             entity.setStatus(ReportStatus.APPROVED);
-            entity.applyApproval();
+            ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
+            handler.applyApproval(entity);
 
             log.info("Final approval for {} id={} version={} by {}",
                     entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),

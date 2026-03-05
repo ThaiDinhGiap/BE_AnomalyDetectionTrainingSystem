@@ -91,9 +91,4 @@ public class DefectProposal extends BaseEntity implements Approvable {
                 });
         return DigestUtils.sha256Hex(sb.toString());
     }
-
-    @Override
-    public void applyApproval() {
-
-    }
 }
