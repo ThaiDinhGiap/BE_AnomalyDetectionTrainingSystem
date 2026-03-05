@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 @Data
 public class TrainingResultListResponse {
     private Long id;
+    private String title;
+    private Long lineId;
+    private String lineName;
     private String monthList;
     private LocalDateTime createdAt;
     private LocalDateTime approvedAt;

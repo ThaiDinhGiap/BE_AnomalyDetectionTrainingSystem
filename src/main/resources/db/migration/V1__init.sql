@@ -779,7 +779,7 @@ CREATE TABLE training_plan_details
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
     training_plan_id BIGINT  NOT NULL,
     employee_id      BIGINT  NOT NULL,
-    process_id       BIGINT  NOT NULL,
+    batch_id VARCHAR(36) NULL,
     target_month     DATE COMMENT 'Tháng thực hiện',
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
@@ -794,10 +794,8 @@ CREATE TABLE training_plan_details
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
     FOREIGN KEY (employee_id) REFERENCES employees (id),
-    FOREIGN KEY (process_id) REFERENCES processes (id),
     INDEX idx_training_plan_details_plan (training_plan_id),
     INDEX idx_training_plan_details_employee (employee_id),
-    INDEX idx_training_plan_details_process (process_id),
     INDEX idx_training_plan_details_target_month (target_month),
     INDEX idx_training_plan_details_planned_date (planned_date),
     INDEX idx_training_plan_details_status (status),
@@ -814,7 +812,6 @@ CREATE TABLE training_plan_history
     training_plan_id BIGINT  NOT NULL,
     title            TEXT,
     version          INT     NOT NULL,
-
     -- Snapshot
     form_code        VARCHAR(50),
     month_start      DATE,
@@ -844,10 +841,9 @@ CREATE TABLE training_plan_detail_history
 (
     id                       BIGINT PRIMARY KEY AUTO_INCREMENT,
     training_plan_history_id BIGINT  NOT NULL,
-
+    batch_id VARCHAR(36) NULL,
     -- Snapshot
     employee_id              BIGINT,
-    process_id               BIGINT,
     target_month             DATE,
     planned_date             DATE,
     actual_date              DATE,

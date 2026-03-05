@@ -10,9 +10,13 @@ import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.RejectReason;
+import com.sep490.anomaly_training_backend.model.RequiredAction;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,27 +38,24 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final ApprovalFlowStepRepository flowStepRepo;
     private final ApprovalActionRepository actionRepo;
     private final ApprovalRouteService routeService;
+    private final RejectReasonRepository rejectReasonRepo;
+    private final RequiredActionRepository requiredActionRepo;
 
     // ==================== SUBMIT ====================
 
     @Override
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
-        // 1. Validate status
         if (entity.getStatus() != ReportStatus.DRAFT) {
-            throw new BusinessException("Chỉ có thể submit khi ở trạng thái DRAFT");
+            throw new BusinessException("Entity can only be submitted when in DRAFT status");
         }
 
-        // 2. Get first step
         ApprovalFlowStep firstStep = getFirstStep(entity.getEntityType());
-
-        // 3. Update entity status
         ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
         entity.setStatus(pendingStatus);
 
-        // 4. Log action
         logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.TEAM_LEADER,
-                currentUser, null, null, request);
+                currentUser, null, null, null, request);
 
         log.info("Submitted {} id={} version={} by user={}",
                 entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
@@ -63,20 +66,15 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void revise(Approvable entity, User currentUser, HttpServletRequest request) {
-        // 1. Validate status
         if (!isRejectedStatus(entity.getStatus())) {
-            throw new BusinessException("Only revise when report is in rejected status. Current status: " + entity.getStatus());
+            throw new BusinessException("Entity can only be revised when in a rejected status. Current status: " + entity.getStatus());
         }
 
-        // 2. Increment version
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
-
-        // 3. Set status back to DRAFT
         entity.setStatus(ReportStatus.DRAFT);
 
-        // 4. Log action (với version mới)
         logAction(entity, ApprovalAction.REVISE, -1, UserRole.TEAM_LEADER,
-                currentUser, null, null, request);
+                currentUser, null, null, null, request);
 
         log.info("Revised {} id={} newVersion={} by user={}",
                 entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
@@ -87,35 +85,26 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void approve(Approvable entity, User currentUser, ApproveRequest req, HttpServletRequest request) {
-        // 2. Get current step from status
         ApprovalFlowStep currentStep = getCurrentStep(entity);
-
-        // 3. Validate approver
         validateApprover(entity, currentUser, currentStep);
 
-        // 4. Log action
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(),
-                currentStep.getApproverRole(), currentUser, req.getComment(), null, request);
+                currentStep.getApproverRole(), currentUser, req.getComment(), null, null, request);
 
-        // 5. Determine next status
         ApprovalFlowStep nextStep = getNextStep(entity.getEntityType(), currentStep.getStepOrder());
 
         if (nextStep != null) {
-            // Còn step tiếp theo
             ReportStatus nextPendingStatus = mapRoleToPendingStatus(nextStep.getApproverRole());
             entity.setStatus(nextPendingStatus);
 
-            log.info("Approved {} id={} version={} by {} -> next: {}",
+            log.info("Approved {} id={} version={} by {} -> next status: {}",
                     entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
                     currentUser.getUsername(), nextPendingStatus);
         } else {
-            // Đây là step cuối -> APPROVED
             entity.setStatus(ReportStatus.APPROVED);
-
-            // Apply report (tạo/update/delete master data)
             entity.applyApproval();
 
-            log.info("Final approved {} id={} version={} by {}",
+            log.info("Final approval for {} id={} version={} by {}",
                     entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
                     currentUser.getUsername());
         }
@@ -126,28 +115,37 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void reject(Approvable entity, User currentUser, RejectRequest req, HttpServletRequest request) {
-        // 1. Validate reject reason
-        if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
-            throw new BusinessException("Vui lòng nhập lý do từ chối");
+        if (req.getRejectReasonIds() == null || req.getRejectReasonIds().isEmpty()) {
+            throw new BusinessException("At least one reject reason must be selected");
         }
 
-        // 3. Get current step
-        ApprovalFlowStep currentStep = getCurrentStep(entity);
+        List<RejectReason> reasons = rejectReasonRepo.findAllById(req.getRejectReasonIds());
+        if (reasons.size() != req.getRejectReasonIds().size()) {
+            throw new BusinessException("One or more reject reasons are invalid: " + req.getRejectReasonIds());
+        }
 
-        // 4. Validate approver
+        Set<RequiredAction> requiredActions = new HashSet<>();
+        if (req.getRequiredActionId() != null) {
+            RequiredAction action = requiredActionRepo.findById(req.getRequiredActionId())
+                    .orElseThrow(() -> new BusinessException("Required action is invalid: " + req.getRequiredActionId()));
+            requiredActions.add(action);
+        }
+
+        ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
 
-        // 5. Log action
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(),
-                currentStep.getApproverRole(), currentUser, req.getComment(), req.getRejectReason(), request);
+                currentStep.getApproverRole(), currentUser,
+                req.getComment(),
+                new HashSet<>(reasons),
+                requiredActions,
+                request);
 
-        // 6. Set rejected status
-        ReportStatus rejectedStatus = mapRoleToRejectedStatus(currentStep.getApproverRole());
-        entity.setStatus(rejectedStatus);
+        entity.setStatus(mapRoleToRejectedStatus(currentStep.getApproverRole()));
 
-        log.info("Rejected {} id={} version={} by {} reason={}",
+        log.info("Rejected {} id={} version={} by {} reasons={} requiredAction={}",
                 entity.getEntityType(), entity.getId(), entity.getCurrentVersion(),
-                currentUser.getUsername(), req.getRejectReason());
+                currentUser.getUsername(), req.getRejectReasonIds(), req.getRequiredActionId());
     }
 
     // ==================== QUERY ====================
@@ -179,20 +177,20 @@ public class ApprovalServiceImpl implements ApprovalService {
         return flowStepRepo.findByEntityTypeAndIsActiveTrueOrderByStepOrderAsc(entityType)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new BusinessException("Không tìm thấy workflow cho " + entityType));
+                .orElseThrow(() -> new BusinessException("No approval workflow found for entity type: " + entityType));
     }
 
     private ApprovalFlowStep getCurrentStep(Approvable entity) {
         ReportStatus status = entity.getStatus();
 
         if (!isWaitingStatus(status)) {
-            throw new BusinessException("Report không ở trạng thái chờ duyệt: " + status);
+            throw new BusinessException("Entity is not in a pending approval status: " + status);
         }
 
         UserRole requiredRole = mapStatusToRole(status);
 
         return flowStepRepo.findByEntityTypeAndApproverRoleAndIsActiveTrue(entity.getEntityType(), requiredRole)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy step phù hợp với status " + status));
+                .orElseThrow(() -> new BusinessException("No approval step found matching status: " + status));
     }
 
     private ApprovalFlowStep getNextStep(ApprovalEntityType entityType, int currentStepOrder) {
@@ -204,19 +202,21 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private void validateApprover(Approvable entity, User currentUser, ApprovalFlowStep step) {
-        // Check role
         if (currentUser.getRole() != step.getApproverRole()) {
-            throw new BusinessException("Bạn không có quyền duyệt ở bước này. Yêu cầu role: " + step.getApproverRole());
+            throw new BusinessException("Insufficient role to approve at this step. Required role: " + step.getApproverRole());
         }
 
-        // Check org hierarchy
         if (!routeService.isValidApprover(entity.getGroupId(), step.getApproverRole(), currentUser.getId())) {
-            throw new BusinessException("Bạn không phải người phê duyệt được chỉ định cho báo cáo này");
+            throw new BusinessException("You are not the designated approver for this report");
         }
     }
 
-    private void logAction(Approvable entity, ApprovalAction action, int stepOrder, UserRole requiredRole,
-                           User performer, String comment, String rejectReason, HttpServletRequest request) {
+    private void logAction(Approvable entity, ApprovalAction action,
+                           int stepOrder, UserRole requiredRole,
+                           User performer, String comment,
+                           Set<RejectReason> rejectReasons,
+                           Set<RequiredAction> requiredActions,
+                           HttpServletRequest request) {
 
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(entity.getEntityType())
@@ -234,6 +234,8 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .ipAddress(getClientIp(request))
                 .userAgent(request != null ? request.getHeader("User-Agent") : null)
                 .contentHash(entity.computeContentHash())
+                .rejectReasons(rejectReasons != null ? rejectReasons : new HashSet<>())
+                .requiredActions(requiredActions != null ? requiredActions : new HashSet<>())
                 .build();
 
         actionRepo.save(logEntry);
@@ -261,7 +263,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         return switch (status) {
             case WAITING_SV -> UserRole.SUPERVISOR;
             case WAITING_MANAGER -> UserRole.MANAGER;
-            default -> throw new BusinessException("Status không hợp lệ để approve/reject: " + status);
+            default -> throw new BusinessException("Invalid status for approve/reject operation: " + status);
         };
     }
 

@@ -51,12 +51,6 @@ public class TrainingPlanDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Employee employee;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "process_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    Process process;
-
     @Column(name = "target_month")
     LocalDate targetMonth;
 
@@ -70,6 +64,13 @@ public class TrainingPlanDetail extends BaseEntity {
     @Column(name = "status")
     @Builder.Default
     TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+
+    /**
+     * Mã nhóm để phân biệt các lần thêm khác nhau của cùng 1 employee.
+     * VD: Employee A thêm lần 1 → batchId = "abc123", lần 2 → batchId = "def456"
+     */
+    @Column(name = "batch_id", length = 36)
+    String batchId;
 
     @Column(columnDefinition = "text")
     String note;

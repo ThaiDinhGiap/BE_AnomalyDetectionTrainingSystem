@@ -17,7 +17,6 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
      */
     @Query("SELECT tpd FROM TrainingPlanDetail tpd " +
             "JOIN FETCH tpd.employee e " +
-            "JOIN FETCH tpd.process p " +
             "JOIN FETCH tpd.trainingPlan tp " +
             "WHERE tpd.plannedDate = :date " +
             "AND tpd.status = 'PENDING' " +
@@ -30,7 +29,6 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
      */
     @Query("SELECT tpd FROM TrainingPlanDetail tpd " +
             "JOIN FETCH tpd.employee e " +
-            "JOIN FETCH tpd.process p " +
             "JOIN FETCH tpd.trainingPlan tp " +
             "WHERE tpd. plannedDate < :today " +
             "AND tpd. status = 'PENDING' " +
@@ -38,4 +36,13 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
             "AND tpd.deleteFlag = false " +
             "ORDER BY tpd.plannedDate ASC")
     List<TrainingPlanDetail> findOverdueTrainings(@Param("today") LocalDate today);
+
+    /**
+     * Lấy danh sách employee ID đã có trong plan
+     */
+    @Query("SELECT DISTINCT tpd.employee.id FROM TrainingPlanDetail tpd " +
+            "WHERE tpd.trainingPlan.id = :planId AND tpd.deleteFlag = false")
+    List<Long> findEmployeeIdsByTrainingPlanId(@Param("planId") Long planId);
+
+    List<TrainingPlanDetail> findByTrainingPlanIdAndDeleteFlagFalse(Long planId);
 }

@@ -14,6 +14,9 @@ public class TrainingPlanCreateRequest {
     @NotNull(message = "Vui lòng chọn Dây chuyền (Group)")
     private Long groupId;
 
+    @NotNull(message = "Vui lòng chọn Product Line")
+    private Long lineId;
+
     @NotNull(message = "Tháng bắt đầu không được để trống")
     private LocalDate monthStart;
 

@@ -16,12 +16,12 @@ import java.util.List;
 public abstract class TrainingPlanMapper {
 
     // --- 1. MAPPING TẠO MỚI (CREATE) ---
-    // Gộp tất cả logic vào đây
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)  // Will be set by builder default
+    @Mapping(target = "status", ignore = true)
     @Mapping(target = "currentVersion", constant = "1")
     @Mapping(target = "formCode", constant = "TR_PLAN")
     @Mapping(target = "line", ignore = true)
+    @Mapping(target = "team", ignore = true)
     @Mapping(target = "details", ignore = true)
     @Mapping(target = "note", ignore = true)
     public abstract TrainingPlan toEntity(TrainingPlanCreateRequest request);
@@ -29,26 +29,27 @@ public abstract class TrainingPlanMapper {
     // --- 3. MAPPING RESPONSE (HIỂN THỊ RA) ---
     @Mapping(source = "line.id", target = "lineId")
     @Mapping(source = "line.name", target = "lineName")
+    @Mapping(source = "line.group.id", target = "groupId")
+    @Mapping(source = "line.group.name", target = "groupName")
+    @Mapping(target = "groupedDetails", ignore = true) // Xử lý trong service
     public abstract TrainingPlanResponse toResponse(TrainingPlan entity);
 
     @Mapping(source = "employee.id", target = "employeeId")
     @Mapping(source = "employee.fullName", target = "employeeName")
     @Mapping(source = "employee.employeeCode", target = "employeeCode")
-    @Mapping(source = "process.id", target = "processId")
-    @Mapping(source = "process.name", target = "processName")
+    @Mapping(target = "employeeProcesses", ignore = true) // Xử lý trong service
     public abstract TrainingPlanDetailResponse toDetailResponse(TrainingPlanDetail entity);
 
     public abstract List<TrainingPlanDetailResponse> toDetailResponseList(List<TrainingPlanDetail> list);
 
-    // 1. Map Update Header (Bỏ qua các trường không cho sửa hoặc tự xử lý)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "line", ignore = true)       // Không cho đổi Line
-    @Mapping(target = "monthStart", ignore = true) // Không cho đổi tháng bắt đầu
-    @Mapping(target = "monthEnd", ignore = true)   // Không cho đổi tháng kết thúc
-    @Mapping(target = "status", ignore = true)     // Status xử lý riêng
-    @Mapping(target = "details", ignore = true)    // Details xử lý riêng trong Service
+    @Mapping(target = "line", ignore = true)
+    @Mapping(target = "team", ignore = true)
+    @Mapping(target = "monthStart", ignore = true)
+    @Mapping(target = "monthEnd", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "details", ignore = true)
     @Mapping(target = "currentVersion", ignore = true)
     @Mapping(target = "formCode", ignore = true)
     public abstract void updateHeader(@MappingTarget TrainingPlan entity, TrainingPlanUpdateRequest request);
-
 }
