@@ -15,7 +15,7 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
 
     Optional<EmployeeSkill> findByEmployeeIdAndProcessIdAndDeleteFlagFalse(Long employeeId, Long processId);
 
-    List<EmployeeSkill> findByIsQualifiedTrueAndDeleteFlagFalse();
+//    List<EmployeeSkill> findByIsQualifiedTrueAndDeleteFlagFalse();
 
     List<EmployeeSkill> findByEmployeeIdAndProcessProductLineId(Long employeeId, Long productLineId);
 }

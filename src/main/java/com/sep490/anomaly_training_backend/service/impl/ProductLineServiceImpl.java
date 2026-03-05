@@ -65,4 +65,13 @@ public class ProductLineServiceImpl implements ProductLineService {
         productLine.setDeleteFlag(true);
         productLineRepository.save(productLine);
     }
+
+    @Override
+    public ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest) {
+        ProductLine productLine = productLineRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Group not found with id: " + id
+                ));
+        return productLineMapper.toDto(productLineRepository.save(productLine));
+    }
 }

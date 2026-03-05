@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 public class DefectProposalResponse {
     Long id;
     ReportStatus status;
-    String groupName;
+    Long productLineId;
+    String productLineName;
     Long teamLeadId;
     String teamLeadName;
     LocalDateTime createdDate;

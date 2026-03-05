@@ -8,11 +8,16 @@ import lombok.Data;
 @Builder
 public class TrainingSampleProposalDetailResponse {
     Long id;
+    Long trainingSampleId;
+    ProposalType proposalType;
+    Long productId;
+    String productCode;
+    Long processId;
     String processName;
+    Long defectId;
     String defectDescription;
     String categoryName;
-    ProposalType proposalType;
-    String trainingSample;
-    String trainingDetail;
+    String trainingSampleCode;
+    String trainingDescription;
     String note;
 }

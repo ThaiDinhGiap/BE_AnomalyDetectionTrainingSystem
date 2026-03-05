@@ -11,4 +11,6 @@ public interface ProductLineService {
     ProductLineResponse createProductLine(ProductLineRequest productLineRequest);
 
     void deleteProductLine(Long id);
+
+    ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest);
 }

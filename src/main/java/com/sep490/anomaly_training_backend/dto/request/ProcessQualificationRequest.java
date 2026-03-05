@@ -11,8 +11,6 @@ public class ProcessQualificationRequest {
 
     private Long processId;
 
-    private Boolean isQualified;
-
     private LocalDate certifiedDate;
 
     private LocalDate expiryDate; // Có thể null (vô thời hạn)

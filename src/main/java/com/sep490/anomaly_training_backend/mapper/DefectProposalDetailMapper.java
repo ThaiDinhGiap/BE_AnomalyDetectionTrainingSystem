@@ -7,7 +7,9 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public abstract class DefectProposalDetailMapper {
 
-    @Mapping(target = "defectProposalDescription", source = "defect.defectDescription")
+    @Mapping(target = "defectDescription", source = "defect.defectDescription")
+    @Mapping(target = "defectId", source = "defect.id")
     @Mapping(target = "processName", source = "defect.process.name")
+    @Mapping(target = "processId", source = "defect.process.id")
     public abstract DefectProposalDetailResponse toResponse(final DefectProposalDetail entity);
 }
