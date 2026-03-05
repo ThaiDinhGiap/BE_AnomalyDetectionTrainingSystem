@@ -11,4 +11,6 @@ public interface RejectReasonRepository extends JpaRepository<RejectReason, Long
     List<RejectReason> findByCategoryName(String categoryName);
 
     List<RejectReason> findByDeleteFlagFalse();
+
+    List<RejectReason> findAllByOrderByCategoryNameAscIdAsc();
 }

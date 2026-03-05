@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.model;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.UserRole;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +13,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -21,6 +24,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Entity
 @Table(name = "approval_actions")
@@ -89,4 +93,20 @@ public class ApprovalActionLog extends BaseEntity {
 
     @Column(name = "content_hash", length = 64)
     private String contentHash;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @JoinTable(
+            name = "approval_action_reject_reasons",
+            joinColumns = @JoinColumn(name = "approval_action_id"),
+            inverseJoinColumns = @JoinColumn(name = "reject_reason_id")
+    )
+    private Set<RejectReason> rejectReasons;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @JoinTable(
+            name = "approval_required_actions",
+            joinColumns = @JoinColumn(name = "approval_action_id"),
+            inverseJoinColumns = @JoinColumn(name = "required_action_id")
+    )
+    private Set<RequiredAction> requiredActions;
 }
