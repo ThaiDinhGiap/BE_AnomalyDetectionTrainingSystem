@@ -30,5 +30,9 @@ public class TrainingPlanResponse {
     private String createdBy;
     private LocalDateTime createdAt;
 
+    // Flat list - tất cả detail rows
     private List<TrainingPlanDetailResponse> details = new ArrayList<>();
+
+    // Grouped by batchId - FE dùng để hiển thị (mỗi group = 1 row trên FE)
+    private List<EmployeePlanGroup> groupedDetails = new ArrayList<>();
 }

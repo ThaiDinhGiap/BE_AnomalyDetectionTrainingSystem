@@ -4,9 +4,14 @@ import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.mapper.GroupMapper;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.GroupService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +25,8 @@ public class GroupServiceImpl implements GroupService {
 
     private final GroupRepository groupRepository;
     private final GroupMapper groupMapper;
+    private final UserRepository userRepository;
+    private final TeamRepository teamRepository;
 
     @Override
     @Transactional
@@ -89,5 +96,19 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<GroupResponse> getGroupsBySupervisor(Long supervisorId) {
         return groupRepository.findBySupervisorId(supervisorId).stream().map(groupMapper::toDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GroupResponse> getMyManagedGroups() {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(currentUsername).orElseThrow();
+
+        List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
+
+        return managedTeams.stream()
+                .map(Team::getGroup)
+                .distinct()
+                .map(group -> new GroupResponse(group.getId(), group.getName()))
+                .collect(Collectors.toList());
     }
 }
