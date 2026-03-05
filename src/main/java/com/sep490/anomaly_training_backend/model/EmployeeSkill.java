@@ -1,15 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,9 +43,10 @@ public class EmployeeSkill extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @Column(name = "is_qualified")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     @Builder.Default
-    Boolean isQualified = true;
+    EmployeeSkillStatus status = EmployeeSkillStatus.VALID;
 
     @Column(name = "certified_date")
     LocalDate certifiedDate;

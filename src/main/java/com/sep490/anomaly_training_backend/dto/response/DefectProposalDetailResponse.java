@@ -10,9 +10,12 @@ import java.time.LocalDate;
 public class DefectProposalDetailResponse {
     Long id;
     ProposalType proposalType;
-    String defectProposalDescription;
+    Long defectId;
+    String defectDescription;
+    Long processId;
     String processName;
     LocalDate detectedDate;
+    Boolean isEscaped;
     String note;
     String originCause;
     String outflowCause;

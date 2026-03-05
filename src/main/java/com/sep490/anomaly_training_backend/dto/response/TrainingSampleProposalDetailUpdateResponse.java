@@ -10,7 +10,6 @@ import lombok.*;
 @Builder
 public class TrainingSampleProposalDetailUpdateResponse {
     Long id;
-    Long trainingSampleProposalId;
     Long trainingSampleId;
     ProposalType proposalType;
     Long processId;

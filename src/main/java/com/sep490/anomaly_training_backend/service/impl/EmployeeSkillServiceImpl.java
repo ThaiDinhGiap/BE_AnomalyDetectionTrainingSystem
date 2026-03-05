@@ -49,23 +49,26 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         return employeeSkillMapper.toDto(saved);
     }
 
-//    @Override
-//    public EmployeeSkillResponse updateEmployeeSkill(Long id, EmployeeSkillRequest request) {
-//        EmployeeSkill skill = employeeSkillRepository.findById(id)
-//                .orElseThrow(() ->
-//                        new EntityNotFoundException("Employee not found with id: " + id)
-//                );
-//        Employee employee = employeeRepository.findById(request.getEmployeeId())
-//                .orElseThrow(() ->
-//                        new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())
-//                );
-//
-//        Process process = processRepository.findById(request.getProcessId())
-//                .orElseThrow(() ->
-//                        new EntityNotFoundException("Process not found with id: " + request.getProcessId())
-//                );
-//        skill.setEmployee(employee);
-//    }
+    @Override
+    public EmployeeSkillResponse updateEmployeeSkillByTeamLead(Long id, EmployeeSkillRequest request) {
+        EmployeeSkill skill = employeeSkillRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Employee not found with id: " + id)
+                );
+        Employee employee = employeeRepository.findById(request.getEmployeeId())
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())
+                );
+
+        Process process = processRepository.findById(request.getProcessId())
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Process not found with id: " + request.getProcessId())
+                );
+        skill.setEmployee(employee);
+        skill.setProcess(process);
+        skill.setStatus(request.getStatus());
+        return employeeSkillMapper.toDto(employeeSkillRepository.save(skill));
+    }
 
     @Override
     public void deleteEmployeeSkill(Long id) {

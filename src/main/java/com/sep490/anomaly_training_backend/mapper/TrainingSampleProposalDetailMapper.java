@@ -7,8 +7,13 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public abstract class TrainingSampleProposalDetailMapper {
+
     @Mapping(target = "processName", source = "process.name")
+    @Mapping(target = "processId", source = "process.id")
     @Mapping(target = "defectDescription", source = "defect.defectDescription")
-    @Mapping(target = "trainingSample", source = "trainingSample.trainingDescription")
+    @Mapping(target = "defectId", source = "defect.id")
+    @Mapping(target = "trainingSampleId", source = "trainingSample.id")
+    @Mapping(target = "productCode", source = "product.code")
+    @Mapping(target = "productId", source = "product.id")
     public abstract TrainingSampleProposalDetailResponse toResponse(TrainingSampleProposalDetail entity);
 }

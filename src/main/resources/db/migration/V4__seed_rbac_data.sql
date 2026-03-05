@@ -6,17 +6,19 @@
 -- PART 1: MODULES
 -- ----------------------------------------------------------------------------
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
-VALUES (1,  'defect_report',   'Báo cáo lỗi sản phẩm',      'Quản lý báo cáo lỗi',                1,  'system'),
-       (2,  'training_topic',  'Chủ đề đào tạo',             'Quản lý chủ đề đào tạo',             2,  'system'),
-       (3,  'training_plan',   'Kế hoạch đào tạo',           'Quản lý kế hoạch đào tạo',           3,  'system'),
-       (4,  'training_result', 'Kết quả đào tạo',            'Quản lý kết quả đào tạo',            4,  'system'),
-       (5,  'employee',        'Nhân viên',                  'Quản lý thông tin nhân viên',        5,  'system'),
-       (6,  'user',            'Tài khoản người dùng',       'Quản lý tài khoản hệ thống',         6,  'system'),
-       (7,  'role',            'Vai trò & Phân quyền',       'Quản lý vai trò và phân quyền',      7,  'system'),
-       (8,  'master_data',     'Dữ liệu danh mục',           'Quản lý dữ liệu danh mục',           8,  'system'),
-       (9,  'scoring',         'Chấm điểm ưu tiên',          'Quản lý chính sách chấm điểm',       9,  'system'),
-       (10, 'dashboard',       'Dashboard & Báo cáo',        'Xem dashboard và báo cáo tổng hợp',  10, 'system'),
-       (11, 'system',          'Cài đặt hệ thống',           'Cài đặt và cấu hình hệ thống',       11, 'system');
+VALUES (1,  'defect_report',                'Báo cáo lỗi sản phẩm',       'Quản lý báo cáo lỗi',                 1,  'system'),
+       (2,  'training_sample',              'Chủ đề đào tạo',             'Quản lý chủ đề đào tạo',              2,  'system'),
+       (3,  'training_plan',                'Kế hoạch đào tạo',           'Quản lý kế hoạch đào tạo',            3,  'system'),
+       (4,  'training_result',              'Kết quả đào tạo',            'Quản lý kết quả đào tạo',             4,  'system'),
+       (5,  'employee',                     'Nhân viên',                  'Quản lý thông tin nhân viên',         5,  'system'),
+       (6,  'user',                         'Tài khoản người dùng',       'Quản lý tài khoản hệ thống',          6,  'system'),
+       (7,  'role',                         'Vai trò & Phân quyền',       'Quản lý vai trò và phân quyền',       7,  'system'),
+       (8,  'master_data',                  'Dữ liệu danh mục',           'Quản lý dữ liệu danh mục',            8,  'system'),
+       (9,  'scoring',                      'Chấm điểm ưu tiên',          'Quản lý chính sách chấm điểm',        9,  'system'),
+       (10, 'dashboard',                    'Dashboard & Báo cáo',        'Xem dashboard và báo cáo tổng hợp',   10, 'system'),
+       (11, 'system',                       'Cài đặt hệ thống',           'Cài đặt và cấu hình hệ thống',        11, 'system'),
+       (12, 'staff_organization',           'Tổ chức nhân sự',            'Quản lí danh sách nhân sự công ty',   12, 'system'),
+       (13, 'manufacturing_line',           'Tổ chức sản xuất',           'Quản lí danh sách tổ chức dây chuyền',13, 'system');
 
 -- ----------------------------------------------------------------------------
 -- PART 2: PERMISSIONS
@@ -24,17 +26,19 @@ VALUES (1,  'defect_report',   'Báo cáo lỗi sản phẩm',      'Quản lý 
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
 VALUES
 -- defect_report (module 1)
-(1,  'defect_report.view',    'Xem báo cáo lỗi',         1, 'view',   1, TRUE, 'system'),
-(2,  'defect_report.create',  'Tạo báo cáo lỗi',         1, 'create', 2, TRUE, 'system'),
-(3,  'defect_report.edit',    'Sửa báo cáo lỗi',         1, 'edit',   3, TRUE, 'system'),
-(4,  'defect_report.delete',  'Xoá báo cáo lỗi',         1, 'delete', 4, TRUE, 'system'),
-(5,  'defect_report.approve', 'Phê duyệt báo cáo lỗi',   1, 'approve',5, TRUE, 'system'),
+(1,  'defect_proposal.view',    'Xem báo cáo lỗi',          1, 'view',   1, TRUE, 'system'),
+(2,  'defect_proposal.create',  'Tạo báo cáo lỗi',          1, 'create', 2, TRUE, 'system'),
+(3,  'defect_proposal.edit',    'Sửa báo cáo lỗi',          1, 'edit',   3, TRUE, 'system'),
+(4,  'defect_proposal.delete',  'Xoá báo cáo lỗi',          1, 'delete', 4, TRUE, 'system'),
+(5,  'defect_proposal.approve', 'Phê duyệt báo cáo lỗi',    1, 'approve',5, TRUE, 'system'),
+(111,'defect.view',             'Xem danh sách lỗi quá khứ',1, 'view',  6, TRUE, 'system'),
 
--- training_topic (module 2)
-(6,  'training_topic.view',   'Xem chủ đề đào tạo',      2, 'view',   1, TRUE, 'system'),
-(7,  'training_topic.create', 'Tạo chủ đề đào tạo',      2, 'create', 2, TRUE, 'system'),
-(8,  'training_topic.edit',   'Sửa chủ đề đào tạo',      2, 'edit',   3, TRUE, 'system'),
-(9,  'training_topic.delete', 'Xoá chủ đề đào tạo',      2, 'delete', 4, TRUE, 'system'),
+-- training_sample (module 2)
+(6,  'training_sample_proposal.view',   'Xem chủ đề đào tạo',           2, 'view',   1, TRUE, 'system'),
+(7,  'training_sample_proposal.create', 'Tạo chủ đề đào tạo',           2, 'create', 2, TRUE, 'system'),
+(8,  'training_sample_proposal.edit',   'Sửa chủ đề đào tạo',           2, 'edit',   3, TRUE, 'system'),
+(9,  'training_sample_proposal.delete', 'Xoá chủ đề đào tạo',           2, 'delete', 4, TRUE, 'system'),
+(100,'training_sample.view',           'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
 
 -- training_plan (module 3)
 (10, 'training_plan.view',    'Xem kế hoạch đào tạo',    3, 'view',   1, TRUE, 'system'),
@@ -85,8 +89,19 @@ VALUES
 (41, 'dashboard.export',      'Xuất báo cáo',            10, 'export',2, TRUE, 'system'),
 
 -- system (module 11)
-(42, 'system.config',         'Cấu hình hệ thống',       11, 'config',1, TRUE, 'system');
+(42, 'system.config',         'Cấu hình hệ thống',       11, 'config',1, TRUE, 'system'),
 
+-- staff organization (module 12)
+(43, 'staff_organization.view',          'Xem danh sách cấu trúc nhân sự',12, 'view',   1, TRUE, 'system'),
+(44, 'staff_organization.create',        'Tạo danh sách cấu trúc nhân sự',12, 'create', 2, TRUE, 'system'),
+(45, 'staff_organization.edit',          'Sửa danh sách cấu trúc nhân sự',12, 'edit',   3, TRUE, 'system'),
+(46, 'staff_organization.delete',        'Xoá danh sách cấu trúc nhân sự',12, 'delete', 4, TRUE, 'system'),
+
+-- manufacturing line (module 13)
+(47, 'manufacturing_line.view',          'Xem danh sách cấu trúc dây chuyền',13, 'view',   1, TRUE, 'system'),
+(48, 'manufacturing_line.create',        'Tạo danh sách cấu trúc dây chuyền',13, 'create', 2, TRUE, 'system'),
+(49, 'manufacturing_line.edit',          'Sửa danh sách cấu trúc dây chuyền',13, 'edit',   3, TRUE, 'system'),
+(50, 'manufacturing_line.delete',        'Xoá danh sách cấu trúc dây chuyền',13, 'delete', 4, TRUE, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 3: ADD MISSING SYSTEM ROLE (FINAL_INSPECTION)
 -- V2 already seeded roles 1-4; add role 5 here
@@ -104,8 +119,8 @@ SELECT 1, id FROM permissions;
 -- MANAGER: view/approve everything, manage employees
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
-(2, 1),(2, 2),(2, 3),(2, 5),    -- defect_report: view,create,edit,approve
-(2, 6),(2, 7),(2, 8),           -- training_topic: view,create,edit
+(2, 1),(2, 2),(2, 3),(2, 5),    -- defect_proposal: view,create,edit,approve
+(2, 6),(2, 7),(2, 8),           -- training_sample: view,create,edit
 (2, 10),(2, 11),(2, 12),(2, 14),-- training_plan: view,create,edit,approve
 (2, 15),(2, 16),(2, 17),        -- training_result: view,edit,approve
 (2, 18),(2, 19),(2, 20),        -- employee: view,create,edit
@@ -116,8 +131,8 @@ VALUES
 -- SUPERVISOR: view/create/edit reports, view plans, manage training results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
-(3, 1),(3, 2),(3, 3),(3, 5),    -- defect_report: view,create,edit,approve
-(3, 6),(3, 7),(3, 8),           -- training_topic: view,create,edit
+(3, 1),(3, 2),(3, 3),(3, 5),    -- defect_proposal: view,create,edit,approve
+(3, 6),(3, 7),(3, 8),           -- training_sample: view,create,edit
 (3, 10),(3, 11),(3, 12),(3, 14),-- training_plan: view,create,edit,approve
 (3, 15),(3, 16),                -- training_result: view,edit
 (3, 18),(3, 19),(3, 20),        -- employee: view,create,edit
@@ -127,17 +142,22 @@ VALUES
 -- TEAM_LEADER: create and view reports, input training results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
-(4, 1),(4, 2),(4, 3),           -- defect_report: view,create,edit
-(4, 6),(4, 7),                  -- training_topic: view,create
-(4, 10),(4, 11),(4, 12),        -- training_plan: view,create,edit
-(4, 15),(4, 16),                -- training_result: view,edit
-(4, 18),                        -- employee: view
-(4, 40);                        -- dashboard: view
+    (4, 1),   -- defect_proposal.view
+    (4, 2),   -- defect_proposal.create
+    (4, 3),   -- defect_proposal.edit
+    (4, 4),   -- defect_proposal.delete
+    (4, 5),   -- defect_proposal.approve
+    (4, 111),-- defect.view (Xem danh sách lỗi quá khứ)
+    (4, 6),   -- training_sample_proposal.view
+    (4, 7),   -- training_sample_proposal.create
+    (4, 8),   -- training_sample_proposal.edit
+    (4, 9),   -- training_sample_proposal.delete
+    (4, 100); -- training_sample.view (Xem danh sách mẫu huấn luyện)
 
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
-(5, 1),(5, 2),(5, 3),           -- defect_report: view,create,edit
+(5, 1),(5, 2),(5, 3),           -- defect_proposal: view,create,edit
 (5, 15),(5, 16),                -- training_result: view,edit
 (5, 18),                        -- employee: view
 (5, 40);                        -- dashboard: view

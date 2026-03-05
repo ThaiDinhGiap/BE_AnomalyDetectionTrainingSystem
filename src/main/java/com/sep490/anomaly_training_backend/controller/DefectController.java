@@ -41,18 +41,18 @@ public class DefectController {
 
     @Operation(summary = "Get defect proposals by productLine")
     @GetMapping("/proposal")
-    @PreAuthorize("hasAuthority('defect.view')")
+    @PreAuthorize("hasAuthority('defect_proposal.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByGroup(
             @RequestParam("productLineId")Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 
             List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(list));
+            return ResponseEntity.ok(ApiResponse.success(list));
     }
 
     @Operation(summary = "Get defect proposal details")
     @GetMapping("/detail/{id}")
-    @PreAuthorize("hasAuthority('defect.view')")
+    @PreAuthorize("hasAuthority('defect_proposal.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalDetailResponse>>> getDefectProposalDetail(@PathVariable Long id) {
         List<DefectProposalDetailResponse> list = defectProposalDetailService.getDefectProposalDetails(id);
         return ResponseEntity.ok(ApiResponse.success(list));
@@ -60,29 +60,29 @@ public class DefectController {
 
     @Operation(summary = "Create new defect proposal")
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('defect.create')")
+    @PreAuthorize("hasAuthority('defect_proposal.create')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody CreateDefectProposalRequest createDefectProposalRequest) {
         defectProposalService.createDefectProposalDraft(createDefectProposalRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('defect.delete')")
+    @PreAuthorize("hasAuthority('defect_proposal.delete')")
     public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id){
         defectProposalService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasAuthority('defect.edit')")
+    @PreAuthorize("hasAuthority('defect_proposal.edit')")
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
-            @Parameter(description = "ID của đề xuất mẫu lỗi quá khứ cần sửa") @PathVariable Long id,
+            @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
             @Valid @RequestBody DefectProposalUpdateRequest request) throws BadRequestException {
         DefectProposalUpdateResponse response = defectProposalService.updateDefectProposal(id, request);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Hoàn duyệt (Chuyển về Nháp)", description = "Chuyển đề xất từ trạng thái chờ duyệt về lại trạng thái Nháp để chỉnh sửa.")
+    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
     @PreAuthorize("hasAuthority('defect.revise')")
     public ResponseEntity<String> revise(
@@ -91,7 +91,7 @@ public class DefectController {
             HttpServletRequest request
     ) {
         defectProposalService.revise(id, currentUser, request);
-        return ResponseEntity.ok("Đã chuyển kế hoạch về trạng thái nháp thành công!");
+        return ResponseEntity.ok("The plan has been successfully moved back to the Draft status!");
     }
 
 }

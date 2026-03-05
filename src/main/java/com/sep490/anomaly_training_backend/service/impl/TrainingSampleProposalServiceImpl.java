@@ -12,13 +12,8 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUp
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
@@ -204,11 +199,11 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         return approvalService.canApprove(proposal, currentUser);
     }
 
-    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal Proposal) {
+    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
         for (CreateTrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
-            entity.setTrainingSampleProposal(Proposal);
+            entity.setTrainingSampleProposal(proposal);
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
@@ -217,10 +212,15 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
+            if (detailRequest.getProductId() != null) {
+                Product product = productRepository.findById(detailRequest.getProductId()).orElse(null);
+                entity.setProduct(product);
+            }
             entity.setProposalType(detailRequest.getProposalType());
             entity.setCategoryName(detailRequest.getCategoryName());
             entity.setProcess(process);
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
+            entity.setTrainingSampleCode(detailRequest.getTrainingSampleCode());
             entity.setNote(detailRequest.getNote());
             trainingSampleProposalDetailRepository.save(entity);
         }
