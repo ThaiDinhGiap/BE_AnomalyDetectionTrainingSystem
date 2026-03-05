@@ -1,14 +1,21 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,7 +25,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -34,7 +49,7 @@ public class DefectController {
     @Operation(summary = "Get defects by productLine (Defect Banking)")
     @GetMapping("/")
     @PreAuthorize("hasAuthority('defect.view')")
-    public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProductLine(@RequestParam("productLineId")Long productLineId) {
+    public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
@@ -43,10 +58,10 @@ public class DefectController {
     @GetMapping("/proposal")
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByGroup(
-            @RequestParam("productLineId")Long productLineId,
+            @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 
-            List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
+        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -68,7 +83,7 @@ public class DefectController {
 
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasAuthority('defect.delete')")
-    public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id){
+    public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id) {
         defectProposalService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
@@ -94,4 +109,38 @@ public class DefectController {
         return ResponseEntity.ok("Đã chuyển kế hoạch về trạng thái nháp thành công!");
     }
 
+    @Operation(summary = "Approve defect proposal", description = "Approve the defect proposal.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Approved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "No approval permission"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Defect Proposal is not found")
+    })
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    public ResponseEntity<String> approveProposal(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ApproveRequest approveRequest,
+            HttpServletRequest request) {
+
+        defectProposalService.approve(id, currentUser, approveRequest, request);
+        return ResponseEntity.ok("Defect Proposal has been approved successfully!");
+    }
+
+    @Operation(summary = "Reject defect proposal", description = "Reject and request revision of the defect proposal.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Defect Proposal rejected"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
+    })
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasAuthority('defect_proposal.reject')")
+    public ResponseEntity<String> rejectProposal(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody RejectRequest rejectRequest,
+            HttpServletRequest request) {
+
+        defectProposalService.reject(id, currentUser, rejectRequest, request);
+        return ResponseEntity.ok("Defect Proposal has been rejected!");
+    }
 }
