@@ -8,7 +8,6 @@ import lombok.Data;
 @Builder
 public class TrainingSampleProposalDetailUpdateRequest {
     Long id;
-    Long trainingSampleProposalId;
     Long trainingSampleId;
     ProposalType proposalType;
     Long processId;

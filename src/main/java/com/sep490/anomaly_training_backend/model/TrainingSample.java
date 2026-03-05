@@ -55,10 +55,6 @@ public class TrainingSample extends BaseEntity {
     @Column(name = "sample_code", length = 20)
     String sampleCode;
 
-    @Column(name = "has_physical_sample")
-    @Builder.Default
-    Boolean hasPhysicalSample = true;
-
     @Column(name = "process_order", nullable = false)
     Integer processOrder;
 

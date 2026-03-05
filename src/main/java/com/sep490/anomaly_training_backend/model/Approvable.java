@@ -23,9 +23,4 @@ public interface Approvable {
     Long getGroupId();
 
     String computeContentHash();
-
-    /**
-     * Apply when APPROVED (create/update/delete master data)
-     */
-    void applyApproval();
 }

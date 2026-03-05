@@ -17,7 +17,6 @@ public class ProcessQualificationResponse {
     private String processName;
     private String processCode;
 
-    private Boolean isQualified;
     private LocalDate certifiedDate;
     private LocalDate expiryDate;
 

@@ -34,7 +34,7 @@ public class ProcessServiceImpl implements ProcessService {
 
     @Override
     @Transactional
-    public ProcessResponse updateProcess(Long id, ProcessRequest request) {
+    public ProcessResponse updateProcessByAdmin(Long id, ProcessRequest request) {
         Process entity = processRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Process not found id: " + id));
 
@@ -43,8 +43,9 @@ public class ProcessServiceImpl implements ProcessService {
                 && processRepository.existsByCode(request.getCode())) {
             throw new RuntimeException("Mã quy trình mới đã tồn tại");
         }
-
-        processMapper.updateEntity(entity, request);
+        entity.setDescription(request.getDescription());
+        entity.setCode(request.getCode());
+        entity.setName(request.getName());
         return processMapper.toDTO(processRepository.save(entity));
     }
 

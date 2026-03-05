@@ -400,7 +400,7 @@ CREATE TABLE employee_skills
     id             BIGINT PRIMARY KEY AUTO_INCREMENT,
     employee_id    BIGINT  NOT NULL,
     process_id     BIGINT  NOT NULL,
-    is_qualified   BOOLEAN          DEFAULT TRUE,
+    status         ENUM ('REVOKED', 'PENDING_REVIEW', 'VALID'),
     certified_date DATE,
     expiry_date    DATE,
 
@@ -413,7 +413,6 @@ CREATE TABLE employee_skills
     FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE CASCADE,
     FOREIGN KEY (process_id) REFERENCES processes (id) ON DELETE CASCADE,
     UNIQUE KEY uk_employee_skills (employee_id, process_id),
-    INDEX idx_employee_skills_qualified (is_qualified),
     INDEX idx_employee_skills_delete_flag (delete_flag)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -589,7 +588,6 @@ CREATE TABLE training_samples
     training_description TEXT         NOT NULL COMMENT 'Nội dung huấn luyện',
     product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
     sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
-    has_physical_sample  BOOLEAN               DEFAULT TRUE,
     process_order        INT          NOT NULL COMMENT 'Thứ tự công đoạn',
     category_order       INT          NOT NULL COMMENT 'Thứ tự hạng mục trong công đoạn',
     content_order        INT          NOT NULL COMMENT 'Thứ tự nội dung trong hạng mục',

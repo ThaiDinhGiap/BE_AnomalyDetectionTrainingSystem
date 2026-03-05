@@ -131,15 +131,15 @@ VALUES (1, 1, 15.00, 'admin'),
        (3, 5, 30.00, 'admin');
 
 -- Employee Skills
-INSERT INTO employee_skills (employee_id, process_id, is_qualified, certified_date, expiry_date, created_by)
-VALUES (1, 1, TRUE, '2023-01-15', '2026-01-15', 'admin'),
-       (1, 2, TRUE, '2023-03-20', '2026-03-20', 'admin'),
-       (2, 1, TRUE, '2023-02-10', '2026-02-10', 'admin'),
-       (3, 1, TRUE, '2022-06-01', '2025-06-01', 'admin'),
-       (4, 3, TRUE, '2023-05-01', '2026-05-01', 'admin'),
-       (5, 3, TRUE, '2023-07-01', '2026-07-01', 'admin'),
-       (7, 4, TRUE, '2023-04-15', '2026-04-15', 'admin'),
-       (7, 5, TRUE, '2023-06-20', '2026-06-20', 'admin');
+INSERT INTO employee_skills (employee_id, process_id, status, certified_date, expiry_date, created_by)
+VALUES (1, 1, 'VALID', '2023-01-15', '2026-01-15', 'admin'),
+       (1, 2, 'PENDING_REVIEW', '2023-03-20', '2026-03-20', 'admin'),
+       (2, 1, 'REVOKED', '2023-02-10', '2026-02-10', 'admin'),
+       (3, 1, 'REVOKED', '2022-06-01', '2025-06-01', 'admin'),
+       (4, 3, 'PENDING_REVIEW', '2023-05-01', '2026-05-01', 'admin'),
+       (5, 3, 'PENDING_REVIEW', '2023-07-01', '2026-07-01', 'admin'),
+       (7, 4, 'VALID', '2023-04-15', '2026-04-15', 'admin'),
+       (7, 5, 'VALID', '2023-06-20', '2026-06-20', 'admin');
 
 
 -- ============================================================================
@@ -223,16 +223,20 @@ VALUES (1, 1, 'CREATE', 'Xước bề mặt trục do dao cụ mòn', 2, '2023-0
 
 -- Training Samples (Master Data)
 INSERT INTO training_samples (id, process_id, product_line_id, defect_id, category_name, training_description,
-                              product_id, sample_code, has_physical_sample, process_order, category_order,
+                              product_id, sample_code, process_order, category_order,
                               content_order, note, created_by)
-VALUES (1, 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ',
-        'Yêu cầu công nhân soi đèn góc 45 độ để phát hiện vết xước. Thời gian tiêu chuẩn: 20 giây.', 1, 'Mẫu NG #55',
-        TRUE, 1, 1, 1, 'Lỗi quan trọng', 'system'),
-       (2, 1, 1, 2, 'Lỗi Kích Thước', 'Sử dụng thước kẹp điện tử đo 3 điểm: đầu, giữa, cuối. Ghi nhận vào form.', 1,
-        'Mẫu NG #62', TRUE, 1, 2, 1, 'Đã lọt qua trạm', 'system'),
-       (3, 5, 3, 3, 'Lắp ráp ron cao su',
-        'Sử dụng đồ gá chuẩn, ép lực đều tay tránh rách ron. Kiểm tra bằng mắt trước khi đưa vào test.', 3,
-        'Mẫu chuẩn #01', TRUE, 1, 1, 1, 'Lỗi lọt KH', 'system');
+VALUES
+    (1, 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ',
+     'Yêu cầu công nhân soi đèn góc 45 độ để phát hiện vết xước. Thời gian tiêu chuẩn: 20 giây.',
+     1, 'Mẫu NG #55', 1, 1, 1, 'Lỗi quan trọng', 'system'),
+
+    (2, 1, 1, 2, 'Lỗi Kích Thước',
+     'Sử dụng thước kẹp điện tử đo 3 điểm: đầu, giữa, cuối. Ghi nhận vào form.',
+     1, 'Mẫu NG #62', 1, 2, 1, 'Đã lọt qua trạm', 'system'),
+
+    (3, 5, 3, 3, 'Lắp ráp ron cao su',
+     'Sử dụng đồ gá chuẩn, ép lực đều tay tránh rách ron. Kiểm tra bằng mắt trước khi đưa vào test.',
+     3, 'Mẫu chuẩn #01', 1, 1, 1, 'Lỗi lọt KH', 'system');
 
 -- Training Sample Proposals
 INSERT INTO training_sample_proposals (id, product_line_id, status, current_version, form_code, created_by)

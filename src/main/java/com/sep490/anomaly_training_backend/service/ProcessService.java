@@ -7,7 +7,7 @@ import java.util.List;
 public interface ProcessService {
     ProcessResponse createProcess(ProcessRequest request);
 
-    ProcessResponse updateProcess(Long id, ProcessRequest request);
+//    ProcessResponse updateProcess(Long id, ProcessRequest request);
 
     void deleteProcess(Long id);
 
@@ -16,4 +16,7 @@ public interface ProcessService {
     List<ProcessResponse> getAllProcesses();
 
     List<ProcessResponse> getProcessesByGroup(Long groupId);
+
+    ProcessResponse updateProcessByAdmin(Long id, ProcessRequest request);
+
 }

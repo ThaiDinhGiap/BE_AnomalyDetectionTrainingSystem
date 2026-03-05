@@ -9,8 +9,8 @@ import java.time.LocalDate;
 @Builder
 public class DefectProposalDetailUpdateRequest {
     Long id;
-    Long defectId;
     ProposalType proposalType;
+    Long defectId;
     String defectDescription;
     Long processId;
     LocalDate detectedDate;
