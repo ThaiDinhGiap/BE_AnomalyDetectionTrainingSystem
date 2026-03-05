@@ -71,6 +71,14 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.getAllPlans());
     }
 
+    @Operation(summary = "Get rejected/revise training plans",
+            description = "Returns plans with status: REVISE, REJECTED_BY_SV, REJECTED_BY_MANAGER")
+    @GetMapping("/rejected")
+    @PreAuthorize("hasAuthority('training_plan.view')")
+    public ResponseEntity<List<TrainingPlanResponse>> getRejectedPlans() {
+        return ResponseEntity.ok(trainingPlanService.getRejectedPlans());
+    }
+
 //    @Operation(summary = "Get groups (Lines) managed by current user")
 //    @GetMapping("/my-managed-groups")
 //    @PreAuthorize("isAuthenticated()")
@@ -167,6 +175,15 @@ public class TrainingPlanController {
             @Parameter(description = "Plan ID") @PathVariable Long planId) {
         return ResponseEntity.ok(trainingPlanService.getEmployeesNotInPlan(planId));
     }
+
+    @Operation(summary = "Get all employees in plan's team", description = "Returns list of all active employees in the same team as the plan. Used for the training plan screen to select employees.")
+    @GetMapping("/{planId}/employees")
+    @PreAuthorize("hasAuthority('training_plan.view')")
+    public ResponseEntity<List<EmployeeResponse>> getEmployeesInTeam(
+            @Parameter(description = "Plan ID") @PathVariable Long planId) {
+        return ResponseEntity.ok(trainingPlanService.getEmployeesInTeams(planId));
+    }
+
 
     @Operation(summary = "Get product lines by group", description = "Returns list of product lines belonging to a specific group (dây chuyền).")
     @GetMapping("/product-lines-by-group/{groupId}")

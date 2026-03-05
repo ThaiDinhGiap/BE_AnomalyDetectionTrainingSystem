@@ -27,6 +27,8 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
 
     List<TrainingPlan> findByDeleteFlagFalse();
 
+    List<TrainingPlan> findByStatusInAndDeleteFlagFalse(List<ReportStatus> statuses);
+
     List<TrainingPlan> findByTeamIdAndDeleteFlagFalse(Long teamId);
 
     /**

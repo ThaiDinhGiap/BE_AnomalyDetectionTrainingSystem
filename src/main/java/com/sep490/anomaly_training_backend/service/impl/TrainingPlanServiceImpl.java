@@ -232,6 +232,23 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
+    public List<TrainingPlanResponse> getRejectedPlans() {
+        List<ReportStatus> rejectedStatuses = List.of(
+                ReportStatus.REVISE,
+                ReportStatus.REJECTED_BY_SV,
+                ReportStatus.REJECTED_BY_MANAGER
+        );
+        List<TrainingPlan> plans = trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses);
+        return plans.stream()
+                .map(plan -> {
+                    TrainingPlanResponse response = mapper.toResponse(plan);
+                    populateEmployeeProcesses(response, plan);
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ProcessResponse> getProcessesByProductLine(Long productLineId) {
         List<Process> processes = processRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
         return processes.stream().map(p -> {
@@ -388,6 +405,36 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
+    public List<EmployeeResponse> getEmployeesInTeams(Long planId) {
+        TrainingPlan plan = trainingPlanRepository.findById(planId)
+                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+
+        // Lấy teamId từ plan
+        Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
+
+        if (teamId == null) {
+            return List.of();
+        }
+
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+
+        return allEmployees.stream()
+                .map(emp -> {
+                    EmployeeResponse res = new EmployeeResponse();
+                    res.setId(emp.getId());
+                    res.setEmployeeCode(emp.getEmployeeCode());
+                    res.setFullName(emp.getFullName());
+                    res.setStatus(emp.getStatus());
+                    res.setTeamId(emp.getTeam() != null ? emp.getTeam().getId() : null);
+                    res.setTeamName(emp.getTeam() != null ? emp.getTeam().getName() : null);
+                    res.setGroupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
+                            ? emp.getTeam().getGroup().getName() : null);
+                    return res;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public TrainingPlanResponse updatePlan(Long planId, TrainingPlanUpdateRequest request) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
@@ -405,9 +452,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         // 2. UPDATE DETAILS (chỉ khi list != null)
         if (request.getDetails() != null && !request.getDetails().isEmpty()) {
-            if (isApproved) {
-                createHistorySnapshot(plan);
-            }
+//            if (isApproved) {
+//                createHistorySnapshot(plan);
+//            }
             processDetailActions(plan, request.getDetails(), isApproved);
         }
 
@@ -856,6 +903,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         if (!report.getCreatedBy().equals(currentUser.getUsername())) {
             throw new BusinessException("Only author can edit on this proposal");
         }
+        createHistorySnapshot(report);
         approvalService.revise(report, currentUser, request);
         trainingPlanRepository.save(report);
     }
@@ -866,7 +914,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
         if (report.getStatus() == ReportStatus.APPROVED) {
-            createHistorySnapshot(report); // Lưu snapshot trước khi tạo Training Result
+//            createHistorySnapshot(report); // Lưu snapshot trước khi tạo Training Result
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);

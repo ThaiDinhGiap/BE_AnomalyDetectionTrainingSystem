@@ -24,6 +24,8 @@ public interface TrainingPlanService {
 
     List<TrainingPlanResponse> getAllPlans();
 
+    List<TrainingPlanResponse> getRejectedPlans();
+
     TrainingPlanResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
 
     void deletePlan(Long id);
@@ -41,6 +43,8 @@ public interface TrainingPlanService {
     TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request);
 
     List<EmployeeResponse> getEmployeesNotInPlan(Long planId);
+
+    List<EmployeeResponse> getEmployeesInTeams(Long planId);
 
     // Relate approval methods
     void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request);
