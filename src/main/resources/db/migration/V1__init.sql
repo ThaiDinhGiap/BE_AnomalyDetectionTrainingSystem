@@ -912,7 +912,7 @@ CREATE TABLE training_result_details
 
     -- Định danh ai làm gì
     employee_id             BIGINT  NOT NULL,
-    process_id              BIGINT  NOT NULL,
+    process_id              BIGINT  NULL,
     training_sample_id      BIGINT COMMENT 'Mẫu huấn luyện sử dụng (từ danh sách)',
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
     classification          INT COMMENT 'Phân loại công đoạn',
