@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
@@ -24,6 +25,10 @@ public interface TrainingResultService {
     void signDetailsByFi(List<FiSignRequest> requests);
 
     List<TrainingResultListResponse> getAllTrainingResults();
+
+    List<TrainingResultListResponse> getResultsByLine(Long lineId);
+
+    List<ProductLineResponse> getMyProductLines();
 
     TrainingResultDetailResponse getTrainingResultDetail(Long id);
 
