@@ -137,8 +137,27 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getProcessesByLine(lineId));
     }
 
+    @Operation(summary = "Get processes by employee skill",
+            description = "Returns list of processes that the employee has skills for, filtered by product line. Used for the Công đoạn dropdown when selecting per employee.")
+    @GetMapping("/processes-by-employee")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProcessesByEmployeeSkill(
+            @Parameter(description = "Employee ID") @RequestParam("employeeId") Long employeeId,
+            @Parameter(description = "Product Line ID") @RequestParam("lineId") Long lineId) {
+        return ResponseEntity.ok(trainingResultService.getProcessesByEmployeeSkill(employeeId, lineId));
+    }
+
+    @Operation(summary = "Get products by process",
+            description = "Returns list of products (mã sản phẩm) linked to a specific process via product_process table.")
+    @GetMapping("/products-by-process/{processId}")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProductsByProcess(
+            @Parameter(description = "Process ID") @PathVariable Long processId) {
+        return ResponseEntity.ok(trainingResultService.getProductsByProcess(processId));
+    }
+
     @Operation(summary = "Get products for dropdown",
-            description = "Returns list of products (mã sản phẩm) for the product dropdown on the result detail screen.")
+            description = "Returns list of all products (mã sản phẩm) for the product dropdown on the result detail screen.")
     @GetMapping("/products")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProducts() {

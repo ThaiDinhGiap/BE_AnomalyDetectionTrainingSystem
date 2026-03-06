@@ -152,8 +152,14 @@ VALUES
     (4, 7),   -- training_sample_proposal.create
     (4, 8),   -- training_sample_proposal.edit
     (4, 9),   -- training_sample_proposal.delete
-    (4, 100); -- training_sample.view (Xem danh sách mẫu huấn luyện)
-
+    (4, 10), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 11),
+    (4, 12),
+    (4, 13),
+    (4, 14),
+    (4, 15),
+    (4, 16),
+    (4, 17);
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
