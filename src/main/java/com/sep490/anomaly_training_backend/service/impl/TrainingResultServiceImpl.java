@@ -12,6 +12,8 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResp
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductProcess;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
@@ -51,6 +53,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final ProcessRepository processRepository;
     private final ProductRepository productRepository;
     private final TrainingSampleRepository trainingSampleRepository;
+    private final EmployeeSkillRepository employeeSkillRepository;
+    private final ProductProcessRepository productProcessRepository;
 
     @Override
     @Transactional
@@ -203,10 +207,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setTrainingTopic(reqDetail.getTrainingTopic());
                 }
 
-                // G. Ngày thực tế
-                if (reqDetail.getActualDate() != null) {
-                    detail.setActualDate(reqDetail.getActualDate());
-                }
+                // G. (actualDate chỉ được set khi submit, không cho FE gửi)
 
                 // H. Thời gian: đưa mẫu vào, bắt đầu vòng thao tác, lấy mẫu ra
                 if (reqDetail.getTimeIn() != null) detail.setTimeIn(reqDetail.getTimeIn());
@@ -249,15 +250,11 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setIsRetrained(reqDetail.getIsRetrained());
                 }
 
-                // N. Auto set actualDate khi đủ 4 chữ ký
+                // N. Auto update status khi đủ 4 chữ ký
                 if (isFullSigned(detail)) {
-                    if (detail.getActualDate() == null) {
-                        detail.setActualDate(java.time.LocalDate.now());
-                    }
                     detail.setStatus(ReportStatus.DONE);
                     // Update plan detail
                     if (detail.getTrainingPlanDetail() != null) {
-                        detail.getTrainingPlanDetail().setActualDate(detail.getActualDate());
                         detail.getTrainingPlanDetail().setStatus(
                                 com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
                     }
@@ -561,6 +558,18 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             throw new IllegalArgumentException("Không thể gửi. Vui lòng chọn Công đoạn cho tất cả các hạng mục.");
         }
 
+        // Set actualDate = now cho tất cả detail khi submit
+        java.time.LocalDate now = java.time.LocalDate.now();
+        for (TrainingResultDetail detail : result.getDetails()) {
+            if (detail.getActualDate() == null) {
+                detail.setActualDate(now);
+            }
+            // Cập nhật actualDate cho plan detail tương ứng
+            if (detail.getTrainingPlanDetail() != null && detail.getTrainingPlanDetail().getActualDate() == null) {
+                detail.getTrainingPlanDetail().setActualDate(now);
+            }
+        }
+
         result.setStatus(ReportStatus.WAITING_SV);
         trainingResultRepository.save(result);
     }
@@ -571,6 +580,31 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 processRepository.findByProductLineIdAndDeleteFlagFalse(lineId);
         return processes.stream()
                 .map(p -> new TrainingResultOptionResponse(p.getId(), p.getCode() + " - " + p.getName()))
+                .toList();
+    }
+
+    @Override
+    public List<TrainingResultOptionResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId) {
+        // Lấy danh sách process mà employee có skill, thuộc product line (lineId)
+        List<EmployeeSkill> skills = employeeSkillRepository
+                .findByEmployeeIdAndProcessProductLineId(employeeId, lineId);
+        return skills.stream()
+                .map(skill -> {
+                    com.sep490.anomaly_training_backend.model.Process p = skill.getProcess();
+                    return new TrainingResultOptionResponse(p.getId(), p.getCode() + " - " + p.getName());
+                })
+                .toList();
+    }
+
+    @Override
+    public List<TrainingResultOptionResponse> getProductsByProcess(Long processId) {
+        // Lấy danh sách sản phẩm liên kết với công đoạn qua bảng product_process
+        List<ProductProcess> productProcesses = productProcessRepository.findByProcessId(processId);
+        return productProcesses.stream()
+                .map(pp -> {
+                    Product product = pp.getProduct();
+                    return new TrainingResultOptionResponse(product.getId(), product.getCode() + " - " + product.getName());
+                })
                 .toList();
     }
 

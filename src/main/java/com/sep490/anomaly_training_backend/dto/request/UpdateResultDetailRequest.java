@@ -3,7 +3,6 @@ package com.sep490.anomaly_training_backend.dto.request;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
@@ -28,8 +27,6 @@ public class UpdateResultDetailRequest {
     // Thời gian vòng thao tác TB (s) - auto-fill từ process, nhưng có thể override
     private BigDecimal cycleTimeStandard;
 
-    // Ngày thực tế huấn luyện
-    private LocalDate actualDate;
 
     // Thời gian đưa mẫu vào
     private LocalTime timeIn;

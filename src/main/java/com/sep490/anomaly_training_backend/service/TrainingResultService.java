@@ -36,6 +36,10 @@ public interface TrainingResultService {
 
     List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
 
+    List<TrainingResultOptionResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId);
+
+    List<TrainingResultOptionResponse> getProductsByProcess(Long processId);
+
     void rejectDetail(Long detailId, String reason);
 
     void retrainDetail(Long detailId);
