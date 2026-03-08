@@ -38,14 +38,14 @@ VALUES
 (7,  'training_sample_proposal.create', 'Tạo chủ đề đào tạo',           2, 'create', 2, TRUE, 'system'),
 (8,  'training_sample_proposal.edit',   'Sửa chủ đề đào tạo',           2, 'edit',   3, TRUE, 'system'),
 (9,  'training_sample_proposal.delete', 'Xoá chủ đề đào tạo',           2, 'delete', 4, TRUE, 'system'),
-(100,'training_sample.view',           'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
+(100,'training_sample.view',            'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
 
 -- training_plan (module 3)
-(10, 'training_plan.view',    'Xem kế hoạch đào tạo',    3, 'view',   1, TRUE, 'system'),
-(11, 'training_plan.create',  'Tạo kế hoạch đào tạo',    3, 'create', 2, TRUE, 'system'),
-(12, 'training_plan.edit',    'Sửa kế hoạch đào tạo',    3, 'edit',   3, TRUE, 'system'),
-(13, 'training_plan.delete',  'Xoá kế hoạch đào tạo',    3, 'delete', 4, TRUE, 'system'),
-(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
+(10, 'training_plan.view',    'Xem kế hoạch đào tạo',       3, 'view',   1, TRUE, 'system'),
+(11, 'training_plan.create',  'Tạo kế hoạch đào tạo',       3, 'create', 2, TRUE, 'system'),
+(12, 'training_plan.edit',    'Sửa kế hoạch đào tạo',       3, 'edit',   3, TRUE, 'system'),
+(13, 'training_plan.delete',  'Xoá kế hoạch đào tạo',       3, 'delete', 4, TRUE, 'system'),
+(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve',5, TRUE, 'system'),
 
 -- training_result (module 4)
 (15, 'training_result.view',  'Xem kết quả đào tạo',     4, 'view',   1, TRUE, 'system'),
@@ -152,7 +152,8 @@ VALUES
     (4, 7),   -- training_sample_proposal.create
     (4, 8),   -- training_sample_proposal.edit
     (4, 9),   -- training_sample_proposal.delete
-    (4, 10), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 100), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 10),
     (4, 11),
     (4, 12),
     (4, 13),
