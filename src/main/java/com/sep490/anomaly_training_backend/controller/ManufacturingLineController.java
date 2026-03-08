@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.ProcessService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -32,9 +34,15 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
     }
 
+    @GetMapping("/lines-by-teamlead")
+    @PreAuthorize("hasAuthority('manufacturing-line.view')")
+    public ResponseEntity<ApiResponse<List<ProductLineResponse>>> findProductLineByTeamLeadId(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(productLineService.getByTeamLeadId(currentUser.getId())));
+    }
+
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing-line.view')")
-    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLine(@RequestBody ProductLineRequest productLineRequest) {
+    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 

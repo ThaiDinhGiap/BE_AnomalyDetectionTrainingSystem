@@ -13,4 +13,6 @@ public interface ProductLineService {
     void deleteProductLine(Long id);
 
     ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest);
+
+    List<ProductLineResponse> getByTeamLeadId(Long teamLeadId);
 }

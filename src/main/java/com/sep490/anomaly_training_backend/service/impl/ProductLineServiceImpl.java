@@ -74,4 +74,12 @@ public class ProductLineServiceImpl implements ProductLineService {
                 ));
         return productLineMapper.toDto(productLineRepository.save(productLine));
     }
+
+    @Override
+    public List<ProductLineResponse> getByTeamLeadId(Long teamLeadId) {
+        return productLineRepository.findProductLineByTeamLeadId(teamLeadId).
+                                    stream()
+                                    .map(productLineMapper::toDto)
+                                    .toList();
+    }
 }

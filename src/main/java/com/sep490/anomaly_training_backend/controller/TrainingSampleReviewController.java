@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/-review-training-samples")
+@RequestMapping("/api/v1/review-training-samples")
 @RequiredArgsConstructor
 @Tag(name = "Training Sample Management", description = "API sắp xếp lịch rà soát danh sách mẫu huấn luyện hàng năm và báo cáo kết quả")
 public class TrainingSampleReviewController {
