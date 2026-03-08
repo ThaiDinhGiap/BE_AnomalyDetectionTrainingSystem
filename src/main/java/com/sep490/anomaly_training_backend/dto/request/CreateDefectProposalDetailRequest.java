@@ -15,6 +15,7 @@ public class CreateDefectProposalDetailRequest {
     Long processId;
     LocalDate detectedDate;
     String note;
+    Boolean isEscaped;
     String originCause;
     String outflowCause;
     String causePoint;

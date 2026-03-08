@@ -210,6 +210,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
+            entity.setIsEscaped(detailRequest.getIsEscaped());
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
             entity.setOriginCause(detailRequest.getOriginCause());
