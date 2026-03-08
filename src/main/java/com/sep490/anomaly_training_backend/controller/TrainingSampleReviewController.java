@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewConfigResponse;
@@ -11,6 +10,7 @@ import com.sep490.anomaly_training_backend.service.TrainingSampleReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,12 +27,21 @@ public class TrainingSampleReviewController {
     private final TrainingSampleReviewConfigService trainingSampleReviewConfigService;
     private final TrainingSampleReviewService trainingSampleReviewService;
 
-    @Operation(summary = "Lấy danh sách cấu hình lịch sắp xếp hàng năm")
+    @Operation(summary = "Lấy danh sách cấu hình lịch kiểm tra định kì")
     @GetMapping("/config/{productLineId}")
-    @PreAuthorize("hasAuthority('training_sample_review.view')")
+    @PreAuthorize("hasAuthority('training_sample_review_config.view')")
     public ResponseEntity<List<TrainingSampleReviewConfigResponse>> getTrainingSampleReviewConfigByProductLine(@PathVariable("productLineId") Long productLineId) {
         List<TrainingSampleReviewConfigResponse> response = trainingSampleReviewConfigService.getTrainingSampleReviewConfigByProductLine(productLineId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Tạo lịch kiểm tra định kì")
+    @PostMapping("/create-config")
+    @PreAuthorize("hasAuthority('training_sample_review_config.create')")
+    public ResponseEntity<ApiResponse<Void>> createTrainingSampleReviewPlan(@AuthenticationPrincipal User currentUser,
+                                                                            @RequestBody TrainingSampleReviewRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
     @Operation(summary = "Lấy danh sách kết quả rà soát hàng năm")
     @GetMapping("/report/{productLineId}")
@@ -43,7 +52,7 @@ public class TrainingSampleReviewController {
     }
 
     @Operation(summary = "Xác nhận hoàn thành rà soát mẫu huấn luyện hàng năm")
-    @GetMapping("/confirm")
+    @PutMapping("/confirm")
     @PreAuthorize("hasAuthority('training_sample_review.edit')")
     public ResponseEntity<TrainingSampleReviewResponse> confirmCompleteReviewTrainingSample(@AuthenticationPrincipal User currentUser,
                                                                                             @RequestBody TrainingSampleReviewRequest request) {
