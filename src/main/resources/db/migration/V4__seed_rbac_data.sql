@@ -152,7 +152,8 @@ VALUES
     (4, 7),   -- training_sample_proposal.create
     (4, 8),   -- training_sample_proposal.edit
     (4, 9),   -- training_sample_proposal.delete
-    (4, 10), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 100), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 10),
     (4, 11),
     (4, 12),
     (4, 13),
