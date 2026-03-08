@@ -59,7 +59,7 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Employee employee;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "process_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
