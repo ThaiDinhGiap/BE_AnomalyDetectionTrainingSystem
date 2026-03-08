@@ -160,7 +160,8 @@ VALUES
     (4, 14),
     (4, 15),
     (4, 16),
-    (4, 17);
+    (4, 17),
+    (4, 47);
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES

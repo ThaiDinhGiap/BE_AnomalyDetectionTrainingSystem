@@ -29,68 +29,68 @@ public class ManufacturingLineController {
     private final EmployeeSkillService employeeSkillService;
 
     @GetMapping("/product-lines")
-    @PreAuthorize("hasAuthority('manufacturing-line.view')")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
     }
 
     @GetMapping("/lines-by-teamlead")
-    @PreAuthorize("hasAuthority('manufacturing-line.view')")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> findProductLineByTeamLeadId(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getByTeamLeadId(currentUser.getId())));
     }
 
     @PostMapping("/product-lines")
-    @PreAuthorize("hasAuthority('manufacturing-line.view')")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 
     @PostMapping("/processes")
-    @PreAuthorize("hasAuthority('manufacturing-line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.create')")
     public ResponseEntity<ApiResponse<ProcessResponse>> createProcess(@RequestBody ProcessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(processService.createProcess(request)));
     }
 
     @PostMapping("/employee-skills")
-    @PreAuthorize("hasAuthority('manufacturing-line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.create')")
     public ResponseEntity<ApiResponse<EmployeeSkillResponse>> createSkill(@RequestBody EmployeeSkillRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.createEmployeeSkill(request)));
     }
     // ====================== UPDATE ======================
     @PutMapping("/product-lines/{id}")
-    @PreAuthorize("hasAuthority('manufacturing-line.edit')")
+    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> updateProductLine(@PathVariable Long id, @RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.updateProductLine(id, productLineRequest)));
     }
     @PutMapping("/processes/{id}")
-    @PreAuthorize("hasAuthority('manufacturing-line.edit')")
+    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProcess(@PathVariable Long id, @RequestBody ProcessRequest processRequest) {
         return ResponseEntity.ok(ApiResponse.success(processService.updateProcessByAdmin(id, processRequest)));
     }
 //    @PutMapping("/employee-skills/{id}")
-//    @PreAuthorize("hasAuthority('manufacturing-line.edit')")
+//    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
 //    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkillByTeamLead(@PathVariable Long id, @RequestBody List<EmployeeSkillRequest> employeeSkillRequestList) {
 //        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequestList)));
 //    }
 
     // ====================== DELETE ======================
     @DeleteMapping("/product-lines/{id}")
-    @PreAuthorize("hasAuthority('manufacturing-line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
     public ResponseEntity<Void> deleteProductLine(@PathVariable Long id) {
         productLineService.deleteProductLine(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/processes/{id}")
-    @PreAuthorize("hasAuthority('manufacturing-line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
     public ResponseEntity<Void> deleteProcess(@PathVariable Long id) {
         processService.deleteProcess(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/employee-skills/{id}")
-    @PreAuthorize("hasAuthority('manufacturing-line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
     public ResponseEntity<Void> deleteEmployeeSkill(@PathVariable Long id) {
         employeeSkillService.deleteEmployeeSkill(id);
         return ResponseEntity.noContent().build();
