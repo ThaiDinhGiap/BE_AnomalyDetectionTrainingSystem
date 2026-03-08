@@ -77,11 +77,10 @@ public class ProcessServiceImpl implements ProcessService {
     }
 
     @Override
-    public List<ProcessResponse> getProcessesByGroup(Long groupId) {
-//        return processRepository.findByGroupId(groupId).stream()
-//                .filter(p -> !p.isDeleteFlag()) // Filter đã xóa
-//                .map(processMapper::toDTO)
-//                .collect(Collectors.toList());
-        return null;
+    public List<ProcessResponse> getProcessesByProductLineId(Long productLineId) {
+        return processRepository.findByProductLineId(productLineId).stream()
+                .filter(p -> !p.isDeleteFlag()) // Filter đã xóa
+                .map(processMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

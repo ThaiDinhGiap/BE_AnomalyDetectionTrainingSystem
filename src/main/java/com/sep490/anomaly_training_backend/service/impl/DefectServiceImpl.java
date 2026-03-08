@@ -2,13 +2,10 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.mapper.DefectMapper;
-import com.sep490.anomaly_training_backend.model.Group;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.DefectService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +30,12 @@ public class DefectServiceImpl implements DefectService {
         return defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId)
                 .stream()
                 .map(defectMapper::toDto).toList();
+    }
+
+    @Override
+    public DefectResponse getDefectById(Long id) {
+        Defect defect = defectRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Defect not found"));
+        return defectMapper.toDto(defect);
     }
 
 }

@@ -15,7 +15,7 @@ public interface ProcessService {
 
     List<ProcessResponse> getAllProcesses();
 
-    List<ProcessResponse> getProcessesByGroup(Long groupId);
+    List<ProcessResponse> getProcessesByProductLineId(Long groupId);
 
     ProcessResponse updateProcessByAdmin(Long id, ProcessRequest request);
 

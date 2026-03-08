@@ -54,10 +54,18 @@ public class DefectController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
+    @Operation(summary = "Get defects detail information")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('defect.detail')")
+    public ResponseEntity<ApiResponse<DefectResponse>> getDefectDetail(@PathVariable("id") Long id) {
+        DefectResponse response = defectService.getDefectById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @Operation(summary = "Get defect proposals by productLine")
     @GetMapping("/proposal")
     @PreAuthorize("hasAuthority('defect_proposal.view')")
-    public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByGroup(
+    public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByProductLine(
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 

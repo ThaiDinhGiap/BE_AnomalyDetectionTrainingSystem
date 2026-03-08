@@ -40,6 +40,12 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getByTeamLeadId(currentUser.getId())));
     }
 
+    @GetMapping("/processes-by-line/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
+    }
+
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
