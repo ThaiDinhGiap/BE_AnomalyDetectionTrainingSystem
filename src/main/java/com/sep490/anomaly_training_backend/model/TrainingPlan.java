@@ -245,16 +245,16 @@ public class TrainingPlan extends BaseEntity implements Approvable {
      */
     public void validateForSubmission() {
         if (details == null || details.isEmpty()) {
-            throw new IllegalArgumentException("Plan dont have details." +
-                    "Please enter 1 detail line at least before submit.");
+            throw new IllegalArgumentException("Plan doesn't have details. " +
+                    "Please enter at least 1 detail line before submit.");
         }
 
         if (title == null || title.trim().isEmpty()) {
-            throw new IllegalArgumentException("Plan's title cant be empty.");
+            throw new IllegalArgumentException("Plan's title can't be empty.");
         }
 
         if (monthEnd.isBefore(monthStart)) {
-            throw new IllegalArgumentException("Month End can be before Month Start.");
+            throw new IllegalArgumentException("Month End cannot be before Month Start.");
         }
 
         for (TrainingPlanDetail detail : details) {
