@@ -9,4 +9,6 @@ public interface DefectService {
 
     List<DefectResponse> getDefectByProductLine(Long productLineId);
 
+    DefectResponse getDefectById(Long id);
+
 }

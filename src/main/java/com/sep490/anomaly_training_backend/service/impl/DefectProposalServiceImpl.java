@@ -89,9 +89,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             throw new BadRequestException("Detail list must not be empty");
         }
         // load existing details (of this proposal)
-        List<DefectProposalDetail> existingDetails =
-                defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
-
+        List<DefectProposalDetail> existingDetails = proposal.getDetails();
         Map<Long, DefectProposalDetail> existingMap = new HashMap<>();
         for (DefectProposalDetail detail : existingDetails) {
             existingMap.put(detail.getId(), detail);
@@ -140,9 +138,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         }
         defectProposalRepository.save(proposal);
         // Query lại & build response (đảm bảo trả về state mới nhất)
-        List<DefectProposalDetail> latestDetails =
-                defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
-
+        List<DefectProposalDetail> latestDetails = proposal.getDetails();
         DefectProposalUpdateResponse response = new DefectProposalUpdateResponse();
         response.setId(proposal.getId());
         response.setProductLineId(proposal.getProductLine() != null ? proposal.getProductLine().getId() : null);
@@ -210,6 +206,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
+            entity.setIsEscaped(detailRequest.getIsEscaped());
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
             entity.setOriginCause(detailRequest.getOriginCause());
@@ -288,11 +285,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
         if (entity.getProcess() != null) {
             response.setProcessId(entity.getProcess().getId());
+            response.setProcessName(entity.getProcess().getName());
         }
-
         response.setDetectedDate(entity.getDetectedDate());
         response.setIsEscaped(entity.getIsEscaped());
-
         response.setNote(entity.getNote());
         response.setOriginCause(entity.getOriginCause());
         response.setOutflowCause(entity.getOutflowCause());

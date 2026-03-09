@@ -7,7 +7,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class DefectResponse {
-    Long id;
+    Long defectId;
     String defectDescription;
     Long processId;
     String processName;

@@ -127,4 +127,72 @@ public class TrainingResultController {
     ) {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
+
+    @Operation(summary = "Get processes by product line",
+            description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")
+    @GetMapping("/processes-by-line/{lineId}")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProcessesByLine(
+            @Parameter(description = "Product Line ID") @PathVariable Long lineId) {
+        return ResponseEntity.ok(trainingResultService.getProcessesByLine(lineId));
+    }
+
+    @Operation(summary = "Get processes by employee skill",
+            description = "Returns list of processes that the employee has skills for, filtered by product line. Used for the Công đoạn dropdown when selecting per employee.")
+    @GetMapping("/processes-by-employee")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProcessesByEmployeeSkill(
+            @Parameter(description = "Employee ID") @RequestParam("employeeId") Long employeeId,
+            @Parameter(description = "Product Line ID") @RequestParam("lineId") Long lineId) {
+        return ResponseEntity.ok(trainingResultService.getProcessesByEmployeeSkill(employeeId, lineId));
+    }
+
+    @Operation(summary = "Get products by process",
+            description = "Returns list of products (mã sản phẩm) linked to a specific process via product_process table.")
+    @GetMapping("/products-by-process/{processId}")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProductsByProcess(
+            @Parameter(description = "Process ID") @PathVariable Long processId) {
+        return ResponseEntity.ok(trainingResultService.getProductsByProcess(processId));
+    }
+
+    @Operation(summary = "Get products for dropdown",
+            description = "Returns list of all products (mã sản phẩm) for the product dropdown on the result detail screen.")
+    @GetMapping("/products")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getProducts() {
+        return ResponseEntity.ok(trainingResultService.getProductGroupsByLine(null));
+    }
+
+    @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)",
+            description = "Submit the training result. All details must have been filled and signed before submission.")
+    @PutMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('training_result.edit')")
+    public ResponseEntity<String> submitResult(
+            @Parameter(description = "Training Result ID") @PathVariable Long id) {
+        trainingResultService.submitResult(id);
+        return ResponseEntity.ok("Kết quả huấn luyện đã được gửi thành công!");
+    }
+
+    @Operation(summary = "Reject a training result detail (Từ chối kết quả)",
+            description = "Reject a specific result detail row with a reason. The employee may need retraining.")
+    @PutMapping("/details/{detailId}/reject")
+    @PreAuthorize("hasAuthority('training_result.edit')")
+    public ResponseEntity<String> rejectDetail(
+            @Parameter(description = "Detail ID to reject") @PathVariable Long detailId,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String reason = (body != null) ? body.get("reason") : null;
+        trainingResultService.rejectDetail(detailId, reason);
+        return ResponseEntity.ok("Đã từ chối kết quả!");
+    }
+
+    @Operation(summary = "Mark detail for retraining (Huấn luyện lại)",
+            description = "Mark a specific result detail as needing retraining and create a new detail row.")
+    @PutMapping("/details/{detailId}/retrain")
+    @PreAuthorize("hasAuthority('training_result.edit')")
+    public ResponseEntity<String> retrainDetail(
+            @Parameter(description = "Detail ID") @PathVariable Long detailId) {
+        trainingResultService.retrainDetail(detailId);
+        return ResponseEntity.ok("Đã đánh dấu huấn luyện lại!");
+    }
 }

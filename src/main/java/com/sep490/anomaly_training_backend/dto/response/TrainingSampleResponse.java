@@ -9,9 +9,12 @@ public class TrainingSampleResponse {
     Long id;
     Long processId;
     String processName;
+    Long productId;
+    String productCode;
     Long defectId;
     String defectName;
     String sampleCode;
+    String categoryName;
     String trainingDescription;
     String note;
 }

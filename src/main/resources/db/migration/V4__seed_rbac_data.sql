@@ -32,20 +32,24 @@ VALUES
 (4,  'defect_proposal.delete',  'Xoá báo cáo lỗi',          1, 'delete', 4, TRUE, 'system'),
 (5,  'defect_proposal.approve', 'Phê duyệt báo cáo lỗi',    1, 'approve',5, TRUE, 'system'),
 (111,'defect.view',             'Xem danh sách lỗi quá khứ',1, 'view',  6, TRUE, 'system'),
+(112,'defect.detail',           'Xem chi tiết lỗi quá khứ', 1, 'view',  6, TRUE, 'system'),
+
 
 -- training_sample (module 2)
 (6,  'training_sample_proposal.view',   'Xem chủ đề đào tạo',           2, 'view',   1, TRUE, 'system'),
 (7,  'training_sample_proposal.create', 'Tạo chủ đề đào tạo',           2, 'create', 2, TRUE, 'system'),
 (8,  'training_sample_proposal.edit',   'Sửa chủ đề đào tạo',           2, 'edit',   3, TRUE, 'system'),
 (9,  'training_sample_proposal.delete', 'Xoá chủ đề đào tạo',           2, 'delete', 4, TRUE, 'system'),
-(100,'training_sample.view',           'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
+(100,'training_sample.view',            'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
+(101,'training_sample.detail',          'Xem chi tiết mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
+
 
 -- training_plan (module 3)
-(10, 'training_plan.view',    'Xem kế hoạch đào tạo',    3, 'view',   1, TRUE, 'system'),
-(11, 'training_plan.create',  'Tạo kế hoạch đào tạo',    3, 'create', 2, TRUE, 'system'),
-(12, 'training_plan.edit',    'Sửa kế hoạch đào tạo',    3, 'edit',   3, TRUE, 'system'),
-(13, 'training_plan.delete',  'Xoá kế hoạch đào tạo',    3, 'delete', 4, TRUE, 'system'),
-(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
+(10, 'training_plan.view',    'Xem kế hoạch đào tạo',       3, 'view',   1, TRUE, 'system'),
+(11, 'training_plan.create',  'Tạo kế hoạch đào tạo',       3, 'create', 2, TRUE, 'system'),
+(12, 'training_plan.edit',    'Sửa kế hoạch đào tạo',       3, 'edit',   3, TRUE, 'system'),
+(13, 'training_plan.delete',  'Xoá kế hoạch đào tạo',       3, 'delete', 4, TRUE, 'system'),
+(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve',5, TRUE, 'system'),
 
 -- training_result (module 4)
 (15, 'training_result.view',  'Xem kết quả đào tạo',     4, 'view',   1, TRUE, 'system'),
@@ -101,7 +105,13 @@ VALUES
 (47, 'manufacturing_line.view',          'Xem danh sách cấu trúc dây chuyền',13, 'view',   1, TRUE, 'system'),
 (48, 'manufacturing_line.create',        'Tạo danh sách cấu trúc dây chuyền',13, 'create', 2, TRUE, 'system'),
 (49, 'manufacturing_line.edit',          'Sửa danh sách cấu trúc dây chuyền',13, 'edit',   3, TRUE, 'system'),
-(50, 'manufacturing_line.delete',        'Xoá danh sách cấu trúc dây chuyền',13, 'delete', 4, TRUE, 'system');
+(50, 'manufacturing_line.delete',        'Xoá danh sách cấu trúc dây chuyền',13, 'delete', 4, TRUE, 'system'),
+
+-- training sample review (module 14)
+(51, 'training_sample_review.view',          'Lấy danh sách kết quả rà soát hàng năm',             13, 'view',   1, TRUE, 'system'),
+(52, 'training_sample_review.confirm',       'Xác nhận hoàn thành rà soát mẫu huấn luyện hàng năm',13, 'edit',   3, TRUE, 'system'),
+(53, 'training_sample_review_config.view',   'Lấy danh sách cấu hình lịch kiểm tra định kì',       13, 'create', 2, TRUE, 'system'),
+(54, 'training_sample_review_config.create', 'Tạo lịch kiểm tra định kì',                  13, 'delete', 4, TRUE, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 3: ADD MISSING SYSTEM ROLE (FINAL_INSPECTION)
 -- V2 already seeded roles 1-4; add role 5 here
@@ -152,8 +162,18 @@ VALUES
     (4, 7),   -- training_sample_proposal.create
     (4, 8),   -- training_sample_proposal.edit
     (4, 9),   -- training_sample_proposal.delete
-    (4, 100); -- training_sample.view (Xem danh sách mẫu huấn luyện)
-
+    (4, 100), -- training_sample.view (Xem danh sách mẫu huấn luyện)
+    (4, 10),
+    (4, 11),
+    (4, 12),
+    (4, 13),
+    (4, 14),
+    (4, 15),
+    (4, 16),
+    (4, 17),
+    (4, 101),
+    (4, 112),
+    (4, 47);
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
