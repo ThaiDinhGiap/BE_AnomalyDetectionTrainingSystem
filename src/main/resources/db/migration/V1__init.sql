@@ -66,7 +66,7 @@ CREATE TABLE users
     full_name         VARCHAR(100)                                                               NOT NULL,
     role              ENUM ('ADMIN', 'MANAGER', 'SUPERVISOR', 'TEAM_LEADER', 'FINAL_INSPECTION') NOT NULL,
     is_active         BOOLEAN                                                                             DEFAULT TRUE,
-    employee_code VARCHAR(20)  NOT NULL UNIQUE,
+    employee_code     VARCHAR(20)                                                                NOT NULL UNIQUE,
     -- OAuth support
     oauth_provider    ENUM ('LOCAL', 'MICROSOFT')                                                         DEFAULT 'LOCAL',
     oauth_provider_id VARCHAR(255),
@@ -742,24 +742,27 @@ CREATE TABLE training_sample_proposal_detail_history
 -- 4.1 TRAINING_PLAN (Header kế hoạch)
 CREATE TABLE training_plans
 (
-    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    form_code       VARCHAR(50)      DEFAULT 'TR_PLAN',
-    title           TEXT,
-    month_start     DATE,
-    month_end       DATE,
-    team_id         BIGINT,
-    line_id         BIGINT COMMENT 'Dây chuyền áp dụng',
-    status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    form_code            VARCHAR(50)      DEFAULT 'TR_PLAN',
+    title                TEXT,
+    month_start          DATE,
+    month_end            DATE,
+    team_id              BIGINT,
+    line_id              BIGINT COMMENT 'Dây chuyền áp dụng',
+    status               ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
         'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
-                                     DEFAULT 'DRAFT',
-    current_version INT              DEFAULT 1,
-    note            TEXT,
+                                          DEFAULT 'DRAFT',
+    current_version      INT              DEFAULT 1,
+    note                 TEXT,
 
-    delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
-    created_by      VARCHAR(255),
-    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by      VARCHAR(255),
+    min_training_per_day INT              DEFAULT 1 COMMENT 'Giới hạn huấn luyện tối thiểu/ngày',
+    max_training_per_day INT              DEFAULT 3 COMMENT 'Giới hạn huấn luyện tối đa/ngày',
+
+    delete_flag          BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at           TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    created_by           VARCHAR(255),
+    updated_at           TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by           VARCHAR(255),
 
     FOREIGN KEY (team_id) REFERENCES `teams` (id),
     FOREIGN KEY (line_id) REFERENCES product_lines (id),
@@ -777,16 +780,16 @@ CREATE TABLE training_plans
 CREATE TABLE training_plan_details
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_id BIGINT  NOT NULL,
-    employee_id      BIGINT  NOT NULL,
-    batch_id VARCHAR(36) NULL,
+    training_plan_id BIGINT      NOT NULL,
+    employee_id      BIGINT      NOT NULL,
+    batch_id         VARCHAR(36) NULL,
     target_month     DATE COMMENT 'Tháng thực hiện',
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
     status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
     note             TEXT,
 
-    delete_flag      BOOLEAN NOT NULL                   DEFAULT FALSE,
+    delete_flag      BOOLEAN     NOT NULL               DEFAULT FALSE,
     created_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
     updated_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -840,8 +843,8 @@ CREATE TABLE training_plan_history
 CREATE TABLE training_plan_detail_history
 (
     id                       BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_history_id BIGINT  NOT NULL,
-    batch_id VARCHAR(36) NULL,
+    training_plan_history_id BIGINT      NOT NULL,
+    batch_id                 VARCHAR(36) NULL,
     -- Snapshot
     employee_id              BIGINT,
     target_month             DATE,
@@ -850,10 +853,10 @@ CREATE TABLE training_plan_detail_history
     status                   VARCHAR(20),
     note                     TEXT,
 
-    delete_flag              BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at               TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    delete_flag              BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at               TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by               VARCHAR(255),
-    updated_at               TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by               VARCHAR(255),
 
     FOREIGN KEY (training_plan_history_id) REFERENCES training_plan_history (id) ON DELETE CASCADE,
@@ -863,6 +866,22 @@ CREATE TABLE training_plan_detail_history
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE training_plan_special_days
+(
+    id               BIGINT PRIMARY KEY AUTO_INCREMENT,
+    training_plan_id BIGINT NOT NULL,
+    special_date     DATE   NOT NULL,
+    training_slot    INT       DEFAULT 0 COMMENT 'Số lượt huấn luyện',
+    note             VARCHAR(255),
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by       VARCHAR(255),
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by       VARCHAR(255),
+    FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
+    UNIQUE KEY uk_tp_special_days (training_plan_id, special_date)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- PART 5: TRAINING RESULT (Kết quả huấn luyện)
