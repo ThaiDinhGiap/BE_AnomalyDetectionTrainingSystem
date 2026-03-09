@@ -1,9 +1,9 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalDetailService;
@@ -72,8 +72,8 @@ public class TrainingSampleController {
     @Operation(summary = "Create new training sample proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('training_sample_proposal.create')")
-    public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(@RequestBody CreateTrainingSampleProposalRequest createTrainingSampleProposalRequest) {
-        trainingSampleProposalService.createTrainingSampleProposal(createTrainingSampleProposalRequest);
+    public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(@RequestBody TrainingSampleProposalRequest request) {
+        trainingSampleProposalService.createTrainingSampleProposal(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
@@ -88,7 +88,7 @@ public class TrainingSampleController {
     @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingProposal(
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,
-            @Valid @RequestBody TrainingSampleProposalUpdateRequest request) throws BadRequestException {
+            @Valid @RequestBody TrainingSampleProposalRequest request) throws BadRequestException {
         TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request);
         return ResponseEntity.ok(response);
     }
