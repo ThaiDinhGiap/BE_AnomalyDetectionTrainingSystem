@@ -272,19 +272,14 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     @Transactional
     public TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request) {
-        // 1. Load plan
+        // 1. Load plan (aggregate root)
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
 
-        // 2. Chỉ cho thêm khi DRAFT hoặc REJECTED
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new BusinessException("Không thể thêm chi tiết khi kế hoạch đang chờ duyệt.");
-        }
-
-        // 3. Validate Employee
+        // 2. Validate Employee
         Employee employee = getValidatedEmployee(request.getEmployeeId());
 
-        // 4. Tạo detail rows cho từng schedule
+        // 3. Tạo detail rows cho từng schedule — add through aggregate root
         List<TrainingPlanDetail> addedDetails = new ArrayList<>();
         String batchId = java.util.UUID.randomUUID().toString();
         if (request.getSchedules() != null) {
@@ -293,7 +288,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                     TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
                     detail.setStatus(TrainingPlanDetailStatus.PENDING);
                     detail.setBatchId(batchId);
-                    plan.getDetails().add(detail);
+                    plan.addDetail(detail); // Aggregate root method — validates editable + sets back-reference
                     addedDetails.add(detail);
                 }
             }
@@ -315,19 +310,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     @Transactional
     public TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request) {
-        // 1. Load plan
+        // 1. Load plan (aggregate root)
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
 
-        // 2. Validate trạng thái
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        // 2. Validate editable status through aggregate root
+        if (!plan.isEditable()) {
             throw new BusinessException("Không thể chỉnh sửa chi tiết khi kế hoạch đang chờ duyệt.");
         }
 
-        // 3. Tìm detail
-        TrainingPlanDetail detail = plan.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
-                .findFirst()
+        // 3. Tìm detail within aggregate
+        TrainingPlanDetail detail = plan.findDetailById(detailId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlanDetail", "id", detailId));
 
         // 4. Validate & update Employee nếu thay đổi
@@ -440,31 +433,21 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch ID: " + planId));
 
-        // Chặn sửa khi đang chờ duyệt
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        // Validate editable through aggregate root
+        if (!plan.isEditable()) {
             throw new IllegalStateException("Không thể chỉnh sửa khi đang chờ duyệt.");
         }
 
-        boolean isApproved = ReportStatus.APPROVED.equals(plan.getStatus());
-
-        // 1. UPDATE HEADER (chỉ field != null)
+        // 1. UPDATE HEADER through aggregate root
         updateHeaderIfPresent(plan, request);
 
         // 2. UPDATE DETAILS (chỉ khi list != null)
         if (request.getDetails() != null && !request.getDetails().isEmpty()) {
-//            if (isApproved) {
-//                createHistorySnapshot(plan);
-//            }
-            processDetailActions(plan, request.getDetails(), isApproved);
+            processDetailActions(plan, request.getDetails(), plan.isApproved());
         }
 
         // 3. Lưu plan
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
-
-        // 4. Nếu APPROVED → tạo lại training_result_details cho detail mới
-//        if (isApproved) {
-//            regenerateResultDetails(savedPlan);
-//        }
 
         TrainingPlanResponse response = mapper.toResponse(savedPlan);
         populateEmployeeProcesses(response, savedPlan);
@@ -474,25 +457,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ==================== HEADER UPDATE ====================
 
     private void updateHeaderIfPresent(TrainingPlan plan, TrainingPlanUpdateRequest request) {
-        if (request.getTitle() != null) {
-            plan.setTitle(request.getTitle());
-        }
-        if (request.getNote() != null) {
-            plan.setNote(request.getNote());
-        }
-        if (request.getMonthStart() != null) {
-            plan.setMonthStart(request.getMonthStart());
-        }
-        if (request.getMonthEnd() != null) {
-            plan.setMonthEnd(request.getMonthEnd());
-        }
-
-        // Validate date range
-        LocalDate start = request.getMonthStart() != null ? request.getMonthStart() : plan.getMonthStart();
-        LocalDate end = request.getMonthEnd() != null ? request.getMonthEnd() : plan.getMonthEnd();
-        if (start != null && end != null && end.isBefore(start)) {
-            throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu");
-        }
+        // Delegate header update to aggregate root
+        plan.updateHeader(request.getTitle(), request.getNote(), request.getMonthStart(), request.getMonthEnd());
 
         if (request.getLineId() != null) {
             ProductLine line = productLineRepository.findById(request.getLineId())
@@ -528,7 +494,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     /**
-     * ADD: Thêm employee vào plan, process tự lấy từ employee_skill
+     * ADD: Thêm employee vào plan, process tự lấy từ employee_skill.
+     * Uses aggregate root addDetail() for invariant enforcement.
      */
     private void handleAddAction(TrainingPlan plan,
                                   TrainingPlanUpdateRequest.DetailAction action,
@@ -551,14 +518,14 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, action.getNote(), schedule);
                 detail.setStatus(TrainingPlanDetailStatus.PENDING);
                 detail.setBatchId(batchId);
-                plan.getDetails().add(detail);
+                plan.addDetail(detail); // Aggregate root method
             }
         }
     }
 
     /**
-     * ADD_SCHEDULE: Thêm ngày vào batch cũ (giữ nguyên row trên FE)
-     * FE gửi batchId → tìm employee từ batch đó → tạo detail mới cùng batchId
+     * ADD_SCHEDULE: Thêm ngày vào batch cũ (giữ nguyên row trên FE).
+     * Uses aggregate root findDetailsByBatchId() and addDetail().
      */
     private void handleAddScheduleAction(TrainingPlan plan,
                                           TrainingPlanUpdateRequest.DetailAction action) {
@@ -570,23 +537,22 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new BusinessException("Cần có ít nhất 1 ngày huấn luyện khi action = ADD_SCHEDULE");
         }
 
-        // Tìm employee từ batch hiện tại (lấy detail đầu tiên cùng batchId)
+        // Tìm employee từ batch hiện tại through aggregate root
         Employee employee;
         if (action.getEmployeeId() != null) {
             employee = getValidatedEmployee(action.getEmployeeId());
         } else {
-            TrainingPlanDetail existingDetail = plan.getDetails().stream()
-                    .filter(d -> action.getBatchId().equals(d.getBatchId()))
-                    .findFirst()
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy batch với ID: " + action.getBatchId()));
-            employee = existingDetail.getEmployee();
+            List<TrainingPlanDetail> batchDetails = plan.findDetailsByBatchId(action.getBatchId());
+            if (batchDetails.isEmpty()) {
+                throw new BusinessException("Không tìm thấy batch với ID: " + action.getBatchId());
+            }
+            employee = batchDetails.get(0).getEmployee();
         }
 
         // Note: nếu không gửi note → lấy note từ detail cũ cùng batch
         String note = action.getNote();
         if (note == null) {
-            note = plan.getDetails().stream()
-                    .filter(d -> action.getBatchId().equals(d.getBatchId()))
+            note = plan.findDetailsByBatchId(action.getBatchId()).stream()
                     .map(TrainingPlanDetail::getNote)
                     .findFirst()
                     .orElse(null);
@@ -597,7 +563,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, note, schedule);
                 detail.setStatus(TrainingPlanDetailStatus.PENDING);
                 detail.setBatchId(action.getBatchId()); // Giữ nguyên batchId cũ
-                plan.getDetails().add(detail);
+                plan.addDetail(detail); // Aggregate root method
             }
         }
     }
@@ -658,7 +624,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     /**
-     * DELETE: Xóa hoặc đánh dấu MISSED tùy trạng thái plan
+     * DELETE: Uses aggregate root removeOrMarkMissed() for status-based behavior.
      */
     private void handleDeleteAction(TrainingPlan plan,
                                      TrainingPlanUpdateRequest.DetailAction action,
@@ -673,18 +639,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new ResourceNotFoundException("TrainingPlanDetail", "id", action.getDetailId());
         }
 
-        if (isApproved) {
-            // APPROVED: không xóa thật, đánh dấu MISSED
-            if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
-                throw new BusinessException("Không thể xóa detail đã hoàn thành (ID: " + action.getDetailId() + ")");
-            }
-            detail.setStatus(TrainingPlanDetailStatus.MISSED);
-            detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
-        } else {
-            // DRAFT/REJECTED: xóa training_result_details con trước rồi xóa thật
+        if (!isApproved) {
+            // DRAFT/REJECTED: xóa training_result_details con trước rồi xóa qua aggregate root
             trainingResultDetailRepository.deleteByTrainingPlanDetailId(detail.getId());
-            plan.getDetails().remove(detail);
         }
+
+        // Delegate to aggregate root — handles APPROVED (mark MISSED) vs DRAFT (physical remove)
+        plan.removeOrMarkMissed(detail);
     }
 
     @Override
@@ -693,8 +654,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
 
-        // Only allow deletion of DRAFT or REJECTED plans
-        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+        // Validate through aggregate root
+        if (!plan.isDeletable()) {
             throw new IllegalStateException(
                     "Chỉ có thể xóa kế hoạch ở trạng thái DRAFT hoặc REJECTED. Trạng thái hiện tại: " + plan.getStatus()
             );
@@ -731,23 +692,19 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     @Transactional
     public void deleteDetail(Long planId, Long detailId) {
-        // 1. Tìm plan
+        // 1. Tìm plan (aggregate root)
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
 
-        // 2. Chỉ cho phép xóa detail khi plan ở trạng thái DRAFT hoặc REJECTED
-        if (plan.getStatus() != ReportStatus.DRAFT
-                && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
-                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+        // 2. Validate through aggregate root
+        if (!plan.isDeletable()) {
             throw new IllegalStateException(
                     "Chỉ có thể xóa chi tiết khi kế hoạch ở trạng thái DRAFT hoặc REJECTED. Trạng thái hiện tại: " + plan.getStatus()
             );
         }
 
-        // 3. Tìm detail trong danh sách
-        TrainingPlanDetail detailToRemove = plan.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
-                .findFirst()
+        // 3. Tìm detail within aggregate
+        TrainingPlanDetail detailToRemove = plan.findDetailById(detailId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlanDetail", "id", detailId));
 
         if (detailToRemove.getStatus() != TrainingPlanDetailStatus.PENDING) {
@@ -756,12 +713,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             );
         }
 
-
         // 4. Xóa training_result_details con trước (FK constraint)
         trainingResultDetailRepository.deleteByTrainingPlanDetailId(detailToRemove.getId());
 
-        // 5. Xóa detail khỏi collection (orphanRemoval=true sẽ xóa khỏi DB)
-        plan.getDetails().remove(detailToRemove);
+        // 5. Remove through aggregate root (orphanRemoval=true sẽ xóa khỏi DB)
+        plan.removeDetail(detailToRemove);
 
         // 6. Lưu plan (cascade sẽ xử lý việc xóa detail)
         trainingPlanRepository.save(plan);
@@ -877,7 +833,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request) {
         TrainingPlan plan = getReportById(planId);
 
-        validatePlanForSubmission(plan);
+        // Delegate validation to aggregate root
+        plan.validateForSubmission();
 
         plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getLine().getName(), planId));
 
@@ -939,65 +896,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", id));
     }
 
-    // private methods
-    private void validatePlanForSubmission(TrainingPlan plan) {
-        // Business rules specific to TrainingPlan
-        if (plan.getDetails() == null || plan.getDetails().isEmpty()) {
-            throw new IllegalArgumentException("Plan dont have details." +
-                    "Please enter 1 detail line at least before submit.");
-        }
-
-        if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Plan's title cant be empty.");
-        }
-
-        // Validate date range
-        if (plan.getMonthEnd().isBefore(plan.getMonthStart())) {
-            throw new IllegalArgumentException("Month End can be before Month Start.");
-        }
-
-        // Validate details have required fields and business rules
-        for (TrainingPlanDetail detail : plan.getDetails()) {
-            if (detail.getEmployee() == null) {
-                throw new IllegalArgumentException("Detail lack of Employee Information.");
-            }
-//            if (detail.getProcess() == null) {
-//                throw new IllegalArgumentException("Detail lack of Process Information.");
-//            }
-            if (detail.getPlannedDate() == null) {
-                throw new IllegalArgumentException("Detail lack of Planned Date.");
-            }
-
-            // Validate plannedDate is within plan's date range
-            if (detail.getPlannedDate().isBefore(plan.getMonthStart()) ||
-                detail.getPlannedDate().isAfter(plan.getMonthEnd())) {
-                throw new IllegalArgumentException(
-                    String.format("Ngày huấn luyện %s nằm ngoài khoảng thời gian kế hoạch (%s - %s)",
-                        detail.getPlannedDate(), plan.getMonthStart(), plan.getMonthEnd())
-                );
-            }
-        }
-
-        // Check for duplicates: same employee + date + batchId
-        for (int i = 0; i < plan.getDetails().size(); i++) {
-            TrainingPlanDetail detail1 = plan.getDetails().get(i);
-            for (int j = i + 1; j < plan.getDetails().size(); j++) {
-                TrainingPlanDetail detail2 = plan.getDetails().get(j);
-
-                boolean sameEmployee = detail1.getEmployee().getId().equals(detail2.getEmployee().getId());
-                boolean sameDate = detail1.getPlannedDate().equals(detail2.getPlannedDate());
-                boolean sameBatch = (detail1.getBatchId() != null && detail1.getBatchId().equals(detail2.getBatchId()));
-
-                if (sameEmployee && sameDate && sameBatch) {
-                    throw new IllegalArgumentException(
-                        String.format("Trùng lặp: Nhân viên '%s' đã được lên lịch huấn luyện vào ngày %s trong cùng 1 lần thêm",
-                            detail1.getEmployee().getFullName(),
-                            detail1.getPlannedDate())
-                    );
-                }
-            }
-        }
-    }
+    // Validation is now handled by TrainingPlan.validateForSubmission() (aggregate root)
 
     /**
      * Hàm private thực hiện việc copy dữ liệu từ Plan -> History Entity
