@@ -13,6 +13,7 @@ public class DefectProposalDetailUpdateRequest {
     Long defectId;
     String defectDescription;
     Long processId;
+    Long processName;
     LocalDate detectedDate;
     Boolean isEscaped;
     String note;
