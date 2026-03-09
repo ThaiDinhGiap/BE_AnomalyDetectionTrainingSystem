@@ -1,13 +1,15 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.List;
+
 @Data
 @Builder
-public class DefectProposalUpdateRequest {
+public class DefectProposalRequest {
     Long id;
     Long productLineId;
-    List<DefectProposalDetailUpdateRequest> listUpdatedItems;
+    ReportStatus status;
+    List<DefectProposalDetailRequest> listDetail;
 }

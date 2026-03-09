@@ -1,8 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
@@ -84,8 +83,8 @@ public class DefectController {
     @Operation(summary = "Create new defect proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('defect_proposal.create')")
-    public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody CreateDefectProposalRequest createDefectProposalRequest) {
-        defectProposalService.createDefectProposalDraft(createDefectProposalRequest);
+    public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody DefectProposalRequest request) {
+        defectProposalService.createDefectProposalDraft(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
@@ -100,7 +99,7 @@ public class DefectController {
     @PreAuthorize("hasAuthority('defect_proposal.edit')")
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
-            @Valid @RequestBody DefectProposalUpdateRequest request) throws BadRequestException {
+            @Valid @RequestBody DefectProposalRequest request) throws BadRequestException {
         DefectProposalUpdateResponse response = defectProposalService.updateDefectProposal(id, request);
         return ResponseEntity.ok(response);
     }

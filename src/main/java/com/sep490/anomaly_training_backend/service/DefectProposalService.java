@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
@@ -15,11 +15,11 @@ import java.util.List;
 public interface DefectProposalService {
     List<DefectProposalResponse> getDefectProposalByTeamLeadAndProductLine(Long id, String username);
 
-    void createDefectProposalDraft(CreateDefectProposalRequest reportRequest);
+    void createDefectProposalDraft(DefectProposalRequest reportRequest);
 
     void deleteDefectProposal(Long id);
 
-    DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalUpdateRequest request) throws BadRequestException;
+    DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request) throws BadRequestException;
 
     // Relate approval methods
     void submit(Long proposalId, User currentUser, HttpServletRequest request);
