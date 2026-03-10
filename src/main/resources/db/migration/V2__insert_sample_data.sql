@@ -223,7 +223,7 @@ VALUES (1, 1, 'CREATE', 'Xước bề mặt trục do dao cụ mòn', 2, '2023-0
 
 -- Training Samples (Master Data)
 INSERT INTO training_samples (id, process_id, product_line_id, defect_id, category_name, training_description,
-                              product_id, sample_code, process_order, category_order,
+                              product_id, training_sample_code, process_order, category_order,
                               content_order, note, created_by)
 VALUES
     (1, 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ',

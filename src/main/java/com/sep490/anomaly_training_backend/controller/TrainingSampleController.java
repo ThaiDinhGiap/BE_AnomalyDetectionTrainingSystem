@@ -45,7 +45,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training samples by product line")
     @GetMapping("/")
-    @PreAuthorize("hasAuthority('training_sample.detail')")
+    @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));

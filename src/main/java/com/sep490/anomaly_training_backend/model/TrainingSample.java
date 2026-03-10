@@ -52,8 +52,8 @@ public class TrainingSample extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Product product;
 
-    @Column(name = "sample_code", length = 20)
-    String sampleCode;
+    @Column(name = "training_sample_code", length = 20)
+    String trainingSampleCode;
 
     @Column(name = "process_order", nullable = false)
     Integer processOrder;

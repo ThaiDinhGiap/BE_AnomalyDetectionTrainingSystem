@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DefectRepository extends JpaRepository<Defect, Long> {
@@ -26,4 +27,14 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
             "join g.supervisor s " +
             "where s.id = :supervisorId and d.deleteFlag = false")
     List<Defect> findAllBySupervisorAndDeleteFlagFalse(@Param("supervisorId") Long supervisorId);
+
+    @Query("""
+    SELECT COUNT(d) > 0
+    FROM Defect d
+    WHERE LOWER(TRIM(d.defectDescription)) = LOWER(TRIM(:defectDescription))
+      AND d.deleteFlag = false
+""")
+    boolean existsActiveByDefectDescriptionIgnoreCase(@Param("defectDescription") String defectDescription);
+
+    Optional<Defect> findByDefectDescriptionIgnoreCase(String defectDescription);
 }
