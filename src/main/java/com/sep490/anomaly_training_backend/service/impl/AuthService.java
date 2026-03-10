@@ -264,13 +264,10 @@ public class AuthService {
             user.setIsActive(request.getIsActive());
         }
 
-        // 4. Cập nhật Roles
         if (request.getRoleIds() != null) {
-            // Lấy danh sách role mới từ DB và thay thế hoàn toàn danh sách cũ
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
             user.setRoles(roles);
         } else {
-            // Nếu gửi lên mảng rỗng hoặc null, tức là muốn xóa hết quyền
             user.getRoles().clear();
         }
 
