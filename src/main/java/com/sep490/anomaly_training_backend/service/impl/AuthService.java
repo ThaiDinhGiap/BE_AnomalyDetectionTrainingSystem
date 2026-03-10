@@ -1,15 +1,17 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.LoginRequest;
-import com.sep490.anomaly_training_backend.dto.request.RefreshTokenRequest;
-import com.sep490.anomaly_training_backend.dto.request.RegisterRequest;
+import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserRoleDTO;
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
 import com.sep490.anomaly_training_backend.exception.AuthException;
 import com.sep490.anomaly_training_backend.model.RefreshToken;
+import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.RefreshTokenRepository;
+import com.sep490.anomaly_training_backend.repository.RoleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +43,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
+    private final RoleRepository roleRepository;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -166,5 +174,105 @@ public class AuthService {
                 jwtService.getAccessTokenExpiration(),
                 UserResponse.fromEntity(user)
         );
+    }
+
+    @Transactional
+    public UserDashboard createUser(UserCreateRequest request) {
+        // 1. Kiểm tra trùng lặp
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username đã tồn tại"); // Bạn có thể thay bằng AuthException của bạn
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại");
+        }
+        if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
+            throw new RuntimeException("Nhân viên có mã " + request.getEmployeeCode() + " đã có tài khoản");
+        }
+
+        // 2. Build User mới
+        User user = User.builder()
+                .username(request.getUsername())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .employeeCode(request.getEmployeeCode())
+                .oauthProvider(OAuthProvider.LOCAL) // Tài khoản nội bộ
+                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .build();
+
+        // 3. Gán Role từ List ID
+        if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
+            user.setRoles(roles);
+        }
+
+        return toUserDashboard(userRepository.save(user));
+    }
+
+    // --- API CẬP NHẬT TÀI KHOẢN ---
+    @Transactional
+    public UserDashboard updateUser(Long id, UserUpdateRequest request) {
+        // 1. Tìm User
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        // 2. Kiểm tra trùng lặp nếu họ đổi Email hoặc EmployeeCode
+        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại ở một tài khoản khác");
+        }
+        if (!user.getEmployeeCode().equals(request.getEmployeeCode()) && userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
+            throw new RuntimeException("Mã nhân viên đã được gán cho một tài khoản khác");
+        }
+
+        // 3. Cập nhật thông tin (KHÔNG CẬP NHẬT PASSWORD VÀ USERNAME)
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setEmployeeCode(request.getEmployeeCode());
+        if (request.getIsActive() != null) {
+            user.setIsActive(request.getIsActive());
+        }
+
+        // 4. Cập nhật Roles
+        if (request.getRoleIds() != null) {
+            // Lấy danh sách role mới từ DB và thay thế hoàn toàn danh sách cũ
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
+            user.setRoles(roles);
+        } else {
+            // Nếu gửi lên mảng rỗng hoặc null, tức là muốn xóa hết quyền
+            user.getRoles().clear();
+        }
+
+        return toUserDashboard(userRepository.save(user));
+    }
+
+    // Hàm mapper chuyển đổi từ Entity sang DTO
+    private UserDashboard toUserDashboard(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        // Chuyển đổi an toàn danh sách Role
+        List<UserRoleDTO> roleDtoList = new ArrayList<>();
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            roleDtoList = user.getRoles().stream()
+                    .map(role -> UserRoleDTO.builder()
+                            .id(role.getId())
+                            .roleCode(role.getRoleCode())
+                            .displayName(role.getDisplayName())
+                            .isActive(role.getIsActive())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
+        // Build và trả về DTO
+        return UserDashboard.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .employeeCode(user.getEmployeeCode())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .isActive(user.getIsActive())
+                .roles(roleDtoList)
+                .build();
     }
 }

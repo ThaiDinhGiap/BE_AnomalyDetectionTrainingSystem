@@ -1,11 +1,10 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
-import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
-import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
-import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
+import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.service.*;
+import com.sep490.anomaly_training_backend.service.impl.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +21,7 @@ public class StaffOrganizationController {
     private final TeamService teamService;
     private final EmployeeService employeeService;
     private final UserService userService;
+    private final AuthService authService;
 
     // ====================== VIEW ======================
     @GetMapping("/sections")
@@ -46,7 +46,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByTeam(teamId)));
     }
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority('staff_organization.view')") //API dành cho danh sách tài khoản
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
     }
@@ -56,6 +56,13 @@ public class StaffOrganizationController {
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
+
+    @GetMapping("/employees/no-account")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    public ResponseEntity<ApiResponse<List<EmployeeNoAccountDTO>>> getEmployeesWithoutAccount() {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
+    }
+
     // ====================== CREATE ======================
     @PostMapping("/sections")
     @PreAuthorize("hasAuthority('staff_organization.create')")
@@ -75,10 +82,24 @@ public class StaffOrganizationController {
     }
     @PostMapping("/employees")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(@RequestBody EmployeeRequest request) {
+    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
+            @Valid @RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
     }
+    @PostMapping("/users")
+    @PreAuthorize("hasAuthority('staff_organization.create')")
+    public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.createUser(request)));
+    }
+
     // ====================== UPDATE ======================
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.updateUser(id, request)));
+    }
     @PutMapping("/sections/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<SectionResponse>> updateSection(

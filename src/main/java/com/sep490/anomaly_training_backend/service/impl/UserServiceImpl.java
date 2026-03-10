@@ -74,7 +74,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDashboard> getAllUserDashboard() {
-        return userRepository.getByDeleteFlagFalse().stream().map(userMapper::toUserDashboard).toList();
+        return userRepository.findAllUsersWithRoles().stream().map(userMapper::toUserDashboard).toList();
     }
 }
