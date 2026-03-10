@@ -1,11 +1,9 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalDetailRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
@@ -31,10 +29,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Service
@@ -62,13 +57,13 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public void createTrainingSampleProposal(CreateTrainingSampleProposalRequest proposalRequest) {
+    public void createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest) {
         ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId()).get();
         TrainingSampleProposal proposal = new TrainingSampleProposal();
         proposal.setProductLine(productLine);
         proposal.setStatus(ReportStatus.DRAFT);
-        TrainingSampleProposal newProposal = trainingSampleProposalRepository.save(proposal);
-        createTrainingSampleProposalDetailRequest(proposalRequest.getTrainingSampleProposalDetail(), newProposal);
+        proposal.setDetails(createDetail(proposalRequest.getListDetail(), proposal));
+        trainingSampleProposalRepository.save(proposal);
     }
 
     @Override
@@ -83,8 +78,8 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalUpdateRequest request) throws BadRequestException {
-        List<TrainingSampleProposalDetailUpdateRequest> items = request.getDetailUpdateRequests();
+    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest request) throws BadRequestException {
+        List<TrainingSampleProposalDetailRequest> items = request.getListDetail();
         if (items == null || items.isEmpty()) {
             throw new BadRequestException("Training sample proposal must contain at least 1 detail");
         }
@@ -108,8 +103,11 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             existingMap.put(detail.getId(), detail);
         }
 
+        // Ghi nhận những detail cũ nào vẫn còn xuất hiện trong request
+        Set<Long> requestDetailIds = new HashSet<>();
+
         // Validate detail id belongs to proposal
-        for (TrainingSampleProposalDetailUpdateRequest item : items) {
+        for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getId() != null && !existingMap.containsKey(item.getId())) {
                 throw new BadRequestException(
                         "Detail id " + item.getId() + " does not belong to proposal " + id
@@ -117,27 +115,33 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             }
         }
         // Create / Update / Delete
-        for (TrainingSampleProposalDetailUpdateRequest item : items) {
+        for (TrainingSampleProposalDetailRequest item : items) {
             //  Create new
             if (item.getId() == null) {
-
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
                 trainingSampleProposalDetailRepository.save(newEntity);
                 continue;
-            } else {
-                //Update or delete existing
-                TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
-                entity.setId(item.getId());
-                entity.setDeleteFlag(item.getDeleteFlag() != null && item.getDeleteFlag());
-                trainingSampleProposalDetailRepository.save(entity);
             }
+            // Update existing
+            requestDetailIds.add(item.getId());
+            //Update
+            TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
+            entity.setId(item.getId());
+            trainingSampleProposalDetailRepository.save(entity);
 
+
+        }
+        // Delete những detail cũ có trong DB nhưng request không gửi lên
+        for (TrainingSampleProposalDetail existing : existingDetails) {
+            if (!requestDetailIds.contains(existing.getId())) {
+                existing.setDeleteFlag(true);
+                trainingSampleProposalDetailRepository.save(existing);
+            }
         }
         trainingSampleProposalRepository.save(proposal);
 
         //Build response
-        List<TrainingSampleProposalDetail> latestDetails =
-                trainingSampleProposalDetailRepository.findByTrainingSampleProposalIdAndDeleteFlagFalse(id);
+        List<TrainingSampleProposalDetail> latestDetails = trainingSampleProposalDetailRepository.findByTrainingSampleProposalIdAndDeleteFlagFalse(id);
 
         List<TrainingSampleProposalDetailUpdateResponse> detailResponses = new ArrayList<>();
         for (TrainingSampleProposalDetail detail : latestDetails) {
@@ -199,11 +203,11 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         return approvalService.canApprove(proposal, currentUser);
     }
 
-    private void createTrainingSampleProposalDetailRequest(List<CreateTrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
-        for (CreateTrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
+    private List<TrainingSampleProposalDetail> createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
+        List<TrainingSampleProposalDetail> detailList = new ArrayList<>();
+        for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
-            entity.setTrainingSampleProposal(proposal);
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
@@ -216,18 +220,20 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 Product product = productRepository.findById(detailRequest.getProductId()).orElse(null);
                 entity.setProduct(product);
             }
+            entity.setTrainingSampleProposal(proposal);
             entity.setProposalType(detailRequest.getProposalType());
             entity.setCategoryName(detailRequest.getCategoryName());
             entity.setProcess(process);
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
             entity.setTrainingSampleCode(detailRequest.getTrainingSampleCode());
             entity.setNote(detailRequest.getNote());
-            trainingSampleProposalDetailRepository.save(entity);
+            detailList.add(entity);
         }
+        return detailList;
     }
 
     private TrainingSampleProposalDetail mapToEntity(
-            TrainingSampleProposalDetailUpdateRequest request,
+            TrainingSampleProposalDetailRequest request,
             TrainingSampleProposal proposal
     ) {
         if (request == null) {
@@ -272,14 +278,12 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         } else {
             entity.setDefect(null);
         }
-
         // fields thường
         entity.setCategoryName(request.getCategoryName());
         entity.setTrainingSampleCode(request.getTrainingSampleCode());
         entity.setTrainingDescription(request.getTrainingDescription());
         entity.setNote(request.getNote());
         entity.setDeleteFlag(false);
-
         return entity;
     }
 

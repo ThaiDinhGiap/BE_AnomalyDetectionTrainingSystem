@@ -15,11 +15,11 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
 
     List<TrainingSample> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
 
-    Optional<TrainingSample> findByProductLineIdAndSampleCode(Long productLineId, String sampleCode);
+    Optional<TrainingSample> findByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 
     List<TrainingSample> findByDefectId(Long defectId);
 
-    Boolean existsByProductLineIdAndSampleCode(Long productLineId, String sampleCode);
+    Boolean existsByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 
-    Boolean existsByProductLineIdAndSampleCodeAndIdNot(Long productLineId, String sampleCode, Long id);
+    Boolean existsByProductLineIdAndTrainingSampleCodeAndIdNot(Long productLineId, String trainingSampleCode, Long id);
 }

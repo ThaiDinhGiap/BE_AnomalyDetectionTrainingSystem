@@ -1,14 +1,13 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.core. OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,12 +65,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         // Check if user exists with same email (link accounts)
-        Optional<User> userByEmail = userRepository. findByEmailAndDeleteFlagFalse(email);
+        Optional<User> userByEmail = userRepository.findByEmailAndDeleteFlagFalse(email);
 
         if (userByEmail.isPresent()) {
             User user = userByEmail.get();
             // Link Microsoft account to existing user
-            user. setOauthProvider(OAuthProvider.MICROSOFT);
+            user.setOauthProvider(OAuthProvider.MICROSOFT);
             user.setOauthProviderId(oauthProviderId);
             userRepository.save(user);
             log.info("Linked Microsoft account to existing user: {}", email);
@@ -85,8 +84,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .username(username)
                 .email(email)
                 .fullName(name != null ? name : email)
-                .role(UserRole.TEAM_LEADER) // Default role - có thể điều chỉnh
-                . oauthProvider(OAuthProvider.MICROSOFT)
+                .oauthProvider(OAuthProvider.MICROSOFT)
                 .oauthProviderId(oauthProviderId)
                 .isActive(true)
                 .build();
@@ -104,7 +102,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         int counter = 1;
 
         // Ensure unique username
-        while (userRepository. existsByUsernameAndDeleteFlagFalse(username)) {
+        while (userRepository.existsByUsernameAndDeleteFlagFalse(username)) {
             username = baseUsername + counter;
             counter++;
         }

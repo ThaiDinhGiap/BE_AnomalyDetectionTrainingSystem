@@ -11,6 +11,7 @@ import java.util.List;
 public class UserDashboard {
     Long id;
     String fullName;
+//    List<String> roles;
     String employeeCode;
     String email;
     String username;

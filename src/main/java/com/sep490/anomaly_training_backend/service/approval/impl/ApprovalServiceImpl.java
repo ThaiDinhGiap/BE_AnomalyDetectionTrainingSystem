@@ -12,6 +12,7 @@ import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.RejectReason;
 import com.sep490.anomaly_training_backend.model.RequiredAction;
+import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
@@ -205,8 +206,10 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private void validateApprover(Approvable entity, User currentUser, ApprovalFlowStep step) {
-        if (currentUser.getRole() != step.getApproverRole()) {
-            throw new BusinessException("Insufficient role to approve at this step. Required role: " + step.getApproverRole());
+        if (!currentUser.hasRole(step.getApproverRole().name())) {
+            throw new BusinessException(
+                    "Insufficient role to approve at this step. Required role: " + step.getApproverRole()
+            );
         }
 
         if (!routeService.isValidApprover(entity.getGroupId(), step.getApproverRole(), currentUser.getId())) {
@@ -231,7 +234,13 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .performedByUser(performer)
                 .performedByUsername(performer.getUsername())
                 .performedByFullName(performer.getFullName())
-                .performedByRole(performer.getRole())
+                .performedByRole(
+                        UserRole.valueOf(performer.getRoles()
+                                .stream()
+                                .findFirst()
+                                .map(Role::getRoleCode)
+                                .orElse("UNKNOWN"))
+                )
                 .comment(comment)
                 .performedAt(Instant.now())
                 .ipAddress(getClientIp(request))

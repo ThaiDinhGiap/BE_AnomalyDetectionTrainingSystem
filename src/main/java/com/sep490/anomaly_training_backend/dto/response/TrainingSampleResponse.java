@@ -12,8 +12,8 @@ public class TrainingSampleResponse {
     Long productId;
     String productCode;
     Long defectId;
-    String defectName;
-    String sampleCode;
+    String defectDescription;
+    String trainingSampleCode;
     String categoryName;
     String trainingDescription;
     String note;

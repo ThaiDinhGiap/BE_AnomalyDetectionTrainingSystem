@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -57,15 +56,9 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
                 JOIN g.section s
                 WHERE tr.status = :status
                 AND tr.deleteFlag = false
-                AND (
-                    (:role = 'SUPERVISOR' AND g.supervisor.id = :userId)
-                    OR
-                    (:role = 'MANAGER' AND s.manager.id = :userId)
-                )
                 ORDER BY tr.createdAt ASC
             """)
     List<TrainingPlan> findPendingForApprove(
             @Param("status") ReportStatus status,
-            @Param("userId") Long userId,
-            @Param("role") UserRole role);
+            @Param("userId") Long userId);
 }
