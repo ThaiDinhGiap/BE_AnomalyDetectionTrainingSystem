@@ -19,7 +19,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework. security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,17 +45,17 @@ public class AuthService {
         }
 
         // Check if email already exists
-        if (userRepository.existsByEmailAndDeleteFlagFalse(request. getEmail())) {
+        if (userRepository.existsByEmailAndDeleteFlagFalse(request.getEmail())) {
             throw new AuthException("Email already exists");
         }
 
         // Create new user
-        User user = User. builder()
+        User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .role(request.getRole())
+                .roles(request.getRoles())
                 .oauthProvider(OAuthProvider.LOCAL)
                 .isActive(true)
                 .build();
@@ -77,7 +77,7 @@ public class AuthService {
             );
 
             User user = userRepository.findByUsernameAndDeleteFlagFalse(request.getUsername())
-                    . orElseThrow(() -> new AuthException("User not found"));
+                    .orElseThrow(() -> new AuthException("User not found"));
 
             if (!user.getIsActive()) {
                 throw new AuthException("User account is inactive");

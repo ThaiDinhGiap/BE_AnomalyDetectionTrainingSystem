@@ -11,18 +11,27 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultListRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,7 +44,6 @@ import org.springframework.stereotype.Service;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -283,8 +291,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 
-        String userRole = currentUser.getRole().toString();
-        boolean isFiUser = "FINAL_INSPECTION".equalsIgnoreCase(userRole);
+        boolean isFiUser = currentUser.hasRole("FINAL_INSPECTION");
 
         if (!isFiUser) {
             throw new RuntimeException("Truy cập bị từ chối: Chỉ quản lý (FI) mới được quyền ký duyệt.");

@@ -4,7 +4,6 @@ import com.sep490.anomaly_training_backend.dto.response.ApprovalHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
@@ -36,8 +35,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     public List<PendingApprovalResponse> getPendingApprovals(User currentUser, ApprovalEntityType entityType) {
         List<PendingApprovalResponse> result = new ArrayList<>();
 
-        UserRole role = currentUser.getRole();
-        ReportStatus targetStatus = getTargetStatusForRole(role);
+        ReportStatus targetStatus = getTargetStatusForUser(currentUser);
 
         if (targetStatus == null) {
             return result;
@@ -75,16 +73,21 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
 
     // ==================== PRIVATE HELPERS ====================
 
-    private ReportStatus getTargetStatusForRole(UserRole role) {
-        return switch (role) {
-            case SUPERVISOR -> ReportStatus.WAITING_SV;
-            case MANAGER -> ReportStatus.WAITING_MANAGER;
-            default -> null;
-        };
+    private ReportStatus getTargetStatusForUser(User user) {
+
+        if (user.hasRole("SUPERVISOR")) {
+            return ReportStatus.WAITING_SV;
+        }
+
+        if (user.hasRole("MANAGER")) {
+            return ReportStatus.WAITING_MANAGER;
+        }
+
+        return null;
     }
 
     private List<PendingApprovalResponse> getPendingDefectProposals(User currentUser, ReportStatus status) {
-        return defectProposalRepository.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
+        return defectProposalRepository.findPendingForApprove(status, currentUser.getId())
                 .stream()
                 .map(report -> PendingApprovalResponse.builder()
                         .entityType(ApprovalEntityType.DEFECT_PROPOSAL)
@@ -102,7 +105,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     }
 
     private List<PendingApprovalResponse> getPendingSampleProposals(User currentUser, ReportStatus status) {
-        return trainingSampleProposalRepository.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
+        return trainingSampleProposalRepository.findPendingForApprove(status, currentUser.getId())
                 .stream()
                 .map(proposal -> PendingApprovalResponse.builder()
                         .entityType(ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL)
@@ -120,7 +123,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     }
 
     private List<PendingApprovalResponse> getPendingPlans(User currentUser, ReportStatus status) {
-        return planRepo.findPendingForApprove(status, currentUser.getId(), currentUser.getRole())
+        return planRepo.findPendingForApprove(status, currentUser.getId())
                 .stream()
                 .map(plan -> PendingApprovalResponse.builder()
                         .entityType(ApprovalEntityType.TRAINING_PLAN)

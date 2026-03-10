@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,7 +19,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -39,6 +37,7 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class User extends BaseEntity implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -56,11 +55,7 @@ public class User extends BaseEntity implements UserDetails {
     String email;
 
     @Column(name = "employee_code", nullable = false, unique = true, length = 20)
-    private String employeeCode;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    UserRole role;
+    String employeeCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "oauth_provider", length = 20)
@@ -80,29 +75,28 @@ public class User extends BaseEntity implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    @ToString.Exclude
     @Builder.Default
     Set<Role> roles = new HashSet<>();
+
+    // ================= Security =================
 
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
+
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
 
-        // Legacy ENUM role (backward compatibility)
-        if (role != null) {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
-        }
-
-        // Dynamic roles + permissions from DB
         if (roles != null) {
             for (Role r : roles) {
+
                 if (Boolean.TRUE.equals(r.getIsActive())) {
+
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + r.getRoleCode()));
+
                     if (r.getPermissions() != null) {
-                        for (Permission p : r.getPermissions()) {
-                            authorities.add(new SimpleGrantedAuthority(p.getPermissionCode()));
-                        }
+                        r.getPermissions().forEach(p ->
+                                authorities.add(new SimpleGrantedAuthority(p.getPermissionCode()))
+                        );
                     }
                 }
             }
@@ -110,6 +104,15 @@ public class User extends BaseEntity implements UserDetails {
 
         return authorities;
     }
+
+    // ================= Helper =================
+
+    public boolean hasRole(String roleCode) {
+        return roles.stream()
+                .anyMatch(r -> r.getRoleCode().equals(roleCode));
+    }
+
+    // ================= UserDetails =================
 
     @Override
     @JsonIgnore
