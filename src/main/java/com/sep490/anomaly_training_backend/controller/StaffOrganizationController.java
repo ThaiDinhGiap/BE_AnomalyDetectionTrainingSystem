@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.service.*;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -81,10 +82,10 @@ public class StaffOrganizationController {
     }
     @PostMapping("/employees")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(@RequestBody EmployeeRequest request) {
+    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
+            @Valid @RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
     }
-
     @PostMapping("/users")
     @PreAuthorize("hasAuthority('staff_organization.create')")
     public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
@@ -93,7 +94,7 @@ public class StaffOrganizationController {
 
     // ====================== UPDATE ======================
     @PutMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.update')")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
             @PathVariable Long id,
             @RequestBody UserUpdateRequest request) {
