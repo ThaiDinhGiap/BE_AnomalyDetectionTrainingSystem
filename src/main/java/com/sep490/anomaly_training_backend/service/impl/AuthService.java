@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserRoleDTO;
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
 import com.sep490.anomaly_training_backend.exception.AuthException;
+import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.RefreshToken;
 import com.sep490.anomaly_training_backend.model.Role;
@@ -185,20 +186,20 @@ public class AuthService {
     public UserDashboard createUser(UserCreateRequest request) {
         // 1. Kiểm tra trùng lặp tài khoản
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username '" + request.getUsername() + "' đã tồn tại.");
+            throw new BusinessException("Username '" + request.getUsername() + "' đã tồn tại.");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email '" + request.getEmail() + "' đã tồn tại.");
+            throw new BusinessException("Email '" + request.getEmail() + "' đã tồn tại.");
         }
         if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-            throw new RuntimeException("Nhân viên có mã " + request.getEmployeeCode() + " đã có tài khoản.");
+            throw new BusinessException("Nhân viên có mã " + request.getEmployeeCode() + " đã có tài khoản.");
         }
 
         Employee employee = employeeRepository.findByEmployeeCode(request.getEmployeeCode())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với mã: " + request.getEmployeeCode()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy nhân viên với mã: " + request.getEmployeeCode()));
 
         String rawPassword = generateRandomPassword();
-        String encodedPassword = passwordEncoder.encode(rawPassword); // Dùng BCrypt hoặc tương đương
+        String encodedPassword = passwordEncoder.encode(rawPassword);
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -215,7 +216,7 @@ public class AuthService {
 
             // Kiểm tra xem số lượng Role tìm thấy có khớp với số ID truyền lên không
             if (roles.size() != request.getRoleIds().size()) {
-                throw new RuntimeException("Một hoặc nhiều Role ID không hợp lệ.");
+                throw new BusinessException("Một hoặc nhiều Role ID không hợp lệ.");
             }
             user.setRoles(roles);
         }
@@ -223,7 +224,7 @@ public class AuthService {
         // 6. Lưu User vào Database
         User savedUser = userRepository.save(user);
 
-// 7. Gửi email thông báo mật khẩu (Sử dụng nguyên bản hàm sendSimpleMail của bạn)
+        // 7. Gửi email thông báo mật khẩu (Sử dụng nguyên bản hàm sendSimpleMail của bạn)
         String subject = "Thông tin tài khoản hệ thống Anomaly Training";
         String body = "Xin chào " + savedUser.getFullName() + ",\n\n"
                 + "Tài khoản của bạn trên hệ thống đã được tạo thành công.\n"

@@ -3,6 +3,8 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.exception.GlobalExceptionHandler;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
@@ -30,26 +32,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
-        // 1. Chuẩn hóa dữ liệu (Tránh trường hợp người dùng nhập toàn dấu cách)
         String empCode = request.getEmployeeCode() != null ? request.getEmployeeCode().trim() : null;
 
-        // 2. Kiểm tra nghiệp vụ: Trùng lặp mã nhân viên
         if (empCode != null && employeeRepository.existsByEmployeeCode(empCode)) {
-            // Lời khuyên: Nên ném Custom Exception (ví dụ: DuplicateResourceException)
-            // để GlobalExceptionHandler trả về mã HTTP 409 Conflict thay vì 500
-            throw new RuntimeException("Mã nhân viên '" + empCode + "' đã tồn tại trong hệ thống.");
+            throw new BusinessException("Mã nhân viên '" + empCode + "' đã tồn tại trong hệ thống.");
         }
 
-        // 3. [QUAN TRỌNG] Kiểm tra Khóa ngoại: Team/Phòng ban có thực sự tồn tại không?
         if (request.getTeamId() != null) {
             boolean isTeamExist = teamRepository.existsById(request.getTeamId());
             if (!isTeamExist) {
-                throw new RuntimeException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
+                throw new BusinessException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
             }
         }
-
-        // 4. Kiểm tra thêm (Nếu bảng Employee yêu cầu Email/Phone là duy nhất)
-        // if (request.getEmail() != null && employeeRepository.existsByEmail(request.getEmail())) { ... }
 
         // 5. Map dữ liệu sang Entity
         Employee employee = employeeMapper.toEntity(request);
@@ -86,12 +80,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy nhân viên với ID: " + id));
 
         // 1. Nếu có thay đổi mã nhân viên, cần check trùng lặp
         if (request.getEmployeeCode() != null && !employee.getEmployeeCode().equals(request.getEmployeeCode())) {
             if (employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-                throw new RuntimeException("Mã nhân viên '" + request.getEmployeeCode() + "' đã tồn tại");
+                throw new BusinessException("Mã nhân viên '" + request.getEmployeeCode() + "' đã tồn tại");
             }
         }
 
@@ -99,7 +93,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (request.getTeamId() != null && !request.getTeamId().equals(employee.getTeam().getId())) {
             boolean isTeamExist = teamRepository.existsById(request.getTeamId());
             if (!isTeamExist) {
-                throw new RuntimeException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
+                throw new BusinessException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
             }
         }
 

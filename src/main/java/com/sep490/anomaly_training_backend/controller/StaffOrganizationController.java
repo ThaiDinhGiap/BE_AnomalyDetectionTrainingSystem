@@ -52,7 +52,7 @@ public class StaffOrganizationController {
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAuthority('staff_organization.view')") //API dành cho Danh sách công nhân
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
