@@ -11,7 +11,9 @@ import java.util.Optional;
 public interface TrainingSampleRepository extends JpaRepository<TrainingSample, Long> {
     List<TrainingSample> findByProcessId(Long processId);
 
-    List<TrainingSample> findByProductLineId(Long productLineId);
+    List<TrainingSample> findByProcessIdAndDeleteFlagFalse(Long processId);
+
+    List<TrainingSample> findByCategoryNameAndDeleteFlagFalse(String categoryName);
 
     List<TrainingSample> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
 

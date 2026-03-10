@@ -51,6 +51,21 @@ public class TrainingSampleController {
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
+    @Operation(summary = "Get training samples group by Category")
+    @GetMapping("/category")
+    @PreAuthorize("hasAuthority('training_sample.view')")
+    public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByCategory(@RequestParam("id") Long id) {
+        List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByCategory(id);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+    @Operation(summary = "Get training samples group by process")
+    @GetMapping("/process")
+    @PreAuthorize("hasAuthority('training_sample.view')")
+    public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProcess(@RequestParam("id") Long id) {
+        List<TrainingSampleResponse> list =  trainingSampleService.getTrainingSampleByProcess(id);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+
     @Operation(summary = "Get training sample proposals by productLine")
     @GetMapping("/proposal")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")

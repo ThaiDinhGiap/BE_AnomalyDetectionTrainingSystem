@@ -8,4 +8,9 @@ public interface TrainingSampleService {
     List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId);
 
     TrainingSampleResponse getTrainingSampleById(Long id);
+
+    List<TrainingSampleResponse> getTrainingSampleByProcess(Long id);
+
+    List<TrainingSampleResponse> getTrainingSampleByCategory(Long id);
+
 }

@@ -29,4 +29,16 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         TrainingSample entity = trainingSampleRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
         return trainingSampleMapper.toDto(entity);
     }
+
+    @Override
+    public List<TrainingSampleResponse> getTrainingSampleByProcess(Long id) {
+        TrainingSample entity = trainingSampleRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
+        return trainingSampleRepository.findByProcessIdAndDeleteFlagFalse(entity.getProcess().getId()).stream().map(trainingSampleMapper::toDto).toList();
+    }
+
+    @Override
+    public List<TrainingSampleResponse> getTrainingSampleByCategory(Long id) {
+        TrainingSample entity = trainingSampleRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
+        return trainingSampleRepository.findByCategoryNameAndDeleteFlagFalse(entity.getCategoryName()).stream().map(trainingSampleMapper::toDto).toList();
+    }
 }
