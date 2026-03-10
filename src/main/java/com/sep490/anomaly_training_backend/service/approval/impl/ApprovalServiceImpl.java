@@ -48,8 +48,8 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
-        if (entity.getStatus() != ReportStatus.DRAFT) {
-            throw new BusinessException("Entity can only be submitted when in DRAFT status");
+        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE)) {
+            throw new BusinessException("Entity can only be submitted when in DRAFT/REVISE status");
         }
 
         ApprovalFlowStep firstStep = getFirstStep(entity.getEntityType());
@@ -73,7 +73,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
-        entity.setStatus(ReportStatus.DRAFT);
+        entity.setStatus(ReportStatus.REVISE);
 
         logAction(entity, ApprovalAction.REVISE, -1, UserRole.TEAM_LEADER,
                 currentUser, null, null, null, request);

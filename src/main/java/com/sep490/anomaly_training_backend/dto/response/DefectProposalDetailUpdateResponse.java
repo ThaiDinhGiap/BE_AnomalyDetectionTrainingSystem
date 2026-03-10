@@ -18,6 +18,7 @@ public class DefectProposalDetailUpdateResponse {
     ProposalType proposalType;
     String defectDescription;
     Long processId;
+    String processName;
     LocalDate detectedDate;
     Boolean isEscaped;
     String note;

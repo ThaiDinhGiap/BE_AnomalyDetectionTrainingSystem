@@ -18,4 +18,8 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
     Optional<TrainingSample> findByProductLineIdAndSampleCode(Long productLineId, String sampleCode);
 
     List<TrainingSample> findByDefectId(Long defectId);
+
+    Boolean existsByProductLineIdAndSampleCode(Long productLineId, String sampleCode);
+
+    Boolean existsByProductLineIdAndSampleCodeAndIdNot(Long productLineId, String sampleCode, Long id);
 }

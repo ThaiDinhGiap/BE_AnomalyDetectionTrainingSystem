@@ -1,10 +1,10 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalDetailRequest;
-import com.sep490.anomaly_training_backend.dto.request.CreateDefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
@@ -33,10 +33,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -62,13 +59,13 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     }
 
     @Override
-    public void createDefectProposalDraft(CreateDefectProposalRequest reportRequest) {
+    public void createDefectProposalDraft(DefectProposalRequest reportRequest) {
         ProductLine productLine = productLineRepository.findById(reportRequest.getProductLineId()).get();
-        DefectProposal report = new DefectProposal();
-        report.setProductLine(productLine);
-        report.setStatus(ReportStatus.DRAFT);
-        DefectProposal mewReport = defectProposalRepository.save(report);
-        createDefectProposalDetailRequest(reportRequest.getDefectProposalDetail(), mewReport);
+        DefectProposal proposalHeader = new DefectProposal();
+        proposalHeader.setProductLine(productLine);
+        proposalHeader.setStatus(ReportStatus.DRAFT);
+        proposalHeader.setDetails(createDetail(reportRequest.getListDetail(), proposalHeader));
+        defectProposalRepository.save(proposalHeader);
     }
 
     @Override
@@ -81,37 +78,39 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     }
 
     @Override
-    public DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalUpdateRequest request) throws BadRequestException {
-        DefectProposal proposal = defectProposalRepository.findById(request.getId())
+    public DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request) throws BadRequestException {
+        DefectProposal proposal = defectProposalRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
-        List<DefectProposalDetailUpdateRequest> items = request.getListUpdatedItems();
+
+        List<DefectProposalDetailRequest> items = request.getListDetail();
         if (items == null || items.isEmpty()) {
             throw new BadRequestException("Detail list must not be empty");
         }
         // load existing details (of this proposal)
-        List<DefectProposalDetail> existingDetails =
-                defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
-
+        List<DefectProposalDetail> existingDetails = defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
         Map<Long, DefectProposalDetail> existingMap = new HashMap<>();
         for (DefectProposalDetail detail : existingDetails) {
             existingMap.put(detail.getId(), detail);
         }
         // validate ids belong to proposal
-        for (DefectProposalDetailUpdateRequest item : items) {
+        for (DefectProposalDetailRequest item : items) {
             Long detailId = item.getId();
             if (detailId != null && !existingMap.containsKey(detailId)) {
                 throw new BadRequestException("Detail id " + detailId + " does not belong to proposal " + proposal.getId());
             }
         }
+        // dùng để xác định những detail nào còn tồn tại trong request
+        Set<Long> requestDetailIds = new HashSet<>();
         //apply create/update/delete
-        for (DefectProposalDetailUpdateRequest item : items) {
+        for (DefectProposalDetailRequest item : items) {
             // create
             if (item.getId() == null) {
                 DefectProposalDetail newEntity = mapToEntity(item, proposal);
                 defectProposalDetailRepository.save(newEntity);
                 continue;
             }
-            // update or delete existing
+            requestDetailIds.add(item.getId());
+            // update existing
             DefectProposalDetail entity = existingMap.get(item.getId());
             if (entity == null) {
                 throw new BadRequestException("Detail id " + item.getId() + " does not belong to this proposal");
@@ -135,16 +134,19 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setOriginCause(item.getOriginCause());
             entity.setOutflowCause(item.getOutflowCause());
             entity.setCausePoint(item.getCausePoint());
-            entity.setDeleteFlag(item.getDeleteFlag() != null && item.getDeleteFlag());
             defectProposalDetailRepository.save(entity);
         }
-        defectProposalRepository.save(proposal);
+        for (DefectProposalDetail existing : existingDetails) {
+            if (!requestDetailIds.contains(existing.getId())) {
+                existing.setDeleteFlag(true);
+                defectProposalDetailRepository.save(existing);
+            }
+        }
+        DefectProposal updatedProposal = defectProposalRepository.save(proposal);
         // Query lại & build response (đảm bảo trả về state mới nhất)
-        List<DefectProposalDetail> latestDetails =
-                defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
-
+        List<DefectProposalDetail> latestDetails = defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(updatedProposal.getId());
         DefectProposalUpdateResponse response = new DefectProposalUpdateResponse();
-        response.setId(proposal.getId());
+        response.setId(updatedProposal.getId());
         response.setProductLineId(proposal.getProductLine() != null ? proposal.getProductLine().getId() : null);
 
         List<DefectProposalDetailUpdateResponse> detailResponses = new ArrayList<>();
@@ -196,30 +198,31 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     }
 
 
-    private void createDefectProposalDetailRequest(List<CreateDefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal) {
-        for (CreateDefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
-            Process process = processRepository.findById(detailRequest.getProcessId()).orElse(null);
+    private List<DefectProposalDetail> createDetail(List<DefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal) {
+        List<DefectProposalDetail> details = new ArrayList<>();
+        for (DefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
+            Process process = processRepository.findById(detailRequest.getProcessId()).orElseThrow(() -> new EntityNotFoundException("Process not found"));
             DefectProposalDetail entity = new DefectProposalDetail();
             entity.setDefectProposal(proposal);
-
             if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
-
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
+            entity.setIsEscaped(detailRequest.getIsEscaped());
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
             entity.setOriginCause(detailRequest.getOriginCause());
             entity.setOutflowCause(detailRequest.getOutflowCause());
             entity.setCausePoint(detailRequest.getCausePoint());
-            defectProposalDetailRepository.save(entity);
+            details.add(entity);
         }
+        return details;
     }
 
-    private DefectProposalDetail mapToEntity(DefectProposalDetailUpdateRequest request, DefectProposal proposal) {
+    private DefectProposalDetail mapToEntity(DefectProposalDetailRequest request, DefectProposal proposal) {
 
         if (request == null) {
             throw new IllegalArgumentException("Request must not be null");
@@ -288,11 +291,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
         if (entity.getProcess() != null) {
             response.setProcessId(entity.getProcess().getId());
+            response.setProcessName(entity.getProcess().getName());
         }
-
         response.setDetectedDate(entity.getDetectedDate());
         response.setIsEscaped(entity.getIsEscaped());
-
         response.setNote(entity.getNote());
         response.setOriginCause(entity.getOriginCause());
         response.setOutflowCause(entity.getOutflowCause());

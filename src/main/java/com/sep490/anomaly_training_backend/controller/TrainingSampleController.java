@@ -4,11 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.CreateTrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalDetailService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalService;
@@ -47,9 +43,9 @@ public class TrainingSampleController {
     public final TrainingSampleProposalService trainingSampleProposalService;
     public final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
 
-    @Operation(summary = "Get training samples by group")
+    @Operation(summary = "Get training samples by product line")
     @GetMapping("/")
-    @PreAuthorize("hasAuthority('training_sample.view')")
+    @PreAuthorize("hasAuthority('training_sample.detail')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
@@ -130,5 +126,13 @@ public class TrainingSampleController {
 
         trainingSampleProposalService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Training Sample Proposal has been rejected!");
+    }
+
+    @Operation(summary = "Get training sample detail information")
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('defect.detail')")
+    public ResponseEntity<ApiResponse<TrainingSampleResponse>> getTrainingSampleDetail(@PathVariable("id") Long id) {
+        TrainingSampleResponse response = trainingSampleService.getTrainingSampleById(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

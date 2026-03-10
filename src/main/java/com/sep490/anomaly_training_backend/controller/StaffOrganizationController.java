@@ -25,62 +25,62 @@ public class StaffOrganizationController {
 
     // ====================== VIEW ======================
     @GetMapping("/sections")
-    @PreAuthorize("hasAuthority('staff-organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
     }
 
     @GetMapping("/group/{sectionId}")
-    @PreAuthorize("hasAuthority('staff-organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(@PathVariable Long sectionId) {
         return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
     }
     @GetMapping("/team/{groupId}")
-    @PreAuthorize("hasAuthority('staff-organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(@PathVariable Long groupId) {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
     @GetMapping("/member/{teamId}")
-    @PreAuthorize("hasAuthority('staff-organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByTeam(@PathVariable Long teamId) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByTeam(teamId)));
     }
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority('staff-organization.view')") //API dành cho danh sách tài khoản
+    @PreAuthorize("hasAuthority('staff_organization.view')") //API dành cho danh sách tài khoản
     public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAuthority('staff-organization.view')") //API dành cho Danh sách công nhân
+    @PreAuthorize("hasAuthority('staff_organization.view')") //API dành cho Danh sách công nhân
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
     // ====================== CREATE ======================
     @PostMapping("/sections")
-    @PreAuthorize("hasAuthority('staff-organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.create')")
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(sectionService.createSection(request)));
     }
 
     @PostMapping("/groups")
-    @PreAuthorize("hasAuthority('staff-organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.create')")
     public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
     }
     @PostMapping("/teams")
-    @PreAuthorize("hasAuthority('staff-organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.create')")
     public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
         return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
     }
     @PostMapping("/employees")
-    @PreAuthorize("hasAuthority('staff-organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.create')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(@RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
     }
     // ====================== UPDATE ======================
     @PutMapping("/sections/{id}")
-    @PreAuthorize("hasAuthority('staff-organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<SectionResponse>> updateSection(
             @PathVariable Long id,
             @RequestBody SectionRequest request) {
@@ -113,7 +113,7 @@ public class StaffOrganizationController {
     // ====================== DELETE ======================
 
     @DeleteMapping("/sections/{id}")
-    @PreAuthorize("hasAuthority('staff-organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.delete')")
     public ResponseEntity<Void> deleteSection(@PathVariable Long id) {
         sectionService.deleteSection(id);
         return ResponseEntity.noContent().build();
