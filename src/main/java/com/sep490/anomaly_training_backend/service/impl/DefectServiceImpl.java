@@ -50,6 +50,13 @@ public class DefectServiceImpl implements DefectService {
     }
 
     @Override
+    public List<DefectResponse> getDefectByProcess(Long processId) {
+        return defectRepository.findByProcessIdAndDeleteFlagFalse(processId)
+                .stream()
+                .map(defectMapper::toDto).toList();
+    }
+
+    @Override
     public DefectResponse getDefectById(Long id) {
         Defect defect = defectRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Defect not found"));
         return defectMapper.toDto(defect);

@@ -37,4 +37,6 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
     boolean existsActiveByDefectDescriptionIgnoreCase(@Param("defectDescription") String defectDescription);
 
     Optional<Defect> findByDefectDescriptionIgnoreCase(String defectDescription);
+
+    List<Defect> findByProcessIdAndDeleteFlagFalse(Long processId);
 }

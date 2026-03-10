@@ -32,6 +32,11 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
+
+    }@GetMapping("/product-lines-detail")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<ProductLineResponse>> getProductLineDetail(@RequestParam Long productLineId) {
+        return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineDetail(productLineId)));
     }
 
     @GetMapping("/lines-by-teamlead")

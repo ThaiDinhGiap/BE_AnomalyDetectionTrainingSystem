@@ -45,6 +45,13 @@ public class DefectController {
         List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
+    @Operation(summary = "Get defects by process ")
+    @GetMapping("/process")
+    @PreAuthorize("hasAuthority('defect.view')")
+    public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProcess(@RequestParam("processId") Long processId) {
+        List<DefectResponse> list = defectService.getDefectByProcess(processId);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
 
     @Operation(summary = "Get defects detail information")
     @GetMapping("/{id}")
