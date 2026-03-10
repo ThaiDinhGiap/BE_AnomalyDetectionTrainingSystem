@@ -86,15 +86,26 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found id: " + id));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên với ID: " + id));
 
-        // Nếu có thay đổi mã nhân viên, cần check trùng lặp (trừ chính nó)
-        if (!employee.getEmployeeCode().equals(request.getEmployeeCode())
-                && employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-            throw new RuntimeException("Mã nhân viên mới đã tồn tại");
+        // 1. Nếu có thay đổi mã nhân viên, cần check trùng lặp
+        if (request.getEmployeeCode() != null && !employee.getEmployeeCode().equals(request.getEmployeeCode())) {
+            if (employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
+                throw new RuntimeException("Mã nhân viên '" + request.getEmployeeCode() + "' đã tồn tại");
+            }
         }
 
+        // 2. [QUAN TRỌNG] Kiểm tra Team có thực sự tồn tại không (nếu có thay đổi)
+        if (request.getTeamId() != null && !request.getTeamId().equals(employee.getTeam().getId())) {
+            boolean isTeamExist = teamRepository.existsById(request.getTeamId());
+            if (!isTeamExist) {
+                throw new RuntimeException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
+            }
+        }
+
+        // 3. Map dữ liệu cập nhật
         employeeMapper.updateEntity(employee, request);
+
         return employeeMapper.toDTO(employeeRepository.save(employee));
     }
 
