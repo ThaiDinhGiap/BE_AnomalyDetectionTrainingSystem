@@ -13,5 +13,5 @@ public class UserDashboard {
     String employeeCode;
     String email;
     String username;
-    String isActive;
+    boolean isActive;
 }
