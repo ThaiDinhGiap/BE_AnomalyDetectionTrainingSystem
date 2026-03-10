@@ -12,6 +12,8 @@ public interface DefectService {
 
     List<DefectResponse> getDefectByProductLine(Long productLineId);
 
+    List<DefectResponse> getDefectByProcess(Long processId);
+
     DefectResponse getDefectById(Long id);
 
     Boolean checkExistDefectDescription(String defectDescription);

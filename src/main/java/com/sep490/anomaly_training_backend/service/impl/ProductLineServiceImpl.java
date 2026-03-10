@@ -42,6 +42,12 @@ public class ProductLineServiceImpl implements ProductLineService {
     }
 
     @Override
+    public ProductLineResponse getProductLineDetail(Long productLineId) {
+         ProductLine entity = productLineRepository.findById(productLineId).orElseThrow(()-> new EntityNotFoundException("ProductLine not found"));
+         return  productLineMapper.toDto(entity);
+    }
+
+    @Override
     public ProductLineResponse createProductLine(ProductLineRequest request) {
         Group group = groupRepository.findById(request.getGroupId())
                 .orElseThrow(() -> new EntityNotFoundException(
