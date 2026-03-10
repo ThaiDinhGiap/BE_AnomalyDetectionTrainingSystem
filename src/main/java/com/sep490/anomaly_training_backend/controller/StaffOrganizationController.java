@@ -52,7 +52,7 @@ public class StaffOrganizationController {
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAuthority('staff_organization.view')") //API dành cho Danh sách công nhân
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
@@ -128,9 +128,10 @@ public class StaffOrganizationController {
     @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @PathVariable Long id,
-            @RequestBody EmployeeRequest request) {
+            @Valid @RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.updateEmployee(id, request)));
     }
+
     // ====================== DELETE ======================
 
     @DeleteMapping("/sections/{id}")
@@ -156,9 +157,9 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/employees/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success("Đã xóa nhân viên thành công"));
     }
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")

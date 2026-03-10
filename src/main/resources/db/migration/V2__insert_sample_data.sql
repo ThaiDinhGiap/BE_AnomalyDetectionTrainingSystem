@@ -56,10 +56,10 @@ VALUES
 
 -- Bổ sung một số Role và Module cơ bản
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
-VALUES (1, 'ROLE_ADMIN', 'Quản trị viên', 'Quyền truy cập toàn hệ thống', TRUE, TRUE, 'system'),
-       (2, 'ROLE_MANAGER', 'Quản lý xưởng', 'Quyền phê duyệt cấp quản lý', TRUE, TRUE, 'system'),
-       (3, 'ROLE_SUPERVISOR', 'Giám sát viên', 'Quyền giám sát, phê duyệt cấp 1', TRUE, TRUE, 'system'),
-       (4, 'ROLE_TEAM_LEADER', 'Tổ trưởng sản xuất', 'Khởi tạo báo cáo và nhập liệu', TRUE, TRUE, 'system');
+VALUES (1, 'ROLE_ADMIN', 'ADMIN', 'Quyền truy cập toàn hệ thống', TRUE, TRUE, 'system'),
+       (2, 'ROLE_MANAGER', 'MANAGER', 'Quyền phê duyệt cấp quản lý', TRUE, TRUE, 'system'),
+       (3, 'ROLE_SUPERVISOR', 'SUPERVISOR', 'Quyền giám sát, phê duyệt cấp 1', TRUE, TRUE, 'system'),
+       (4, 'ROLE_TEAM_LEADER', 'TEAM_LEADER', 'Khởi tạo báo cáo và nhập liệu', TRUE, TRUE, 'system');
 
 INSERT INTO user_roles (user_id, role_id)
 VALUES (1, 1),

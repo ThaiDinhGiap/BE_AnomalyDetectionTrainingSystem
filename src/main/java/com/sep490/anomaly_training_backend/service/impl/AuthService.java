@@ -7,13 +7,17 @@ import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserRoleDTO;
 import com.sep490.anomaly_training_backend.enums.OAuthProvider;
 import com.sep490.anomaly_training_backend.exception.AuthException;
+import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.RefreshToken;
 import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.RefreshTokenRepository;
 import com.sep490.anomaly_training_backend.repository.RoleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.JwtService;
+import com.sep490.anomaly_training_backend.service.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,6 +48,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
     private final RoleRepository roleRepository;
+    private final EmployeeRepository employeeRepository;
+    private final MailService mailService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -178,38 +184,65 @@ public class AuthService {
 
     @Transactional
     public UserDashboard createUser(UserCreateRequest request) {
-        // 1. Kiểm tra trùng lặp
+        // 1. Kiểm tra trùng lặp tài khoản
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username đã tồn tại"); // Bạn có thể thay bằng AuthException của bạn
+            throw new BusinessException("Username '" + request.getUsername() + "' đã tồn tại.");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại");
+            throw new BusinessException("Email '" + request.getEmail() + "' đã tồn tại.");
         }
         if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-            throw new RuntimeException("Nhân viên có mã " + request.getEmployeeCode() + " đã có tài khoản");
+            throw new BusinessException("Nhân viên có mã " + request.getEmployeeCode() + " đã có tài khoản.");
         }
 
-        // 2. Build User mới
+        Employee employee = employeeRepository.findByEmployeeCode(request.getEmployeeCode())
+                .orElseThrow(() -> new BusinessException("Không tìm thấy nhân viên với mã: " + request.getEmployeeCode()));
+
+        String rawPassword = generateRandomPassword();
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+
         User user = User.builder()
                 .username(request.getUsername())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
                 .email(request.getEmail())
                 .employeeCode(request.getEmployeeCode())
-                .oauthProvider(OAuthProvider.LOCAL) // Tài khoản nội bộ
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                .fullName(employee.getFullName())
+                .passwordHash(encodedPassword)
+                .oauthProvider(OAuthProvider.LOCAL)
                 .build();
 
-        // 3. Gán Role từ List ID
+        // 5. Gán Role từ List ID
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(request.getRoleIds()));
+
+            // Kiểm tra xem số lượng Role tìm thấy có khớp với số ID truyền lên không
+            if (roles.size() != request.getRoleIds().size()) {
+                throw new BusinessException("Một hoặc nhiều Role ID không hợp lệ.");
+            }
             user.setRoles(roles);
         }
 
-        return toUserDashboard(userRepository.save(user));
+        // 6. Lưu User vào Database
+        User savedUser = userRepository.save(user);
+
+        // 7. Gửi email thông báo mật khẩu (Sử dụng nguyên bản hàm sendSimpleMail của bạn)
+        String subject = "Thông tin tài khoản hệ thống Anomaly Training";
+        String body = "Xin chào " + savedUser.getFullName() + ",\n\n"
+                + "Tài khoản của bạn trên hệ thống đã được tạo thành công.\n"
+                + "Đây là thông tin đăng nhập của bạn:\n"
+                + "- Tên đăng nhập: " + savedUser.getUsername() + "\n"
+                + "- Mật khẩu: " + rawPassword + "\n\n"
+                + "Vui lòng đăng nhập và đổi mật khẩu ngay trong lần sử dụng đầu tiên để bảo mật tài khoản.\n\n"
+                + "Trân trọng,\nBan Quản Trị Hệ Thống.";
+
+        mailService.sendSimpleMail(savedUser.getEmail(), subject, body);
+        return toUserDashboard(savedUser);
     }
 
-    // --- API CẬP NHẬT TÀI KHOẢN ---
+    private String generateRandomPassword() {
+        String randomStr = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        return randomStr + "X@1z";
+    }
+
     @Transactional
     public UserDashboard updateUser(Long id, UserUpdateRequest request) {
         // 1. Tìm User
@@ -224,7 +257,6 @@ public class AuthService {
             throw new RuntimeException("Mã nhân viên đã được gán cho một tài khoản khác");
         }
 
-        // 3. Cập nhật thông tin (KHÔNG CẬP NHẬT PASSWORD VÀ USERNAME)
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setEmployeeCode(request.getEmployeeCode());
