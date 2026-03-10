@@ -184,8 +184,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                                     "Hạng mục huấn luyện ID " + reqDetail.getTrainingSampleId() + " không tồn tại"));
                     detail.setTrainingSample(sample);
                     // Auto-fill sampleCode từ sample nếu user không gửi
-                    if (reqDetail.getSampleCode() == null && sample.getSampleCode() != null) {
-                        detail.setSampleCode(sample.getSampleCode());
+                    if (reqDetail.getSampleCode() == null && sample.getTrainingSampleCode() != null) {
+                        detail.setSampleCode(sample.getTrainingSampleCode());
                     }
                 }
 
@@ -490,8 +490,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             // Số quản lý mẫu
             if (detail.getSampleCode() != null) {
                 row.setSampleCode(detail.getSampleCode());
-            } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getSampleCode() != null) {
-                row.setSampleCode(detail.getTrainingSample().getSampleCode());
+            } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
+                row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
             }
 
             // Training topic (text tự do - nếu không chọn sample)

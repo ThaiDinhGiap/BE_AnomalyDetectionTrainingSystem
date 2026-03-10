@@ -33,6 +33,7 @@ VALUES
 (5,  'defect_proposal.approve', 'Phê duyệt báo cáo lỗi',    1, 'approve',5, TRUE, 'system'),
 (111,'defect.view',             'Xem danh sách lỗi quá khứ',1, 'view',  6, TRUE, 'system'),
 (112,'defect.detail',           'Xem chi tiết lỗi quá khứ', 1, 'view',  6, TRUE, 'system'),
+(113,'defect.import',           'Nhâp danh sách lỗi quá khứ từ file', 1, 'view',  6, TRUE, 'system'),
 
 
 -- training_sample (module 2)
@@ -42,6 +43,7 @@ VALUES
 (9,  'training_sample_proposal.delete', 'Xoá chủ đề đào tạo',           2, 'delete', 4, TRUE, 'system'),
 (100,'training_sample.view',            'Xem danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
 (101,'training_sample.detail',          'Xem chi tiết mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
+(102,'training_sample.import',          'Nhập danh sách mẫu huấn luyện',  2, 'view',   5, TRUE, 'system'),
 
 
 -- training_plan (module 3)
@@ -176,6 +178,8 @@ VALUES
     (4, 17),
     (4, 101),
     (4, 112),
+    (4, 113),
+    (4, 102),
     (4, 47);
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)

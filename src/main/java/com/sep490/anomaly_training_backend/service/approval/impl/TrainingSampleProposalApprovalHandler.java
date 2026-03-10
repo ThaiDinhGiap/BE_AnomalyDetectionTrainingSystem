@@ -63,7 +63,7 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         }
 
         // Check for unique constraint before saving
-        if (trainingSampleRepository.existsByProductLineIdAndSampleCode(created.getProductLine().getId(), created.getSampleCode())) {
+        if (trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
             throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
         }
 
@@ -91,9 +91,9 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Copy new values from the proposal detail to the existing TrainingSample
         copyFromDetailToTrainingSample(d, existing);
 
-        // Check for unique constraint violation for updated sampleCode
-        if (trainingSampleRepository.existsByProductLineIdAndSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getSampleCode(), existing.getId())) {
-            throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
+        // Check for unique constraint violation for updated trainingSampleCode
+        if (trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
+            throw new IllegalStateException("trainingSampleCode already exists for this productLine. DetailId=" + d.getId());
         }
 
         // Save the updated TrainingSample
@@ -150,6 +150,6 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         target.setCategoryName(d.getCategoryName());
         target.setTrainingDescription(d.getTrainingDescription());
         target.setNote(d.getNote());
-        target.setSampleCode(d.getTrainingSampleCode());
+        target.setTrainingSampleCode(d.getTrainingSampleCode());
     }
 }

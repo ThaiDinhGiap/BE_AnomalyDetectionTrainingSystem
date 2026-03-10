@@ -6,7 +6,8 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CreateTrainingSampleProposalDetailRequest {
+public class TrainingSampleProposalDetailRequest {
+    Long id;
     Long trainingSampleId; // chỉ định mẫu huan luyen nào đc tác động
     ProposalType proposalType; //CREATE, UPDATE, DELETE
     Long processId; //Công doan
