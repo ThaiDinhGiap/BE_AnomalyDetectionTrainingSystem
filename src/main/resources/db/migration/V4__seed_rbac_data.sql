@@ -114,12 +114,6 @@ VALUES
 (52, 'training_sample_review.confirm',       'Xác nhận hoàn thành rà soát mẫu huấn luyện hàng năm',13, 'edit',   3, TRUE, 'system'),
 (53, 'training_sample_review_config.view',   'Lấy danh sách cấu hình lịch kiểm tra định kì',       13, 'create', 2, TRUE, 'system'),
 (54, 'training_sample_review_config.create', 'Tạo lịch kiểm tra định kì',                  13, 'delete', 4, TRUE, 'system');
--- ----------------------------------------------------------------------------
--- PART 3: ADD MISSING SYSTEM ROLE (FINAL_INSPECTION)
--- V2 already seeded roles 1-4; add role 5 here
--- ----------------------------------------------------------------------------
-INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
-VALUES (5, 'ROLE_FINAL_INSPECTION', 'Kiểm tra cuối chuyền', 'Nhập kết quả kiểm tra cuối', TRUE, TRUE, 'system');
 
 -- ----------------------------------------------------------------------------
 -- PART 4: ASSIGN PERMISSIONS TO ROLES
