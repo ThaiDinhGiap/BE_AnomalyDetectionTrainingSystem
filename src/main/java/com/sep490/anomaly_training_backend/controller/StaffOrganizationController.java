@@ -88,7 +88,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/groups/{id}")
-    @PreAuthorize("hasAuthority('admin.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<GroupResponse>> updateGroup(
             @PathVariable Long id,
             @RequestBody GroupRequest request) {
@@ -96,7 +96,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/teams/{id}")
-    @PreAuthorize("hasAuthority('admin.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(
             @PathVariable Long id,
             @RequestBody TeamRequest request) {
@@ -104,7 +104,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/employees/{id}")
-    @PreAuthorize("hasAuthority('admin.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.edit')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @PathVariable Long id,
             @RequestBody EmployeeRequest request) {
@@ -120,27 +120,27 @@ public class StaffOrganizationController {
     }
 
     @DeleteMapping("/groups/{id}")
-    @PreAuthorize("hasAuthority('admin.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.delete')")
     public ResponseEntity<Void> deleteGroup(@PathVariable Long id) {
         groupService.deleteGroup(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/teams/{id}")
-    @PreAuthorize("hasAuthority('admin.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.delete')")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.deleteTeam(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/employees/{id}")
-    @PreAuthorize("hasAuthority('admin.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.delete')")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
         return ResponseEntity.noContent().build();
     }
     @DeleteMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('admin.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.delete')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
