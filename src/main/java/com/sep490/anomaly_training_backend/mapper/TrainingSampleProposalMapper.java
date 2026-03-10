@@ -15,7 +15,6 @@ import java.util.Objects;
 public abstract class TrainingSampleProposalMapper {
 
     @Mapping(target = "productLineName", source = "productLine.name")
-    @Mapping(target = "createdDate", source = "updatedAt")
     @Mapping(target = "teamLeadId", source = "createdBy", qualifiedByName = "usernameToId")
     @Mapping(target = "teamLeadName", source = "createdBy", qualifiedByName = "usernameToName")
     public abstract TrainingSampleProposalResponse toResponse(TrainingSampleProposal entity,

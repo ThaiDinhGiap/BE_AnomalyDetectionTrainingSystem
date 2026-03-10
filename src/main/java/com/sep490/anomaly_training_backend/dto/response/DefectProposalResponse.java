@@ -15,6 +15,6 @@ public class DefectProposalResponse {
     String productLineName;
     Long teamLeadId;
     String teamLeadName;
-    LocalDateTime createdDate;
+    LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

@@ -15,7 +15,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public abstract class DefectProposalMapper {
 
-    @Mapping(target = "createdDate", source = "updatedAt")
     @Mapping(target = "productLineName", source = "productLine.name")
     @Mapping(target = "teamLeadId", source = "createdBy", qualifiedByName = "usernameToId")
     @Mapping(target = "teamLeadName", source = "createdBy", qualifiedByName = "usernameToName")
