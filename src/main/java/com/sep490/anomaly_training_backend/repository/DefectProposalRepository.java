@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,15 +38,9 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
                 JOIN g.section s
                 WHERE df.status = :status
                 AND df.deleteFlag = false
-                AND (
-                    (:role = 'SUPERVISOR' AND g.supervisor.id = :userId)
-                    OR
-                    (:role = 'MANAGER' AND s.manager.id = :userId)
-                )
                 ORDER BY df.createdAt ASC
             """)
     List<DefectProposal> findPendingForApprove(
             @Param("status") ReportStatus status,
-            @Param("userId") Long userId,
-            @Param("role") UserRole role);
+            @Param("userId") Long userId);
 }

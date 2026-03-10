@@ -1,14 +1,16 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
-import com.sep490.anomaly_training_backend.enums.UserRole;
-import jakarta. validation.constraints.Email;
+import com.sep490.anomaly_training_backend.model.Role;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation. constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Set;
 
 @Data
 @Builder
@@ -33,5 +35,5 @@ public class RegisterRequest {
     private String fullName;
 
     @NotNull(message = "Role is required")
-    private UserRole role;
+    private Set<Role> roles;
 }
