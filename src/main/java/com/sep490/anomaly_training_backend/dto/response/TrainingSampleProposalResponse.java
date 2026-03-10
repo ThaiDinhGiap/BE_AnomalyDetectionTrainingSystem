@@ -13,5 +13,6 @@ public class TrainingSampleProposalResponse {
     ReportStatus status;
     Long teamLeadId;
     String teamLeadName;
-    LocalDateTime createdDate;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
 }

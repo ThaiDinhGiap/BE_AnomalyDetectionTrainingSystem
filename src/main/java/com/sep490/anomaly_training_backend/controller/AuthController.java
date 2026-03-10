@@ -24,7 +24,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -169,18 +168,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Logged out from all devices", null));
     }
 
-    @Operation(
-            summary = "Get current user",
-            description = "Get information of the currently authenticated user"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        User user = userRepository.findByUsernameAndDeleteFlagFalse(userDetails.getUsername())
-                .orElseThrow(() -> new AuthException("User not found"));
-
-        return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
-    }
 }
