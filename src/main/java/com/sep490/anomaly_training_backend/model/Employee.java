@@ -40,7 +40,7 @@ public class Employee extends BaseEntity {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

@@ -283,7 +283,7 @@ CREATE TABLE employees
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
     employee_code VARCHAR(20)  NOT NULL UNIQUE,
     full_name     VARCHAR(100) NOT NULL,
-    team_id       BIGINT       NOT NULL,
+    team_id       BIGINT,
     status        ENUM ('ACTIVE', 'MATERNITY_LEAVE', 'RESIGNED') DEFAULT 'ACTIVE',
 
     delete_flag   BOOLEAN      NOT NULL                          DEFAULT FALSE,
