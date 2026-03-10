@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
@@ -25,19 +26,33 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
-        // Validate mã nhân viên trùng lặp
         if (employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
             throw new RuntimeException("Mã nhân viên '" + request.getEmployeeCode() + "' đã tồn tại");
         }
 
         Employee employee = employeeMapper.toEntity(request);
 
-        // Nếu request chưa có status, đảm bảo set mặc định (dù Entity có Builder.Default, kiểm tra cho chắc)
         if (employee.getStatus() == null) {
             employee.setStatus(EmployeeStatus.ACTIVE);
         }
 
         return employeeMapper.toDTO(employeeRepository.save(employee));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeNoAccountDTO> getEmployeesWithoutAccount() {
+        List<Employee> employees = employeeRepository.findAllEmployeesWithoutAccount();
+
+        return employees.stream()
+                .map(e -> EmployeeNoAccountDTO.builder()
+                        .id(e.getId())
+                        .employeeCode(e.getEmployeeCode())
+                        .fullName(e.getFullName())
+                        .teamName(e.getTeam() != null ? e.getTeam().getName(): "N/A")
+                        .status(e.getStatus().name())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

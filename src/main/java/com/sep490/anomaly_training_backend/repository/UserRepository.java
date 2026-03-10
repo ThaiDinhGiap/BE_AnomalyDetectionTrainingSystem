@@ -35,6 +35,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmailAndDeleteFlagFalse(String email);
 
-    List<User> getByDeleteFlagFalse();
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.deleteFlag = false")
+    List<User> findAllUsersWithRoles();
+
+    // Kiểm tra trùng email
+    boolean existsByEmail(String email);
+
+    // Kiểm tra nhân viên đã có tài khoản chưa dựa vào employeeCode
+    boolean existsByEmployeeCode(String employeeCode);
 }
 
