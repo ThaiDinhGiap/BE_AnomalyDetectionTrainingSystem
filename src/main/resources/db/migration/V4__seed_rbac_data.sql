@@ -136,7 +136,10 @@ VALUES
 (2, 18),(2, 19),(2, 20),        -- employee: view,create,edit
 (2, 36),(2, 37),(2, 38),        -- scoring: view,create,edit
 (2, 40),(2, 41),                -- dashboard: view,export
-(2, 22),(2, 27);                -- user.view, role.view
+(2, 43),
+(2, 44),
+(2, 45),
+(2, 46),(2, 22),(2, 27);                -- user.view, role.view
 
 -- SUPERVISOR: view/create/edit reports, view plans, manage training results
 INSERT INTO role_permissions (role_id, permission_id)
