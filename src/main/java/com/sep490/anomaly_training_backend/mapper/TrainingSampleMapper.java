@@ -13,5 +13,6 @@ public abstract class TrainingSampleMapper {
     @Mapping(target = "defectDescription", source = "defect.defectDescription")
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productCode", source = "product.code")
+    @Mapping(target = "trainingSampleId", source = "id")
     public abstract TrainingSampleResponse toDto(TrainingSample entity);
 }

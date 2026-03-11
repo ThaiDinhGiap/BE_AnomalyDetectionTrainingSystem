@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class TrainingSampleResponse {
-    Long id;
+    Long trainingSampleId;
     Long processId;
     String processName;
     Long productId;
