@@ -9,4 +9,20 @@ import java.util.List;
 
 public interface ImportHistoryService {
      void saveHistory(User user, String filePath, ImportType importType, ImportStatus status, List<ImportErrorItem> errors);
+    default void saveFailHistory(
+            User user,
+            String filePath,
+            ImportType importType,
+            List<ImportErrorItem> errors
+    ) {
+        saveHistory(user, filePath, importType, ImportStatus.FAIL, errors);
+    }
+
+    default void savePassHistory(
+            User user,
+            String filePath,
+            ImportType importType
+    ) {
+        saveHistory(user, filePath, importType, ImportStatus.PASS, List.of());
+    }
 }

@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,4 +25,12 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
     Boolean existsByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 
     Boolean existsByProductLineIdAndTrainingSampleCodeAndIdNot(Long productLineId, String trainingSampleCode, Long id);
+
+    @Query(value = """
+    SELECT MAX(CAST(SUBSTRING(training_code, 3) AS UNSIGNED))
+    FROM training_samples
+    WHERE training_code LIKE 'TS%'
+      AND delete_flag = false
+""", nativeQuery = true)
+    Optional<Long> findMaxTrainingCodeSequence();
 }

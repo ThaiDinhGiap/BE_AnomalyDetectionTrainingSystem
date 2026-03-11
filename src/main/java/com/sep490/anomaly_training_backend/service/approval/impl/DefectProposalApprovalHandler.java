@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
+import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.util.List;
 public class DefectProposalApprovalHandler implements ApprovalHandler {
     private final DefectProposalRepository defectProposalRepository;
     private final DefectRepository defectRepository;
+    private final DefectCodeGenerator defectCodeGenerator;
 
     @Override
     public ApprovalEntityType getType() {
@@ -51,6 +53,10 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
                     Defect created = new Defect();
                     copyFromDetailToDefect(d, created);
 
+                    // Tạo defect code tự động
+                    String generatedCode = defectCodeGenerator.generateDefectCode();
+                    created.setDefectCode(generatedCode);
+
                     // đảm bảo không null các field bắt buộc
                     requireNonNullForCreate(created, d);
 
@@ -69,6 +75,7 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
                             .orElseThrow(() -> new IllegalStateException("Defect not found id=" + d.getDefect().getId()));
 
                     copyFromDetailToDefect(d, defect);
+                    // Giữ nguyên defect code khi UPDATE, không tạo code mới
                     requireNonNullForUpdate(defect, d);
 
                     defectRepository.save(defect);
@@ -118,6 +125,9 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
         }
         if (defect.getDetectedDate() == null) {
             throw new IllegalStateException("detectedDate is required for CREATE. detailId=" + d.getId());
+        }
+        if (StringUtil.isBlank(defect.getDefectCode())) {
+            throw new IllegalStateException("defectCode should be generated and must not be blank. detailId=" + d.getId());
         }
     }
     private void requireNonNullForUpdate(Defect defect, DefectProposalDetail d) {

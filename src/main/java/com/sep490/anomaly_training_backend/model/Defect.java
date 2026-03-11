@@ -36,6 +36,9 @@ public class Defect extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(name = "defect_code", nullable = false, unique = true, length = 10)
+    String defectCode;
+
     @Column(name = "defect_description", nullable = false, columnDefinition = "text")
     String defectDescription;
 

@@ -23,7 +23,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -125,6 +127,9 @@ public class DefectServiceImpl implements DefectService {
         return sheet;
     }
     private void validateAllRows(Sheet sheet, List<ImportErrorItem> errors) {
+        List<DefectImportDto> parsedDtos = new ArrayList<>();
+
+        // Parse all rows first
         for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
 
@@ -133,13 +138,18 @@ public class DefectServiceImpl implements DefectService {
             }
 
             try {
-                parseRowToImportDto(row, i + 1);
+                DefectImportDto dto = parseRowToImportDto(row, i + 1);
+                parsedDtos.add(dto);
             } catch (BadRequestException e) {
                 errors.add(buildRowError(i + 1, "ROW", null, e.getMessage()));
             } catch (Exception e) {
                 errors.add(buildRowError(i + 1, "ROW", null, "Unexpected error: " + e.getMessage()));
             }
         }
+
+        // Validate no duplicate defectCode and defectDescription
+        validateNoDuplicateDefectCode(parsedDtos, errors);
+        validateNoDuplicateDefectDescription(parsedDtos, errors);
     }
     private List<DefectResponse> saveAllRows(Sheet sheet) throws BadRequestException {
         List<DefectResponse> responses = new ArrayList<>();
@@ -161,7 +171,7 @@ public class DefectServiceImpl implements DefectService {
 
     private Defect upsertDefect(DefectImportDto dto) {
         Defect defect = defectRepository
-                .findByDefectDescriptionIgnoreCase(dto.getDefectDescription().trim())
+                .findByDefectCode(dto.getDefectCode())
                 .orElseGet(Defect::new);
 
         applyImportDtoToDefect(dto, defect);
@@ -170,6 +180,7 @@ public class DefectServiceImpl implements DefectService {
     }
     private void applyImportDtoToDefect(DefectImportDto dto, Defect defect) {
         defect.setDefectDescription(dto.getDefectDescription());
+        defect.setDefectCode(dto.getDefectCode());
         defect.setDetectedDate(dto.getDetectedDate());
         defect.setIsEscaped(dto.getIsEscaped());
         defect.setNote(dto.getNote());
@@ -265,21 +276,7 @@ public class DefectServiceImpl implements DefectService {
         }
     }
 
-    private Boolean parseBooleanText(String value, String fieldName, int excelRowNumber) throws BadRequestException {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
 
-        String normalized = value.trim().toLowerCase();
-
-        return switch (normalized) {
-            case "true", "1", "yes", "y" -> true;
-            case "false", "0", "no", "n" -> false;
-            default -> throw new BadRequestException(
-                    "Row " + excelRowNumber + ": " + fieldName + " must be true/false, yes/no, or 1/0"
-            );
-        };
-    }
     private String getCellDisplayValue(Cell cell) {
         if (cell == null) {
             return null;
@@ -323,9 +320,7 @@ public class DefectServiceImpl implements DefectService {
     }
     private ImportErrorItem buildSystemError(String message) {
         return ImportErrorItem.builder()
-                .rowNumber(null)
                 .field("SYSTEM")
-                .value(null)
                 .message(message)
                 .build();
     }
@@ -347,30 +342,34 @@ public class DefectServiceImpl implements DefectService {
                 .build();
     }
     private DefectImportDto parseRowToImportDto(Row row, int excelRowNumber) throws BadRequestException {
-        String defectDescription = getRequiredStringCellValue(
+        String defectCode = getRequiredStringCellValue(
                 row.getCell(1), "defectDescription", excelRowNumber
+        );
+        String defectDescription = getRequiredStringCellValue(
+                row.getCell(2), "defectCode", excelRowNumber
         );
 
         String processCode = getRequiredStringCellValue(
-                row.getCell(2), "processCode", excelRowNumber
+                row.getCell(3), "processCode", excelRowNumber
         );
 
         LocalDate detectedDate = getLocalDateCellValue(
-                row.getCell(3), "detectedDate", excelRowNumber
+                row.getCell(4), "detectedDate", excelRowNumber
         );
 
         Boolean isEscaped = getEscapedCellValue(
-                row.getCell(4), "isEscaped", excelRowNumber
+                row.getCell(5), "isEscaped", excelRowNumber
         );
 
-        String outflowCause = getOptionalStringCellValue(row.getCell(5));
-        String originCause = getOptionalStringCellValue(row.getCell(6));
-        String causePoint = getOptionalStringCellValue(row.getCell(7));
-        String note = getOptionalStringCellValue(row.getCell(8));
+        String outflowCause = getOptionalStringCellValue(row.getCell(6));
+        String originCause = getOptionalStringCellValue(row.getCell(7));
+        String causePoint = getOptionalStringCellValue(row.getCell(8));
+        String note = getOptionalStringCellValue(row.getCell(9));
 
         Process process = processRepository.findByCode(processCode.trim()).orElseThrow(() -> new BadRequestException("Row " + excelRowNumber + ": Process not found: " + processCode));
 
         return DefectImportDto.builder()
+                .defectCode(defectCode)
                 .defectDescription(defectDescription)
                 .detectedDate(detectedDate)
                 .isEscaped(isEscaped)
@@ -379,6 +378,7 @@ public class DefectServiceImpl implements DefectService {
                 .outflowCause(outflowCause)
                 .causePoint(causePoint)
                 .processCode(process.getCode())
+                .excelRowNumber(excelRowNumber)
                 .build();
     }
     private Boolean getEscapedCellValue(Cell cell, String fieldName, int excelRowNumber) throws BadRequestException {
@@ -400,6 +400,71 @@ public class DefectServiceImpl implements DefectService {
                     "Row " + excelRowNumber + ": " + fieldName + " must be 'Có' or 'Không'"
             );
         };
+    }
+
+    /**
+     * Validate that defectCode is unique across all rows in import
+     * Rule: defectCode không được lặp lại trong file import
+     */
+    private void validateNoDuplicateDefectCode(List<DefectImportDto> parsedDtos, List<ImportErrorItem> errors) {
+        Map<String, Integer> defectCodeCount = new HashMap<>();
+        Map<String, Integer> firstOccurrenceRow = new HashMap<>();
+
+        for (DefectImportDto dto : parsedDtos) {
+            String code = dto.getDefectCode();
+            defectCodeCount.put(code, defectCodeCount.getOrDefault(code, 0) + 1);
+
+            if (!firstOccurrenceRow.containsKey(code)) {
+                firstOccurrenceRow.put(code, dto.getExcelRowNumber() != null ? dto.getExcelRowNumber() : 0);
+            }
+        }
+
+        // Find duplicates
+        for (Map.Entry<String, Integer> entry : defectCodeCount.entrySet()) {
+            if (entry.getValue() > 1) {
+                // Find all rows with this duplicate code
+                for (DefectImportDto dto : parsedDtos) {
+                    if (dto.getDefectCode().equals(entry.getKey())) {
+                        errors.add(buildRowError(
+                            dto.getExcelRowNumber(),
+                            "defectCode",
+                            entry.getKey(),
+                            "defectCode '" + entry.getKey() + "' is duplicated in file import (" + entry.getValue() + " occurrences)"
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate that defectDescription is unique across all rows in import
+     * Rule: defectDescription không được lặp lại, ngay cả khi defectCode khác nhau
+     */
+    private void validateNoDuplicateDefectDescription(List<DefectImportDto> parsedDtos, List<ImportErrorItem> errors) {
+        Map<String, Integer> descriptionCount = new HashMap<>();
+
+        for (DefectImportDto dto : parsedDtos) {
+            String description = dto.getDefectDescription();
+            descriptionCount.put(description, descriptionCount.getOrDefault(description, 0) + 1);
+        }
+
+        // Find duplicates
+        for (Map.Entry<String, Integer> entry : descriptionCount.entrySet()) {
+            if (entry.getValue() > 1) {
+                // Find all rows with this duplicate description
+                for (DefectImportDto dto : parsedDtos) {
+                    if (dto.getDefectDescription().equals(entry.getKey())) {
+                        errors.add(buildRowError(
+                            dto.getExcelRowNumber(),
+                            "defectDescription",
+                            entry.getKey(),
+                            "defectDescription '" + entry.getKey() + "' is duplicated in file import (" + entry.getValue() + " occurrences)"
+                        ));
+                    }
+                }
+            }
+        }
     }
 
 }

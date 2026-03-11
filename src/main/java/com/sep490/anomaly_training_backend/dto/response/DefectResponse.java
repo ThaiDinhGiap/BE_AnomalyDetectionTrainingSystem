@@ -8,6 +8,7 @@ import java.time.LocalDate;
 @Builder
 public class DefectResponse {
     Long defectId;
+    String defectCode;
     String defectDescription;
     Long processId;
     String processName;
