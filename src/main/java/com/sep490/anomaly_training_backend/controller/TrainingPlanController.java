@@ -205,7 +205,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Submit plan for approval", description = "Change plan status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_plan.submit')")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -216,7 +216,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Revise plan (Return to Draft)", description = "Move plan from pending approval back to Draft status for editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_plan.revise')")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -259,7 +259,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_plan.reject')")
+    @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<String> rejectPlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

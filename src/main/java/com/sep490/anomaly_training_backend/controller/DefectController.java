@@ -119,7 +119,7 @@ public class DefectController {
             HttpServletRequest request
     ) {
         defectProposalService.revise(id, currentUser, request);
-        return ResponseEntity.ok("The plan has been successfully moved back to the Draft status!");
+        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
     }
 
     @Operation(summary = "Approve defect proposal", description = "Approve the defect proposal.")
@@ -146,7 +146,7 @@ public class DefectController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('defect_proposal.reject')")
+    @PreAuthorize("hasAuthority('defect_proposal.edit')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -163,5 +163,15 @@ public class DefectController {
     public ResponseEntity<ApiResponse<List<DefectResponse>>> importDefect(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<DefectResponse> data = defectService.importDefect(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success( data));
+    }
+    @Operation(summary = "Submit defect proposal for approval", description = "Change defect proposal status from DRAFT to SUBMITTED.")
+    @PutMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('training_sample_proposal.submit')")
+    public ResponseEntity<String> submit(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request) {
+            defectProposalService.submitDefectProposalForApproval(id, currentUser, request);
+        return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
 }

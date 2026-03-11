@@ -30,4 +30,6 @@ public interface TrainingSampleProposalService {
     void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request);
 
     boolean canApprove(Long proposalId, User currentUser);
+
+    void submitTrainingSampleProposalForApproval(Long proposalId, User currentUser, HttpServletRequest request);
 }

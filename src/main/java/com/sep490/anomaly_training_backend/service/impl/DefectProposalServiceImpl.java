@@ -3,14 +3,13 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
-import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
 import com.sep490.anomaly_training_backend.model.Defect;
@@ -80,11 +79,11 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     @Override
     public DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request) throws BadRequestException {
         DefectProposal proposal = defectProposalRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", id));
 
         List<DefectProposalDetailRequest> items = request.getListDetail();
         if (items == null || items.isEmpty()) {
-            throw new BadRequestException("Detail list must not be empty");
+            throw new BusinessException("Cannot submit proposal without details");
         }
         // load existing details (of this proposal)
         List<DefectProposalDetail> existingDetails = defectProposalDetailRepository.findByDefectProposalIdAndDeleteFlagFalse(id);
@@ -157,10 +156,18 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         return response;
     }
 
+    @Override
+    public void submitDefectProposalForApproval(Long proposalId, User currentUser, HttpServletRequest request) {
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", proposalId));
+        validateProposalForSubmission(proposal);
+        approvalService.submit(proposal, currentUser, request);
+        defectProposalRepository.save(proposal);
+    }
+
     // Approval Methods
     @Override
     public void submit(Long proposalId, User currentUser, HttpServletRequest request) {
-        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", proposalId));
         if (!proposal.getCreatedBy().equals(currentUser.getUsername())) {
             throw new BusinessException("Only author can submit this proposal");
         }
@@ -170,27 +177,27 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
     @Override
     public void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request) {
-        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", proposalId));
         approvalService.approve(proposal, currentUser, req, request);
         defectProposalRepository.save(proposal);
     }
 
     @Override
     public void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request) {
-        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", proposalId));
         approvalService.reject(proposal, currentUser, req, request);
         defectProposalRepository.save(proposal);
     }
 
     @Override
     public boolean canApprove(Long proposalId, User currentUser) {
-        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        DefectProposal proposal = defectProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal", "id", proposalId));
         return approvalService.canApprove(proposal, currentUser);
     }
 
     @Override
     public void revise(Long id, User currentUser, HttpServletRequest request) {
-        DefectProposal proposal = defectProposalRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Defect Proposal not found"));
+        DefectProposal proposal = defectProposalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Defect Proposal not found"));
         if (!proposal.getCreatedBy().equals(proposal.getCreatedBy())) {
             throw new BusinessException("Only author can edit on this proposal");
         }
@@ -301,6 +308,26 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         response.setCausePoint(entity.getCausePoint());
         response.setDeleteFlag(entity.isDeleteFlag());
         return response;
+    }
+
+    private void validateProposalForSubmission(DefectProposal proposal) throws BusinessException {
+        if (proposal.getDetails() == null || proposal.getDetails().isEmpty()) {
+            throw new BusinessException("Cannot submit proposal without details");
+        }
+        for (DefectProposalDetail detail : proposal.getDetails()) {
+            if (detail.getProcess() == null) {
+                throw new BusinessException("Process is required for all details");
+            }
+            if (detail.getProposalType() == null) {
+                throw new BusinessException("Proposal type is required for all details");
+            }
+            if (detail.getDefectDescription() == null || detail.getDefectDescription().isBlank()) {
+                throw new BusinessException("Defect description is required for all details");
+            }
+            if (detail.getDetectedDate() == null) {
+                throw new BusinessException("Detected date is required for all details");
+            }
+        }
     }
 
 }
