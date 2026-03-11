@@ -125,7 +125,7 @@ public class TrainingSampleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_sample_proposal.reject')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -146,9 +146,19 @@ public class TrainingSampleController {
 
     @Operation(summary = "Import data (Training Sample Banking)")
     @PostMapping("/import")
-    @PreAuthorize("hasAuthority('defect.import')")
+    @PreAuthorize("hasAuthority('training_sample.import')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> importTrainingSample(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<TrainingSampleResponse> data = trainingSampleService.importTrainingSample(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success( data));
+    }
+    @Operation(summary = "Submit training sample proposal for approval", description = "Change training sample proposal  status from DRAFT to SUBMITTED.")
+    @PutMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    public ResponseEntity<String> submit(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        trainingSampleProposalService.submitTrainingSampleProposalForApproval(id, currentUser, request);
+        return ResponseEntity.ok("Training sample proposal submitted for approval successfully!");
     }
 }

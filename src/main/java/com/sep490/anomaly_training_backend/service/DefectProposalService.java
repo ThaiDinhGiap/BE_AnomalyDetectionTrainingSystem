@@ -21,6 +21,8 @@ public interface DefectProposalService {
 
     DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request) throws BadRequestException;
 
+    void submitDefectProposalForApproval(Long proposalId, User currentUser, HttpServletRequest request);
+
     // Relate approval methods
     void submit(Long proposalId, User currentUser, HttpServletRequest request);
 
