@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductLineRepository extends JpaRepository<ProductLine, Long> {
@@ -26,4 +27,9 @@ public interface ProductLineRepository extends JpaRepository<ProductLine, Long> 
     WHERE u.id = :teamLeadId
 """)
     List<ProductLine> findProductLineByTeamLeadId(@Param("teamLeadId") Long teamLeadId);
+
+    /**
+     * Find ProductLine by name (case-sensitive, used for import)
+     */
+    Optional<ProductLine> findByName(String name);
 }

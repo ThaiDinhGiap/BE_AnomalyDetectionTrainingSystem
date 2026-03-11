@@ -11,6 +11,8 @@ import com.sep490.anomaly_training_backend.repository.ImportHistoryRepository;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +24,7 @@ public class ImportHistoryServiceImpl implements ImportHistoryService {
     private final ObjectMapper objectMapper;
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveHistory(User user, String filePath, ImportType importType, ImportStatus status, List<ImportErrorItem> errors) {
         String errorJson = null;
 

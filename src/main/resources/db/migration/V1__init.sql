@@ -428,6 +428,7 @@ CREATE TABLE defects
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
     defect_description TEXT    NOT NULL,
+    defect_code        VARCHAR(255)    NOT NULL,
     process_id         BIGINT  NOT NULL,
     detected_date      DATE    NOT NULL,
     is_escaped         BOOLEAN          DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
@@ -442,6 +443,7 @@ CREATE TABLE defects
     updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
+    UNIQUE KEY uk_defect (defect_code),
     FOREIGN KEY (process_id) REFERENCES processes (id),
     INDEX idx_defects_process (process_id),
     INDEX idx_defects_detected_date (detected_date),
@@ -581,11 +583,12 @@ CREATE TABLE defect_proposal_detail_history
 CREATE TABLE training_samples
 (
     id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    training_code        VARCHAR(20) NOT NULL UNIQUE COMMENT 'Mã huấn luyện (TS000001, TS000002, ...)',
     process_id           BIGINT       NOT NULL,
     product_line_id      BIGINT       NOT NULL,
     defect_id            BIGINT,
     category_name        VARCHAR(200) NOT NULL COMMENT 'Hạng mục huấn luyện',
-    training_description TEXT         NOT NULL COMMENT 'Nội dung huấn luyện',
+    training_description VARCHAR(255)         NOT NULL COMMENT 'Nội dung huấn luyện',
     product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
     training_sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     process_order        INT          NOT NULL COMMENT 'Thứ tự công đoạn',
@@ -603,7 +606,7 @@ CREATE TABLE training_samples
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
     FOREIGN KEY (defect_id) REFERENCES defects (id) ON DELETE SET NULL,
     FOREIGN KEY (product_id) REFERENCES products (id),
-    UNIQUE KEY uk_training_samples_code (product_line_id, training_sample_code),
+    UNIQUE KEY uk_training_code (training_code),
     INDEX idx_training_samples_process (process_id),
     INDEX idx_training_samples_product_line (product_line_id),
     INDEX idx_training_samples_product (product_id),

@@ -3,14 +3,12 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.ProcessService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
+import com.sep490.anomaly_training_backend.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,13 +25,15 @@ public class ManufacturingLineController {
     private final ProductLineService productLineService;
     private final ProcessService processService;
     private final EmployeeSkillService employeeSkillService;
+    private final ProductService productService;
 
     @GetMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
 
-    }@GetMapping("/product-lines-detail")
+    }
+    @GetMapping("/product-lines-detail")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> getProductLineDetail(@RequestParam Long productLineId) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineDetail(productLineId)));
@@ -49,6 +49,12 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
+    }
+
+    @GetMapping("/product-by-process/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProcess(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProcessId(id)));
     }
 
     @PostMapping("/product-lines")

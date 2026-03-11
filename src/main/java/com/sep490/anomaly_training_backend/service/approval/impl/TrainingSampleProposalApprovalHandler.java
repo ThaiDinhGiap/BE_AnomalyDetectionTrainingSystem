@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
+import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.List;
 @Slf4j
 public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private final TrainingSampleRepository trainingSampleRepository;
+    private final TrainingCodeGenerator trainingCodeGenerator;
 
     @Override
     public ApprovalEntityType getType() {
@@ -57,18 +59,24 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         TrainingSample created = new TrainingSample();
         copyFromDetailToTrainingSample(d, created);
 
+        // Generate trainingCode for new TrainingSample
+        String trainingCode = trainingCodeGenerator.generateTrainingCode();
+        created.setTrainingCode(trainingCode);
+        log.info("Generated trainingCode: {} for new TrainingSample", trainingCode);
+
         // Ensure non-null fields required for TrainingSample
         if (created.getProcessOrder() == null || created.getCategoryOrder() == null || created.getContentOrder() == null) {
             throw new IllegalStateException("Missing orders (processOrder/categoryOrder/contentOrder) for CREATE. DetailId=" + d.getId());
         }
 
         // Check for unique constraint before saving
-        if (trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
+        if (created.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
             throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
         }
 
         // Save the new TrainingSample
         trainingSampleRepository.save(created);
+        log.info("TrainingSample created successfully with ID: {} and trainingCode: {}", created.getId(), created.getTrainingCode());
 
         // Set the newly created TrainingSample back to the proposal detail for auditing purposes
         d.setTrainingSample(created);
@@ -91,13 +99,17 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Copy new values from the proposal detail to the existing TrainingSample
         copyFromDetailToTrainingSample(d, existing);
 
+        // Note: trainingCode should NOT be changed on UPDATE (it's a permanent identifier)
+        log.info("Updating TrainingSample ID: {} with existing trainingCode: {}", existing.getId(), existing.getTrainingCode());
+
         // Check for unique constraint violation for updated trainingSampleCode
-        if (trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
+        if (existing.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
             throw new IllegalStateException("trainingSampleCode already exists for this productLine. DetailId=" + d.getId());
         }
 
         // Save the updated TrainingSample
         trainingSampleRepository.save(existing);
+        log.info("TrainingSample updated successfully with ID: {}", existing.getId());
     }
 
     /* ===================== APPLY DELETE ===================== */
@@ -112,8 +124,9 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
                 .orElseThrow(() -> new IllegalStateException("TrainingSample not found id=" + d.getTrainingSample().getId()));
 
         // Soft delete (Recommended)
-        existing.setDeleteFlag(true);  // You can use soft delete field like isActive or deletedAt if needed
+        existing.setDeleteFlag(true);
         trainingSampleRepository.save(existing);
+        log.info("TrainingSample soft deleted successfully with ID: {} and trainingCode: {}", existing.getId(), existing.getTrainingCode());
 
         // If hard delete is required (be cautious with this!)
         // trainingSampleRepository.delete(existing);
@@ -144,7 +157,7 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     // Copy fields from proposal detail to the TrainingSample entity
     private void copyFromDetailToTrainingSample(TrainingSampleProposalDetail d, TrainingSample target) {
         target.setProcess(d.getProcess());
-        target.setProductLine(d.getProcess().getProductLine());  // Assumption: ProductLine comes from Product
+        target.setProductLine(d.getProcess().getProductLine());
         target.setProduct(d.getProduct());
         target.setDefect(d.getDefect());
         target.setCategoryName(d.getCategoryName());

@@ -39,4 +39,9 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
     Optional<Defect> findByDefectDescriptionIgnoreCase(String defectDescription);
 
     List<Defect> findByProcessIdAndDeleteFlagFalse(Long processId);
+
+    Optional<Defect> findByDefectCode(String defectCode);
+
+    @Query("SELECT MAX(CAST(SUBSTRING(d.defectCode, 3) AS long)) FROM Defect d WHERE d.defectCode LIKE 'DF%'")
+    Optional<Long> findMaxDefectCodeSequence();
 }

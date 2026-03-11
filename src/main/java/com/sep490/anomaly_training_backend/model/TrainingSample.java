@@ -22,6 +22,9 @@ public class TrainingSample extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(name = "training_code", nullable = false, unique = true, length = 20)
+    String trainingCode;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "process_id")
     @ToString.Exclude

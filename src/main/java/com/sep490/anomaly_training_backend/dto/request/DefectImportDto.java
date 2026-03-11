@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DefectImportDto {
+    private String defectCode;
     private String defectDescription;
     private LocalDate detectedDate;
     private Boolean isEscaped;
@@ -18,4 +19,5 @@ public class DefectImportDto {
     private String outflowCause;
     private String causePoint;
     private String processCode;
+    private Integer excelRowNumber;  // NEW! Track which row this came from
 }
