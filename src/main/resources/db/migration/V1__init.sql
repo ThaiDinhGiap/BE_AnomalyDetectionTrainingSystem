@@ -64,7 +64,7 @@ CREATE TABLE users
     email             VARCHAR(100)                                                               NOT NULL UNIQUE,
     password_hash     VARCHAR(255),
     full_name         VARCHAR(100)                                                               NOT NULL,
-    role              ENUM ('ADMIN', 'MANAGER', 'SUPERVISOR', 'TEAM_LEADER', 'FINAL_INSPECTION') NOT NULL,
+    role              ENUM ('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_SUPERVISOR', 'ROLE_TEAM_LEADER', 'ROLE_FINAL_INSPECTION') NOT NULL,
     is_active         BOOLEAN                                                                             DEFAULT TRUE,
     employee_code     VARCHAR(20)                                                                NOT NULL UNIQUE,
     -- OAuth support
@@ -1355,7 +1355,7 @@ CREATE TABLE approval_flow_steps
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
     entity_type   VARCHAR(50)                    NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
     step_order    INT                            NOT NULL,
-    approver_role ENUM ('SUPERVISOR', 'MANAGER') NOT NULL,
+    approver_role ENUM ('ROLE_SUPERVISOR', 'ROLE_MANAGER') NOT NULL,
     is_active     BOOLEAN                        NOT NULL DEFAULT TRUE,
 
     delete_flag   BOOLEAN                        NOT NULL DEFAULT FALSE,
@@ -1385,13 +1385,13 @@ CREATE TABLE approval_actions
     --    1 = SV approve/reject
     --    2 = MG approve/reject
     step_order             INT                                                                        NOT NULL,
-    required_role          ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
+    required_role          ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
     action                 ENUM ('REVISE', 'SUBMIT', 'APPROVE', 'REJECT')                             NOT NULL,
 
     performed_by_user_id   BIGINT                                                                     NOT NULL,
     performed_by_username  VARCHAR(50)                                                                NOT NULL,
     performed_by_full_name VARCHAR(100)                                                               NOT NULL,
-    performed_by_role      ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
+    performed_by_role      ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
 
     comment                TEXT,
 

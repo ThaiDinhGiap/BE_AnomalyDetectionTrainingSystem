@@ -28,8 +28,8 @@ public class ApprovalRouteServiceImpl implements ApprovalRouteService {
                 .orElseThrow(() -> new BusinessException("Không tìm thấy group: " + groupId));
 
         return switch (approverUserRole) {
-            case SUPERVISOR -> group.getSupervisor();
-            case MANAGER -> group.getSection().getManager();
+            case ROLE_SUPERVISOR -> group.getSupervisor();
+            case ROLE_MANAGER -> group.getSection().getManager();
             default -> throw new BusinessException("Unsupported approver UserRole: " + approverUserRole);
         };
     }
