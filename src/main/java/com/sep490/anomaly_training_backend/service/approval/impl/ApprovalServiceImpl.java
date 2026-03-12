@@ -57,7 +57,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
         entity.setStatus(pendingStatus);
 
-        logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.TEAM_LEADER,
+        logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.ROLE_TEAM_LEADER,
                 currentUser, null, null, null, request);
 
         log.info("Submitted {} id={} version={} by user={}",
@@ -76,7 +76,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
         entity.setStatus(ReportStatus.REVISE);
 
-        logAction(entity, ApprovalAction.REVISE, -1, UserRole.TEAM_LEADER,
+        logAction(entity, ApprovalAction.REVISE, -1, UserRole.ROLE_TEAM_LEADER,
                 currentUser, null, null, null, request);
 
         log.info("Revised {} id={} newVersion={} by user={}",
@@ -257,24 +257,24 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     private ReportStatus mapRoleToPendingStatus(UserRole role) {
         return switch (role) {
-            case SUPERVISOR -> ReportStatus.WAITING_SV;
-            case MANAGER -> ReportStatus.WAITING_MANAGER;
+            case ROLE_SUPERVISOR -> ReportStatus.WAITING_SV;
+            case ROLE_MANAGER -> ReportStatus.WAITING_MANAGER;
             default -> throw new BusinessException("Unsupported approver role: " + role);
         };
     }
 
     private ReportStatus mapRoleToRejectedStatus(UserRole role) {
         return switch (role) {
-            case SUPERVISOR -> ReportStatus.REJECTED_BY_SV;
-            case MANAGER -> ReportStatus.REJECTED_BY_MANAGER;
+            case ROLE_SUPERVISOR -> ReportStatus.REJECTED_BY_SV;
+            case ROLE_MANAGER -> ReportStatus.REJECTED_BY_MANAGER;
             default -> throw new BusinessException("Unsupported approver role: " + role);
         };
     }
 
     private UserRole mapStatusToRole(ReportStatus status) {
         return switch (status) {
-            case WAITING_SV -> UserRole.SUPERVISOR;
-            case WAITING_MANAGER -> UserRole.MANAGER;
+            case WAITING_SV -> UserRole.ROLE_SUPERVISOR;
+            case WAITING_MANAGER -> UserRole.ROLE_MANAGER;
             default -> throw new BusinessException("Invalid status for approve/reject operation: " + status);
         };
     }

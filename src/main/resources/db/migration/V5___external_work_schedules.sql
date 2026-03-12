@@ -164,7 +164,7 @@ CREATE TABLE work_schedules (
                                 raw_record_id BIGINT NULL,
 
     -- Flexible role/day/attendance fields (avoid ENUM lock-in)
-                                role_code VARCHAR(50) NULL,            -- e.g., EMPLOYEE, TEAM_LEADER, MANAGER...
+                                role_code VARCHAR(50) NULL,            -- e.g., EMPLOYEE, ROLE_TEAM_LEADER, MANAGER...
                                 day_type VARCHAR(50) NOT NULL,         -- e.g., WORKING_DAY, HOLIDAY, ANNUAL_LEAVE...
                                 attendance_status VARCHAR(50) NOT NULL,-- e.g., PLANNED, APPROVED, ACTUAL...
 
@@ -335,7 +335,7 @@ START TRANSACTION;
 -- 0) Assumed existing master data (NOT inserted here):
 --    product_lines: id=1
 --    teams:         id=1
---    employees:     id=1001 (EMPLOYEE), id=1002 (TEAM_LEADER or manager role)
+--    employees:     id=1001 (EMPLOYEE), id=1002 (ROLE_TEAM_LEADER or manager role)
 -- ----------------------------------------------------------------------------
 
 -- ----------------------------------------------------------------------------
@@ -493,13 +493,13 @@ INSERT INTO external_schedule_raw_records (
              @sync_batch_id,
              'EXT-E-2',
              '2026-01-01',
-             'TEAM_LEADER',
+             'ROLE_TEAM_LEADER',
              'HOLIDAY',
              'OFF',
              JSON_OBJECT(
                      'externalEmployeeId','EXT-E-00002',
                      'date','2026-01-01',
-                     'role','TEAM_LEADER',
+                     'role','ROLE_TEAM_LEADER',
                      'dayType','HOLIDAY',
                      'holiday', JSON_OBJECT('code','NEW_YEAR','name','Tết dương lịch'),
                      'shift', JSON_OBJECT('code','OFF'),
@@ -530,13 +530,13 @@ INSERT INTO external_schedule_raw_records (
              @sync_batch_id,
              'EXT-E-2',
              '2026-01-03',
-             'TEAM_LEADER',
+             'ROLE_TEAM_LEADER',
              'WORKING_DAY',
              'NIGHT',
              JSON_OBJECT(
                      'externalEmployeeId','EXT-E-00002',
                      'date','2026-01-03',
-                     'role','TEAM_LEADER',
+                     'role','ROLE_TEAM_LEADER',
                      'dayType','WORKING_DAY',
                      'shift', JSON_OBJECT('code','NIGHT','start','20:00','end','05:00','breakMinutes',60,'isOvernight',TRUE),
                      'segments', JSON_ARRAY(
@@ -749,7 +749,7 @@ INSERT INTO work_schedules (
              'EXT-E-2',
              @sync_batch_id,
              @raw_id_emp2_d1,
-             'TEAM_LEADER',
+             'ROLE_TEAM_LEADER',
              'HOLIDAY',
              'HOLIDAY',
              'OFF',
@@ -824,7 +824,7 @@ INSERT INTO work_schedules (
              'EXT-E-2',
              @sync_batch_id,
              @raw_id_emp2_d3,
-             'TEAM_LEADER',
+             'ROLE_TEAM_LEADER',
              'WORKING_DAY',
              'APPROVED',
              'NIGHT',
@@ -1067,7 +1067,7 @@ INSERT INTO work_schedule_segments (
         1,
         1,
         'HOLIDAY',
-        'TEAM_LEADER',
+        'ROLE_TEAM_LEADER',
         'OFF',
         0,
         0,
@@ -1125,7 +1125,7 @@ INSERT INTO work_schedule_segments (
         1,
         1,
         'WORK',
-        'TEAM_LEADER',
+        'ROLE_TEAM_LEADER',
         'NIGHT',
         480,
         NULL,
