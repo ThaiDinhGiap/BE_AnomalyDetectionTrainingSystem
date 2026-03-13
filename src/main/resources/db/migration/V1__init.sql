@@ -1322,13 +1322,12 @@ CREATE TABLE training_sample_reviews
     product_line_id BIGINT    NOT NULL,
     review_year     INT       NOT NULL COMMENT 'Năm review (2026)',
     due_date        DATE      NOT NULL COMMENT 'Hạn chót phải hoàn thành',
-    completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    completed_date  DATE               COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT    NOT NULL COMMENT 'TL thực hiện review',
     result          ENUM ('PENDING', 'NO_CHANGE', 'CHANGE_PROPOSED', 'OVERDUE')
                               NOT NULL DEFAULT 'PENDING',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
-    confirmed_at    TIMESTAMP NULL COMMENT 'Thời điểm SV xác nhận',
 
     delete_flag     BOOLEAN   NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
@@ -1349,6 +1348,28 @@ CREATE TABLE training_sample_reviews
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+-- Training Sample Review Policies table
+
+CREATE TABLE training_sample_review_policies (
+                                                 id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                                 policy_code VARCHAR(50) UNIQUE NOT NULL,
+                                                 effective_date DATE NOT NULL,
+                                                 expiration_date DATE,
+                                                 status ENUM('DEACTIVE', 'ACTIVE') NOT NULL DEFAULT 'ACTIVE',
+                                                 description TEXT,
+
+                                                 delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
+                                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                 created_by VARCHAR(255),
+                                                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                 updated_by VARCHAR(255),
+
+                                                 INDEX idx_training_review_policies_effective (effective_date, expiration_date),
+                                                 INDEX idx_training_review_policies_status (status),
+                                                 INDEX idx_training_review_policies_delete_flag (delete_flag)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE approval_flow_steps
 (
