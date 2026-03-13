@@ -1,7 +1,24 @@
 package com.sep490.anomaly_training_backend.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import com.sep490.anomaly_training_backend.enums.DefectType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
@@ -50,9 +67,6 @@ public class DefectProposalDetailHistory extends BaseEntity {
     @Column(name = "detected_date")
     LocalDate detectedDate;
 
-    @Column(name = "is_escaped")
-    Boolean isEscaped;
-
     @Column(columnDefinition = "text")
     String note;
 
@@ -64,4 +78,14 @@ public class DefectProposalDetailHistory extends BaseEntity {
 
     @Column(name = "cause_point", length = 255)
     String causePoint;
+
+    @Column(name = "origin_measures", length = 255)
+    String originMeasures;
+
+    @Column(name = "outflow_measures", length = 255)
+    String outflowMeasures;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "defect_type")
+    DefectType defectType;
 }
