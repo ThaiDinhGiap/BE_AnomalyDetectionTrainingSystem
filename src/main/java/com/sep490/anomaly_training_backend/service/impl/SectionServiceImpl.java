@@ -2,8 +2,10 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
 import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
-import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.SectionMapper;
+import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.service.SectionService;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +26,11 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional
     public SectionResponse createSection(SectionRequest request) {
-        // Validate tên trùng (tuỳ chọn)
         if (sectionRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Tên bộ phận '" + request.getName() + "' đã tồn tại.");
+            throw new AppException(ErrorCode.SECTION_NAME_ALREADY_EXISTS);
         }
 
-        // Mapper tự lo việc tìm User Manager
         Section section = sectionMapper.toEntity(request);
-
         return sectionMapper.toDTO(sectionRepository.save(section));
     }
 
@@ -39,11 +38,9 @@ public class SectionServiceImpl implements SectionService {
     @Transactional
     public SectionResponse updateSection(Long id, SectionRequest request) {
         Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Section với ID: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        // Update fields
         sectionMapper.updateEntity(section, request);
-
         return sectionMapper.toDTO(sectionRepository.save(section));
     }
 
@@ -51,9 +48,8 @@ public class SectionServiceImpl implements SectionService {
     @Transactional
     public void deleteSection(Long id) {
         Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Section với ID: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        // Soft Delete
         section.setDeleteFlag(true);
         sectionRepository.save(section);
     }
@@ -61,9 +57,9 @@ public class SectionServiceImpl implements SectionService {
     @Override
     public SectionResponse getSectionById(Long id) {
         return sectionRepository.findById(id)
-                .filter(s -> !s.isDeleteFlag()) // Chỉ lấy cái chưa xoá
+                .filter(s -> !s.isDeleteFlag())
                 .map(sectionMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Section hoặc đã bị xoá. ID: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
     }
 
     @Override

@@ -3,12 +3,12 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
-import com.sep490.anomaly_training_backend.exception.GlobalExceptionHandler;
+import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
-import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
@@ -35,28 +35,23 @@ public class EmployeeServiceImpl implements EmployeeService {
         String empCode = request.getEmployeeCode() != null ? request.getEmployeeCode().trim() : null;
 
         if (empCode != null && employeeRepository.existsByEmployeeCode(empCode)) {
-            throw new BusinessException("Mã nhân viên '" + empCode + "' đã tồn tại trong hệ thống.");
+            throw new AppException(ErrorCode.EMPLOYEE_CODE_ALREADY_LINKED);
         }
 
         if (request.getTeamId() != null) {
             boolean isTeamExist = teamRepository.existsById(request.getTeamId());
             if (!isTeamExist) {
-                throw new BusinessException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
+                throw new AppException(ErrorCode.TEAM_NOT_FOUND);
             }
         }
 
-        // 5. Map dữ liệu sang Entity
         Employee employee = employeeMapper.toEntity(request);
-
-        // Ghi đè lại mã nhân viên đã được loại bỏ khoảng trắng thừa
         employee.setEmployeeCode(empCode);
 
-        // 6. Gán giá trị mặc định an toàn
         if (employee.getStatus() == null) {
             employee.setStatus(EmployeeStatus.ACTIVE);
         }
 
-        // 7. Lưu và trả về
         return employeeMapper.toDTO(employeeRepository.save(employee));
     }
 
@@ -70,7 +65,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .id(e.getId())
                         .employeeCode(e.getEmployeeCode())
                         .fullName(e.getFullName())
-                        .teamName(e.getTeam() != null ? e.getTeam().getName(): "N/A")
+                        .teamName(e.getTeam() != null ? e.getTeam().getName() : "N/A")
                         .status(e.getStatus().name())
                         .build())
                 .collect(Collectors.toList());
@@ -80,24 +75,21 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy nhân viên với ID: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        // 1. Nếu có thay đổi mã nhân viên, cần check trùng lặp
         if (request.getEmployeeCode() != null && !employee.getEmployeeCode().equals(request.getEmployeeCode())) {
             if (employeeRepository.existsByEmployeeCode(request.getEmployeeCode())) {
-                throw new BusinessException("Mã nhân viên '" + request.getEmployeeCode() + "' đã tồn tại");
+                throw new AppException(ErrorCode.EMPLOYEE_CODE_ALREADY_LINKED);
             }
         }
 
-        // 2. [QUAN TRỌNG] Kiểm tra Team có thực sự tồn tại không (nếu có thay đổi)
         if (request.getTeamId() != null && !request.getTeamId().equals(employee.getTeam().getId())) {
             boolean isTeamExist = teamRepository.existsById(request.getTeamId());
             if (!isTeamExist) {
-                throw new BusinessException("Không tìm thấy nhóm/phòng ban với ID: " + request.getTeamId());
+                throw new AppException(ErrorCode.TEAM_NOT_FOUND);
             }
         }
 
-        // 3. Map dữ liệu cập nhật
         employeeMapper.updateEntity(employee, request);
 
         return employeeMapper.toDTO(employeeRepository.save(employee));
@@ -107,11 +99,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Transactional
     public void deleteEmployee(Long id) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        // Soft Delete
         employee.setDeleteFlag(true);
-        // Có thể cân nhắc chuyển status sang RESIGNED luôn nếu muốn
         employee.setStatus(EmployeeStatus.RESIGNED);
 
         employeeRepository.save(employee);
@@ -122,7 +112,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeeRepository.findById(id)
                 .filter(e -> !e.isDeleteFlag())
                 .map(employeeMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Employee not found or deleted"));
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
     }
 
     @Override

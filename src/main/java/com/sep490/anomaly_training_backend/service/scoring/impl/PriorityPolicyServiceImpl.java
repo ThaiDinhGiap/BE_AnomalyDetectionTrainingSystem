@@ -11,8 +11,8 @@ import com.sep490.anomaly_training_backend.enums.FilterOperator;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.RankingDirection;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
-import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PriorityPolicyMapper;
 import com.sep490.anomaly_training_backend.model.ComputedMetric;
 import com.sep490.anomaly_training_backend.model.PriorityPolicy;
@@ -70,7 +70,7 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
     public PriorityPolicyResponse updatePolicy(Long id, PriorityPolicyRequest request) {
         PriorityPolicy policy = findActivePolicy(id);
         if (policy.getStatus() != PolicyStatus.DRAFT) {
-            throw new BusinessException("Chỉ có thể chỉnh sửa chính sách ở trạng thái DRAFT");
+            throw new AppException(ErrorCode.INVALID_POLICY_STATUS, "Only DRAFT policies can be edited.");
         }
 
         PolicyEntityType entityType = parseEntityType(request.getEntityType());
@@ -118,10 +118,9 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
     public void activatePolicy(Long id) {
         PriorityPolicy policy = findActivePolicy(id);
         if (policy.getStatus() != PolicyStatus.DRAFT) {
-            throw new BusinessException("Chỉ có thể kích hoạt chính sách ở trạng thái DRAFT");
+            throw new AppException(ErrorCode.INVALID_POLICY_STATUS, "Only DRAFT policies can be activated.");
         }
 
-        // Archive other active policies of same entity type
         List<PriorityPolicy> activePolicies = policyRepository
                 .findByEntityTypeAndStatusAndDeleteFlagFalse(policy.getEntityType(), PolicyStatus.ACTIVE);
         for (PriorityPolicy active : activePolicies) {
@@ -138,7 +137,7 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
     public void archivePolicy(Long id) {
         PriorityPolicy policy = findActivePolicy(id);
         if (policy.getStatus() != PolicyStatus.ACTIVE) {
-            throw new BusinessException("Chỉ có thể lưu trữ chính sách ở trạng thái ACTIVE");
+            throw new AppException(ErrorCode.INVALID_POLICY_STATUS, "Only ACTIVE policies can be archived.");
         }
         policy.setStatus(PolicyStatus.ARCHIVED);
         policyRepository.save(policy);
@@ -149,7 +148,7 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
     public void deletePolicy(Long id) {
         PriorityPolicy policy = findActivePolicy(id);
         if (policy.getStatus() != PolicyStatus.DRAFT) {
-            throw new BusinessException("Chỉ có thể xóa chính sách ở trạng thái DRAFT");
+            throw new AppException(ErrorCode.INVALID_POLICY_STATUS, "Only DRAFT policies can be deleted.");
         }
         policy.setDeleteFlag(true);
         policyRepository.save(policy);
@@ -163,34 +162,32 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
         );
     }
 
-    // ---- Private helpers ----
-
     private PriorityPolicy findActivePolicy(Long id) {
         return policyRepository.findById(id)
                 .filter(p -> !p.isDeleteFlag())
-                .orElseThrow(() -> new ResourceNotFoundException("PriorityPolicy", "id", id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRIORITY_POLICY_NOT_FOUND));
     }
 
     private PolicyEntityType parseEntityType(String value) {
         try {
             return PolicyEntityType.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new BusinessException("Entity type không hợp lệ: " + value);
+            throw new AppException(ErrorCode.INVALID_ENTITY_TYPE, "Invalid entity type: " + value);
         }
     }
 
     private void validatePolicyDates(LocalDate effectiveDate, LocalDate expirationDate, boolean requireFutureOrToday) {
         if (requireFutureOrToday && effectiveDate.isBefore(LocalDate.now())) {
-            throw new BusinessException("Ngày hiệu lực phải là hôm nay hoặc trong tương lai");
+            throw new AppException(ErrorCode.INVALID_EFFECTIVE_DATE);
         }
         if (expirationDate != null && !expirationDate.isAfter(effectiveDate)) {
-            throw new BusinessException("Ngày hết hạn phải sau ngày hiệu lực");
+            throw new AppException(ErrorCode.INVALID_EXPIRATION_DATE);
         }
     }
 
     private void validateTiers(List<PriorityTierRequest> tiers, PolicyEntityType entityType) {
         if (tiers == null || tiers.isEmpty()) {
-            throw new BusinessException("Phải có ít nhất một tầng ưu tiên");
+            throw new AppException(ErrorCode.MISSING_PRIORITY_TIER);
         }
 
         Set<String> validMetrics = computedMetricRepository
@@ -202,20 +199,20 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
         for (int i = 0; i < tiers.size(); i++) {
             PriorityTierRequest tier = tiers.get(i);
             if (tier.getTierOrder() != i + 1) {
-                throw new BusinessException("Thứ tự tầng phải liên tiếp bắt đầu từ 1");
+                throw new AppException(ErrorCode.INVALID_TIER_ORDER);
             }
             if (!validMetrics.contains(tier.getRankingMetric())) {
-                throw new BusinessException("Metric không hợp lệ cho entity type này: " + tier.getRankingMetric());
+                throw new AppException(ErrorCode.INVALID_METRIC, "Invalid ranking metric: " + tier.getRankingMetric());
             }
             if (tier.getSecondaryMetric() != null && !validMetrics.contains(tier.getSecondaryMetric())) {
-                throw new BusinessException("Secondary metric không hợp lệ: " + tier.getSecondaryMetric());
+                throw new AppException(ErrorCode.INVALID_METRIC, "Invalid secondary metric: " + tier.getSecondaryMetric());
             }
             if (tier.getFilters() == null || tier.getFilters().isEmpty()) {
-                throw new BusinessException("Tầng " + tier.getTierOrder() + " phải có ít nhất một bộ lọc");
+                throw new AppException(ErrorCode.MISSING_TIER_FILTER, "Tier " + tier.getTierOrder() + " must have at least one filter.");
             }
             for (TierFilterRequest filter : tier.getFilters()) {
                 if (!validMetrics.contains(filter.getMetricName())) {
-                    throw new BusinessException("Filter metric không hợp lệ: " + filter.getMetricName());
+                    throw new AppException(ErrorCode.INVALID_METRIC, "Invalid filter metric: " + filter.getMetricName());
                 }
             }
         }
@@ -239,7 +236,6 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
             List<PriorityTierFilter> filters = new ArrayList<>();
             int filterOrder = 0;
             for (TierFilterRequest filterReq : req.getFilters()) {
-                // Fetch unit from computed_metrics
                 String unit = computedMetricRepository.findByMetricNameAndDeleteFlagFalse(filterReq.getMetricName())
                         .map(ComputedMetric::getUnit)
                         .orElse(null);

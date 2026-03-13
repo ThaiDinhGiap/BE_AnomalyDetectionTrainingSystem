@@ -11,8 +11,8 @@ import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
-import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -61,17 +61,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Transactional
     public TrainingPlanResponse createPlan(TrainingPlanCreateRequest request) {
         if (request.getMonthEnd().isBefore(request.getMonthStart())) {
-            throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu");
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
 
         if (managedTeams.isEmpty()) {
-            throw new IllegalStateException("Bạn không phải là Team Lead của bất kỳ nhóm nào.");
+            throw new AppException(ErrorCode.USER_NOT_TEAM_LEAD);
         }
 
         List<Team> validTeams = managedTeams.stream()
@@ -79,17 +79,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .toList();
 
         if (validTeams.isEmpty()) {
-            throw new IllegalStateException("Bạn không có quyền tạo kế hoạch cho Dây chuyền này (ID: " + request.getGroupId() + ")");
+            throw new AppException(ErrorCode.NO_PERMISSION_FOR_GROUP);
         }
         Group selectedGroup = validTeams.get(0).getGroup();
 
         // Validate và lấy ProductLine
         ProductLine productLine = productLineRepository.findById(request.getLineId())
-                .orElseThrow(() -> new EntityNotFoundException("Product Line ID " + request.getLineId() + " không tồn tại"));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
 
         // Validate ProductLine thuộc Group đã chọn
         if (!productLine.getGroup().getId().equals(selectedGroup.getId())) {
-            throw new IllegalArgumentException("Product Line không thuộc Dây chuyền đã chọn");
+            throw new AppException(ErrorCode.PRODUCT_LINE_NOT_IN_GROUP);
         }
 
         TrainingPlan trainingPlan = mapper.toEntity(request);
@@ -137,7 +137,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public List<GroupResponse> getMyManagedGroups() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername).orElseThrow();
+        User currentUser = userRepository.findByUsername(currentUsername).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
 
@@ -151,7 +151,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public TrainingPlanResponse getPlanDetail(Long id) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch với ID: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         TrainingPlanResponse response = mapper.toResponse(plan);
         populateEmployeeProcesses(response, plan);
@@ -274,11 +274,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request) {
         // 1. Load plan
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // 2. Chỉ cho thêm khi DRAFT hoặc REJECTED
         if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new BusinessException("Không thể thêm chi tiết khi kế hoạch đang chờ duyệt.");
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         // 3. Validate Employee
@@ -300,7 +300,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         if (addedDetails.isEmpty()) {
-            throw new BusinessException("Cần có ít nhất 1 ngày huấn luyện được lên kế hoạch.");
+            throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
         trainingPlanRepository.save(plan);
@@ -317,18 +317,18 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request) {
         // 1. Load plan
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // 2. Validate trạng thái
         if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new BusinessException("Không thể chỉnh sửa chi tiết khi kế hoạch đang chờ duyệt.");
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         // 3. Tìm detail
         TrainingPlanDetail detail = plan.getDetails().stream()
                 .filter(d -> d.getId().equals(detailId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlanDetail", "id", detailId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
 
         // 4. Validate & update Employee nếu thay đổi
         if (request.getEmployeeId() != null) {
@@ -354,8 +354,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
                 detail.setPlannedDate(plannedDate);
             } catch (DateTimeException e) {
-                throw new BusinessException("Ngày " + schedule.getPlannedDay() +
-                        " không hợp lệ trong tháng " + targetMonth.getMonthValue());
+                throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
             }
         }
 
@@ -369,7 +368,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public List<EmployeeResponse> getEmployeesNotInPlan(Long planId) {
         // 1. Load plan để lấy thông tin team/group
         TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // 2. Lấy tất cả employee thuộc cùng group/team
         Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
@@ -407,7 +406,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public List<EmployeeResponse> getEmployeesInTeams(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // Lấy teamId từ plan
         Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
@@ -438,11 +437,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Transactional
     public TrainingPlanResponse updatePlan(Long planId, TrainingPlanUpdateRequest request) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy kế hoạch ID: " + planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // Chặn sửa khi đang chờ duyệt
         if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new IllegalStateException("Không thể chỉnh sửa khi đang chờ duyệt.");
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         boolean isApproved = ReportStatus.APPROVED.equals(plan.getStatus());
@@ -491,12 +490,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         LocalDate start = request.getMonthStart() != null ? request.getMonthStart() : plan.getMonthStart();
         LocalDate end = request.getMonthEnd() != null ? request.getMonthEnd() : plan.getMonthEnd();
         if (start != null && end != null && end.isBefore(start)) {
-            throw new IllegalArgumentException("Tháng kết thúc không được nhỏ hơn tháng bắt đầu");
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
         if (request.getLineId() != null) {
             ProductLine line = productLineRepository.findById(request.getLineId())
-                    .orElseThrow(() -> new EntityNotFoundException("Product Line ID " + request.getLineId() + " không tồn tại"));
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
             plan.setLine(line);
         }
     }
@@ -515,7 +514,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         for (TrainingPlanUpdateRequest.DetailAction action : actions) {
             if (action.getAction() == null) {
-                throw new BusinessException("Thiếu trường 'action' trong detail request");
+                throw new AppException(ErrorCode.MISSING_ACTION_IN_DETAIL);
             }
 
             switch (action.getAction()) {
@@ -534,13 +533,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                   TrainingPlanUpdateRequest.DetailAction action,
                                   Long productLineId) {
         if (action.getEmployeeId() == null) {
-            throw new BusinessException("employeeId là bắt buộc khi action = ADD");
+            throw new AppException(ErrorCode.MISSING_EMPLOYEE_ID);
         }
 
         Employee employee = getValidatedEmployee(action.getEmployeeId());
 
         if (action.getSchedules() == null || action.getSchedules().isEmpty()) {
-            throw new BusinessException("Cần có ít nhất 1 ngày huấn luyện khi thêm detail mới.");
+            throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
         // Tạo batchId chung cho lần ADD này → phân biệt các lần thêm khác nhau của cùng 1 employee
@@ -563,11 +562,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private void handleAddScheduleAction(TrainingPlan plan,
                                           TrainingPlanUpdateRequest.DetailAction action) {
         if (action.getBatchId() == null || action.getBatchId().isBlank()) {
-            throw new BusinessException("batchId là bắt buộc khi action = ADD_SCHEDULE");
+            throw new AppException(ErrorCode.MISSING_BATCH_ID);
         }
 
         if (action.getSchedules() == null || action.getSchedules().isEmpty()) {
-            throw new BusinessException("Cần có ít nhất 1 ngày huấn luyện khi action = ADD_SCHEDULE");
+            throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
         // Tìm employee từ batch hiện tại (lấy detail đầu tiên cùng batchId)
@@ -578,7 +577,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             TrainingPlanDetail existingDetail = plan.getDetails().stream()
                     .filter(d -> action.getBatchId().equals(d.getBatchId()))
                     .findFirst()
-                    .orElseThrow(() -> new BusinessException("Không tìm thấy batch với ID: " + action.getBatchId()));
+                    .orElseThrow(() -> new AppException(ErrorCode.BATCH_NOT_FOUND));
             employee = existingDetail.getEmployee();
         }
 
@@ -610,17 +609,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                      Long productLineId,
                                      boolean isApproved) {
         if (action.getDetailId() == null) {
-            throw new BusinessException("detailId là bắt buộc khi action = UPDATE");
+            throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
 
         TrainingPlanDetail detail = detailMap.get(action.getDetailId());
         if (detail == null) {
-            throw new ResourceNotFoundException("TrainingPlanDetail", "id", action.getDetailId());
+            throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
         // Bản APPROVED: không cho sửa detail đã hoàn thành
         if (isApproved && detail.getStatus() == TrainingPlanDetailStatus.DONE) {
-            throw new BusinessException("Không thể sửa detail đã hoàn thành (ID: " + action.getDetailId() + ")");
+            throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
         }
 
         if (action.getEmployeeId() != null) {
@@ -637,8 +636,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             try {
                 detail.setPlannedDate(targetMonth.withDayOfMonth(action.getPlannedDay()));
             } catch (DateTimeException e) {
-                throw new BusinessException("Ngày " + action.getPlannedDay()
-                        + " không hợp lệ trong tháng " + targetMonth.getMonthValue());
+                throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
             }
         }
 
@@ -651,8 +649,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             try {
                 detail.setPlannedDate(targetMonth.withDayOfMonth(schedule.getPlannedDay()));
             } catch (DateTimeException e) {
-                throw new BusinessException("Ngày " + schedule.getPlannedDay()
-                        + " không hợp lệ trong tháng " + targetMonth.getMonthValue());
+                throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
             }
         }
     }
@@ -665,18 +662,18 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                      Map<Long, TrainingPlanDetail> detailMap,
                                      boolean isApproved) {
         if (action.getDetailId() == null) {
-            throw new BusinessException("detailId là bắt buộc khi action = DELETE");
+            throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
 
         TrainingPlanDetail detail = detailMap.get(action.getDetailId());
         if (detail == null) {
-            throw new ResourceNotFoundException("TrainingPlanDetail", "id", action.getDetailId());
+            throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
         if (isApproved) {
             // APPROVED: không xóa thật, đánh dấu MISSED
             if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
-                throw new BusinessException("Không thể xóa detail đã hoàn thành (ID: " + action.getDetailId() + ")");
+                throw new AppException(ErrorCode.CANNOT_DELETE_COMPLETED_DETAIL);
             }
             detail.setStatus(TrainingPlanDetailStatus.MISSED);
             detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
@@ -691,20 +688,18 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Transactional
     public void deletePlan(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // Only allow deletion of DRAFT or REJECTED plans
         if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
-            throw new IllegalStateException(
-                    "Chỉ có thể xóa kế hoạch ở trạng thái DRAFT hoặc REJECTED. Trạng thái hiện tại: " + plan.getStatus()
-            );
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         // Verify ownership - user must be the creator or have delete permission
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!plan.getCreatedBy().equals(currentUsername)) {
             User currentUser = userRepository.findByUsername(currentUsername)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
             // Check if user is team leader of the same group
             boolean isTeamLeader = teamRepository.findAllByTeamLeaderId(currentUser.getId())
@@ -712,7 +707,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                     .anyMatch(team -> team.getId().equals(plan.getTeam().getId()));
 
             if (!isTeamLeader) {
-                throw new IllegalStateException("Bạn không có quyền xóa kế hoạch này");
+                throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION);
             }
         }
 
@@ -733,27 +728,23 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void deleteDetail(Long planId, Long detailId) {
         // 1. Tìm plan
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", planId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // 2. Chỉ cho phép xóa detail khi plan ở trạng thái DRAFT hoặc REJECTED
         if (plan.getStatus() != ReportStatus.DRAFT
                 && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
                 && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
-            throw new IllegalStateException(
-                    "Chỉ có thể xóa chi tiết khi kế hoạch ở trạng thái DRAFT hoặc REJECTED. Trạng thái hiện tại: " + plan.getStatus()
-            );
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         // 3. Tìm detail trong danh sách
         TrainingPlanDetail detailToRemove = plan.getDetails().stream()
                 .filter(d -> d.getId().equals(detailId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlanDetail", "id", detailId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
 
         if (detailToRemove.getStatus() != TrainingPlanDetailStatus.PENDING) {
-            throw new IllegalStateException(
-                    "Chỉ có thể xóa chi tiết khi kế hoạch ở trạng thái PENDING. Trạng thái hiện tại: " + detailToRemove.getStatus()
-            );
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
 
@@ -825,19 +816,17 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private Employee getValidatedEmployee(Long employeeId) {
         // Nên dùng getReferenceById nếu chỉ cần gán quan hệ (lazy), nhưng findById an toàn hơn để check tồn tại
         return employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new EntityNotFoundException("Nhân viên ID " + employeeId + " không tồn tại"));
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
     }
 
     private Process getValidatedProcess(Long processId, Long productLineId) {
         Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new EntityNotFoundException("Công đoạn ID " + processId + " không tồn tại"));
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
         // Validate Process thuộc ProductLine được chọn trong Plan
         if (productLineId != null && process.getProductLine() != null) {
             if (!process.getProductLine().getId().equals(productLineId)) {
-                throw new IllegalArgumentException(
-                        "Công đoạn '" + process.getName() + "' không thuộc ProductLine được chọn trong kế hoạch này"
-                );
+                throw new AppException(ErrorCode.PROCESS_NOT_IN_PRODUCT_LINE);
             }
         }
 
@@ -865,8 +854,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
             detailEntity.setPlannedDate(plannedDate);
         } catch (DateTimeException e) {
-            throw new IllegalArgumentException("Ngày " + schedule.getPlannedDay() +
-                    " không hợp lệ trong tháng " + targetMonth.getMonthValue());
+            throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
         }
 
         return detailEntity;
@@ -901,7 +889,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan report = getReportById(reportId);
 
         if (!report.getCreatedBy().equals(currentUser.getUsername())) {
-            throw new BusinessException("Only author can edit on this proposal");
+            throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
         createHistorySnapshot(report);
         approvalService.revise(report, currentUser, request);
@@ -936,45 +924,41 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     private TrainingPlan getReportById(Long id) {
         return trainingPlanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("TrainingPlan", "id", id));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
     }
 
     // private methods
     private void validatePlanForSubmission(TrainingPlan plan) {
         // Business rules specific to TrainingPlan
         if (plan.getDetails() == null || plan.getDetails().isEmpty()) {
-            throw new IllegalArgumentException("Plan dont have details." +
-                    "Please enter 1 detail line at least before submit.");
+            throw new AppException(ErrorCode.PLAN_HAS_NO_DETAILS);
         }
 
         if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Plan's title cant be empty.");
+            throw new AppException(ErrorCode.MISSING_PLAN_TITLE);
         }
 
         // Validate date range
         if (plan.getMonthEnd().isBefore(plan.getMonthStart())) {
-            throw new IllegalArgumentException("Month End can be before Month Start.");
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
         // Validate details have required fields and business rules
         for (TrainingPlanDetail detail : plan.getDetails()) {
             if (detail.getEmployee() == null) {
-                throw new IllegalArgumentException("Detail lack of Employee Information.");
+                throw new AppException(ErrorCode.MISSING_EMPLOYEE_IN_DETAIL);
             }
 //            if (detail.getProcess() == null) {
 //                throw new IllegalArgumentException("Detail lack of Process Information.");
 //            }
             if (detail.getPlannedDate() == null) {
-                throw new IllegalArgumentException("Detail lack of Planned Date.");
+                throw new AppException(ErrorCode.MISSING_PLANNED_DATE_IN_DETAIL);
             }
 
             // Validate plannedDate is within plan's date range
             if (detail.getPlannedDate().isBefore(plan.getMonthStart()) ||
                 detail.getPlannedDate().isAfter(plan.getMonthEnd())) {
-                throw new IllegalArgumentException(
-                    String.format("Ngày huấn luyện %s nằm ngoài khoảng thời gian kế hoạch (%s - %s)",
-                        detail.getPlannedDate(), plan.getMonthStart(), plan.getMonthEnd())
-                );
+                throw new AppException(ErrorCode.PLANNED_DATE_OUT_OF_RANGE);
             }
         }
 
@@ -989,11 +973,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 boolean sameBatch = (detail1.getBatchId() != null && detail1.getBatchId().equals(detail2.getBatchId()));
 
                 if (sameEmployee && sameDate && sameBatch) {
-                    throw new IllegalArgumentException(
-                        String.format("Trùng lặp: Nhân viên '%s' đã được lên lịch huấn luyện vào ngày %s trong cùng 1 lần thêm",
-                            detail1.getEmployee().getFullName(),
-                            detail1.getPlannedDate())
-                    );
+                    throw new AppException(ErrorCode.DUPLICATE_TRAINING_SCHEDULE);
                 }
             }
         }

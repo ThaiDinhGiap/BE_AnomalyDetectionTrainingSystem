@@ -4,6 +4,8 @@ import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
 import com.sep490.anomaly_training_backend.model.Group;
@@ -12,7 +14,6 @@ import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +27,16 @@ public class ProductLineServiceImpl implements ProductLineService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final EmployeeSkillMapper employeeSkillMapper;
     private final GroupRepository groupRepository;
+
     @Override
     public List<ProductLineResponse> getAllProductLine() {
         List<ProductLineResponse> responses = productLineRepository.findByDeleteFlagFalse()
-                                                                   .stream().map(productLineMapper::toDto)
-                                                                   .toList();
+                .stream().map(productLineMapper::toDto)
+                .toList();
         for (ProductLineResponse response : responses) {
             for (ProcessResponse processResponse : response.getProcesses()) {
                 List<EmployeeSkillResponse> skillResponses = employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(processResponse.getId())
-                                                                                    .stream().map(employeeSkillMapper::toDto).toList();
+                        .stream().map(employeeSkillMapper::toDto).toList();
                 processResponse.setSkillsProcess(skillResponses);
             }
         }
@@ -43,31 +45,28 @@ public class ProductLineServiceImpl implements ProductLineService {
 
     @Override
     public ProductLineResponse getProductLineDetail(Long productLineId) {
-         ProductLine entity = productLineRepository.findById(productLineId).orElseThrow(()-> new EntityNotFoundException("ProductLine not found"));
-         return  productLineMapper.toDto(entity);
+        ProductLine entity = productLineRepository.findById(productLineId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+        return productLineMapper.toDto(entity);
     }
 
     @Override
     public ProductLineResponse createProductLine(ProductLineRequest request) {
         Group group = groupRepository.findById(request.getGroupId())
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Group not found with id: " + request.getGroupId()
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
         ProductLine productLine = ProductLine.builder()
                 .name(request.getName())
                 .group(group)
                 .build();
 
-        return productLineMapper.toDto(productLine);
+        return productLineMapper.toDto(productLineRepository.save(productLine));
     }
 
     @Override
     public void deleteProductLine(Long id) {
         ProductLine productLine = productLineRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Group not found with id: " + id
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         productLine.setDeleteFlag(true);
         productLineRepository.save(productLine);
     }
@@ -75,17 +74,16 @@ public class ProductLineServiceImpl implements ProductLineService {
     @Override
     public ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest) {
         ProductLine productLine = productLineRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "Group not found with id: " + id
-                ));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+        // Logic to update the entity is missing in the original code
         return productLineMapper.toDto(productLineRepository.save(productLine));
     }
 
     @Override
     public List<ProductLineResponse> getByTeamLeadId(Long teamLeadId) {
         return productLineRepository.findProductLineByTeamLeadId(teamLeadId).
-                                    stream()
-                                    .map(productLineMapper::toDto)
-                                    .toList();
+                stream()
+                .map(productLineMapper::toDto)
+                .toList();
     }
 }

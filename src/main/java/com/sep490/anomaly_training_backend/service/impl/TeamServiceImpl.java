@@ -2,8 +2,10 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
 import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
-import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
+import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.service.TeamService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,7 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public TeamResponse createTeam(TeamRequest request) {
         if (teamRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Tên Team đã tồn tại");
+            throw new AppException(ErrorCode.TEAM_NAME_ALREADY_EXISTS);
         }
 
         Team team = teamMapper.toEntity(request);
@@ -36,7 +38,7 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public TeamResponse updateTeam(Long id, TeamRequest request) {
         Team team = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
 
         teamMapper.updateEntity(team, request);
         return teamMapper.toDTO(teamRepository.save(team));
@@ -46,9 +48,8 @@ public class TeamServiceImpl implements TeamService {
     @Transactional
     public void deleteTeam(Long id) {
         Team team = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
 
-        // Soft delete
         team.setDeleteFlag(true);
         teamRepository.save(team);
     }
@@ -58,7 +59,7 @@ public class TeamServiceImpl implements TeamService {
         return teamRepository.findById(id)
                 .filter(t -> !t.isDeleteFlag())
                 .map(teamMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Team not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
     }
 
     @Override
