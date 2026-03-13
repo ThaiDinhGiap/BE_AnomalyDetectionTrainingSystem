@@ -3,6 +3,8 @@ package com.sep490.anomaly_training_backend.service;
 import com.sep490.anomaly_training_backend.dto.request.UserRequest;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.model.Employee;
+
 import java.util.List;
 
 public interface UserService {
@@ -16,5 +18,7 @@ public interface UserService {
 
     List<UserResponse> getAllUsers();
 
-    List<UserDashboard>  getAllUserDashboard();
+    List<UserDashboard> getAllUserDashboard();
+
+    Employee getEmployeeOfUser(Long userId);
 }

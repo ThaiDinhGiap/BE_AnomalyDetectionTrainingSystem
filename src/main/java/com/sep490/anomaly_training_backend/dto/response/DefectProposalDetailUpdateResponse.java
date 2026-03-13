@@ -20,10 +20,12 @@ public class DefectProposalDetailUpdateResponse {
     Long processId;
     String processName;
     LocalDate detectedDate;
-    Boolean isEscaped;
     String note;
     String originCause;
     String outflowCause;
     String causePoint;
     Boolean deleteFlag;
+    String originMeasures;
+    String outflowMeasures;
+    String defectType;
 }

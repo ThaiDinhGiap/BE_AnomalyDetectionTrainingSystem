@@ -3,8 +3,11 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.UserRequest;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
 import com.sep490.anomaly_training_backend.mapper.UserMapper;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional
@@ -77,5 +81,13 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<UserDashboard> getAllUserDashboard() {
         return userRepository.findAllUsersWithRoles().stream().map(userMapper::toUserDashboard).toList();
+    }
+
+    @Override
+    public Employee getEmployeeOfUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        return employeeRepository.findByEmployeeCode(user.getEmployeeCode())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee", "employeeCode", user.getEmployeeCode()));
     }
 }

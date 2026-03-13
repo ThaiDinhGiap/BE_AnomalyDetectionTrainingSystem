@@ -60,25 +60,24 @@ DROP TABLE IF EXISTS approval_actions;
 CREATE TABLE users
 (
     id                BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username          VARCHAR(50)                                                                NOT NULL UNIQUE,
-    email             VARCHAR(100)                                                               NOT NULL UNIQUE,
+    username          VARCHAR(50)  NOT NULL UNIQUE,
+    email             VARCHAR(100) NOT NULL UNIQUE,
     password_hash     VARCHAR(255),
-    full_name         VARCHAR(100)                                                               NOT NULL,
-    role              ENUM ('ADMIN', 'MANAGER', 'SUPERVISOR', 'TEAM_LEADER', 'FINAL_INSPECTION') NOT NULL,
-    is_active         BOOLEAN                                                                             DEFAULT TRUE,
-    employee_code     VARCHAR(20)                                                                NOT NULL UNIQUE,
+    full_name         VARCHAR(100) NOT NULL,
+    is_active         BOOLEAN                     DEFAULT TRUE,
+    employee_code     VARCHAR(20)  NOT NULL UNIQUE,
+
     -- OAuth support
-    oauth_provider    ENUM ('LOCAL', 'MICROSOFT')                                                         DEFAULT 'LOCAL',
+    oauth_provider    ENUM ('LOCAL', 'MICROSOFT') DEFAULT 'LOCAL',
     oauth_provider_id VARCHAR(255),
 
     -- BaseEntity
-    delete_flag       BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
-    created_at        TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
+    delete_flag       BOOLEAN      NOT NULL       DEFAULT FALSE,
+    created_at        TIMESTAMP                   DEFAULT CURRENT_TIMESTAMP,
     created_by        VARCHAR(255),
-    updated_at        TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP                   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by        VARCHAR(255),
 
-    INDEX idx_users_role (role),
     INDEX idx_users_active (is_active),
     INDEX idx_users_oauth (oauth_provider, oauth_provider_id),
     INDEX idx_users_delete_flag (delete_flag)
@@ -212,8 +211,9 @@ CREATE TABLE role_permissions
 CREATE TABLE sections
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code        VARCHAR(20)  NOT NULL UNIQUE,
     name        VARCHAR(100) NOT NULL,
-    manager_id  BIGINT       NOT NULL,
+    manager_id  BIGINT,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -235,7 +235,7 @@ CREATE TABLE `groups`
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
     section_id    BIGINT       NOT NULL,
     name          VARCHAR(100) NOT NULL,
-    supervisor_id BIGINT       NOT NULL,
+    supervisor_id BIGINT,
 
     delete_flag   BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -306,8 +306,10 @@ CREATE TABLE employees
 CREATE TABLE product_lines
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    group_id    BIGINT       NOT NULL,
+    code        VARCHAR(20)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
+
+    group_id    BIGINT       NOT NULL,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -327,7 +329,6 @@ CREATE TABLE product_lines
 CREATE TABLE processes
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id  BIGINT       NOT NULL,
     code             VARCHAR(20)  NOT NULL,
     name             VARCHAR(200) NOT NULL,
     description      TEXT,
@@ -335,6 +336,8 @@ CREATE TABLE processes
         COMMENT '1,2,3=Quan trọng cần FI ký, 4=Thường',
     standard_time_jt DECIMAL(10, 2)
         COMMENT 'Thời gian tiêu chuẩn (giây)',
+
+    product_line_id  BIGINT       NOT NULL,
 
     delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -427,20 +430,25 @@ CREATE TABLE employee_skills
 CREATE TABLE defects
 (
     id                 BIGINT PRIMARY KEY AUTO_INCREMENT,
-    defect_description TEXT    NOT NULL,
-    defect_code        VARCHAR(255)    NOT NULL,
-    process_id         BIGINT  NOT NULL,
-    detected_date      DATE    NOT NULL,
-    is_escaped         BOOLEAN          DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
+    defect_description TEXT         NOT NULL,
+    defect_code        VARCHAR(255) NOT NULL,
+    process_id         BIGINT       NOT NULL,
+    detected_date      DATE         NOT NULL,
+
     origin_cause       VARCHAR(255),
     outflow_cause      VARCHAR(255),
     cause_point        VARCHAR(255),
+
+    origin_measures    VARCHAR(255),
+    outflow_measures   VARCHAR(255),
+    defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
+
     note               TEXT,
 
-    delete_flag        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    delete_flag        BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
-    updated_at         TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by         VARCHAR(255),
 
     UNIQUE KEY uk_defect (defect_code),
@@ -489,11 +497,15 @@ CREATE TABLE defect_proposal_details
     defect_description TEXT                                NOT NULL,
     process_id         BIGINT                              NOT NULL,
     detected_date      DATE                                NOT NULL,
-    is_escaped         BOOLEAN                                      DEFAULT FALSE,
     note               TEXT,
+
     origin_cause       VARCHAR(255),
     outflow_cause      VARCHAR(255),
     cause_point        VARCHAR(255),
+
+    origin_measures    VARCHAR(255),
+    outflow_measures   VARCHAR(255),
+    defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
@@ -555,11 +567,15 @@ CREATE TABLE defect_proposal_detail_history
     process_code               VARCHAR(20),
     process_name               VARCHAR(200),
     detected_date              DATE,
-    is_escaped                 BOOLEAN,
+
     note                       TEXT,
     origin_cause               VARCHAR(255),
     outflow_cause              VARCHAR(255),
     cause_point                VARCHAR(255),
+
+    origin_measures            VARCHAR(255),
+    outflow_measures           VARCHAR(255),
+    defect_type                ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
     delete_flag                BOOLEAN NOT NULL DEFAULT FALSE,
     created_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
@@ -583,14 +599,14 @@ CREATE TABLE defect_proposal_detail_history
 CREATE TABLE training_samples
 (
     id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_code        VARCHAR(20) NOT NULL UNIQUE COMMENT 'Mã huấn luyện (TS000001, TS000002, ...)',
+    training_code        VARCHAR(20)  NOT NULL UNIQUE COMMENT 'Mã huấn luyện (TS000001, TS000002, ...)',
     process_id           BIGINT       NOT NULL,
     product_line_id      BIGINT       NOT NULL,
     defect_id            BIGINT,
     category_name        VARCHAR(200) NOT NULL COMMENT 'Hạng mục huấn luyện',
-    training_description VARCHAR(255)         NOT NULL COMMENT 'Nội dung huấn luyện',
+    training_description VARCHAR(255) NOT NULL COMMENT 'Nội dung huấn luyện',
     product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
-    training_sample_code          VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
+    training_sample_code VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     process_order        INT          NOT NULL COMMENT 'Thứ tự công đoạn',
     category_order       INT          NOT NULL COMMENT 'Thứ tự hạng mục trong công đoạn',
     content_order        INT          NOT NULL COMMENT 'Thứ tự nội dung trong hạng mục',
@@ -1374,15 +1390,15 @@ CREATE TABLE training_sample_review_policies (
 CREATE TABLE approval_flow_steps
 (
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    entity_type   VARCHAR(50)                    NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
-    step_order    INT                            NOT NULL,
-    approver_role ENUM ('SUPERVISOR', 'MANAGER') NOT NULL,
-    is_active     BOOLEAN                        NOT NULL DEFAULT TRUE,
+    entity_type   VARCHAR(50)                              NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
+    step_order    INT                                      NOT NULL,
+    approver_role ENUM ('ROLE_SUPERVISOR', 'ROLE_MANAGER') NOT NULL,
+    is_active     BOOLEAN                                  NOT NULL DEFAULT TRUE,
 
-    delete_flag   BOOLEAN                        NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP                               DEFAULT CURRENT_TIMESTAMP,
+    delete_flag   BOOLEAN                                  NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP                                         DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
-    updated_at    TIMESTAMP                               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP                                         DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
     UNIQUE KEY uk_approval_flow_steps_entity_order (entity_type, step_order),
@@ -1395,28 +1411,28 @@ CREATE TABLE approval_flow_steps
 CREATE TABLE approval_actions
 (
     id                     BIGINT PRIMARY KEY AUTO_INCREMENT,
-    entity_type            VARCHAR(50)                                                                NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
-    entity_id              BIGINT                                                                     NOT NULL,
+    entity_type            VARCHAR(50)                                                                                         NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
+    entity_id              BIGINT                                                                                              NOT NULL,
 
-    entity_version         INT                                                                        NOT NULL,
+    entity_version         INT                                                                                                 NOT NULL,
 
     -- Step order convention:
     --   -1 = REVISE (TL)
     --    0 = SUBMIT (TL)
     --    1 = SV approve/reject
     --    2 = MG approve/reject
-    step_order             INT                                                                        NOT NULL,
-    required_role          ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
-    action                 ENUM ('REVISE', 'SUBMIT', 'APPROVE', 'REJECT')                             NOT NULL,
+    step_order             INT                                                                                                 NOT NULL,
+    required_role          ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
+    action                 ENUM ('REVISE', 'SUBMIT', 'APPROVE', 'REJECT')                                                      NOT NULL,
 
-    performed_by_user_id   BIGINT                                                                     NOT NULL,
-    performed_by_username  VARCHAR(50)                                                                NOT NULL,
-    performed_by_full_name VARCHAR(100)                                                               NOT NULL,
-    performed_by_role      ENUM ('TEAM_LEADER', 'SUPERVISOR', 'MANAGER', 'FINAL_INSPECTION', 'ADMIN') NOT NULL,
+    performed_by_user_id   BIGINT                                                                                              NOT NULL,
+    performed_by_username  VARCHAR(50)                                                                                         NOT NULL,
+    performed_by_full_name VARCHAR(100)                                                                                        NOT NULL,
+    performed_by_role      ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
 
     comment                TEXT,
 
-    performed_at           TIMESTAMP                                                                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    performed_at           TIMESTAMP                                                                                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- Audit environment
     ip_address             VARCHAR(45),
@@ -1425,10 +1441,10 @@ CREATE TABLE approval_actions
     content_hash           VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
 
     -- BaseEntity fields
-    delete_flag            BOOLEAN                                                                    NOT NULL DEFAULT FALSE,
-    created_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP,
+    delete_flag            BOOLEAN                                                                                             NOT NULL DEFAULT FALSE,
+    created_at             TIMESTAMP                                                                                                    DEFAULT CURRENT_TIMESTAMP,
     created_by             VARCHAR(255),
-    updated_at             TIMESTAMP                                                                           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP                                                                                                    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by             VARCHAR(255),
 
     CONSTRAINT fk_approval_actions_user
