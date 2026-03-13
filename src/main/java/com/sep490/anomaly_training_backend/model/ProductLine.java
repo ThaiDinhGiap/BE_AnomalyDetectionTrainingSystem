@@ -36,6 +36,9 @@ public class ProductLine extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @Column(nullable = false, length = 20)
+    private String code;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id")
     @ToString.Exclude

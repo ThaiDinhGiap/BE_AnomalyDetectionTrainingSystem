@@ -12,7 +12,6 @@ import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -106,16 +105,20 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
         defectProposalRepository.save(proposal);
 
     }
+
     private void copyFromDetailToDefect(DefectProposalDetail d, Defect defect) {
         defect.setDefectDescription(d.getDefectDescription());
         defect.setProcess(d.getProcess());              // đảm bảo process là entity managed
         defect.setDetectedDate(d.getDetectedDate());
-        defect.setIsEscaped(Boolean.TRUE.equals(d.getIsEscaped()));
         defect.setNote(d.getNote());
         defect.setOriginCause(d.getOriginCause());
         defect.setOutflowCause(d.getOutflowCause());
         defect.setCausePoint(d.getCausePoint());
+        defect.setOriginMeasures(d.getOriginMeasures());
+        defect.setOutflowMeasures(d.getOutflowMeasures());
+        defect.setDefectType(d.getDefectType());
     }
+
     private void requireNonNullForCreate(Defect defect, DefectProposalDetail d) {
         if (StringUtil.isBlank(defect.getDefectDescription())) {
             throw new IllegalStateException("defectDescription is required for CREATE. detailId=" + d.getId());
@@ -130,6 +133,7 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
             throw new IllegalStateException("defectCode should be generated and must not be blank. detailId=" + d.getId());
         }
     }
+
     private void requireNonNullForUpdate(Defect defect, DefectProposalDetail d) {
         // Nếu bạn chọn UPDATE theo full snapshot, thì check giống CREATE
         requireNonNullForCreate(defect, d);

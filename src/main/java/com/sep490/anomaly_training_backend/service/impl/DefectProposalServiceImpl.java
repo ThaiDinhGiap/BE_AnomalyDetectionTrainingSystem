@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.BusinessException;
 import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
@@ -32,7 +33,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -128,11 +134,13 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setProposalType(item.getProposalType());
             entity.setDefectDescription(item.getDefectDescription());
             entity.setDetectedDate(item.getDetectedDate());
-            entity.setIsEscaped(item.getIsEscaped());
             entity.setNote(item.getNote());
             entity.setOriginCause(item.getOriginCause());
             entity.setOutflowCause(item.getOutflowCause());
             entity.setCausePoint(item.getCausePoint());
+            entity.setOriginMeasures(item.getOriginMeasures());
+            entity.setOutflowMeasures(item.getOutflowMeasures());
+            entity.setDefectType(DefectType.valueOf(item.getDefectType()));
             defectProposalDetailRepository.save(entity);
         }
         for (DefectProposalDetail existing : existingDetails) {
@@ -218,12 +226,14 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
-            entity.setIsEscaped(detailRequest.getIsEscaped());
             entity.setDetectedDate(detailRequest.getDetectedDate());
             entity.setNote(detailRequest.getNote());
             entity.setOriginCause(detailRequest.getOriginCause());
             entity.setOutflowCause(detailRequest.getOutflowCause());
             entity.setCausePoint(detailRequest.getCausePoint());
+            entity.setOriginMeasures(detailRequest.getOriginMeasures());
+            entity.setOutflowMeasures(detailRequest.getOutflowMeasures());
+            entity.setDefectType(DefectType.valueOf(detailRequest.getDefectType()));
             details.add(entity);
         }
         return details;
@@ -267,13 +277,14 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         entity.setDefectDescription(request.getDefectDescription());
         entity.setDetectedDate(request.getDetectedDate());
 
-        Boolean escaped = request.getIsEscaped();
-        entity.setIsEscaped(escaped != null && escaped);
-
         entity.setNote(request.getNote());
         entity.setOriginCause(request.getOriginCause());
         entity.setOutflowCause(request.getOutflowCause());
         entity.setCausePoint(request.getCausePoint());
+
+        entity.setOriginMeasures(request.getOriginMeasures());
+        entity.setOutflowMeasures(request.getOutflowMeasures());
+        entity.setDefectType(DefectType.valueOf(request.getDefectType()));
 
         entity.setDeleteFlag(false);
 
@@ -301,12 +312,14 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             response.setProcessName(entity.getProcess().getName());
         }
         response.setDetectedDate(entity.getDetectedDate());
-        response.setIsEscaped(entity.getIsEscaped());
         response.setNote(entity.getNote());
         response.setOriginCause(entity.getOriginCause());
         response.setOutflowCause(entity.getOutflowCause());
         response.setCausePoint(entity.getCausePoint());
         response.setDeleteFlag(entity.isDeleteFlag());
+        response.setOriginMeasures(entity.getOriginMeasures());
+        response.setOutflowMeasures(entity.getOutflowMeasures());
+        response.setDefectType(entity.getDefectType().toString());
         return response;
     }
 
