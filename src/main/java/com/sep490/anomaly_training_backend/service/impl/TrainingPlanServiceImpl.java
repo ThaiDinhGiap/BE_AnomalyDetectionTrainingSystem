@@ -512,16 +512,16 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         if (request.getNote() != null) {
             plan.setNote(request.getNote());
         }
-        if (request.getMonthStart() != null) {
-            plan.setStartDate(request.getMonthStart());
+        if (request.getStartDate() != null) {
+            plan.setStartDate(request.getStartDate());
         }
-        if (request.getMonthEnd() != null) {
-            plan.setEndDate(request.getMonthEnd());
+        if (request.getEndDate() != null) {
+            plan.setEndDate(request.getEndDate());
         }
 
         // Validate date range
-        LocalDate start = request.getMonthStart() != null ? request.getMonthStart() : plan.getStartDate();
-        LocalDate end = request.getMonthEnd() != null ? request.getMonthEnd() : plan.getEndDate();
+        LocalDate start = request.getStartDate() != null ? request.getStartDate() : plan.getStartDate();
+        LocalDate end = request.getEndDate() != null ? request.getEndDate() : plan.getEndDate();
         if (start != null && end != null && end.isBefore(start)) {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
