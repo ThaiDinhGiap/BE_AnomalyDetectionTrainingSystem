@@ -1,7 +1,8 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.enums.UserRole;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
@@ -25,12 +26,12 @@ public class ApprovalRouteServiceImpl implements ApprovalRouteService {
     @Override
     public User getApproverForStep(Long groupId, UserRole approverUserRole) {
         Group group = groupRepo.findById(groupId)
-                .orElseThrow(() -> new BusinessException("Không tìm thấy group: " + groupId));
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
         return switch (approverUserRole) {
             case ROLE_SUPERVISOR -> group.getSupervisor();
             case ROLE_MANAGER -> group.getSection().getManager();
-            default -> throw new BusinessException("Unsupported approver UserRole: " + approverUserRole);
+            default -> throw new AppException(ErrorCode.UNSUPPORTED_APPROVER_ROLE);
         };
     }
 

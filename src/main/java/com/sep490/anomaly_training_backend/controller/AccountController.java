@@ -2,7 +2,8 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
-import com.sep490.anomaly_training_backend.exception.AuthException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +35,8 @@ public class AccountController {
             @AuthenticationPrincipal User userDetails) {
 
         User user = userRepository.findByUsernameAndDeleteFlagFalse(userDetails.getUsername())
-                .orElseThrow(() -> new AuthException("User not found"));
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
 
         return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
     }

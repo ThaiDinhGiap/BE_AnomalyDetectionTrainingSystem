@@ -2,16 +2,18 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.service.TrainingSampleReviewService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewService {
@@ -30,7 +32,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     @Override
     public TrainingSampleReviewResponse confirmReview(User reviewedBy, TrainingSampleReviewRequest request) {
         TrainingSampleReview reportReview = trainingSampleReviewRepository.findById(request.getId()).
-                orElseThrow(() -> new EntityNotFoundException("Training sample review report not found"));
+                orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_REVIEW_NOT_FOUND));
         reportReview.setReviewedBy(reviewedBy);
         reportReview.setSampleSnapshot(request.getSampleSnapshot());
         trainingSampleReviewRepository.save(reportReview);

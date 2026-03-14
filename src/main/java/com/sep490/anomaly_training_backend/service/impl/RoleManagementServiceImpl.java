@@ -5,14 +5,14 @@ import com.sep490.anomaly_training_backend.dto.request.RoleRequest;
 import com.sep490.anomaly_training_backend.dto.response.PermissionResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Permission;
 import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.repository.PermissionRepository;
 import com.sep490.anomaly_training_backend.repository.RoleRepository;
 import com.sep490.anomaly_training_backend.service.RoleManagementService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +39,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Transactional(readOnly = true)
     public RoleDetailResponse getRoleById(Long id) {
         Role role = roleRepository.findByIdWithPermissions(id)
-                .orElseThrow(() -> new BusinessException("Role not found: " + id, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return toRoleDetailResponse(role);
     }
 
@@ -47,7 +47,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Transactional
     public RoleResponse createRole(RoleRequest request) {
         if (roleRepository.existsByRoleCode(request.getRoleCode())) {
-            throw new BusinessException("Role code already exists: " + request.getRoleCode());
+            throw new AppException(ErrorCode.ROLE_CODE_ALREADY_EXISTS);
         }
         Role role = Role.builder()
                 .roleCode(request.getRoleCode())
@@ -64,14 +64,17 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     public RoleResponse updateRole(Long id, RoleRequest request) {
         Role role = roleRepository.findById(id)
                 .filter(r -> !r.isDeleteFlag())
-                .orElseThrow(() -> new BusinessException("Role not found: " + id, HttpStatus.NOT_FOUND));
-        if (Boolean.TRUE.equals(role.getIsSystem()) && !role.getRoleCode().equals(request.getRoleCode())) {
-            throw new BusinessException("Cannot change role code of a system role");
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        if (Boolean.TRUE.equals(role.getIsSystem())) {
+            throw new AppException(ErrorCode.SYSTEM_ROLE_MODIFICATION_NOT_ALLOWED);
         }
+
         if (!role.getRoleCode().equals(request.getRoleCode())
                 && roleRepository.existsByRoleCode(request.getRoleCode())) {
-            throw new BusinessException("Role code already exists: " + request.getRoleCode());
+            throw new AppException(ErrorCode.ROLE_CODE_ALREADY_EXISTS);
         }
+
         role.setRoleCode(request.getRoleCode());
         role.setDisplayName(request.getDisplayName());
         role.setDescription(request.getDescription());
@@ -83,10 +86,12 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     public void deleteRole(Long id) {
         Role role = roleRepository.findById(id)
                 .filter(r -> !r.isDeleteFlag())
-                .orElseThrow(() -> new BusinessException("Role not found: " + id, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
         if (Boolean.TRUE.equals(role.getIsSystem())) {
-            throw new BusinessException("System roles cannot be deleted");
+            throw new AppException(ErrorCode.SYSTEM_ROLE_DELETION_NOT_ALLOWED);
         }
+
         role.setDeleteFlag(true);
         roleRepository.save(role);
     }
@@ -95,7 +100,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Transactional
     public RoleDetailResponse assignPermissions(Long id, RolePermissionRequest request) {
         Role role = roleRepository.findByIdWithPermissions(id)
-                .orElseThrow(() -> new BusinessException("Role not found: " + id, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         List<Permission> permissions = permissionRepository.findByIdInAndDeleteFlagFalse(request.getPermissionIds());
         role.setPermissions(new HashSet<>(permissions));
         return toRoleDetailResponse(roleRepository.save(role));
@@ -105,7 +110,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Transactional(readOnly = true)
     public List<PermissionResponse> getRolePermissions(Long id) {
         Role role = roleRepository.findByIdWithPermissions(id)
-                .orElseThrow(() -> new BusinessException("Role not found: " + id, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return role.getPermissions().stream()
                 .map(this::toPermissionResponse)
                 .collect(Collectors.toList());

@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.NotificationTemplate;
 import com.sep490.anomaly_training_backend.repository.NotificationTemplateRepository;
 import com.sep490.anomaly_training_backend.service.NotificationTemplateService;
@@ -15,7 +17,7 @@ public class NotificationTemplateServiceImpl implements NotificationTemplateServ
     @Override
     public NotificationTemplate getTemplateByCode(String code) {
         return notificationTemplateRepository.findById(code)
-                .orElseThrow(() -> new RuntimeException("Notification template not found for code: " + code));
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_TEMPLATE_NOT_FOUND));
     }
 
     @Override

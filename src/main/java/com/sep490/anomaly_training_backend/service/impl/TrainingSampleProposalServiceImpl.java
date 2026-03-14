@@ -8,30 +8,20 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDe
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.exception.BusinessException;
-import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +49,8 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
 
     @Override
     public void createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest) {
-        ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId()).get();
+        ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId())
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         TrainingSampleProposal proposal = new TrainingSampleProposal();
         proposal.setProductLine(productLine);
         proposal.setStatus(ReportStatus.DRAFT);
@@ -69,33 +60,27 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
 
     @Override
     public void deleteTrainingSampleProposal(Long id) {
-        TrainingSampleProposal entity = trainingSampleProposalRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("Training Sample Proposal not found"));
-        if (entity != null) {
-            entity.setDeleteFlag(true);
-            trainingSampleProposalRepository.save(entity);
-        }
-
+        TrainingSampleProposal entity = trainingSampleProposalRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
+        entity.setDeleteFlag(true);
+        trainingSampleProposalRepository.save(entity);
     }
 
     @Override
-    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest request) throws BadRequestException {
+    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest request) {
         List<TrainingSampleProposalDetailRequest> items = request.getListDetail();
         if (items == null || items.isEmpty()) {
-            throw new BusinessException("Cannot submit proposal without details");
+            throw new AppException(ErrorCode.PROPOSAL_HAS_NO_DETAILS);
         }
 
-        // Load proposal
         TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", id));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
 
-        //Update productLine nếu có
         if (request.getProductLineId() != null) {
             ProductLine productLine = productLineRepository.getReferenceById(request.getProductLineId());
             proposal.setProductLine(productLine);
         }
 
-        //Load existing details of this proposal
         List<TrainingSampleProposalDetail> existingDetails =
                 trainingSampleProposalDetailRepository.findByTrainingSampleProposalIdAndDeleteFlagFalse(id);
 
@@ -104,35 +89,24 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             existingMap.put(detail.getId(), detail);
         }
 
-        // Ghi nhận những detail cũ nào vẫn còn xuất hiện trong request
         Set<Long> requestDetailIds = new HashSet<>();
 
-        // Validate detail id belongs to proposal
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getId() != null && !existingMap.containsKey(item.getId())) {
-                throw new BadRequestException(
-                        "Detail id " + item.getId() + " does not belong to proposal " + id
-                );
+                throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
             }
         }
-        // Create / Update / Delete
         for (TrainingSampleProposalDetailRequest item : items) {
-            //  Create new
             if (item.getId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
                 trainingSampleProposalDetailRepository.save(newEntity);
                 continue;
             }
-            // Update existing
             requestDetailIds.add(item.getId());
-            //Update
             TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
             entity.setId(item.getId());
             trainingSampleProposalDetailRepository.save(entity);
-
-
         }
-        // Delete những detail cũ có trong DB nhưng request không gửi lên
         for (TrainingSampleProposalDetail existing : existingDetails) {
             if (!requestDetailIds.contains(existing.getId())) {
                 existing.setDeleteFlag(true);
@@ -141,9 +115,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         }
         trainingSampleProposalRepository.save(proposal);
 
-        //Build response
         List<TrainingSampleProposalDetail> latestDetails = trainingSampleProposalDetailRepository.findByTrainingSampleProposalIdAndDeleteFlagFalse(id);
-
         List<TrainingSampleProposalDetailUpdateResponse> detailResponses = new ArrayList<>();
         for (TrainingSampleProposalDetail detail : latestDetails) {
             detailResponses.add(mapToResponse(detail));
@@ -151,25 +123,19 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
 
         return TrainingSampleProposalUpdateResponse.builder()
                 .id(proposal.getId())
-                .productLineId(
-                        proposal.getProductLine() != null
-                                ? proposal.getProductLine().getId()
-                                : null
-                )
+                .productLineId(proposal.getProductLine() != null ? proposal.getProductLine().getId() : null)
                 .detailUpdateResponses(detailResponses)
                 .build();
     }
 
-    // Approval Methods
     @Override
     @Transactional
     public void revise(Long id, User currentUser, HttpServletRequest request) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", id));
-
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         if (!proposal.getCreatedBy().equals(proposal.getCreatedBy())) {
-            throw new BusinessException("Only author can edit on this proposal");
+            throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
-
         approvalService.revise(proposal, currentUser, request);
         trainingSampleProposalRepository.save(proposal);
     }
@@ -177,7 +143,8 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     @Override
     @Transactional
     public void submit(Long proposalId, User currentUser, HttpServletRequest request) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", proposalId));
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         approvalService.submit(proposal, currentUser, request);
         trainingSampleProposalRepository.save(proposal);
     }
@@ -185,7 +152,8 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     @Override
     @Transactional
     public void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", proposalId));
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         approvalService.approve(proposal, currentUser, req, request);
         trainingSampleProposalRepository.save(proposal);
     }
@@ -193,20 +161,23 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     @Override
     @Transactional
     public void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", proposalId));
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         approvalService.reject(proposal, currentUser, req, request);
         trainingSampleProposalRepository.save(proposal);
     }
 
     @Override
     public boolean canApprove(Long proposalId, User currentUser) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", proposalId));
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         return approvalService.canApprove(proposal, currentUser);
     }
 
     @Override
     public void submitTrainingSampleProposalForApproval(Long proposalId, User currentUser, HttpServletRequest request) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId).orElseThrow(() -> new ResourceNotFoundException("Training Sample", "id", proposalId));
+        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
         validateProposalForSubmission(proposal);
         approvalService.submit(proposal, currentUser, request);
         trainingSampleProposalRepository.save(proposal);
@@ -215,18 +186,21 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     private List<TrainingSampleProposalDetail> createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
         List<TrainingSampleProposalDetail> detailList = new ArrayList<>();
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
-            Process process = processRepository.findById(detailRequest.getProcessId()).orElseThrow(() -> new ResourceNotFoundException("Process", "id", detailRequest.getProcessId()));
+            Process process = processRepository.findById(detailRequest.getProcessId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
             }
             if (detailRequest.getDefectId() != null) {
-                Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElseThrow(() -> new ResourceNotFoundException("Defect", "id", detailRequest.getDefectId()));
+                Defect defect = defectRepository.findById(detailRequest.getDefectId())
+                        .orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
                 entity.setDefect(defect);
             }
             if (detailRequest.getProductId() != null) {
-                Product product = productRepository.findById(detailRequest.getProductId()).orElseThrow(() -> new ResourceNotFoundException("Product", "id", detailRequest.getProductId()));
+                Product product = productRepository.findById(detailRequest.getProductId())
+                        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
                 entity.setProduct(product);
             }
             entity.setTrainingSampleProposal(proposal);
@@ -241,35 +215,22 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         return detailList;
     }
 
-    private TrainingSampleProposalDetail mapToEntity(
-            TrainingSampleProposalDetailRequest request,
-            TrainingSampleProposal proposal
-    ) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request must not be null");
-        }
-
-        // required fields (theo entity nullable=false)
-        if (request.getProposalType() == null) {
-            throw new IllegalArgumentException("proposalType is required");
-        }
-        if (request.getProcessId() == null) {
-            throw new IllegalArgumentException("processId is required");
-        }
+    private TrainingSampleProposalDetail mapToEntity(TrainingSampleProposalDetailRequest request, TrainingSampleProposal proposal) {
+        if (request == null) throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT);
+        if (request.getProposalType() == null) throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
+        if (request.getProcessId() == null) throw new AppException(ErrorCode.MISSING_PROCESS_ID);
         if (request.getCategoryName() == null || request.getCategoryName().isBlank()) {
-            throw new IllegalArgumentException("categoryName is required");
+            throw new AppException(ErrorCode.MISSING_CATEGORY_NAME);
         }
         if (request.getTrainingDescription() == null || request.getTrainingDescription().isBlank()) {
-            throw new IllegalArgumentException("trainingDescription is required");
+            throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
         }
 
         TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
-        // FK bắt buộc
         entity.setTrainingSampleProposal(proposal);
         entity.setProposalType(request.getProposalType());
         entity.setProcess(processRepository.getReferenceById(request.getProcessId()));
 
-        // FK optional
         if (request.getTrainingSampleId() != null) {
             entity.setTrainingSample(trainingSampleRepository.getReferenceById(request.getTrainingSampleId()));
         } else {
@@ -287,7 +248,6 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         } else {
             entity.setDefect(null);
         }
-        // fields thường
         entity.setCategoryName(request.getCategoryName());
         entity.setTrainingSampleCode(request.getTrainingSampleCode());
         entity.setTrainingDescription(request.getTrainingDescription());
@@ -317,24 +277,23 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 .build();
     }
 
-    private void validateProposalForSubmission(TrainingSampleProposal proposal) throws BusinessException {
+    private void validateProposalForSubmission(TrainingSampleProposal proposal) {
         if (proposal.getDetails() == null || proposal.getDetails().isEmpty()) {
-            throw new BusinessException("Cannot submit proposal without details");
+            throw new AppException(ErrorCode.PROPOSAL_HAS_NO_DETAILS);
         }
         for (TrainingSampleProposalDetail detail : proposal.getDetails()) {
             if (detail.getProposalType() == null) {
-                throw new BusinessException("Proposal type is required for all details");
+                throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
             }
             if (detail.getProcess() == null) {
-                throw new BusinessException("Process is required for all details");
+                throw new AppException(ErrorCode.MISSING_PROCESS_IN_DETAIL);
             }
             if (detail.getCategoryName() == null || detail.getCategoryName().isBlank()) {
-                throw new BusinessException("Category name is required for all details");
+                throw new AppException(ErrorCode.MISSING_CATEGORY_NAME);
             }
             if (detail.getTrainingDescription() == null || detail.getTrainingDescription().isBlank()) {
-                throw new BusinessException("Training description is required for all details");
+                throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
             }
         }
     }
-
 }

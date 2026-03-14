@@ -2,6 +2,8 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
@@ -10,7 +12,6 @@ import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,14 +29,10 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     public EmployeeSkillResponse createEmployeeSkill(EmployeeSkillRequest request) {
 
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         Process process = processRepository.findById(request.getProcessId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Process not found with id: " + request.getProcessId())
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
         EmployeeSkill entity = EmployeeSkill.builder()
                 .employee(employee)
@@ -52,18 +49,14 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     @Override
     public EmployeeSkillResponse updateEmployeeSkillByTeamLead(Long id, EmployeeSkillRequest request) {
         EmployeeSkill skill = employeeSkillRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Employee not found with id: " + id)
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_SKILL_NOT_FOUND));
+
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Employee not found with id: " + request.getEmployeeId())
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         Process process = processRepository.findById(request.getProcessId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Process not found with id: " + request.getProcessId())
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+
         skill.setEmployee(employee);
         skill.setProcess(process);
         skill.setStatus(request.getStatus());
@@ -73,9 +66,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     @Override
     public void deleteEmployeeSkill(Long id) {
         EmployeeSkill skill = employeeSkillRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Employee not found with id: " + id)
-                );
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_SKILL_NOT_FOUND));
         skill.setDeleteFlag(true);
         employeeSkillRepository.save(skill);
     }
