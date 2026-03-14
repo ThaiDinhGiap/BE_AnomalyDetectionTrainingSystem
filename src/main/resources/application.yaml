@@ -47,8 +47,8 @@ spring:
         max-retries: 3
 
   mail:
-    host: smtp.office365.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:
@@ -57,11 +57,9 @@ spring:
           auth: true
           starttls:
             enable: true
-            required: true
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
-        from: ${MAIL_USERNAME}
 
   security:
     oauth2:
