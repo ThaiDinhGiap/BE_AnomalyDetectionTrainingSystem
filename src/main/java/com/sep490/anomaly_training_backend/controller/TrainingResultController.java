@@ -2,10 +2,7 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,6 +38,16 @@ public class TrainingResultController {
             @Parameter(description = "Training group (Line) ID") @RequestParam("groupId") Long groupId
     ) {
         return ResponseEntity.ok(trainingResultService.getProductGroupsByLine(groupId));
+    }
+
+    @Operation(summary = "Get training samples by product",
+            description = "Lấy danh sách mẫu luyện tập dựa trên sản phẩm đã chọn.")
+    @GetMapping("/samples-by-product")
+    public ResponseEntity<List<SampleResultResponse>> getSamplesByProduct(
+            @Parameter(description = "ID của sản phẩm")
+            @RequestParam("productId") Long productId) {
+
+        return ResponseEntity.ok(trainingResultService.getSamplesByProduct(productId));
     }
 
     @Operation(summary = "Get training topics by Process ID")
@@ -141,7 +148,7 @@ public class TrainingResultController {
             description = "Returns list of processes that the employee has skills for, filtered by product line. Used for the Công đoạn dropdown when selecting per employee.")
     @GetMapping("/processes-by-employee")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<TrainingResultOptionResponse>> getProcessesByEmployeeSkill(
+    public ResponseEntity<List<TrainingResultProcessResponse>> getProcessesByEmployeeSkill(
             @Parameter(description = "Employee ID") @RequestParam("employeeId") Long employeeId,
             @Parameter(description = "Product Line ID") @RequestParam("lineId") Long lineId) {
         return ResponseEntity.ok(trainingResultService.getProcessesByEmployeeSkill(employeeId, lineId));
@@ -151,7 +158,7 @@ public class TrainingResultController {
             description = "Returns list of products (mã sản phẩm) linked to a specific process via product_process table.")
     @GetMapping("/products-by-process/{processId}")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<TrainingResultOptionResponse>> getProductsByProcess(
+    public ResponseEntity<List<TrainingResultProductOptionResponse>> getProductsByProcess(
             @Parameter(description = "Process ID") @PathVariable Long processId) {
         return ResponseEntity.ok(trainingResultService.getProductsByProcess(processId));
     }

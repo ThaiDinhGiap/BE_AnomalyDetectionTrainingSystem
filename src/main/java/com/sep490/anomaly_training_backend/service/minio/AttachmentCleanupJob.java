@@ -52,7 +52,7 @@ public class AttachmentCleanupJob {
                 }
 
             } catch (Exception e) {
-                // 3. Xử lý lỗi (Cơ chế Retry / Exponential Backoff)
+                // 3. Xử lý lỗi (Cơ chế Retry / Exponntial Backoff)
                 log.error("Failed to delete file from MinIO: {}", item.getObjectKey(), e);
 
                 item.setAttempts(item.getAttempts() + 1);
