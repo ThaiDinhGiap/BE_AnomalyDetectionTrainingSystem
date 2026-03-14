@@ -780,8 +780,8 @@ CREATE TABLE training_plans
     id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
     form_code            VARCHAR(50)      DEFAULT 'TR_PLAN',
     title                TEXT,
-    month_start          DATE,
-    month_end            DATE,
+    startDate            DATE,
+    endDate              DATE,
     team_id              BIGINT,
     line_id              BIGINT COMMENT 'Dây chuyền áp dụng',
     status               ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
@@ -804,7 +804,7 @@ CREATE TABLE training_plans
     INDEX idx_training_plans_team (team_id),
     INDEX idx_training_plans_line (line_id),
     INDEX idx_training_plans_status (status),
-    INDEX idx_training_plans_month_range (month_start, month_end),
+    INDEX idx_training_plans_month_range (startDate, endDate),
     INDEX idx_training_plans_delete_flag (delete_flag)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -822,7 +822,6 @@ CREATE TABLE training_plan_details
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
     status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
-    note             TEXT,
 
     delete_flag      BOOLEAN     NOT NULL               DEFAULT FALSE,
     created_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP,

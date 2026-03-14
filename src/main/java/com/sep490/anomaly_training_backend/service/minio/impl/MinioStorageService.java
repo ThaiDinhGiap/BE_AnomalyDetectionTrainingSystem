@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.service.minio.impl;
 
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.service.minio.IStorageService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
@@ -41,7 +43,7 @@ public class MinioStorageService implements IStorageService {
             return objectKey;
         } catch (Exception e) {
             log.error("Error while uploading file to MinIO", e);
-            throw new RuntimeException("Error while uploading file to MinIO", e);
+            throw new AppException(ErrorCode.MINIO_UPLOAD_ERROR, e.getMessage());
         }
     }
 
@@ -56,7 +58,7 @@ public class MinioStorageService implements IStorageService {
             );
         } catch (Exception e) {
             log.error("Error while deleting file from MinIO", e);
-            throw new RuntimeException("Error while deleting file from MinIO", e);
+            throw new AppException(ErrorCode.MINIO_DELETE_ERROR, e.getMessage());
         }
     }
 

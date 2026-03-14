@@ -6,7 +6,6 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
@@ -269,4 +268,15 @@ public class TrainingPlanController {
         trainingPlanService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Plan has been rejected!");
     }
+
+//    @Operation(summary = "Generate Training Plan", description = "Automative generate training plan")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Plan generated successfully"),
+//            @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
+//    })
+//    @PostMapping("{id}/generate")
+//    @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
+//    public ResponseEntity<TrainingPlanResponse> generatePlan(
+//
+//    )
 }

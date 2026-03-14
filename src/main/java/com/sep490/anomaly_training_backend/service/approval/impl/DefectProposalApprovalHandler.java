@@ -1,12 +1,16 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.DefectType;
+import com.sep490.anomaly_training_backend.enums.ProcessClassification;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
+import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +26,7 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
     private final DefectProposalRepository defectProposalRepository;
     private final DefectRepository defectRepository;
     private final DefectCodeGenerator defectCodeGenerator;
+    private final ProcessRepository processRepository;
 
     @Override
     public ApprovalEntityType getType() {
@@ -41,6 +46,12 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
             if (d.getProposalType() == null) {
                 throw new IllegalStateException("ProposalType is missing in proposal detail id=" + d.getId());
             }
+
+            Process process = d.getProcess();
+            if (d.getDefectType().equals(DefectType.DEFECTIVE_GOODS) && (process.getClassification().getValue() != 1)) {
+                d.getProcess().setClassification(ProcessClassification.C1);
+            }
+            processRepository.save(process);
 
             switch (d.getProposalType()) {
                 case CREATE -> {

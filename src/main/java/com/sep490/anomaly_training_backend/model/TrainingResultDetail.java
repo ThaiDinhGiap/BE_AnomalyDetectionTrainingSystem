@@ -146,6 +146,7 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User signatureFiOut;
 
+}
     // Approval implementation
 
 //    @Override
@@ -187,4 +188,3 @@ public class TrainingResultDetail extends BaseEntity {
 //    @Override
 //    public void applyApproval() {
 //    }
-}

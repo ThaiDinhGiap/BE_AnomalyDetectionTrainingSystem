@@ -29,6 +29,9 @@ public enum ErrorCode {
     INVALID_ERROR_KEY(4001, "The error key is misspelled or does not exist.", HttpStatus.INTERNAL_SERVER_ERROR),
     LOAD_ADDRESS_JSON_FAIL(4002, "Error loading address JSON file.", HttpStatus.INTERNAL_SERVER_ERROR),
     TRANSACTION_FAILED(4003, "Transaction failed.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATABASE_SAVE_ERROR(4004, "Error saving data to the database.", HttpStatus.INTERNAL_SERVER_ERROR),
+    MINIO_UPLOAD_ERROR(4005, "Error while uploading file to storage.", HttpStatus.INTERNAL_SERVER_ERROR),
+    MINIO_DELETE_ERROR(4006, "Error while deleting file from storage.", HttpStatus.INTERNAL_SERVER_ERROR),
 
     //range 6xxx: General Business logic errors
     USERNAME_ALREADY_EXISTS(6001, "Username already exists.", HttpStatus.CONFLICT),
@@ -52,6 +55,12 @@ public enum ErrorCode {
     EMPLOYEE_SKILL_NOT_FOUND(6019, "Employee skill not found.", HttpStatus.NOT_FOUND),
     NOTIFICATION_TEMPLATE_NOT_FOUND(6020, "Notification template not found.", HttpStatus.NOT_FOUND),
     ONLY_AUTHOR_CAN_EDIT(6021, "Only the author can edit this item.", HttpStatus.FORBIDDEN),
+
+    // Attachment Errors (range 61xx)
+    INVALID_FILE_TYPE(6100, "Only image files (JPG, PNG, etc.) are allowed.", HttpStatus.BAD_REQUEST),
+    NO_FILE_SELECTED(6101, "Please select at least one file to upload.", HttpStatus.BAD_REQUEST),
+    MAX_FILES_EXCEEDED(6102, "You can only upload a maximum of {maxFiles} files at a time.", HttpStatus.BAD_REQUEST),
+    ATTACHMENT_NOT_FOUND(6103, "Attachment not found.", HttpStatus.NOT_FOUND),
 
     // Training Plan Errors (range 70xx)
     INVALID_DATE_RANGE(7001, "End date cannot be before start date.", HttpStatus.BAD_REQUEST),
