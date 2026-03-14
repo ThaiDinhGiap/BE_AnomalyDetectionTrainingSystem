@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.repository;
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -33,4 +34,14 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
       AND delete_flag = false
 """, nativeQuery = true)
     Optional<Long> findMaxTrainingCodeSequence();
+
+    List<TrainingSample> findByProductId(Long productId);
+    @Query("SELECT ts FROM TrainingSample ts")
+    List<TrainingSample> findAllSamples();
+
+    @Query("SELECT ts FROM TrainingSample ts " +
+            "WHERE ts.product.id = :productId OR ts.product IS NULL")
+    List<TrainingSample> findByProductIdOrGlobal(@Param("productId") Long productId);
+
+    List<TrainingSample> findByProductIdAndProcessId(Long productId, Long processId);
 }

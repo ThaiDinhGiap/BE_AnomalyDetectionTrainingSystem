@@ -4,10 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -36,9 +33,10 @@ public interface TrainingResultService {
 
     List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
 
-    List<TrainingResultOptionResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId);
+    List<TrainingResultProcessResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId);
 
-    List<TrainingResultOptionResponse> getProductsByProcess(Long processId);
+    List<TrainingResultProductOptionResponse> getProductsByProcess(Long processId);
+    List<SampleResultResponse> getSamplesByProduct(Long productId);
 
     void rejectDetail(Long detailId, String reason);
 

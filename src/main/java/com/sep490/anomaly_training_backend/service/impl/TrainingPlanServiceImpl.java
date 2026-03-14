@@ -202,7 +202,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         detail.getEmployeeId(),
                         empId -> {
                             List<EmployeeSkill> skills = employeeSkillRepository
-                                    .findByEmployeeIdAndProcessProductLineId(empId, productLineId);
+                                    .findSkillsByEmployeeAndLine(empId, productLineId);
                             return skills.stream()
                                     .map(skill -> {
                                         TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
@@ -801,7 +801,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         if (productLineId == null || detailResponse.getEmployeeId() == null) return;
 
         List<EmployeeSkill> skills = employeeSkillRepository
-                .findByEmployeeIdAndProcessProductLineId(detailResponse.getEmployeeId(), productLineId);
+                .findSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
 
         List<TrainingPlanDetailResponse.ProcessInfo> processes = skills.stream()
                 .map(skill -> {
