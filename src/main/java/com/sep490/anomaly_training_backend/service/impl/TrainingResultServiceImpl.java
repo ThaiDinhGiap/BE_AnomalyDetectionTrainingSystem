@@ -57,7 +57,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         result.setTrainingPlan(plan);
         result.setTeam(plan.getTeam());
         result.setLine(plan.getLine());
-        result.setYear(plan.getMonthStart().getYear());
+        result.setYear(plan.getStartDate().getYear());
         result.setTitle("Báo cáo kết quả - " + plan.getTitle());
         result.setStatus(ReportStatus.ON_GOING);
         result.setCurrentVersion(1);
@@ -309,10 +309,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
 
             TrainingPlan plan = entity.getTrainingPlan();
-            if (plan != null && plan.getMonthStart() != null && plan.getMonthEnd() != null) {
+            if (plan != null && plan.getStartDate() != null && plan.getEndDate() != null) {
                 List<String> months = new ArrayList<>();
-                java.time.LocalDate cursor = plan.getMonthStart().withDayOfMonth(1);
-                java.time.LocalDate end = plan.getMonthEnd().withDayOfMonth(1);
+                java.time.LocalDate cursor = plan.getStartDate().withDayOfMonth(1);
+                java.time.LocalDate end = plan.getEndDate().withDayOfMonth(1);
                 while (!cursor.isAfter(end)) {
                     months.add(cursor.format(monthYearFormatter));
                     cursor = cursor.plusMonths(1);

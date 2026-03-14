@@ -1,11 +1,10 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.ApprovalHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalMetadataService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +29,7 @@ public class ApprovalController {
 
     private final ApprovalService approvalService;
     private final ApprovalQueryService approvalQueryService;
-
+    private final ApprovalMetadataService approvalMetadataService;
     // ==================== PENDING LIST ====================
 
     @GetMapping("/pending")
@@ -92,6 +91,23 @@ public class ApprovalController {
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @GetMapping("/metadata/reject-reasons")
+    @Operation(summary = "Get grouped reject reasons for rejection form")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<RejectReasonGroupResponse>>> getRejectReasons() {
+        List<RejectReasonGroupResponse> reasons = approvalMetadataService.getRejectReasonGroups();
+        return ResponseEntity.ok(ApiResponse.success(reasons));
+    }
+
+    @GetMapping("/metadata/required-actions")
+    @Operation(summary = "Get list of required actions when rejecting")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<RequiredActionResponse>>> getRequiredActions() {
+        List<RequiredActionResponse> actions = approvalMetadataService.getRequiredActions();
+        return ResponseEntity.ok(ApiResponse.success(actions));
+    }
+
 
     // ==================== HELPER ====================
 

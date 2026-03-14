@@ -513,15 +513,15 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             plan.setNote(request.getNote());
         }
         if (request.getMonthStart() != null) {
-            plan.setMonthStart(request.getMonthStart());
+            plan.setStartDate(request.getMonthStart());
         }
         if (request.getMonthEnd() != null) {
-            plan.setMonthEnd(request.getMonthEnd());
+            plan.setEndDate(request.getMonthEnd());
         }
 
         // Validate date range
-        LocalDate start = request.getMonthStart() != null ? request.getMonthStart() : plan.getMonthStart();
-        LocalDate end = request.getMonthEnd() != null ? request.getMonthEnd() : plan.getMonthEnd();
+        LocalDate start = request.getMonthStart() != null ? request.getMonthStart() : plan.getStartDate();
+        LocalDate end = request.getMonthEnd() != null ? request.getMonthEnd() : plan.getEndDate();
         if (start != null && end != null && end.isBefore(start)) {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
@@ -972,7 +972,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         // Validate date range
-        if (plan.getMonthEnd().isBefore(plan.getMonthStart())) {
+        if (plan.getEndDate().isBefore(plan.getStartDate())) {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
@@ -989,8 +989,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             }
 
             // Validate plannedDate is within plan's date range
-            if (detail.getPlannedDate().isBefore(plan.getMonthStart()) ||
-                    detail.getPlannedDate().isAfter(plan.getMonthEnd())) {
+            if (detail.getPlannedDate().isBefore(plan.getStartDate()) ||
+                    detail.getPlannedDate().isAfter(plan.getEndDate())) {
                 throw new AppException(ErrorCode.PLANNED_DATE_OUT_OF_RANGE);
             }
         }
@@ -1021,8 +1021,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .version(plan.getCurrentVersion() == null ? 1 : plan.getCurrentVersion())
                 .title(plan.getTitle())
                 .formCode(plan.getFormCode())
-                .monthStart(plan.getMonthStart())
-                .monthEnd(plan.getMonthEnd())
+                .monthStart(plan.getStartDate())
+                .monthEnd(plan.getEndDate())
                 .note(plan.getNote())
                 .recordedAt(LocalDateTime.now())
                 .lineId(plan.getLine() != null ? plan.getLine().getId() : null)

@@ -406,7 +406,7 @@ VALUES (1, 1, 'CREATE', 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ', 'Mẫu NG 
 -- Team 2 (Line 2): NV 4, 5
 -- Team 3 (Line 3): NV 7
 -- ============================================================================
-INSERT INTO training_plans (id, form_code, title, startDate, endDate, team_id, line_id, status, current_version,
+INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version,
                             note, min_training_per_day, max_training_per_day, created_by)
 VALUES
 -- 5 Kế hoạch gốc (1 tháng)
