@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
@@ -45,6 +46,8 @@ public interface TrainingPlanService {
     List<EmployeeResponse> getEmployeesNotInPlan(Long planId);
 
     List<EmployeeResponse> getEmployeesInTeams(Long planId);
+
+    List<TrainingPlanResponse> generateTrainingPlans(TrainingPlanGenerationRequest request);
 
     // Relate approval methods
     void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request);
