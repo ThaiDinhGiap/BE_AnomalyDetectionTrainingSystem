@@ -88,8 +88,18 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     @Builder.Default
     List<TrainingPlanDetail> details = new ArrayList<>();
 
-    // Approval implementation
+    @Column(name = "min_training_per_day")
+    Integer minTrainingPerDay;
 
+    @Column(name = "max_training_per_day")
+    Integer maxTrainingPerDay;
+
+    @OneToMany(mappedBy = "trainingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
+    List<TrainingPlanSpecialDay> specialDays = new ArrayList<>();
+
+    // Approval implementation
     @Override
     public ApprovalEntityType getEntityType() {
         return ApprovalEntityType.TRAINING_PLAN;

@@ -6,22 +6,50 @@ import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -215,7 +243,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         response.setGroupedDetails(new ArrayList<>(groupMap.values()));
     }
-
 
 
     @Override
@@ -434,6 +461,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
+    public List<TrainingPlanResponse> generateTrainingPlans(TrainingPlanGenerationRequest request) {
+
+        return List.of();
+    }
+
+    @Override
     @Transactional
     public TrainingPlanResponse updatePlan(Long planId, TrainingPlanUpdateRequest request) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
@@ -503,8 +536,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ==================== DETAIL ACTIONS (1 FLOW CHUNG) ====================
 
     private void processDetailActions(TrainingPlan plan,
-                                       List<TrainingPlanUpdateRequest.DetailAction> actions,
-                                       boolean isApproved) {
+                                      List<TrainingPlanUpdateRequest.DetailAction> actions,
+                                      boolean isApproved) {
         Long productLineId = (plan.getLine() != null) ? plan.getLine().getId() : null;
 
         // Index details hiện tại theo ID → O(1) lookup
@@ -530,8 +563,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * ADD: Thêm employee vào plan, process tự lấy từ employee_skill
      */
     private void handleAddAction(TrainingPlan plan,
-                                  TrainingPlanUpdateRequest.DetailAction action,
-                                  Long productLineId) {
+                                 TrainingPlanUpdateRequest.DetailAction action,
+                                 Long productLineId) {
         if (action.getEmployeeId() == null) {
             throw new AppException(ErrorCode.MISSING_EMPLOYEE_ID);
         }
@@ -560,7 +593,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * FE gửi batchId → tìm employee từ batch đó → tạo detail mới cùng batchId
      */
     private void handleAddScheduleAction(TrainingPlan plan,
-                                          TrainingPlanUpdateRequest.DetailAction action) {
+                                         TrainingPlanUpdateRequest.DetailAction action) {
         if (action.getBatchId() == null || action.getBatchId().isBlank()) {
             throw new AppException(ErrorCode.MISSING_BATCH_ID);
         }
@@ -605,9 +638,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * UPDATE: Sửa 1 detail cụ thể theo detailId — chỉ update field được gửi lên (non-null)
      */
     private void handleUpdateAction(TrainingPlanUpdateRequest.DetailAction action,
-                                     Map<Long, TrainingPlanDetail> detailMap,
-                                     Long productLineId,
-                                     boolean isApproved) {
+                                    Map<Long, TrainingPlanDetail> detailMap,
+                                    Long productLineId,
+                                    boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -658,9 +691,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * DELETE: Xóa hoặc đánh dấu MISSED tùy trạng thái plan
      */
     private void handleDeleteAction(TrainingPlan plan,
-                                     TrainingPlanUpdateRequest.DetailAction action,
-                                     Map<Long, TrainingPlanDetail> detailMap,
-                                     boolean isApproved) {
+                                    TrainingPlanUpdateRequest.DetailAction action,
+                                    Map<Long, TrainingPlanDetail> detailMap,
+                                    boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -957,7 +990,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
             // Validate plannedDate is within plan's date range
             if (detail.getPlannedDate().isBefore(plan.getMonthStart()) ||
-                detail.getPlannedDate().isAfter(plan.getMonthEnd())) {
+                    detail.getPlannedDate().isAfter(plan.getMonthEnd())) {
                 throw new AppException(ErrorCode.PLANNED_DATE_OUT_OF_RANGE);
             }
         }
@@ -1018,4 +1051,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         trainingPlanHistoryRepository.save(history);
     }
+
+    
 }
