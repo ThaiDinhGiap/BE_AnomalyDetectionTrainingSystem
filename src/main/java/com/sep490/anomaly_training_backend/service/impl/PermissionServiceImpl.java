@@ -4,6 +4,8 @@ import com.sep490.anomaly_training_backend.dto.response.ModulePermissionResponse
 import com.sep490.anomaly_training_backend.dto.response.PermissionResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserPermissionResponse;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Module;
 import com.sep490.anomaly_training_backend.model.Permission;
 import com.sep490.anomaly_training_backend.model.Role;
@@ -13,11 +15,8 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.PermissionService;
 import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.sep490.anomaly_training_backend.exception.BusinessException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +35,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional(readOnly = true)
     public Map<String, List<String>> getUserPermissions(Long userId) {
         User user = userRepository.findByIdWithRolesAndPermissions(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return buildPermissionMap(user);
     }
 
@@ -85,7 +84,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional(readOnly = true)
     public UserPermissionResponse getUserPermissionDetail(Long userId) {
         User user = userRepository.findByIdWithRolesAndPermissions(userId)
-                .orElseThrow(() -> new BusinessException("User not found: " + userId, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         List<RoleResponse> roles = user.getRoles() == null ? List.of() :
                 user.getRoles().stream()
                         .filter(r -> !r.isDeleteFlag())

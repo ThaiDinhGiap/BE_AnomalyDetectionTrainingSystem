@@ -3,8 +3,10 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
-import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
+import com.sep490.anomaly_training_backend.enums.ImportType;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleMapper;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -16,7 +18,6 @@ import com.sep490.anomaly_training_backend.util.validator.TrainingSampleImportVa
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,50 +51,47 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     @Override
     public TrainingSampleResponse getTrainingSampleById(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         return trainingSampleMapper.toDto(entity);
     }
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByProcess(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         return trainingSampleRepository.findByProcessIdAndDeleteFlagFalse(entity.getProcess().getId())
-            .stream().map(trainingSampleMapper::toDto).toList();
+                .stream().map(trainingSampleMapper::toDto).toList();
     }
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByCategory(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Training Sample not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         return trainingSampleRepository.findByCategoryNameAndDeleteFlagFalse(entity.getCategoryName())
-            .stream().map(trainingSampleMapper::toDto).toList();
+                .stream().map(trainingSampleMapper::toDto).toList();
     }
 
     @Override
-    public List<TrainingSampleResponse> importTrainingSample(User currentUser, MultipartFile file) throws BadRequestException {
+    public List<TrainingSampleResponse> importTrainingSample(User currentUser, MultipartFile file) {
         List<ImportErrorItem> errors = new ArrayList<>();
         try {
-            // Step 1: Validate file format
             validateImportFile(file);
 
             try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
                 Sheet sheet = getFirstSheet(workbook);
 
-                // Step 2: Get ProductLine from row 1
                 ProductLine productLine = getProductLineFromHeader(sheet);
                 if (productLine == null) {
                     errors.add(buildSystemError("ProductLine not found in file header (Row 1)"));
                     saveImportFailHistory(currentUser, file, errors);
-                    throw new BadRequestException("ProductLine not found in file header");
+                    throw new AppException(ErrorCode.PRODUCT_LINE_NOT_IN_HEADER);
                 }
 
-                // Step 3: Parse all rows with carry-forward logic
                 List<TrainingSampleImportDto> parsedRows = importHelper.parseExcelRowsWithCarryForward(sheet, errors);
 
                 if (!errors.isEmpty()) {
                     saveImportFailHistory(currentUser, file, errors);
-                    throw new BadRequestException("Error parsing rows. Please check import history.");
+                    throw new AppException(ErrorCode.IMPORT_PARSE_ERROR);
                 }
 
                 // Step 4: Validate only file data (NO DB validation)
@@ -101,7 +99,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
                 if (!errors.isEmpty()) {
                     saveImportFailHistory(currentUser, file, errors);
-                    throw new BadRequestException("Validation failed. Please check import history.");
+                    throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
                 }
 
                 // Step 5: Insert all rows
@@ -112,11 +110,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
                 return responses;
 
-            } catch (BadRequestException e) {
-                if (errors.isEmpty()) {
-                    errors.add(buildSystemError(e.getMessage()));
-                    saveImportFailHistory(currentUser, file, errors);
-                }
+            } catch (AppException e) {
                 throw e;
             } catch (Exception e) {
                 log.error("Import training sample failed", e);
@@ -124,14 +118,14 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                     errors.add(buildSystemError("System error: " + e.getMessage()));
                     saveImportFailHistory(currentUser, file, errors);
                 }
-                throw new BadRequestException("Cannot read excel file: " + e.getMessage());
+                throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE);
             }
 
-        } catch (BadRequestException e) {
+        } catch (AppException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error during import", e);
-            throw new BadRequestException("Unexpected error: " + e.getMessage());
+            throw new AppException(ErrorCode.UNEXPECTED_IMPORT_ERROR);
         }
     }
 
@@ -140,7 +134,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
      */
     private List<TrainingSampleResponse> insertAllRows(
             List<TrainingSampleImportDto> parsedRows,
-            ProductLine productLine) throws BadRequestException {
+            ProductLine productLine) {
 
         List<TrainingSampleResponse> responses = new ArrayList<>();
 
@@ -152,19 +146,19 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
             // Create new TrainingSample
             TrainingSample sample = TrainingSample.builder()
-                .trainingCode(dto.getTrainingCode())
-                .process(process)
-                .productLine(productLine)
-                .categoryName(dto.getCategoryName())
-                .trainingDescription(dto.getTrainingDescription())
-                .trainingSampleCode(dto.getTrainingSampleCode())
-                .defect(defect)
-                .product(product)
-                .processOrder(dto.getProcessOrder())
-                .categoryOrder(dto.getCategoryOrder())
-                .contentOrder(dto.getContentOrder())
-                .note(dto.getNote())
-                .build();
+                    .trainingCode(dto.getTrainingCode())
+                    .process(process)
+                    .productLine(productLine)
+                    .categoryName(dto.getCategoryName())
+                    .trainingDescription(dto.getTrainingDescription())
+                    .trainingSampleCode(dto.getTrainingSampleCode())
+                    .defect(defect)
+                    .product(product)
+                    .processOrder(dto.getProcessOrder())
+                    .categoryOrder(dto.getCategoryOrder())
+                    .contentOrder(dto.getContentOrder())
+                    .note(dto.getNote())
+                    .build();
 
             TrainingSample saved = trainingSampleRepository.save(sample);
             responses.add(trainingSampleMapper.toDto(saved));
@@ -204,24 +198,24 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     private void validateImportFile(MultipartFile file) throws BadRequestException {
         if (file == null || file.isEmpty()) {
-            throw new BadRequestException("File is empty");
+            throw new AppException(ErrorCode.FILE_IS_EMPTY);
         }
 
         String fileName = file.getOriginalFilename();
         if (fileName == null ||
                 (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
-            throw new BadRequestException("Only .xls or .xlsx files are supported");
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
         }
     }
 
-    private Sheet getFirstSheet(Workbook workbook) throws BadRequestException {
+    private Sheet getFirstSheet(Workbook workbook) {
         if (workbook.getNumberOfSheets() == 0) {
-            throw new BadRequestException("Excel file does not contain any sheet");
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
         }
 
         Sheet sheet = workbook.getSheetAt(0);
         if (sheet == null) {
-            throw new BadRequestException("Cannot read first sheet");
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
         }
 
         return sheet;
@@ -253,31 +247,30 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     private void saveImportFailHistory(User currentUser, MultipartFile file, List<ImportErrorItem> errors) {
         importHistoryService.saveHistory(
-            currentUser,
-            file.getOriginalFilename(),
-            ImportType.TRAINING_SAMPLE_IMPORT,
-            ImportStatus.FAIL,
-            errors
+                currentUser,
+                file.getOriginalFilename(),
+                ImportType.TRAINING_SAMPLE_IMPORT,
+                ImportStatus.FAIL,
+                errors
         );
     }
 
     private void saveImportPassHistory(User currentUser, MultipartFile file) {
         importHistoryService.saveHistory(
-            currentUser,
-            file.getOriginalFilename(),
-            ImportType.TRAINING_SAMPLE_IMPORT,
-            ImportStatus.PASS,
-            List.of()
+                currentUser,
+                file.getOriginalFilename(),
+                ImportType.TRAINING_SAMPLE_IMPORT,
+                ImportStatus.PASS,
+                List.of()
         );
     }
 
     private ImportErrorItem buildSystemError(String message) {
         return ImportErrorItem.builder()
-            .rowNumber(null)
-            .field("SYSTEM")
-            .value(null)
-            .message(message)
-            .build();
+                .rowNumber(null)
+                .field("SYSTEM")
+                .value(null)
+                .message(message)
+                .build();
     }
 }
-

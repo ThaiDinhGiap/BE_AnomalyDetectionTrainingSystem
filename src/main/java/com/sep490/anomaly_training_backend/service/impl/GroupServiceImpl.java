@@ -2,8 +2,10 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
-import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.GroupMapper;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
@@ -31,14 +33,10 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional
     public GroupResponse createGroup(GroupRequest request) {
-        // Kiểm tra tên trùng (nếu cần)
         if (groupRepository.existsByName(request.getName())) {
-            // Lưu ý: Logic này có thể chặt quá nếu cho phép trùng tên khác Section
-            // Nếu muốn cho trùng tên ở Section khác nhau thì dùng existsByNameAndSectionId
-            throw new RuntimeException("Tên nhóm đã tồn tại");
+            throw new AppException(ErrorCode.GROUP_NAME_ALREADY_EXISTS);
         }
 
-        // Mapper tự tìm Section và Supervisor
         Group group = groupMapper.toEntity(request);
         return groupMapper.toDTO(groupRepository.save(group));
     }
@@ -47,7 +45,7 @@ public class GroupServiceImpl implements GroupService {
     @Transactional
     public GroupResponse updateGroup(Long id, GroupRequest request) {
         Group group = groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Group not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
         groupMapper.updateEntity(group, request);
         return groupMapper.toDTO(groupRepository.save(group));
@@ -57,9 +55,8 @@ public class GroupServiceImpl implements GroupService {
     @Transactional
     public void deleteGroup(Long id) {
         Group group = groupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Group not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
-        // Soft delete
         group.setDeleteFlag(true);
         groupRepository.save(group);
     }
@@ -69,7 +66,7 @@ public class GroupServiceImpl implements GroupService {
         return groupRepository.findById(id)
                 .filter(g -> !g.isDeleteFlag())
                 .map(groupMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Group not found id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
     }
 
     @Override
@@ -101,7 +98,8 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public List<GroupResponse> getMyManagedGroups() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername).orElseThrow();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
 

@@ -3,7 +3,8 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.UserRequest;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
-import com.sep490.anomaly_training_backend.exception.ResourceNotFoundException;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.UserMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.User;
@@ -30,13 +31,10 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse createUser(UserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username đã tồn tại");
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
 
-        // Dùng toEntity
         User user = userMapper.toEntity(request);
-
-        // Save và dùng toDTO
         return userMapper.toDTO(userRepository.save(user));
     }
 
@@ -44,10 +42,9 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse updateUser(Long id, UserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         userMapper.updateEntity(user, request);
-
         return userMapper.toDTO(userRepository.save(user));
     }
 
@@ -55,7 +52,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setDeleteFlag(true);
         user.setIsActive(false);
         userRepository.save(user);
@@ -66,7 +63,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .filter(u -> !u.isDeleteFlag())
                 .map(userMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Override
@@ -86,8 +83,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Employee getEmployeeOfUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return employeeRepository.findByEmployeeCode(user.getEmployeeCode())
-                .orElseThrow(() -> new ResourceNotFoundException("Employee", "employeeCode", user.getEmployeeCode()));
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
     }
 }

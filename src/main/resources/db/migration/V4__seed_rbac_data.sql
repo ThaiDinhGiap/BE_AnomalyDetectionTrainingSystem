@@ -18,8 +18,8 @@ VALUES (1,  'defect_report',                'Báo cáo lỗi sản phẩm',     
        (10, 'dashboard',                    'Dashboard & Báo cáo',        'Xem dashboard và báo cáo tổng hợp',   10, 'system'),
        (11, 'system',                       'Cài đặt hệ thống',           'Cài đặt và cấu hình hệ thống',        11, 'system'),
        (12, 'staff_organization',           'Tổ chức nhân sự',            'Quản lí danh sách nhân sự công ty',   12, 'system'),
-       (13, 'manufacturing_line',           'Tổ chức sản xuất',           'Quản lí danh sách tổ chức dây chuyền',13, 'system');
-
+       (13, 'manufacturing_line',           'Tổ chức sản xuất',           'Quản lí danh sách tổ chức dây chuyền',13, 'system'),
+       (14, 'attachment',             'Quản lý File & Ảnh',     'Upload và xóa tệp MinIO', 15, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 2: PERMISSIONS
 -- ----------------------------------------------------------------------------
@@ -113,8 +113,10 @@ VALUES
 (51, 'training_sample_review.view',          'Lấy danh sách kết quả rà soát hàng năm',             13, 'view',   1, TRUE, 'system'),
 (52, 'training_sample_review.confirm',       'Xác nhận hoàn thành rà soát mẫu huấn luyện hàng năm',13, 'edit',   3, TRUE, 'system'),
 (53, 'training_sample_review_config.view',   'Lấy danh sách cấu hình lịch kiểm tra định kì',       13, 'create', 2, TRUE, 'system'),
-(54, 'training_sample_review_config.create', 'Tạo lịch kiểm tra định kì',                  13, 'delete', 4, TRUE, 'system');
-
+(54, 'training_sample_review_config.create', 'Tạo lịch kiểm tra định kì',                  13, 'delete', 4, TRUE, 'system'),
+(56, 'attachment.view',   'Xem file/ảnh đính kèm', 14, 'view',   1, TRUE, 'system'),
+(57, 'attachment.create', 'Upload file/ảnh mới',   14, 'create', 2, TRUE, 'system'),
+(58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 4: ASSIGN PERMISSIONS TO ROLES
 -- ADMIN gets all permissions
@@ -135,7 +137,12 @@ VALUES
 (2, 43),
 (2, 44),
 (2, 45),
-(2, 46),(2, 22),(2, 27);                -- user.view, role.view
+(2, 46),
+(2, 22),
+(2, 56),
+(2, 57),
+(2, 58),
+(2, 27);                -- user.view, role.view
 
 -- SUPERVISOR: view/create/edit reports, view plans, manage training results
 INSERT INTO role_permissions (role_id, permission_id)
@@ -146,6 +153,9 @@ VALUES
 (3, 15),(3, 16),                -- training_result: view,edit
 (3, 18),(3, 19),(3, 20),        -- employee: view,create,edit
 (3, 36),                        -- scoring: view
+(3, 56),
+(3, 57),
+(3, 58),
 (3, 40);                        -- dashboard: view
 
 -- TEAM_LEADER: create and view reports, input training results
@@ -174,12 +184,18 @@ VALUES
     (4, 112),
     (4, 113),
     (4, 102),
+    (4, 56),
+    (4, 57),
+    (4, 58),
     (4, 47);
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 (5, 1),(5, 2),(5, 3),           -- defect_proposal: view,create,edit
 (5, 15),(5, 16),                -- training_result: view,edit
+(5, 56),
+(5, 57),
+(5, 58),
 (5, 18),                        -- employee: view
 (5, 40);                        -- dashboard: view
 

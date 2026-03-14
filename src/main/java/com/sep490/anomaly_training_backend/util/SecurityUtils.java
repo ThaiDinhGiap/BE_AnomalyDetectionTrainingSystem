@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.util;
 
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +30,7 @@ public class SecurityUtils {
 
     public static User getCurrentUserOrThrow() {
         return getCurrentUser()
-                .orElseThrow(() -> new IllegalStateException("No authenticated user found"));
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
     }
 
     public static Optional<String> getCurrentUsername() {

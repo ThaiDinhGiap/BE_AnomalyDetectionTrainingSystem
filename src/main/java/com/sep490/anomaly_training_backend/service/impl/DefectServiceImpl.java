@@ -6,6 +6,8 @@ import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.DefectMapper;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.Process;
@@ -14,7 +16,6 @@ import com.sep490.anomaly_training_backend.repository.DefectRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
@@ -23,8 +24,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,7 +68,7 @@ public class DefectServiceImpl implements DefectService {
 
     @Override
     public DefectResponse getDefectById(Long id) {
-        Defect defect = defectRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Defect not found"));
+        Defect defect = defectRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
         return defectMapper.toDto(defect);
     }
 
@@ -91,7 +91,7 @@ public class DefectServiceImpl implements DefectService {
 
             if (!errors.isEmpty()) {
                 saveImportFailHistory(currentUser, file, errors);
-                throw new BadRequestException("Import failed. Please check import history.");
+                throw new AppException(ErrorCode.IMPORT_FAILED);
             }
 
             List<DefectResponse> responses = saveAllRows(sheet);
@@ -99,40 +99,35 @@ public class DefectServiceImpl implements DefectService {
             saveImportPassHistory(currentUser, file);
             return responses;
 
-        } catch (BadRequestException e) {
+        } catch (AppException e) {
             throw e;
         } catch (Exception e) {
             log.error("Import defect failed", e);
-
-            List<ImportErrorItem> systemErrors = List.of(
-                    buildSystemError(e.getMessage())
-            );
-
+            List<ImportErrorItem> systemErrors = List.of(buildSystemError(e.getMessage()));
             saveImportFailHistory(currentUser, file, systemErrors);
-            throw new BadRequestException("Cannot read excel file: " + e.getMessage());
+            throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE);
         }
     }
 
     private void validateImportFile(MultipartFile file) throws BadRequestException {
         if (file == null || file.isEmpty()) {
-            throw new BadRequestException("File is empty");
+            throw new AppException(ErrorCode.FILE_IS_EMPTY);
         }
 
         String fileName = file.getOriginalFilename();
-        if (fileName == null ||
-                (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
-            throw new BadRequestException("Only .xls or .xlsx files are supported");
+        if (fileName == null || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
         }
     }
 
     private Sheet getFirstSheet(Workbook workbook) throws BadRequestException {
         if (workbook.getNumberOfSheets() == 0) {
-            throw new BadRequestException("Excel file does not contain any sheet");
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
         }
 
         Sheet sheet = workbook.getSheetAt(0);
         if (sheet == null) {
-            throw new BadRequestException("Cannot read first sheet");
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
         }
 
         return sheet;
@@ -140,18 +135,13 @@ public class DefectServiceImpl implements DefectService {
 
     private void validateAllRows(Sheet sheet, List<ImportErrorItem> errors) {
         List<DefectImportRowData> parsedDtos = new ArrayList<>();
-        // Parse all rows first
         for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-
-            if (isRowEmpty(row)) {
-                continue;
-            }
-
+            if (isRowEmpty(row)) continue;
             try {
                 DefectImportRowData dto = parseRowToImportDto(row, i + 1);
                 parsedDtos.add(dto);
-            } catch (BadRequestException e) {
+            } catch (AppException e) {
                 errors.add(buildRowError(i + 1, "ROW", null, e.getMessage()));
             } catch (Exception e) {
                 errors.add(buildRowError(i + 1, "ROW", null, "Unexpected error: " + e.getMessage()));
@@ -205,7 +195,7 @@ public class DefectServiceImpl implements DefectService {
 
         if (dto.getProcessCode() != null) {
             Process process = processRepository.findByCode(dto.getProcessCode())
-                    .orElseThrow(() -> new IllegalArgumentException("Process not found with code: " + dto.getProcessCode()));
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND, "Process not found with code: " + dto.getProcessCode()));
             defect.setProcess(process);
         } else {
             defect.setProcess(null);
@@ -234,7 +224,7 @@ public class DefectServiceImpl implements DefectService {
         String value = getOptionalStringCellValue(cell);
 
         if (value == null || value.isBlank()) {
-            throw new BadRequestException("Row " + excelRowNumber + ": " + fieldName + " must not be blank");
+            throw new AppException(ErrorCode.INVALID_CELL_VALUE, "Row " + excelRowNumber + ": " + fieldName + " must not be blank");
         }
 
         return value.trim();
@@ -284,14 +274,11 @@ public class DefectServiceImpl implements DefectService {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                 return LocalDate.parse(value, formatter);
             }
-
-            throw new BadRequestException("Row " + excelRowNumber + ": " + fieldName + " has invalid format");
-        } catch (BadRequestException e) {
+            throw new AppException(ErrorCode.INVALID_CELL_VALUE, "Row " + excelRowNumber + ": " + fieldName + " has invalid format");
+        } catch (AppException e) {
             throw e;
         } catch (Exception e) {
-            throw new BadRequestException(
-                    "Row " + excelRowNumber + ": " + fieldName + " has invalid value: " + getCellDisplayValue(cell)
-            );
+            throw new AppException(ErrorCode.INVALID_CELL_VALUE, "Row " + excelRowNumber + ": " + fieldName + " has invalid value: " + getCellDisplayValue(cell));
         }
     }
 
@@ -396,8 +383,10 @@ public class DefectServiceImpl implements DefectService {
                 row.getCell(12), "defectType", excelRowNumber
         );
 
-        Process process = processRepository.findByCode(processCode.trim()).orElseThrow(() -> new BadRequestException("Row " + excelRowNumber + ": Process not found: " + processCode));
+//        Process process = processRepository.findByCode(processCode.trim()).orElseThrow(() -> new BadRequestException("Row " + excelRowNumber + ": Process not found: " + processCode));
 
+        Process process = processRepository.findByCode(processCode.trim())
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND, "Row " + excelRowNumber + ": Process not found: " + processCode));
         return DefectImportRowData.builder()
                 .defectCode(defectCode)
                 .defectDescription(defectDescription)
