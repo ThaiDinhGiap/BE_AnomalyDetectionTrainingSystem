@@ -29,6 +29,7 @@ public class TrainingPlanResponse {
 
     private String createdBy;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedBy;
 
     // Flat list - tất cả detail rows
     private List<TrainingPlanDetailResponse> details = new ArrayList<>();
