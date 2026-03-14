@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.util.import_helper;
+package com.sep490.anomaly_training_backend.util.validator;
 
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;

@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DefectImportDto {
+public class DefectImportRowData {
     private String defectCode;
     private String defectDescription;
     private LocalDate detectedDate;
@@ -22,9 +22,12 @@ public class DefectImportDto {
     private String outflowCause;
     private String causePoint;
 
+    private ImageData imageData;
     private String originMeasures;
     private String outflowMeasures;
-    private String defectType;
+    private Boolean isEscape;
+    private Boolean customerClaim;
+    private Boolean startledClaim;
 
     private String processCode;
     private Integer excelRowNumber;  // NEW! Track which row this came from

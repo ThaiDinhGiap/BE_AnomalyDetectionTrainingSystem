@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
+import com.sep490.anomaly_training_backend.dto.request.DefectImportRowData;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.enums.DefectType;
@@ -87,6 +87,7 @@ public class DefectServiceImpl implements DefectService {
             Sheet sheet = getFirstSheet(workbook);
 
             validateAllRows(sheet, errors);
+//            List<DefectImportRowData>
 
             if (!errors.isEmpty()) {
                 saveImportFailHistory(currentUser, file, errors);
@@ -138,8 +139,7 @@ public class DefectServiceImpl implements DefectService {
     }
 
     private void validateAllRows(Sheet sheet, List<ImportErrorItem> errors) {
-        List<DefectImportDto> parsedDtos = new ArrayList<>();
-
+        List<DefectImportRowData> parsedDtos = new ArrayList<>();
         // Parse all rows first
         for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
@@ -149,7 +149,7 @@ public class DefectServiceImpl implements DefectService {
             }
 
             try {
-                DefectImportDto dto = parseRowToImportDto(row, i + 1);
+                DefectImportRowData dto = parseRowToImportDto(row, i + 1);
                 parsedDtos.add(dto);
             } catch (BadRequestException e) {
                 errors.add(buildRowError(i + 1, "ROW", null, e.getMessage()));
@@ -173,7 +173,7 @@ public class DefectServiceImpl implements DefectService {
                 continue;
             }
 
-            DefectImportDto dto = parseRowToImportDto(row, i + 1);
+            DefectImportRowData dto = parseRowToImportDto(row, i + 1);
             Defect savedDefect = upsertDefect(dto);
             responses.add(defectMapper.toDto(savedDefect));
         }
@@ -181,7 +181,7 @@ public class DefectServiceImpl implements DefectService {
         return responses;
     }
 
-    private Defect upsertDefect(DefectImportDto dto) {
+    private Defect upsertDefect(DefectImportRowData dto) {
         Defect defect = defectRepository
                 .findByDefectCode(dto.getDefectCode())
                 .orElseGet(Defect::new);
@@ -191,7 +191,7 @@ public class DefectServiceImpl implements DefectService {
         return defectRepository.save(defect);
     }
 
-    private void applyImportDtoToDefect(DefectImportDto dto, Defect defect) {
+    private void applyImportDtoToDefect(DefectImportRowData dto, Defect defect) {
         defect.setDefectDescription(dto.getDefectDescription());
         defect.setDefectCode(dto.getDefectCode());
         defect.setDetectedDate(dto.getDetectedDate());
@@ -201,7 +201,7 @@ public class DefectServiceImpl implements DefectService {
         defect.setCausePoint(dto.getCausePoint());
         defect.setOriginMeasures(dto.getOriginMeasures());
         defect.setOutflowMeasures(dto.getOutflowMeasures());
-        defect.setDefectType(DefectType.valueOf(dto.getDefectType()));
+//        defect.setDefectType(DefectType.valueOf(dto.getDefectType()));
 
         if (dto.getProcessCode() != null) {
             Process process = processRepository.findByCode(dto.getProcessCode())
@@ -366,7 +366,7 @@ public class DefectServiceImpl implements DefectService {
                 .build();
     }
 
-    private DefectImportDto parseRowToImportDto(Row row, int excelRowNumber) throws BadRequestException {
+    private DefectImportRowData parseRowToImportDto(Row row, int excelRowNumber) throws BadRequestException {
         String defectCode = getRequiredStringCellValue(
                 row.getCell(1), "defectDescription", excelRowNumber
         );
@@ -398,7 +398,7 @@ public class DefectServiceImpl implements DefectService {
 
         Process process = processRepository.findByCode(processCode.trim()).orElseThrow(() -> new BadRequestException("Row " + excelRowNumber + ": Process not found: " + processCode));
 
-        return DefectImportDto.builder()
+        return DefectImportRowData.builder()
                 .defectCode(defectCode)
                 .defectDescription(defectDescription)
                 .detectedDate(detectedDate)
@@ -408,7 +408,7 @@ public class DefectServiceImpl implements DefectService {
                 .causePoint(causePoint)
                 .originMeasures(originMeasures)
                 .outflowMeasures(outflowMeasures)
-                .defectType(defectType)
+//                .defectType(defectType)
                 .processCode(process.getCode())
                 .excelRowNumber(excelRowNumber)
                 .build();
@@ -439,11 +439,11 @@ public class DefectServiceImpl implements DefectService {
      * Validate that defectCode is unique across all rows in import
      * Rule: defectCode không được lặp lại trong file import
      */
-    private void validateNoDuplicateDefectCode(List<DefectImportDto> parsedDtos, List<ImportErrorItem> errors) {
+    private void validateNoDuplicateDefectCode(List<DefectImportRowData> parsedDtos, List<ImportErrorItem> errors) {
         Map<String, Integer> defectCodeCount = new HashMap<>();
         Map<String, Integer> firstOccurrenceRow = new HashMap<>();
 
-        for (DefectImportDto dto : parsedDtos) {
+        for (DefectImportRowData dto : parsedDtos) {
             String code = dto.getDefectCode();
             defectCodeCount.put(code, defectCodeCount.getOrDefault(code, 0) + 1);
 
@@ -456,7 +456,7 @@ public class DefectServiceImpl implements DefectService {
         for (Map.Entry<String, Integer> entry : defectCodeCount.entrySet()) {
             if (entry.getValue() > 1) {
                 // Find all rows with this duplicate code
-                for (DefectImportDto dto : parsedDtos) {
+                for (DefectImportRowData dto : parsedDtos) {
                     if (dto.getDefectCode().equals(entry.getKey())) {
                         errors.add(buildRowError(
                                 dto.getExcelRowNumber(),
@@ -474,10 +474,10 @@ public class DefectServiceImpl implements DefectService {
      * Validate that defectDescription is unique across all rows in import
      * Rule: defectDescription không được lặp lại, ngay cả khi defectCode khác nhau
      */
-    private void validateNoDuplicateDefectDescription(List<DefectImportDto> parsedDtos, List<ImportErrorItem> errors) {
+    private void validateNoDuplicateDefectDescription(List<DefectImportRowData> parsedDtos, List<ImportErrorItem> errors) {
         Map<String, Integer> descriptionCount = new HashMap<>();
 
-        for (DefectImportDto dto : parsedDtos) {
+        for (DefectImportRowData dto : parsedDtos) {
             String description = dto.getDefectDescription();
             descriptionCount.put(description, descriptionCount.getOrDefault(description, 0) + 1);
         }
@@ -486,7 +486,7 @@ public class DefectServiceImpl implements DefectService {
         for (Map.Entry<String, Integer> entry : descriptionCount.entrySet()) {
             if (entry.getValue() > 1) {
                 // Find all rows with this duplicate description
-                for (DefectImportDto dto : parsedDtos) {
+                for (DefectImportRowData dto : parsedDtos) {
                     if (dto.getDefectDescription().equals(entry.getKey())) {
                         errors.add(buildRowError(
                                 dto.getExcelRowNumber(),
