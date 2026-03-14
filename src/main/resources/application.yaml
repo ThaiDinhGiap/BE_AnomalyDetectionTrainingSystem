@@ -84,7 +84,14 @@ spring:
             user-info-uri: https://graph.microsoft.com/oidc/userinfo
             user-name-attribute: sub
             jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
-
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
+  bucket-name: ${MINIO_BUCKET:anomaly-training-bucket}
+  presigned:
+    upload-expiry-minutes: 30
+    download-expiry-minutes: 60
 logging:
   file:
     path: ./logs
@@ -112,6 +119,8 @@ app:
     enabled: ${RABBITMQ_ENABLED:true}
   mail:
     enabled: ${MAIL_ENABLED:false}
+  attachment:
+    max-files-per-request: 10
   scheduler:
     # Training Reminders
     training-reminder-today: "0 0 6 * * ?"

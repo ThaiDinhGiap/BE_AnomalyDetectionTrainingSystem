@@ -1,7 +1,10 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.enums.DefectType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -51,10 +54,6 @@ public class Defect extends BaseEntity {
     @Column(name = "detected_date", nullable = false)
     LocalDate detectedDate;
 
-    @Column(name = "is_escaped")
-    @Builder.Default
-    Boolean isEscaped = false;
-
     @Column(columnDefinition = "text")
     String note;
 
@@ -66,4 +65,14 @@ public class Defect extends BaseEntity {
 
     @Column(name = "cause_point", length = 255)
     String causePoint;
+
+    @Column(name = "origin_measures", length = 255)
+    String originMeasures;
+
+    @Column(name = "outflow_measures", length = 255)
+    String outflowMeasures;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "defect_type")
+    DefectType defectType;
 }

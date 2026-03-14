@@ -1,16 +1,62 @@
 version: '3.8'
+
 services:
+  # 1. RabbitMQ (Message Broker cho các job chạy ngầm như Xóa ảnh Async)
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"    # AMQP port
-      - "15672:15672"  # Management UI
+      - "5672:5672"    # AMQP port (Spring Boot gọi vào đây)
+      - "15672:15672"  # Management UI (Giao diện Web)
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - factory_net
 
+  # 2. MinIO Server (Object Storage lưu trữ ảnh)
+  minio:
+    image: minio/minio:latest
+    container_name: minio_server
+    ports:
+      - "9000:9000" # API Port (Spring Boot / Client gọi vào đây)
+      - "9001:9001" # Web Console (Admin vào xem file)
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin123"
+      MINIO_API_CORS_ALLOW_ORIGIN: "*" # Tránh lỗi CORS khi iPad Web App upload/download
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - factory_net
+
+  # 3. MinIO Client (Tự động khởi tạo Bucket khi MinIO vừa chạy lên)
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      mc mb myminio/factory-assets --ignore-existing;
+      mc anonymous set private myminio/factory-assets;
+      echo 'Bucket factory-assets đã sẵn sàng!';
+      "
+    networks:
+      - factory_net
+
+# Cấu hình Volumes để dữ liệu không mất đi khi tắt Docker
 volumes:
   rabbitmq_data:
+  minio_data:
+
+# Cấu hình Network nội bộ
+networks:
+  factory_net:
+    driver: bridge

@@ -82,9 +82,9 @@ VALUES (1, 1),
 -- ============================================================================
 
 -- Sections (Xưởng)
-INSERT INTO sections (id, name, manager_id, created_by)
-VALUES (1, 'Xưởng Gia Công Cơ Khí', 2, 'ROLE_ADMIN'),
-       (2, 'Xưởng Lắp Ráp & Đóng Gói', 2, 'ROLE_ADMIN');
+INSERT INTO sections (id, code, name, manager_id, created_by)
+VALUES (1, 'SEC01', 'Xưởng Gia Công Cơ Khí', 2, 'ROLE_ADMIN'),
+       (2, 'SEC02', 'Xưởng Lắp Ráp & Đóng Gói', 2, 'ROLE_ADMIN');
 
 -- Groups (Dây chuyền / Khu vực)
 INSERT INTO `groups` (id, section_id, name, supervisor_id, created_by)
@@ -93,10 +93,10 @@ VALUES (1, 1, 'Khu Vực Tiện CNC', 3, 'ROLE_ADMIN'),
        (3, 2, 'Khu Vực Lắp Ráp Máy Bơm', 4, 'ROLE_ADMIN');
 
 -- Product Lines (Dòng sản phẩm - Table mới)
-INSERT INTO product_lines (id, group_id, name, created_by)
-VALUES (1, 1, 'Dòng Máy Bơm Nước P1', 'ROLE_ADMIN'),
-       (2, 2, 'Dòng Bơm Thủy Lực P2', 'ROLE_ADMIN'),
-       (3, 3, 'Dây Chuyền Lắp Ráp Động Cơ Nổ', 'ROLE_ADMIN');
+INSERT INTO product_lines (id, code, name, group_id, created_by)
+VALUES (1, 'PL-P1', 'Dòng Máy Bơm Nước P1', 1, 'ROLE_ADMIN'),
+       (2, 'PL-P2', 'Dòng Bơm Thủy Lực P2', 2, 'ROLE_ADMIN'),
+       (3, 'PL-DE', 'Dây Chuyền Lắp Ráp Động Cơ Nổ', 3, 'ROLE_ADMIN');
 
 -- Teams (Tổ sản xuất)
 INSERT INTO teams (id, group_id, name, team_leader_id, created_by)
@@ -155,77 +155,84 @@ INSERT INTO defects (defect_code,
                      defect_description,
                      process_id,
                      detected_date,
-                     is_escaped,
+                     defect_type,
+                     origin_measures,
+                     outflow_measures,
                      note,
                      origin_cause,
                      outflow_cause,
                      cause_point,
                      created_by)
-VALUES ('DF001', 'Xước bề mặt trục', 1, '2023-09-01', FALSE, 'Phát hiện tại OP10', 'Dao cụ mòn',
-        'Không kiểm tra dao định kỳ', 'Tiện', 'system'),
-       ('DF002', 'Sai dung sai đường kính', 1, '2023-09-02', TRUE, 'Lọt lắp ráp', 'Sai offset', 'QC không kiểm 100%',
+VALUES ('DF001', 'Xước bề mặt trục', 1, '2023-09-01', 'DEFECTIVE_GOODS', 'Tăng tần suất kiểm tra dao',
+        'Thêm bước kiểm tra dao vào checklist', 'Phát hiện tại OP10', 'Dao cụ mòn', 'Không kiểm tra dao định kỳ',
         'Tiện', 'system'),
-       ('DF003', 'Bavia chưa xử lý', 1, '2023-09-03', FALSE, 'Phát hiện QC', 'Thiếu bước deburr', 'Không có checklist',
-        'Hoàn thiện', 'system'),
-       ('DF004', 'Sai vị trí lỗ', 1, '2023-09-04', FALSE, 'Máy lệch tâm', 'Đồ gá không cố định',
-        'Không xác nhận đầu ca', 'Khoan', 'system'),
-       ('DF005', 'Biến dạng sau ép', 1, '2023-09-05', TRUE, 'Lọt công đoạn sau', 'Áp lực ép lớn',
-        'Không kiểm tra lực ép', 'Ép', 'system'),
+       ('DF002', 'Sai dung sai đường kính', 1, '2023-09-02', 'CLAIM', 'Hiệu chỉnh lại máy', 'Đào tạo lại QC',
+        'Lọt lắp ráp', 'Sai offset', 'QC không kiểm 100%', 'Tiện', 'system'),
+       ('DF003', 'Bavia chưa xử lý', 1, '2023-09-03', 'DEFECTIVE_GOODS', 'Bổ sung bước deburr vào quy trình',
+        'Tạo checklist kiểm tra', 'Phát hiện QC', 'Thiếu bước deburr', 'Không có checklist', 'Hoàn thiện', 'system'),
+       ('DF004', 'Sai vị trí lỗ', 1, '2023-09-04', 'DEFECTIVE_GOODS', 'Sửa lại đồ gá', 'Thêm bước xác nhận đầu ca',
+        'Máy lệch tâm', 'Đồ gá không cố định', 'Không xác nhận đầu ca', 'Khoan', 'system'),
+       ('DF005', 'Biến dạng sau ép', 1, '2023-09-05', 'CLAIM', 'Hiệu chỉnh lực ép', 'Thêm bước kiểm tra lực ép',
+        'Lọt công đoạn sau', 'Áp lực ép lớn', 'Không kiểm tra lực ép', 'Ép', 'system'),
 
-       ('DF006', 'Nứt bề mặt', 1, '2023-09-06', FALSE, 'Kiểm tra từ tính', 'Nhiệt luyện sai',
-        'Không kiểm soát nhiệt độ', 'Nhiệt luyện', 'system'),
-       ('DF007', 'Sai độ nhám', 1, '2023-09-07', TRUE, 'Khách hàng phản hồi', 'Thông số sai',
-        'Thiếu kiểm tra cuối line', 'Tiện', 'system'),
-       ('DF008', 'Ren bị mòn', 1, '2023-09-08', FALSE, 'Dao ren mòn', 'Dao quá tuổi thọ', 'Không thay dao định kỳ',
-        'Tiện ren', 'system'),
-       ('DF009', 'Sai kích thước then', 1, '2023-09-09', FALSE, 'Sai bản vẽ', 'Cập nhật nhầm version',
-        'Không review bản vẽ', 'Phay', 'system'),
-       ('DF010', 'Trầy xước nội bộ', 1, '2023-09-10', TRUE, 'Vận chuyển nội bộ', 'Không có khay đựng',
-        'Không kiểm tra packaging', 'Vận chuyển', 'system'),
-
-       ('DF011', 'Sai lực siết vít', 1, '2023-09-11', FALSE, 'Torque sai', 'Chưa calibrate',
-        'Không kiểm tra torque định kỳ', 'Lắp ráp', 'system'),
-       ('DF012', 'Sai vị trí rãnh', 1, '2023-09-12', FALSE, 'Lệch dao', 'Set dao sai', 'Không kiểm tra first piece',
-        'Phay', 'system'),
-       ('DF013', 'Sai chiều dài tổng', 1, '2023-09-13', TRUE, 'Lọt QC', 'Offset sai', 'Không kiểm tra 3 mẫu đầu',
-        'Tiện', 'system'),
-       ('DF014', 'Rỗ bề mặt', 1, '2023-09-14', FALSE, 'Vật liệu lỗi', 'Nguyên liệu kém', 'Không kiểm incoming', 'Tiện',
+       ('DF006', 'Nứt bề mặt', 1, '2023-09-06', 'DEFECTIVE_GOODS', 'Hiệu chỉnh lò nhiệt', 'Giám sát nhiệt độ chặt chẽ',
+        'Kiểm tra từ tính', 'Nhiệt luyện sai', 'Không kiểm soát nhiệt độ', 'Nhiệt luyện', 'system'),
+       ('DF007', 'Sai độ nhám', 1, '2023-09-07', 'STARTLED_CLAIM', 'Cập nhật lại thông số',
+        'Thêm trạm kiểm tra cuối line', 'Khách hàng phản hồi', 'Thông số sai', 'Thiếu kiểm tra cuối line', 'Tiện',
         'system'),
-       ('DF015', 'Cong vênh chi tiết', 1, '2023-09-15', TRUE, 'Biến dạng', 'Nhiệt luyện sai', 'Không kiểm nhiệt độ',
-        'Nhiệt luyện', 'system'),
+       ('DF008', 'Ren bị mòn', 1, '2023-09-08', 'DEFECTIVE_GOODS', 'Thay dao định kỳ', 'Quản lý tuổi thọ dao',
+        'Dao ren mòn', 'Dao quá tuổi thọ', 'Không thay dao định kỳ', 'Tiện ren', 'system'),
+       ('DF009', 'Sai kích thước then', 1, '2023-09-09', 'DEFECTIVE_GOODS', 'Cập nhật lại bản vẽ',
+        'Quy trình review bản vẽ', 'Sai bản vẽ', 'Cập nhật nhầm version', 'Không review bản vẽ', 'Phay', 'system'),
+       ('DF010', 'Trầy xước nội bộ', 1, '2023-09-10', 'CLAIM', 'Sử dụng khay chuyên dụng', 'Kiểm tra packaging',
+        'Vận chuyển nội bộ', 'Không có khay đựng', 'Không kiểm tra packaging', 'Vận chuyển', 'system'),
 
-       ('DF016', 'Tràn keo terminal', 2, '2023-10-01', FALSE, 'Keo quá mức', 'Cài đặt sai', 'Không hiệu chỉnh đầu ca',
+       ('DF011', 'Sai lực siết vít', 1, '2023-09-11', 'DEFECTIVE_GOODS', 'Hiệu chỉnh súng torque',
+        'Kiểm tra torque định kỳ', 'Torque sai', 'Chưa calibrate', 'Không kiểm tra torque định kỳ', 'Lắp ráp',
+        'system'),
+       ('DF012', 'Sai vị trí rãnh', 1, '2023-09-12', 'DEFECTIVE_GOODS', 'Đào tạo lại cách set dao',
+        'Kiểm tra first piece 100%', 'Lệch dao', 'Set dao sai', 'Không kiểm tra first piece', 'Phay', 'system'),
+       ('DF013', 'Sai chiều dài tổng', 1, '2023-09-13', 'CLAIM', 'Hiệu chỉnh offset', 'Kiểm tra 3 mẫu đầu', 'Lọt QC',
+        'Offset sai', 'Không kiểm tra 3 mẫu đầu', 'Tiện', 'system'),
+       ('DF014', 'Rỗ bề mặt', 1, '2023-09-14', 'DEFECTIVE_GOODS', 'Kiểm tra vật liệu đầu vào',
+        'Yêu cầu chứng chỉ vật liệu', 'Vật liệu lỗi', 'Nguyên liệu kém', 'Không kiểm incoming', 'Tiện', 'system'),
+       ('DF015', 'Cong vênh chi tiết', 1, '2023-09-15', 'CLAIM', 'Hiệu chỉnh quy trình nhiệt luyện',
+        'Kiểm soát nhiệt độ chặt chẽ', 'Biến dạng', 'Nhiệt luyện sai', 'Không kiểm nhiệt độ', 'Nhiệt luyện', 'system'),
+
+       ('DF016', 'Tràn keo terminal', 2, '2023-10-01', 'DEFECTIVE_GOODS', 'Hiệu chỉnh máy bơm keo',
+        'Kiểm tra đầu ca', 'Keo quá mức', 'Cài đặt sai', 'Không hiệu chỉnh đầu ca', 'Bơm keo', 'system'),
+       ('DF017', 'Thiếu lượng keo', 2, '2023-10-02', 'CLAIM', 'Bảo trì bơm định kỳ', 'Kiểm tra định lượng',
+        'Test fail', 'Bơm không ổn định', 'Không kiểm tra định lượng', 'Bơm keo', 'system'),
+       ('DF018', 'Sai cực linh kiện', 2, '2023-10-03', 'DEFECTIVE_GOODS', 'Đào tạo lại nhân viên',
+        'Thêm bước kiểm tra visual', 'Lắp ngược', 'Thiếu đào tạo', 'Không kiểm tra visual', 'Lắp ráp', 'system'),
+       ('DF019', 'Hở mối hàn', 2, '2023-10-04', 'CLAIM', 'Hiệu chỉnh nhiệt độ hàn', 'Tăng cường kiểm tra AOI',
+        'AOI bỏ sót', 'Nhiệt hàn thấp', 'Không kiểm nhiệt độ', 'Hàn', 'system'),
+       ('DF020', 'Cháy linh kiện', 2, '2023-10-05', 'CLAIM', 'Hiệu chỉnh máy test', 'Kiểm tra setup máy',
+        'Sai điện áp', 'Cài đặt máy sai', 'Không kiểm setup', 'Test điện', 'system'),
+
+       ('DF021', 'Lệch vị trí bắt vít', 2, '2023-10-06', 'DEFECTIVE_GOODS', 'Sửa lại template', 'Kiểm tra jig đầu ca',
+        'Template sai', 'Không cố định jig', 'Không kiểm tra đầu ca', 'Lắp ráp', 'system'),
+       ('DF022', 'Bong keo test nhiệt', 2, '2023-10-07', 'STARTLED_CLAIM', 'Thay đổi nhà cung cấp keo',
+        'Kiểm tra vật liệu đầu vào', 'Khách hàng trả về', 'Keo kém chất lượng', 'Không kiểm vật liệu đầu vào',
         'Bơm keo', 'system'),
-       ('DF017', 'Thiếu lượng keo', 2, '2023-10-02', TRUE, 'Test fail', 'Bơm không ổn định',
-        'Không kiểm tra định lượng', 'Bơm keo', 'system'),
-       ('DF018', 'Sai cực linh kiện', 2, '2023-10-03', FALSE, 'Lắp ngược', 'Thiếu đào tạo', 'Không kiểm tra visual',
-        'Lắp ráp', 'system'),
-       ('DF019', 'Hở mối hàn', 2, '2023-10-04', TRUE, 'AOI bỏ sót', 'Nhiệt hàn thấp', 'Không kiểm nhiệt độ', 'Hàn',
-        'system'),
-       ('DF020', 'Cháy linh kiện', 2, '2023-10-05', TRUE, 'Sai điện áp', 'Cài đặt máy sai', 'Không kiểm setup',
-        'Test điện', 'system'),
+       ('DF023', 'Thiếu linh kiện nhỏ', 2, '2023-10-08', 'DEFECTIVE_GOODS', 'Sử dụng hệ thống pick-to-light',
+        'Kiểm tra final 100%', 'Sót linh kiện', 'Không check BOM', 'Không kiểm final', 'Lắp ráp', 'system'),
+       ('DF024', 'Nứt chân linh kiện', 2, '2023-10-09', 'DEFECTIVE_GOODS', 'Đào tạo lại thao tác',
+        'Sử dụng khay đựng phù hợp', 'Va chạm', 'Handling sai', 'Không đào tạo thao tác', 'Lắp ráp', 'system'),
+       ('DF025', 'Sai barcode', 2, '2023-10-10', 'CLAIM', 'Sửa lại template in', 'Review file in trước khi in',
+        'In sai mã', 'Template lỗi', 'Không review file in', 'In nhãn', 'system'),
 
-       ('DF021', 'Lệch vị trí bắt vít', 2, '2023-10-06', FALSE, 'Template sai', 'Không cố định jig',
-        'Không kiểm tra đầu ca', 'Lắp ráp', 'system'),
-       ('DF022', 'Bong keo test nhiệt', 2, '2023-10-07', TRUE, 'Khách hàng trả về', 'Keo kém chất lượng',
-        'Không kiểm vật liệu đầu vào', 'Bơm keo', 'system'),
-       ('DF023', 'Thiếu linh kiện nhỏ', 2, '2023-10-08', FALSE, 'Sót linh kiện', 'Không check BOM', 'Không kiểm final',
-        'Lắp ráp', 'system'),
-       ('DF024', 'Nứt chân linh kiện', 2, '2023-10-09', FALSE, 'Va chạm', 'Handling sai', 'Không đào tạo thao tác',
-        'Lắp ráp', 'system'),
-       ('DF025', 'Sai barcode', 2, '2023-10-10', TRUE, 'In sai mã', 'Template lỗi', 'Không review file in', 'In nhãn',
+       ('DF026', 'Chạm chập mạch', 2, '2023-10-11', 'STARTLED_CLAIM', 'Hiệu chỉnh máy hàn', 'Tăng cường kiểm tra AOI',
+        'Khách hàng phản hồi', 'Hàn dư thiếc', 'Không kiểm AOI', 'Hàn', 'system'),
+       ('DF027', 'Sai thông số điện trở', 2, '2023-10-12', 'DEFECTIVE_GOODS', 'Sử dụng máy quét barcode',
+        'Xác nhận linh kiện trước khi lắp', 'Chọn nhầm part', 'Thiếu xác nhận linh kiện', 'Không check BOM', 'Lắp ráp',
         'system'),
-
-       ('DF026', 'Chạm chập mạch', 2, '2023-10-11', TRUE, 'Khách hàng phản hồi', 'Hàn dư thiếc', 'Không kiểm AOI',
-        'Hàn', 'system'),
-       ('DF027', 'Sai thông số điện trở', 2, '2023-10-12', FALSE, 'Chọn nhầm part', 'Thiếu xác nhận linh kiện',
-        'Không check BOM', 'Lắp ráp', 'system'),
-       ('DF028', 'Bể vỏ khi ép', 2, '2023-10-13', TRUE, 'Lực ép lớn', 'Cài đặt sai', 'Không kiểm lực ép', 'Ép vỏ',
-        'system'),
-       ('DF029', 'Hở gioăng', 2, '2023-10-14', FALSE, 'Lắp lệch', 'Thiếu guide', 'Không kiểm cuối line', 'Lắp ráp',
-        'system'),
-       ('DF030', 'Sai thứ tự lắp ráp', 2, '2023-10-15', TRUE, 'Lọt QC', 'Không theo WI', 'Không giám sát', 'Assembly',
-        'system');
+       ('DF028', 'Bể vỏ khi ép', 2, '2023-10-13', 'CLAIM', 'Hiệu chỉnh lực ép', 'Kiểm tra lực ép định kỳ',
+        'Lực ép lớn', 'Cài đặt sai', 'Không kiểm lực ép', 'Ép vỏ', 'system'),
+       ('DF029', 'Hở gioăng', 2, '2023-10-14', 'DEFECTIVE_GOODS', 'Sử dụng guide lắp ráp', 'Kiểm tra cuối line',
+        'Lắp lệch', 'Thiếu guide', 'Không kiểm cuối line', 'Lắp ráp', 'system'),
+       ('DF030', 'Sai thứ tự lắp ráp', 2, '2023-10-15', 'CLAIM', 'Đào tạo lại quy trình', 'Giám sát chặt chẽ hơn',
+        'Lọt QC', 'Không theo WI', 'Không giám sát', 'Assembly', 'system');
 -- Defect Proposals (Header)
 INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, created_by)
 VALUES (1, 1, 'APPROVED', 1, 'DEF-2023-001', 'tl_prod01'),
@@ -233,14 +240,16 @@ VALUES (1, 1, 'APPROVED', 1, 'DEF-2023-001', 'tl_prod01'),
 
 -- Defect Proposal Details
 INSERT INTO defect_proposal_details (defect_proposal_id, defect_id, proposal_type, defect_description, process_id,
-                                     detected_date, is_escaped, note, origin_cause, outflow_cause, cause_point,
-                                     created_by)
-VALUES (1, 1, 'CREATE', 'Xước bề mặt trục do dao cụ mòn', 2, '2023-09-15', FALSE, 'Đã xử lý dao', 'Dao mẻ',
-        'Không soi đèn kỹ', 'Tại đài dao', 'tl_prod01'),
-       (1, 2, 'CREATE', 'Lỗi kích thước đường kính ngoài dung sai', 1, '2023-09-20', TRUE, 'Lọt ra khâu lắp ráp',
-        'Setup sai thông số', 'Đo sai cách', 'Tại khâu kẹp phôi', 'tl_prod01'),
-       (2, 3, 'CREATE', 'Rò rỉ ron cao su khi test áp lực', 5, '2023-10-05', TRUE, 'Cần huấn luyện khẩn',
-        'Rách ron khi ép', 'Lực ép tay không đều', 'Trạm ép ron', 'tl_prod03');
+                                     detected_date, defect_type, origin_measures, outflow_measures, note,
+                                     origin_cause, outflow_cause, cause_point, created_by)
+VALUES (1, 1, 'CREATE', 'Xước bề mặt trục do dao cụ mòn', 2, '2023-09-15', 'DEFECTIVE_GOODS', 'Thay dao mới',
+        'Tăng tần suất kiểm tra', 'Đã xử lý dao', 'Dao mẻ', 'Không soi đèn kỹ', 'Tại đài dao', 'tl_prod01'),
+       (1, 2, 'CREATE', 'Lỗi kích thước đường kính ngoài dung sai', 1, '2023-09-20', 'CLAIM', 'Hiệu chỉnh máy',
+        'Đào tạo lại cách đo', 'Lọt ra khâu lắp ráp', 'Setup sai thông số', 'Đo sai cách', 'Tại khâu kẹp phôi',
+        'tl_prod01'),
+       (2, 3, 'CREATE', 'Rò rỉ ron cao su khi test áp lực', 5, '2023-10-05', 'CLAIM', 'Sử dụng đồ gá mới',
+        'Đào tạo lại thao tác ép', 'Cần huấn luyện khẩn', 'Rách ron khi ép', 'Lực ép tay không đều', 'Trạm ép ron',
+        'tl_prod03');
 
 
 -- ============================================================================
@@ -398,41 +407,41 @@ VALUES (1, 1, 'CREATE', 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ', 'Mẫu NG 
 -- Team 3 (Line 3): NV 7
 -- ============================================================================
 INSERT INTO training_plans (id, form_code, title, month_start, month_end, team_id, line_id, status, current_version,
-                            note, created_by)
+                            note, min_training_per_day, max_training_per_day, created_by)
 VALUES
 -- 5 Kế hoạch gốc (1 tháng)
 (1, 'TR_PLAN_TIEN_001', 'Kế hoạch huấn luyện T3/2026 - Line Tiện CNC', '2026-03-01', '2026-03-31', 1, 1, 'APPROVED', 2,
- 'Đã duyệt. NV001 có 2 lần thêm.', 'tl_prod01'),
+ 'Đã duyệt. NV001 có 2 lần thêm.', 1, 3, 'tl_prod01'),
 (2, 'TR_PLAN_TIEN_002', 'Kế hoạch huấn luyện T4/2026 - Line Tiện CNC', '2026-04-01', '2026-04-30', 1, 1, 'DRAFT', 1,
- 'Đang soạn thảo, chưa submit.', 'tl_prod01'),
+ 'Đang soạn thảo, chưa submit.', 1, 3, 'tl_prod01'),
 (3, 'TR_PLAN_PHAY_001', 'Kế hoạch huấn luyện T3/2026 - Line Phay CNC', '2026-03-01', '2026-03-31', 2, 2, 'WAITING_SV',
- 1, 'Đã submit, chờ ROLE_SUPERVISOR duyệt.', 'tl_prod02'),
-(4, 'TR_PLAN_LAP_001', 'Kế hoạch huấn luyện T3/2026 - Line Lắp Ráp', '2026-03-01', '2026-03-31', 3, 3, 'REJECTED_BY_SV',
- 1, 'Bị SV trả lại vì thiếu lịch cho NV007.', 'tl_prod03'),
+ 1, 'Đã submit, chờ ROLE_SUPERVISOR duyệt.', 1, 3, 'tl_prod02'),
+(4, 'TR_PLAN_LAP_001', 'Kế hoạch huấn luyện T3/2026 - Line Lắp Ráp', '2026-03-01', '2026-03-31', 3, 3,
+ 'REJECTED_BY_SV', 1, 'Bị SV trả lại vì thiếu lịch cho NV007.', 1, 3, 'tl_prod03'),
 (5, 'TR_PLAN_PHAY_002', 'Kế hoạch huấn luyện T2/2026 - Line Phay CNC', '2026-02-01', '2026-02-28', 2, 2, 'APPROVED', 1,
- 'Tháng 2, đã duyệt và hoàn thành.', 'tl_prod02'),
+ 'Tháng 2, đã duyệt và hoàn thành.', 1, 3, 'tl_prod02'),
 
 -- 10 Kế hoạch mới (Nhiều tháng)
 (6, 'TR_PLAN_TIEN_003', 'Kế hoạch huấn luyện T4-T5/2026 - Line Tiện CNC', '2026-04-01', '2026-05-31', 1, 1, 'APPROVED',
- 1, 'Kế hoạch 2 tháng. Đã duyệt.', 'tl_prod01'),
+ 1, 'Kế hoạch 2 tháng. Đã duyệt.', 1, 3, 'tl_prod01'),
 (7, 'TR_PLAN_PHAY_003', 'Kế hoạch huấn luyện T5-T7/2026 - Line Phay CNC', '2026-05-01', '2026-07-31', 2, 2, 'APPROVED',
- 1, 'Kế hoạch 3 tháng. Đã duyệt.', 'tl_prod02'),
+ 1, 'Kế hoạch 3 tháng. Đã duyệt.', 1, 3, 'tl_prod02'),
 (8, 'TR_PLAN_LAP_002', 'Kế hoạch huấn luyện T6-T9/2026 - Line Lắp Ráp', '2026-06-01', '2026-09-30', 3, 3, 'WAITING_SV',
- 1, 'Kế hoạch 4 tháng dài hạn, chờ SV duyệt.', 'tl_prod03'),
+ 1, 'Kế hoạch 4 tháng dài hạn, chờ SV duyệt.', 1, 3, 'tl_prod03'),
 (9, 'TR_PLAN_TIEN_004', 'Kế hoạch huấn luyện T7-T8/2026 - Line Tiện CNC', '2026-07-01', '2026-08-31', 1, 1, 'DRAFT', 1,
- 'Đang soạn thảo cho Quý 3.', 'tl_prod01'),
+ 'Đang soạn thảo cho Quý 3.', 1, 3, 'tl_prod01'),
 (10, 'TR_PLAN_PHAY_004', 'Kế hoạch huấn luyện T8-T10/2026 - Line Phay CNC', '2026-08-01', '2026-10-31', 2, 2,
- 'APPROVED', 1, 'Đã duyệt cho T8, T9, T10.', 'tl_prod02'),
+ 'APPROVED', 1, 'Đã duyệt cho T8, T9, T10.', 1, 3, 'tl_prod02'),
 (11, 'TR_PLAN_LAP_003', 'Kế hoạch huấn luyện T9-T10/2026 - Line Lắp Ráp', '2026-09-01', '2026-10-31', 3, 3,
- 'REJECTED_BY_SV', 1, 'Bị từ chối do trùng lịch sản xuất lớn T9.', 'tl_prod03'),
-(12, 'TR_PLAN_TIEN_005', 'Kế hoạch huấn luyện T1-T4/2026 - Line Tiện CNC', '2026-01-01', '2026-04-30', 1, 1, 'APPROVED',
- 1, 'Kế hoạch đầu năm, đã hoàn tất toàn bộ.', 'tl_prod01'),
+ 'REJECTED_BY_SV', 1, 'Bị từ chối do trùng lịch sản xuất lớn T9.', 1, 3, 'tl_prod03'),
+(12, 'TR_PLAN_TIEN_005', 'Kế hoạch huấn luyện T1-T4/2026 - Line Tiện CNC', '2026-01-01', '2026-04-30', 1, 1,
+ 'APPROVED', 1, 'Kế hoạch đầu năm, đã hoàn tất toàn bộ.', 1, 3, 'tl_prod01'),
 (13, 'TR_PLAN_PHAY_005', 'Kế hoạch huấn luyện T10-T11/2026 - Line Phay CNC', '2026-10-01', '2026-11-30', 2, 2, 'DRAFT',
- 1, 'Dự thảo cuối năm.', 'tl_prod02'),
+ 1, 'Dự thảo cuối năm.', 1, 3, 'tl_prod02'),
 (14, 'TR_PLAN_LAP_004', 'Kế hoạch huấn luyện T11-T1/2027 - Line Lắp Ráp', '2026-11-01', '2027-01-31', 3, 3,
- 'WAITING_SV', 1, 'Kế hoạch vắt qua năm sau, chờ duyệt.', 'tl_prod03'),
+ 'WAITING_SV', 1, 'Kế hoạch vắt qua năm sau, chờ duyệt.', 1, 3, 'tl_prod03'),
 (15, 'TR_PLAN_TIEN_006', 'Kế hoạch huấn luyện T11-T12/2026 - Line Tiện CNC', '2026-11-01', '2026-12-31', 1, 1,
- 'APPROVED', 1, 'Chốt sổ cuối năm 2026, đã duyệt.', 'tl_prod01');
+ 'APPROVED', 1, 'Chốt sổ cuối năm 2026, đã duyệt.', 1, 3, 'tl_prod01');
 
 
 -- ============================================================================
@@ -602,76 +611,77 @@ VALUES (1, 1, 'Kết quả huấn luyện T3/2026 - Line Tiện', 'TR_RES_TIEN_0
 -- 6. TRAINING RESULT DETAILS (Mapping 1-1 với ID của bảng Training Plan Details)
 -- ============================================================================
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, process_id,
-                                     training_sample_id, product_id, classification, cycle_time_standard,
+                                     training_sample_id, product_id, classification, training_topic, sample_code,
+                                     cycle_time_standard,
                                      planned_date, actual_date, time_in, time_start_op, time_out, status,
                                      detection_time, is_pass, note, is_retrained,
                                      signature_pro_in, signature_fi_in, signature_pro_out, signature_fi_out, created_by)
 VALUES
 -- Mapping với Result 1 (Kế hoạch 1 gốc)
-(1, 1, 1, 1, 2, 1, 2, 15.00, '2026-03-05', '2026-03-05', '08:00:00', '08:03:00', '08:18:00', 'APPROVED', 14, TRUE,
- 'Thao tác OP10 tốt', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(1, 2, 1, 2, 1, 1, 1, 20.00, '2026-03-12', '2026-03-12', '09:00:00', '09:02:00', '09:22:00', 'APPROVED', 19, TRUE,
- 'Soi đèn đúng góc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(1, 3, 1, 1, NULL, NULL, NULL, NULL, '2026-03-19', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ ngày 19/3',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
-(1, 4, 1, 2, NULL, NULL, NULL, NULL, '2026-03-22', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ ngày 22/3',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
-(1, 5, 1, 1, NULL, NULL, NULL, NULL, '2026-03-28', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ ngày 28/3',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
-(1, 6, 2, 1, 2, 1, 2, 15.00, '2026-03-06', '2026-03-06', '08:30:00', '08:33:00', '08:48:00', 'APPROVED', 13, TRUE,
- 'NV002 chuẩn', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(1, 7, 2, 1, NULL, NULL, NULL, NULL, '2026-03-20', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ ngày 20/3',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
-(1, 9, 3, 1, NULL, NULL, NULL, NULL, '2026-03-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ ngày 15/3',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(1, 1, 1, 1, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-03-05', '2026-03-05', '08:00:00', '08:03:00', '08:18:00',
+ 'APPROVED', 14, TRUE, 'Thao tác OP10 tốt', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(1, 2, 1, 2, 1, 1, 1, NULL, 'Mẫu NG #55', 20.00, '2026-03-12', '2026-03-12', '09:00:00', '09:02:00', '09:22:00',
+ 'APPROVED', 19, TRUE, 'Soi đèn đúng góc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(1, 3, 1, 1, NULL, NULL, NULL, 'Huấn luyện đột xuất', NULL, NULL, '2026-03-19', NULL, NULL, NULL, NULL, 'PENDING',
+ NULL, NULL, 'Chờ ngày 19/3', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(1, 4, 1, 2, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-22', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chờ ngày 22/3', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(1, 5, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-28', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chờ ngày 28/3', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(1, 6, 2, 1, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-03-06', '2026-03-06', '08:30:00', '08:33:00', '08:48:00',
+ 'APPROVED', 13, TRUE, 'NV002 chuẩn', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(1, 7, 2, 1, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-20', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chờ ngày 20/3', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(1, 9, 3, 1, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chờ ngày 15/3', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
 
 -- Mapping với Result 2 (Kế hoạch 5 gốc - APPROVED toàn bộ)
-(2, 22, 4, 3, NULL, 2, 3, 18.00, '2026-02-05', '2026-02-05', '08:00:00', '08:02:00', '08:20:00', 'APPROVED', 16, TRUE,
- 'NV004 OK', FALSE, 6, 9, 6, 9, 'tl_prod02'),
-(2, 23, 4, 3, NULL, 2, 3, 18.00, '2026-02-18', '2026-02-18', '09:00:00', '09:03:00', '09:21:00', 'APPROVED', 17, TRUE,
- 'NV004 lần 2', FALSE, 6, 9, 6, 9, 'tl_prod02'),
-(2, 24, 5, 3, NULL, 2, 3, 18.00, '2026-02-10', '2026-02-10', '10:00:00', '10:02:00', '10:20:00', 'APPROVED', 15, TRUE,
- 'NV005 tốt', FALSE, 6, 9, 6, 9, 'tl_prod02'),
-(2, 25, 5, 3, NULL, 2, 3, 18.00, '2026-02-25', '2026-02-25', '08:30:00', '08:32:00', '08:50:00', 'APPROVED', 16, TRUE,
- 'NV005 lần 2', FALSE, 6, 9, 6, 9, 'tl_prod02'),
+(2, 22, 4, 3, 8, 2, 3, NULL, 'Mẫu NG #70', 18.00, '2026-02-05', '2026-02-05', '08:00:00', '08:02:00', '08:20:00',
+ 'APPROVED', 16, TRUE, 'NV004 OK', FALSE, 6, 9, 6, 9, 'tl_prod02'),
+(2, 23, 4, 3, 9, 2, 3, NULL, 'Mẫu NG #71', 18.00, '2026-02-18', '2026-02-18', '09:00:00', '09:03:00', '09:21:00',
+ 'APPROVED', 17, TRUE, 'NV004 lần 2', FALSE, 6, 9, 6, 9, 'tl_prod02'),
+(2, 24, 5, 3, 10, 2, 3, NULL, 'Mẫu chuẩn #02', 18.00, '2026-02-10', '2026-02-10', '10:00:00', '10:02:00', '10:20:00',
+ 'APPROVED', 15, TRUE, 'NV005 tốt', FALSE, 6, 9, 6, 9, 'tl_prod02'),
+(2, 25, 5, 3, 11, 2, 3, NULL, 'Mẫu chuẩn #03', 18.00, '2026-02-25', '2026-02-25', '08:30:00', '08:32:00', '08:50:00',
+ 'APPROVED', 16, TRUE, 'NV005 lần 2', FALSE, 6, 9, 6, 9, 'tl_prod02'),
 
 -- Mapping với Result 3 (Kế hoạch 6)
-(3, 26, 1, 1, 2, 1, 2, 15.00, '2026-04-10', '2026-04-10', '08:00:00', '08:05:00', '08:20:00', 'APPROVED', 15, TRUE,
- 'NV001 hoàn thành T4', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(3, 27, 2, 2, NULL, NULL, NULL, NULL, '2026-05-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+(3, 26, 1, 1, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-04-10', '2026-04-10', '08:00:00', '08:05:00', '08:20:00',
+ 'APPROVED', 15, TRUE, 'NV001 hoàn thành T4', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(3, 27, 2, 2, NULL, NULL, NULL, NULL, NULL, NULL, '2026-05-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
  'Chờ tới giữa tháng 5', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
 
 -- Mapping với Result 4 (Kế hoạch 7)
-(4, 28, 4, 3, 1, 2, 3, 18.00, '2026-05-20', '2026-05-20', '09:00:00', '09:02:00', '09:20:00', 'APPROVED', 18, TRUE,
- 'NV004 hoàn thành T5', FALSE, 6, 9, 6, 9, 'tl_prod02'),
-(4, 29, 5, 3, NULL, NULL, NULL, NULL, '2026-06-10', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ T6', FALSE,
- NULL, NULL, NULL, NULL, 'tl_prod02'),
-(4, 30, 4, 3, NULL, NULL, NULL, NULL, '2026-07-05', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ T7', FALSE,
- NULL, NULL, NULL, NULL, 'tl_prod02'),
+(4, 28, 4, 3, 1, 2, 3, NULL, 'Mẫu NG #55', 18.00, '2026-05-20', '2026-05-20', '09:00:00', '09:02:00', '09:20:00',
+ 'APPROVED', 18, TRUE, 'NV004 hoàn thành T5', FALSE, 6, 9, 6, 9, 'tl_prod02'),
+(4, 29, 5, 3, NULL, NULL, NULL, NULL, NULL, NULL, '2026-06-10', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ T6',
+ FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
+(4, 30, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-05', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chờ T7',
+ FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
 
 -- Mapping với Result 5 (Kế hoạch 10)
-(5, 35, 4, 3, NULL, NULL, NULL, NULL, '2026-08-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chưa tới hạn',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
-(5, 36, 5, 3, NULL, NULL, NULL, NULL, '2026-09-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chưa tới hạn',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
-(5, 37, 5, 3, NULL, NULL, NULL, NULL, '2026-10-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Chưa tới hạn',
- FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
+(5, 35, 4, 3, NULL, NULL, NULL, NULL, NULL, NULL, '2026-08-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chưa tới hạn', FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
+(5, 36, 5, 3, NULL, NULL, NULL, NULL, NULL, NULL, '2026-09-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chưa tới hạn', FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
+(5, 37, 5, 3, NULL, NULL, NULL, NULL, NULL, NULL, '2026-10-15', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Chưa tới hạn', FALSE, NULL, NULL, NULL, NULL, 'tl_prod02'),
 
 -- Mapping với Result 6 (Kế hoạch 12 - APPROVED toàn bộ 4 tháng đầu năm)
-(6, 40, 1, 1, 1, 1, 1, 20.00, '2026-01-10', '2026-01-10', '08:00:00', '08:02:00', '08:22:00', 'APPROVED', 20, TRUE,
- 'T1 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(6, 41, 1, 2, 2, 1, 2, 15.00, '2026-02-10', '2026-02-10', '08:30:00', '08:32:00', '08:47:00', 'APPROVED', 15, TRUE,
- 'T2 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(6, 42, 2, 1, 1, 1, 1, 20.00, '2026-03-15', '2026-03-15', '09:00:00', '09:05:00', '09:25:00', 'APPROVED', 20, TRUE,
- 'T3 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
-(6, 43, 2, 2, 2, 1, 2, 15.00, '2026-04-20', '2026-04-20', '10:00:00', '10:01:00', '10:16:00', 'APPROVED', 15, TRUE,
- 'T4 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(6, 40, 1, 1, 1, 1, 1, NULL, 'Mẫu NG #55', 20.00, '2026-01-10', '2026-01-10', '08:00:00', '08:02:00', '08:22:00',
+ 'APPROVED', 20, TRUE, 'T1 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(6, 41, 1, 2, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-02-10', '2026-02-10', '08:30:00', '08:32:00', '08:47:00',
+ 'APPROVED', 15, TRUE, 'T2 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(6, 42, 2, 1, 1, 1, 1, NULL, 'Mẫu NG #55', 20.00, '2026-03-15', '2026-03-15', '09:00:00', '09:05:00', '09:25:00',
+ 'APPROVED', 20, TRUE, 'T3 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(6, 43, 2, 2, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-04-20', '2026-04-20', '10:00:00', '10:01:00', '10:16:00',
+ 'APPROVED', 15, TRUE, 'T4 xuất sắc', FALSE, 5, 8, 5, 8, 'tl_prod01'),
 
 -- Mapping với Result 7 (Kế hoạch 15)
-(7, 49, 1, 1, NULL, NULL, NULL, NULL, '2026-11-11', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Lịch T11', FALSE,
- NULL, NULL, NULL, NULL, 'tl_prod01'),
-(7, 50, 3, 2, NULL, NULL, NULL, NULL, '2026-12-12', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL, 'Lịch T12', FALSE,
- NULL, NULL, NULL, NULL, 'tl_prod01');
+(7, 49, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, '2026-11-11', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Lịch T11', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+(7, 50, 3, 2, NULL, NULL, NULL, NULL, NULL, NULL, '2026-12-12', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
+ 'Lịch T12', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01');
 
 -- ============================================================================
 -- PART 6: NOTIFICATIONS & SYSTEM CONFIGS
@@ -687,11 +697,12 @@ VALUES ('DEFECT_WAITING_SV', '[Hệ Thống Đào Tạo] Báo cáo lỗi cần x
         'TL gửi kế hoạch, thông báo SV', 'ROLE_ADMIN');
 
 -- Notification Settings
-INSERT INTO notification_settings (template_code, is_enabled, remind_before_days, is_persistent, remind_interval_hours,
-                                   max_reminders, preferred_send_time, created_by)
-VALUES ('DEFECT_WAITING_SV', TRUE, 0, FALSE, 24, 1, '08:00:00', 'ROLE_ADMIN'),
-       ('DEFECT_WAITING_ROLE_MANAGER', TRUE, 0, FALSE, 24, 1, '08:00:00', 'ROLE_ADMIN'),
-       ('PLAN_WAITING_SV', TRUE, 0, FALSE, 24, 1, '08:00:00', 'ROLE_ADMIN');
+INSERT INTO notification_settings (template_code, is_enabled, remind_before_days, is_persistent,
+                                   remind_interval_hours, max_reminders, preferred_send_time, escalate_after_days,
+                                   created_by)
+VALUES ('DEFECT_WAITING_SV', TRUE, 0, FALSE, 24, 1, '08:00:00', NULL, 'ROLE_ADMIN'),
+       ('DEFECT_WAITING_ROLE_MANAGER', TRUE, 0, FALSE, 24, 1, '08:00:00', NULL, 'ROLE_ADMIN'),
+       ('PLAN_WAITING_SV', TRUE, 0, FALSE, 24, 1, '08:00:00', NULL, 'ROLE_ADMIN');
 
 
 -- ============================================================================

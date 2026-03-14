@@ -211,8 +211,9 @@ CREATE TABLE role_permissions
 CREATE TABLE sections
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code        VARCHAR(20)  NOT NULL UNIQUE,
     name        VARCHAR(100) NOT NULL,
-    manager_id  BIGINT       NOT NULL,
+    manager_id  BIGINT,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -234,7 +235,7 @@ CREATE TABLE `groups`
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
     section_id    BIGINT       NOT NULL,
     name          VARCHAR(100) NOT NULL,
-    supervisor_id BIGINT       NOT NULL,
+    supervisor_id BIGINT,
 
     delete_flag   BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -305,8 +306,10 @@ CREATE TABLE employees
 CREATE TABLE product_lines
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    group_id    BIGINT       NOT NULL,
+    code        VARCHAR(20)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
+
+    group_id    BIGINT       NOT NULL,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -326,7 +329,6 @@ CREATE TABLE product_lines
 CREATE TABLE processes
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id  BIGINT       NOT NULL,
     code             VARCHAR(20)  NOT NULL,
     name             VARCHAR(200) NOT NULL,
     description      TEXT,
@@ -334,6 +336,8 @@ CREATE TABLE processes
         COMMENT '1,2,3=Quan trọng cần FI ký, 4=Thường',
     standard_time_jt DECIMAL(10, 2)
         COMMENT 'Thời gian tiêu chuẩn (giây)',
+
+    product_line_id  BIGINT       NOT NULL,
 
     delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -430,10 +434,15 @@ CREATE TABLE defects
     defect_code        VARCHAR(255) NOT NULL,
     process_id         BIGINT       NOT NULL,
     detected_date      DATE         NOT NULL,
-    is_escaped         BOOLEAN               DEFAULT FALSE COMMENT 'Lỗi lọt ra ngoài?',
+
     origin_cause       VARCHAR(255),
     outflow_cause      VARCHAR(255),
     cause_point        VARCHAR(255),
+
+    origin_measures    VARCHAR(255),
+    outflow_measures   VARCHAR(255),
+    defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
+
     note               TEXT,
 
     delete_flag        BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -488,11 +497,15 @@ CREATE TABLE defect_proposal_details
     defect_description TEXT                                NOT NULL,
     process_id         BIGINT                              NOT NULL,
     detected_date      DATE                                NOT NULL,
-    is_escaped         BOOLEAN                                      DEFAULT FALSE,
     note               TEXT,
+
     origin_cause       VARCHAR(255),
     outflow_cause      VARCHAR(255),
     cause_point        VARCHAR(255),
+
+    origin_measures    VARCHAR(255),
+    outflow_measures   VARCHAR(255),
+    defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
@@ -554,11 +567,15 @@ CREATE TABLE defect_proposal_detail_history
     process_code               VARCHAR(20),
     process_name               VARCHAR(200),
     detected_date              DATE,
-    is_escaped                 BOOLEAN,
+
     note                       TEXT,
     origin_cause               VARCHAR(255),
     outflow_cause              VARCHAR(255),
     cause_point                VARCHAR(255),
+
+    origin_measures            VARCHAR(255),
+    outflow_measures           VARCHAR(255),
+    defect_type                ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
     delete_flag                BOOLEAN NOT NULL DEFAULT FALSE,
     created_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
