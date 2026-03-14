@@ -33,4 +33,8 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
       AND delete_flag = false
 """, nativeQuery = true)
     Optional<Long> findMaxTrainingCodeSequence();
+
+    List<TrainingSample> findByProductId(Long productId);
+
+    List<TrainingSample> findByProductIdAndProcessId(Long productId, Long processId);
 }

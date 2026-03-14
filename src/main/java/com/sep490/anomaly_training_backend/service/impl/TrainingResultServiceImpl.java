@@ -5,10 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -171,13 +168,15 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 if (reqDetail.getTimeOut() != null) detail.setTimeOut(reqDetail.getTimeOut());
                 if (reqDetail.getDetectionTime() != null) detail.setDetectionTime(reqDetail.getDetectionTime());
 
+                // Auto-calculate isPass if possible
+                if (detail.getTimeIn() != null && detail.getTimeOut() != null && detail.getCycleTimeStandard() != null) {
+                    long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut()).toSeconds();
+                    detail.setIsPass(actualSeconds <= detail.getCycleTimeStandard().longValue());
+                }
+
+                // Manual override from FE always takes precedence
                 if (reqDetail.getIsPass() != null) {
                     detail.setIsPass(reqDetail.getIsPass());
-                } else if (detail.getTimeIn() != null && detail.getTimeOut() != null
-                        && detail.getCycleTimeStandard() != null) {
-                    long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut()).toSeconds();
-                    boolean autoPass = actualSeconds <= detail.getCycleTimeStandard().longValue();
-                    detail.setIsPass(autoPass);
                 }
 
                 if (reqDetail.getNote() != null) detail.setNote(reqDetail.getNote());
@@ -500,25 +499,38 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public List<TrainingResultOptionResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId) {
+    public List<TrainingResultProcessResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId) {
         List<EmployeeSkill> skills = employeeSkillRepository
-                .findByEmployeeIdAndProcessProductLineId(employeeId, lineId);
+                .findSkillsByEmployeeAndLine(employeeId, lineId);
         return skills.stream()
                 .map(skill -> {
                     com.sep490.anomaly_training_backend.model.Process p = skill.getProcess();
-                    return new TrainingResultOptionResponse(p.getId(), p.getCode() + " - " + p.getName());
+                    return new TrainingResultProcessResponse(p.getId(), p.getCode() + " - " + p.getName(), p.getClassification());
                 })
                 .toList();
     }
 
     @Override
-    public List<TrainingResultOptionResponse> getProductsByProcess(Long processId) {
+    public List<TrainingResultProductOptionResponse> getProductsByProcess(Long processId) {
         List<ProductProcess> productProcesses = productProcessRepository.findByProcessId(processId);
         return productProcesses.stream()
                 .map(pp -> {
                     Product product = pp.getProduct();
-                    return new TrainingResultOptionResponse(product.getId(), product.getCode() + " - " + product.getName());
+                    return new TrainingResultProductOptionResponse(product.getId(), product.getCode() + " - " + product.getName(), pp.getStandardTimeJt());
                 })
+                .toList();
+    }
+
+    @Override
+    public List<SampleResultResponse> getSamplesByProduct(Long productId) {
+        List<TrainingSample> samples = trainingSampleRepository.findByProductId(productId);
+
+        return samples.stream()
+                .map(sample -> new SampleResultResponse(
+                        sample.getId(),
+                        sample.getTrainingSampleCode(),
+                        sample.getTrainingDescription()
+                ))
                 .toList();
     }
 
