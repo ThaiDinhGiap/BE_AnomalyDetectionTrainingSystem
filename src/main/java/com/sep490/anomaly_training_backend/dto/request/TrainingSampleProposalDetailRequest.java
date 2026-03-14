@@ -1,11 +1,18 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
 import com.sep490.anomaly_training_backend.enums.ProposalType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TrainingSampleProposalDetailRequest {
     Long id;
     Long trainingSampleId; // chỉ định mẫu huan luyen nào đc tác động
@@ -17,4 +24,7 @@ public class TrainingSampleProposalDetailRequest {
     Long productId; // Mã sản phẩm
     String trainingDescription; // Nôi dung
     String note; //Chi chú
+    
+    // Images to upload and store in Attachment table
+    List<MultipartFile> images;
 }

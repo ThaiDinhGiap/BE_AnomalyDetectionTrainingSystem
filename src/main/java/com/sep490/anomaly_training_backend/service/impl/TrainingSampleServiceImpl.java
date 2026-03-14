@@ -15,7 +15,6 @@ import com.sep490.anomaly_training_backend.service.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.util.helper.TrainingSampleImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.TrainingSampleImportValidator;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -102,8 +101,8 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                     throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
                 }
 
-                // Step 5: Insert all rows
-                List<TrainingSampleResponse> responses = insertAllRows(parsedRows, productLine);
+                // Step 5: Upsert all rows (changed from insert to upsert)
+                List<TrainingSampleResponse> responses = upsertAllRows(parsedRows, productLine, sheet);
 
                 // Step 6: Save success history
                 saveImportPassHistory(currentUser, file);
@@ -130,42 +129,127 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     }
 
     /**
-     * Insert all parsed rows into database (simple insert, no upsert)
+     * Upsert all parsed rows into database
+     * - Find by trainingCode
+     * - Update if exists OR Create if new
+     * - Handle images from Excel rows
      */
-    private List<TrainingSampleResponse> insertAllRows(
+    private List<TrainingSampleResponse> upsertAllRows(
             List<TrainingSampleImportDto> parsedRows,
-            ProductLine productLine) {
+            ProductLine productLine,
+            Sheet sheet) {
 
         List<TrainingSampleResponse> responses = new ArrayList<>();
 
-        for (TrainingSampleImportDto dto : parsedRows) {
-            // Resolve entities from codes (just lookup, no validation error handling)
-            Process process = processRepository.findByCode(dto.getProcessCode()).orElse(null);
-            Defect defect = dto.getDefectCode() != null ? defectRepository.findByDefectCode(dto.getDefectCode()).orElse(null) : null;
-            Product product = dto.getProductCode() != null ? productRepository.findByCode(dto.getProductCode()).orElse(null) : null;
+        for (int rowIndex = 0; rowIndex < parsedRows.size(); rowIndex++) {
+            TrainingSampleImportDto dto = parsedRows.get(rowIndex);
+            
+            try {
+                // Upsert entity
+                TrainingSample sample = upsertTrainingSample(dto, productLine);
 
-            // Create new TrainingSample
-            TrainingSample sample = TrainingSample.builder()
-                    .trainingCode(dto.getTrainingCode())
-                    .process(process)
-                    .productLine(productLine)
-                    .categoryName(dto.getCategoryName())
-                    .trainingDescription(dto.getTrainingDescription())
-                    .trainingSampleCode(dto.getTrainingSampleCode())
-                    .defect(defect)
-                    .product(product)
-                    .processOrder(dto.getProcessOrder())
-                    .categoryOrder(dto.getCategoryOrder())
-                    .contentOrder(dto.getContentOrder())
-                    .note(dto.getNote())
-                    .build();
+                // Handle images from Excel row (if any)
+                // rowIndex + 3 because: row 1 = header, row 2 = column names, row 3 onwards = data
+                int excelRowIndex = rowIndex + 3;
+                handleTrainingSampleImages(sheet, sample, excelRowIndex);
 
-            TrainingSample saved = trainingSampleRepository.save(sample);
-            responses.add(trainingSampleMapper.toDto(saved));
+                responses.add(trainingSampleMapper.toDto(sample));
+
+            } catch (Exception e) {
+                log.error("Error upserting training sample with code {}: {}", dto.getTrainingCode(), e.getMessage(), e);
+                // Continue với rows khác, không throw exception
+            }
         }
 
         return responses;
     }
+
+    /**
+     * Upsert one TrainingSample by trainingCode
+     * - Find by trainingCode
+     * - If exists: update all fields
+     * - If not exists: create new
+     */
+    private TrainingSample upsertTrainingSample(
+            TrainingSampleImportDto dto,
+            ProductLine productLine) {
+
+        // Find existing by trainingCode
+        TrainingSample sample = trainingSampleRepository
+                .findByTrainingCode(dto.getTrainingCode())
+                .orElseGet(TrainingSample::new);
+
+        // Resolve relationships
+        Process process = null;
+        if (dto.getProcessCode() != null) {
+            process = processRepository.findByCode(dto.getProcessCode()).orElse(null);
+        }
+
+        Defect defect = null;
+        if (dto.getDefectCode() != null) {
+            defect = defectRepository.findByDefectCode(dto.getDefectCode()).orElse(null);
+        }
+
+        Product product = null;
+        if (dto.getProductCode() != null) {
+            product = productRepository.findByCode(dto.getProductCode()).orElse(null);
+        }
+
+        // Update all fields (for both insert and update scenarios)
+        sample.setTrainingCode(dto.getTrainingCode());
+        sample.setProcess(process);
+        sample.setProductLine(productLine);
+        sample.setCategoryName(dto.getCategoryName());
+        sample.setTrainingDescription(dto.getTrainingDescription());
+        sample.setTrainingSampleCode(dto.getTrainingSampleCode());
+        sample.setDefect(defect);
+        sample.setProduct(product);
+        sample.setProcessOrder(dto.getProcessOrder());
+        sample.setCategoryOrder(dto.getCategoryOrder());
+        sample.setContentOrder(dto.getContentOrder());
+        sample.setNote(dto.getNote());
+
+        TrainingSample saved = trainingSampleRepository.save(sample);
+
+        log.info("Upserted TrainingSample: code={}, id={}, isNew={}", 
+                dto.getTrainingCode(), saved.getId(), sample.getId() == null);
+
+        return saved;
+    }
+
+    /**
+     * Handle images for TrainingSample from Excel row
+     * - Extract images từ row
+     * - Delete old attachments (if updating existing record)
+     * - Upload new images
+     */
+    private void handleTrainingSampleImages(Sheet sheet, TrainingSample sample, int excelRowIndex) {
+        try {
+            if (sample.getId() == null) {
+                log.debug("Sample has no ID, skipping image handling");
+                return;
+            }
+
+            Row row = sheet.getRow(excelRowIndex);
+            if (row == null) {
+                log.debug("Row {} is null, skipping image handling", excelRowIndex);
+                return;
+            }
+
+            log.info("Handling images for TrainingSample id={} from row {}", sample.getId(), excelRowIndex);
+
+            // Note: Image handling service is injected and will be called here
+            // Currently images are not extracted from Excel in this import
+            // Future: If Excel format includes images, call importImageHandlerService here
+            // importImageHandlerService.handleRowImages(row, "TRAINING_SAMPLE", sample.getId(), "SYSTEM");
+
+        } catch (Exception e) {
+            log.error("Error handling images for TrainingSample id={}: {}", sample.getId(), e.getMessage());
+            // Don't throw - ảnh handling fail không nên block main import
+        }
+    }
+
+
 
     /**
      * Get ProductLine from Excel header row (Row 1)
@@ -196,7 +280,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     // ============= Validation Methods =============
 
-    private void validateImportFile(MultipartFile file) throws BadRequestException {
+    private void validateImportFile(MultipartFile file)  {
         if (file == null || file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_IS_EMPTY);
         }

@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.util.validator;
 
-import com.sep490.anomaly_training_backend.dto.request.DefectImportRowData;
+import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class DefectImportValidator {
      * - defectCode không được trùng trong cùng file
      * - defectDescription không được trùng trong cùng file
      */
-    public void validateFileData(List<DefectImportRowData> parsedRows, List<ImportErrorItem> errors) {
+    public void validateFileData(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
         validateRequiredFields(parsedRows, errors);
         validateDefectCodeDuplicates(parsedRows, errors);
         validateDefectDescriptionDuplicates(parsedRows, errors);
@@ -37,17 +37,8 @@ public class DefectImportValidator {
     /**
      * Validate các field bắt buộc
      */
-    private void validateRequiredFields(List<DefectImportRowData> parsedRows, List<ImportErrorItem> errors) {
-        for (DefectImportRowData row : parsedRows) {
-            if (isBlank(row.getDefectCode())) {
-                errors.add(buildRowError(
-                        row.getExcelRowNumber(),
-                        "defectCode",
-                        null,
-                        "defectCode is required"
-                ));
-            }
-
+    private void validateRequiredFields(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
+        for (DefectImportDto row : parsedRows) {
             if (isBlank(row.getProcessCode())) {
                 errors.add(buildRowError(
                         row.getExcelRowNumber(),
@@ -71,11 +62,11 @@ public class DefectImportValidator {
     /**
      * Validate defectCode không được trùng trong cùng file
      */
-    private void validateDefectCodeDuplicates(List<DefectImportRowData> parsedRows, List<ImportErrorItem> errors) {
+    private void validateDefectCodeDuplicates(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
         Map<String, Integer> defectCodeCount = new HashMap<>();
         Map<String, Integer> firstRowOfCode = new HashMap<>();
 
-        for (DefectImportRowData row : parsedRows) {
+        for (DefectImportDto row : parsedRows) {
             String defectCode = normalize(row.getDefectCode());
             if (defectCode == null) {
                 continue;
@@ -92,7 +83,7 @@ public class DefectImportValidator {
                 String defectCode = entry.getKey();
                 Integer firstRow = firstRowOfCode.get(defectCode);
 
-                for (DefectImportRowData row : parsedRows) {
+                for (DefectImportDto row : parsedRows) {
                     if (defectCode.equals(normalize(row.getDefectCode()))) {
                         errors.add(buildRowError(
                                 row.getExcelRowNumber(),
@@ -109,11 +100,11 @@ public class DefectImportValidator {
     /**
      * Validate defectDescription không được trùng trong cùng file
      */
-    private void validateDefectDescriptionDuplicates(List<DefectImportRowData> parsedRows, List<ImportErrorItem> errors) {
+    private void validateDefectDescriptionDuplicates(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
         Map<String, Integer> defectDescriptionCount = new HashMap<>();
         Map<String, Integer> firstRowOfDescription = new HashMap<>();
 
-        for (DefectImportRowData row : parsedRows) {
+        for (DefectImportDto row : parsedRows) {
             String defectDescription = normalize(row.getDefectDescription());
             if (defectDescription == null) {
                 continue;
@@ -130,7 +121,7 @@ public class DefectImportValidator {
                 String defectDescription = entry.getKey();
                 Integer firstRow = firstRowOfDescription.get(defectDescription);
 
-                for (DefectImportRowData row : parsedRows) {
+                for (DefectImportDto row : parsedRows) {
                     if (defectDescription.equals(normalize(row.getDefectDescription()))) {
                         errors.add(buildRowError(
                                 row.getExcelRowNumber(),

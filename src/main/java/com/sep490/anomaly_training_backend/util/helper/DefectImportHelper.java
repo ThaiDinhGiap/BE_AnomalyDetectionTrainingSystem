@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.util.helper;
 
-import com.sep490.anomaly_training_backend.dto.request.DefectImportRowData;
+import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import lombok.RequiredArgsConstructor;
@@ -29,37 +29,38 @@ public class DefectImportHelper {
     private static final int COL_OUTFLOW_CAUSE = 7;
     private static final int COL_ORIGIN_MEASURE = 8;
     private static final int COL_OUTFLOW_MEASURE = 9;
-    private static final int COL_ESCAPED = 10;
-    private static final int COL_CUSTOMER_CLAIM = 11;
-    private static final int COL_STARTLED_CLAIM = 12;
+    private static final int COL_PRODUCT = 10;
+    private static final int COL_CUSTOMER = 11;
+    private static final int COL_QUANTITY = 12;
+    private static final int COL_CONCLUSION = 13;
+    private static final int COL_ESCAPED = 14;
+    private static final int COL_CUSTOMER_CLAIM = 15;
+    private static final int COL_STARTLED_CLAIM = 16;
 
     /**
      * Parse toàn bộ data row từ row 3 trở đi.
      */
-    public List<DefectImportRowData> parseExcelRows(
+    public List<DefectImportDto> parseExcelRows(
             Sheet sheet,
             List<ImportErrorItem> errors
     ) {
-        List<DefectImportRowData> result = new ArrayList<>();
+        List<DefectImportDto> results = new ArrayList<>();
 
         for (int i = 2; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-
             if (isRowEmpty(row)) {
                 continue;
             }
-
             try {
-                result.add(parseRow(row, i + 1));
+                results.add(parseRow(row, i + 1));
             } catch (Exception e) {
                 errors.add(buildRowError(i + 1, "ROW", null, "Error parsing row: " + e.getMessage()));
             }
         }
-
-        return result;
+        return results;
     }
 
-    private DefectImportRowData parseRow(Row row, int excelRowNumber) throws BadRequestException {
+    private DefectImportDto parseRow(Row row, int excelRowNumber) throws BadRequestException {
         String defectCode = getOptionalStringCellValue(row.getCell(COL_DEFECT_CODE));
         String processCode = getOptionalStringCellValue(row.getCell(COL_PROCESS));
         String defectDescription = getOptionalStringCellValue(row.getCell(COL_DEFECT_DESCRIPTION));
@@ -68,6 +69,10 @@ public class DefectImportHelper {
         String outflowCause = getOptionalStringCellValue(row.getCell(COL_OUTFLOW_CAUSE));
         String outflowMeasures = getOptionalStringCellValue(row.getCell(COL_OUTFLOW_MEASURE));
         String originMeasures = getOptionalStringCellValue(row.getCell(COL_ORIGIN_MEASURE));
+        String productCode = getOptionalStringCellValue(row.getCell(COL_PRODUCT));
+        String customer = getOptionalStringCellValue(row.getCell(COL_CUSTOMER));
+        Integer quantity = getOptionalIntegerCellValue(row.getCell(COL_QUANTITY));
+        String conclusion = getOptionalStringCellValue(row.getCell(COL_CONCLUSION));
 
         Boolean isEscaped = getOptionalBooleanCellValue(row.getCell(COL_ESCAPED),"PPGH", excelRowNumber);
         Boolean customerClaim = getOptionalBooleanCellValue(row.getCell(COL_CUSTOMER_CLAIM), "customerClaim", excelRowNumber);
@@ -75,7 +80,7 @@ public class DefectImportHelper {
 
         ImageData imageData = extractImageFromRow(row, excelRowNumber);
 
-        return DefectImportRowData.builder()
+        return DefectImportDto.builder()
                 .excelRowNumber(excelRowNumber)
                 .defectCode(defectCode)
                 .processCode(processCode)
@@ -89,6 +94,10 @@ public class DefectImportHelper {
                 .isEscape(isEscaped)
                 .customerClaim(customerClaim)
                 .startledClaim(startledClaim)
+                .productCode(productCode)
+                .customer(customer)
+                .quantity(quantity)
+                .conclusion(conclusion)
                 .build();
     }
 
@@ -290,6 +299,35 @@ public class DefectImportHelper {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Integer getOptionalIntegerCellValue(Cell cell) {
+        if (cell == null || cell.getCellType() == CellType.BLANK) {
+            return null;
+        }
+
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                double value = cell.getNumericCellValue();
+                if (value == (long) value) {
+                    return (int) value;
+                }
+                return (int) Math.round(value);
+            }
+
+            if (cell.getCellType() == CellType.STRING) {
+                String value = cell.getStringCellValue().trim();
+                if (value.isEmpty()) {
+                    return null;
+                }
+                return Integer.parseInt(value);
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.warn("Error parsing integer value from cell: {}", getCellDisplayValue(cell), e);
+            return null;
+        }
     }
 
     private ImportErrorItem buildRowError(Integer rowNumber, String field, String value, String message) {

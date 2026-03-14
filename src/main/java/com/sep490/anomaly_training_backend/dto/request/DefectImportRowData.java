@@ -14,21 +14,21 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DefectImportRowData {
-    private String defectCode;
-    private String defectDescription;
-    private LocalDate detectedDate;
-    private String note;
-    private String originCause;
-    private String outflowCause;
-    private String causePoint;
+    private String defectCodeColumn;
+    private String defectDescriptionColumn;
+    private LocalDate detectedDateColumn;
+    private String noteColumn;
+    private String originCauseColumn;
+    private String outflowCauseColumn;
+    private String causePointColumn;
 
     private ImageData imageData;
-    private String originMeasures;
-    private String outflowMeasures;
-    private Boolean isEscape;
-    private Boolean customerClaim;
-    private Boolean startledClaim;
+    private String originMeasuresColumn;
+    private String outflowMeasuresColumn;
+    private Boolean isEscapeColumn;
+    private Boolean customerClaimColumn;
+    private Boolean startledClaimColumn;
 
-    private String processCode;
+    private String processCodeColumn;
     private Integer excelRowNumber;  // NEW! Track which row this came from
 }

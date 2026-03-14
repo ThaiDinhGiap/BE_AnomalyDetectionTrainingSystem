@@ -26,6 +26,11 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
 
     Boolean existsByProductLineIdAndTrainingSampleCodeAndIdNot(Long productLineId, String trainingSampleCode, Long id);
 
+    /**
+     * Find TrainingSample by trainingCode (unique key for upsert in import)
+     */
+    Optional<TrainingSample> findByTrainingCode(String trainingCode);
+
     @Query(value = """
     SELECT MAX(CAST(SUBSTRING(training_code, 3) AS UNSIGNED))
     FROM training_samples

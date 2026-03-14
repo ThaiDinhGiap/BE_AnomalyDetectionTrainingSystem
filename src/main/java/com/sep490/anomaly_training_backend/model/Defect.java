@@ -75,4 +75,19 @@ public class Defect extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "defect_type")
     DefectType defectType;
+
+    @Column(name = "customer", length = 255)
+    String customer;
+
+    @Column(name = "quantity")
+    Integer quantity;
+
+    @Column(name = "conclusion", columnDefinition = "text")
+    String conclusion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    Product product;
 }

@@ -28,4 +28,11 @@ public class DefectProposalDetailUpdateResponse {
     String originMeasures;
     String outflowMeasures;
     String defectType;
+    
+    // New fields
+    String customer;
+    Integer quantity;
+    String conclusion;
+    ProductResponse productResponse;
+
 }
