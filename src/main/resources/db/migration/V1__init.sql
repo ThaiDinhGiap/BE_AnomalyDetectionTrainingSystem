@@ -1324,11 +1324,10 @@ CREATE TABLE training_sample_review_configs
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
+    review_policy_id BIGINT  NOT NULL,
     trigger_month   INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
     trigger_day     INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
     due_days        INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
-    assignee_id     BIGINT COMMENT 'TL phụ trách review (mặc định)',
-    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
@@ -1337,9 +1336,8 @@ CREATE TABLE training_sample_review_configs
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
-    FOREIGN KEY (assignee_id) REFERENCES users (id),
+    FOREIGN KEY (review_policy_id) REFERENCES training_sample_review_policies (id),
     UNIQUE KEY uk_review_configs_product_line (product_line_id),
-    INDEX idx_review_configs_active (is_active),
     INDEX idx_review_configs_delete_flag (delete_flag)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4

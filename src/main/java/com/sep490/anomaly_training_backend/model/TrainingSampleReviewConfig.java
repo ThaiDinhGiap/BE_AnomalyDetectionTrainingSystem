@@ -61,7 +61,4 @@ public class TrainingSampleReviewConfig extends BaseEntity {
     @Builder.Default
     Integer dueDays = 30;
 
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    Boolean isActive = true;
 }

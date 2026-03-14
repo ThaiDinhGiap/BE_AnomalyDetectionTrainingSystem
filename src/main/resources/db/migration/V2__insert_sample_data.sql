@@ -737,27 +737,87 @@ VALUES ('Vui lòng bổ sung thêm thông tin', 'ROLE_ADMIN'),
 
 
 -- ============================================================================
--- PART 8: ANNUAL REVIEW CONFIG
+-- PART 8: TRAINING SAMPLE REVIEW CONFIG
 -- ============================================================================
+INSERT INTO training_sample_review_policies (
+    policy_code,
+    effective_date,
+    expiration_date,
+    status,
+    description,
+    delete_flag,
+    created_by,
+    updated_by
+) VALUES
+      (
+          'TSRP-2025-001',
+          '2025-01-01',
+          '2025-12-31',
+          'ACTIVE',
+          'Chính sách rà soát mẫu huấn luyện áp dụng cho năm 2025',
+          FALSE,
+          'system',
+          'system'
+      ),
+      (
+          'TSRP-2025-002',
+          '2025-04-01',
+          '2025-09-30',
+          'ACTIVE',
+          'Chính sách rà soát mẫu huấn luyện áp dụng cho năm 2024',
+          FALSE,
+          'system',
+          'system'
+      ),
+      (
+          'TSRP-2024-001',
+          '2024-01-01',
+          '2024-12-31',
+          'DEACTIVE',
+          'Chính sách rà soát mẫu huấn luyện áp dụng cho năm 2023',
+          FALSE,
+          'system',
+          'system'
+      ),
+      (
+          'TSRP-2026-001',
+          '2026-01-01',
+          NULL,
+          'ACTIVE',
+          'Chính sách rà soát mẫu huấn luyện áp dụng cho năm 2022',
+          FALSE,
+          'system',
+          'system'
+      ),
+      (
+          'TSRP-2025-003',
+          '2025-07-01',
+          '2025-12-31',
+          'DEACTIVE',
+          'Chính sách rà soát mẫu huấn luyện áp dụng cho năm 2021',
+          FALSE,
+          'admin',
+          'admin'
+      );
 
-INSERT INTO training_sample_review_configs (product_line_id, trigger_month, trigger_day, due_days, assignee_id,
-                                            is_active, created_by)
-VALUES (1, 3, 1, 30, 5, TRUE, 'ROLE_ADMIN'), -- Review định kỳ vào tháng 3 cho Line Tiện
-       (2, 3, 1, 30, 6, TRUE, 'ROLE_ADMIN');
+INSERT INTO training_sample_review_configs (product_line_id, trigger_month, trigger_day, due_days, review_policy_id,
+                                             created_by)
+VALUES (1, 3, 1, 30, 2,  'ROLE_ADMIN'), -- Review định kỳ vào tháng 3 cho Line Tiện
+       (2, 3, 1, 30, 1,  'ROLE_ADMIN');
 
 INSERT INTO approval_flow_steps (entity_type, step_order, approver_role, is_active, created_by)
 VALUES
 -- DEFECT_REPORT: SV -> ROLE_MANAGER
-('DEFECT_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-('DEFECT_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
+('DEFECT_REPORT', 1, 'ROLE_SUPERVISOR',  'system'),
+('DEFECT_REPORT', 2, 'ROLE_MANAGER',  'system'),
 
 -- TRAINING_TOPIC_REPORT: SV -> ROLE_MANAGER
-('TRAINING_TOPIC_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-('TRAINING_TOPIC_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
+('TRAINING_TOPIC_REPORT', 1, 'ROLE_SUPERVISOR',  'system'),
+('TRAINING_TOPIC_REPORT', 2, 'ROLE_MANAGER',  'system'),
 
 -- TRAINING_PLAN: SV -> ROLE_MANAGER
-('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system');
+('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR',  'system'),
+('TRAINING_PLAN', 2, 'ROLE_MANAGER',  'system');
 
 SET FOREIGN_KEY_CHECKS = 1;
 
