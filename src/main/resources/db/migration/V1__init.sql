@@ -443,6 +443,12 @@ CREATE TABLE defects
     outflow_measures   VARCHAR(255),
     defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
+    -- 4 new fields for Defect
+    customer           VARCHAR(255) COMMENT 'Tên khách hàng',
+    quantity           INT          COMMENT 'Số lượng',
+    conclusion         LONGTEXT     COMMENT 'Kết luận',
+    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+
     note               TEXT,
 
     delete_flag        BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -453,7 +459,9 @@ CREATE TABLE defects
 
     UNIQUE KEY uk_defect (defect_code),
     FOREIGN KEY (process_id) REFERENCES processes (id),
+    FOREIGN KEY (product_id) REFERENCES products (id),
     INDEX idx_defects_process (process_id),
+    INDEX idx_defects_product (product_id),
     INDEX idx_defects_detected_date (detected_date),
     INDEX idx_defects_delete_flag (delete_flag)
 ) ENGINE = InnoDB
@@ -507,6 +515,12 @@ CREATE TABLE defect_proposal_details
     outflow_measures   VARCHAR(255),
     defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
+    -- 4 new fields for DefectProposalDetail
+    customer           VARCHAR(255) COMMENT 'Tên khách hàng',
+    quantity           INT          COMMENT 'Số lượng',
+    conclusion         LONGTEXT     COMMENT 'Kết luận',
+    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
@@ -516,9 +530,11 @@ CREATE TABLE defect_proposal_details
     FOREIGN KEY (defect_proposal_id) REFERENCES defect_proposals (id) ON DELETE CASCADE,
     FOREIGN KEY (defect_id) REFERENCES defects (id) ON DELETE SET NULL,
     FOREIGN KEY (process_id) REFERENCES processes (id),
+    FOREIGN KEY (product_id) REFERENCES products (id),
     INDEX idx_defect_proposal_details_proposal (defect_proposal_id),
     INDEX idx_defect_proposal_details_defect (defect_id),
     INDEX idx_defect_proposal_details_process (process_id),
+    INDEX idx_defect_proposal_details_product (product_id),
     INDEX idx_defect_proposal_details_type (proposal_type),
     INDEX idx_defect_proposal_details_delete_flag (delete_flag)
 ) ENGINE = InnoDB
