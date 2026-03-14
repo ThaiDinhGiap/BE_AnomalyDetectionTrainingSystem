@@ -524,7 +524,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public List<SampleResultResponse> getSamplesByProduct(Long productId) {
         List<TrainingSample> samples = trainingSampleRepository.findByProductId(productId);
-
+        if (samples.isEmpty()) {
+            samples = trainingSampleRepository.findAllSamples();
+        }
         return samples.stream()
                 .map(sample -> new SampleResultResponse(
                         sample.getId(),
