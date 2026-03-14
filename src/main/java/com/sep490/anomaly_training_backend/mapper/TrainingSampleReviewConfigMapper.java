@@ -8,6 +8,5 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public abstract class TrainingSampleReviewConfigMapper {
     @Mapping(target = "productLine", source = "productLine.name")
-    @Mapping(target = "assignee", source = "assignee.fullName")
     public abstract TrainingSampleReviewConfigResponse toDto(TrainingSampleReviewConfig entity);
 }

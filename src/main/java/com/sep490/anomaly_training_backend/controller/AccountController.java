@@ -5,7 +5,6 @@ import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
-import com.sep490.anomaly_training_backend.exception.AuthException;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;

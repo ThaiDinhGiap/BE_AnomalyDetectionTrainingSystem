@@ -246,23 +246,7 @@ VALUES ('DF001', 'Xước bề mặt trục', 1, '2023-09-01', 'DEFECTIVE_GOODS'
         'Kiểm tra vật liệu đầu vào', 'Khách hàng trả về', 'Keo kém chất lượng', 'Không kiểm vật liệu đầu vào',
         'Bơm keo', 'Khách hàng S', 15, 'Thay nhà cung cấp keo', 'system'),
        ('DF023', 'Thiếu linh kiện nhỏ', 2, '2023-10-08', 'DEFECTIVE_GOODS', 'Sử dụng hệ thống pick-to-light',
-        'Kiểm tra final 100%', 'Sót linh kiện', 'Không check BOM', 'Không kiểm final', 'Lắp ráp', 'Khách hàng T', 10, 'Nâng cấp hệ thống picking', 'system'),
-       ('DF024', 'Nứt chân linh kiện', 2, '2023-10-09', 'DEFECTIVE_GOODS', 'Đào tạo lại thao tác',
-        'Sử dụng khay đựng phù hợp', 'Va chạm', 'Handling sai', 'Không đào tạo thao tác', 'Lắp ráp', 'system'),
-       ('DF025', 'Sai barcode', 2, '2023-10-10', 'CLAIM', 'Sửa lại template in', 'Review file in trước khi in',
-        'In sai mã', 'Template lỗi', 'Không review file in', 'In nhãn', 'system'),
-
-       ('DF026', 'Chạm chập mạch', 2, '2023-10-11', 'STARTLED_CLAIM', 'Hiệu chỉnh máy hàn', 'Tăng cường kiểm tra AOI',
-        'Khách hàng phản hồi', 'Hàn dư thiếc', 'Không kiểm AOI', 'Hàn', 'system'),
-       ('DF027', 'Sai thông số điện trở', 2, '2023-10-12', 'DEFECTIVE_GOODS', 'Sử dụng máy quét barcode',
-        'Xác nhận linh kiện trước khi lắp', 'Chọn nhầm part', 'Thiếu xác nhận linh kiện', 'Không check BOM', 'Lắp ráp',
-        'system'),
-       ('DF028', 'Bể vỏ khi ép', 2, '2023-10-13', 'CLAIM', 'Hiệu chỉnh lực ép', 'Kiểm tra lực ép định kỳ',
-        'Lực ép lớn', 'Cài đặt sai', 'Không kiểm lực ép', 'Ép vỏ', 'system'),
-       ('DF029', 'Hở gioăng', 2, '2023-10-14', 'DEFECTIVE_GOODS', 'Sử dụng guide lắp ráp', 'Kiểm tra cuối line',
-        'Lắp lệch', 'Thiếu guide', 'Không kiểm cuối line', 'Lắp ráp', 'system'),
-       ('DF030', 'Sai thứ tự lắp ráp', 2, '2023-10-15', 'CLAIM', 'Đào tạo lại quy trình', 'Giám sát chặt chẽ hơn',
-        'Lọt QC', 'Không theo WI', 'Không giám sát', 'Assembly', 'system');
+        'Kiểm tra final 100%', 'Sót linh kiện', 'Không check BOM', 'Không kiểm final', 'Lắp ráp', 'Khách hàng T', 10, 'Nâng cấp hệ thống picking', 'system');
 -- Defect Proposals (Header)
 INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, created_by)
 VALUES (1, 1, 'APPROVED', 1, 'DEF-2023-001', 'tl_prod01'),

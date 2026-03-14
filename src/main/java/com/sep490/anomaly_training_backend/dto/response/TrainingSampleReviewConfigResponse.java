@@ -8,10 +8,10 @@ import lombok.Data;
 public class TrainingSampleReviewConfigResponse {
     Long id;
     String productLine;
-    Integer triggerMonth = 3;
-    Integer triggerDay = 1;
-    Integer dueDays = 30;
+    Integer triggerMonth ;
+    Integer triggerDay;
+    Integer dueDays;
     String assignee;
-    Boolean isActive = true;
+    Boolean isActive;
 
 }
