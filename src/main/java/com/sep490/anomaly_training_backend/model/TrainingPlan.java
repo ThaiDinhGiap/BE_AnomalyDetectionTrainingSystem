@@ -53,11 +53,11 @@ public class TrainingPlan extends BaseEntity implements Approvable {
     @Builder.Default
     String formCode = "TR_PLAN";
 
-    @Column(name = "month_start")
-    LocalDate monthStart;
+    @Column(name = "start_date")
+    LocalDate startDate;
 
-    @Column(name = "month_end")
-    LocalDate monthEnd;
+    @Column(name = "end_date")
+    LocalDate endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
