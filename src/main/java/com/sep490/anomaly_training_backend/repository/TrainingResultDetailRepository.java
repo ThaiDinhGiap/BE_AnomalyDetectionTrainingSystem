@@ -59,4 +59,9 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Transactional
     void deleteByTrainingPlanDetailIdIn(List<Long> trainingPlanDetailIds);
 
+    @Query("SELECT d.process.id, COUNT(d) FROM TrainingResultDetail d WHERE d.process.id IN :processIds AND d.status = 'DONE' GROUP BY d.process.id")
+    List<Object[]> countCompletedByProcessIds(@Param("processIds") List<Long> processIds);
+
+    @Query("SELECT d.process.id, COUNT(d) FROM TrainingResultDetail d WHERE d.process.id IN :processIds GROUP BY d.process.id")
+    List<Object[]> countTotalByProcessIds(@Param("processIds") List<Long> processIds);
 }
