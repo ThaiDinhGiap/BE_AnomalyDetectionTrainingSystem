@@ -31,6 +31,17 @@ public class TrainingResultController {
 
     private final TrainingResultService trainingResultService;
 
+    @Operation(summary = "Get KPI Summary (Top Cards)")
+    @GetMapping("/kpi-summary")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<KpiSummaryResponse> getKpiSummary(
+            @Parameter(description = "Filter by Team ID") @RequestParam(required = false) Long teamId,
+            @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId,
+            @Parameter(description = "Filter by Year") @RequestParam(required = false) Integer year
+    ) {
+        return ResponseEntity.ok(trainingResultService.getKpiSummary(teamId, lineId, year));
+    }
+
     @Operation(summary = "Get product groups by Group ID")
     @GetMapping("/product-groups")
     @PreAuthorize("hasAuthority('training_result.view')")
