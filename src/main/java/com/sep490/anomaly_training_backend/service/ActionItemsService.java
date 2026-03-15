@@ -7,7 +7,7 @@ import com.sep490.anomaly_training_backend.dto.response.PendingSignatureResponse
 import java.util.List;
 
 public interface ActionItemsService {
-    List<PendingSignatureResponse> getPendingSignatures();
-    List<FailedTrainingResponse> getFailedTrainings();
-    List<ExpiringSkillResponse> getExpiringSkills();
+    List<PendingSignatureResponse> getPendingSignatures(Long lineId);
+    List<FailedTrainingResponse> getFailedTrainings(Long lineId);
+    List<ExpiringSkillResponse> getExpiringSkills(Long lineId);
 }

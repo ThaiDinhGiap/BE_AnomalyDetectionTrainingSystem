@@ -18,8 +18,10 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
 
     Optional<EmployeeSkill> findByEmployeeIdAndProcessIdAndDeleteFlagFalse(Long employeeId, Long processId);
 
-    @Query("SELECT es FROM EmployeeSkill es WHERE es.status = 'VALID' AND es.expiryDate BETWEEN CURRENT_DATE AND :thirtyDaysFromNow")
-    List<EmployeeSkill> findExpiringSkills(@Param("thirtyDaysFromNow") LocalDate thirtyDaysFromNow);
+    @Query("SELECT es FROM EmployeeSkill es JOIN es.process p " +
+            "WHERE es.status = 'VALID' AND es.expiryDate BETWEEN CURRENT_DATE AND :thirtyDaysFromNow " +
+            "AND (:lineId IS NULL OR p.productLine.id = :lineId)")
+    List<EmployeeSkill> findExpiringSkills(@Param("lineId") Long lineId, @Param("thirtyDaysFromNow") LocalDate thirtyDaysFromNow);
 
     @Query("SELECT es FROM EmployeeSkill es " +
             "JOIN es.process p " +
