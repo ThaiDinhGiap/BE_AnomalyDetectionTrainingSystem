@@ -3,6 +3,8 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
+import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,13 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,6 +26,19 @@ import java.util.List;
 public class TrainingResultController {
 
     private final TrainingResultService trainingResultService;
+    private final EmployeeSkillService employeeSkillService;
+
+    @Operation(summary = "Get skill matrix data")
+    @GetMapping("/skills/matrix")
+    @PreAuthorize("hasAuthority('employee.view')")
+    public ResponseEntity<SkillMatrixResponse> getSkillMatrix(
+            @Parameter(description = "Filter by Team ID", required = true) @RequestParam Long teamId,
+            @Parameter(description = "Filter by Product Line ID", required = true) @RequestParam Long lineId,
+            @Parameter(description = "Optional list of Employee IDs to display") @RequestParam(required = false) List<Long> employeeIds,
+            @Parameter(description = "Optional list of Process IDs to display") @RequestParam(required = false) List<Long> processIds
+    ) {
+        return ResponseEntity.ok(employeeSkillService.getSkillMatrix(teamId, lineId, employeeIds, processIds));
+    }
 
     @Operation(summary = "Get KPI Summary (Top Cards)")
     @GetMapping("/kpi-summary")

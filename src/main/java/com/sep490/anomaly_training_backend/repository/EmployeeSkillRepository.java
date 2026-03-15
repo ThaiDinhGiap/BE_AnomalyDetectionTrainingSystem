@@ -28,4 +28,6 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
             "WHERE es.employee.id = :employeeId " +
             "AND p.productLine.id = :lineId")
     List<EmployeeSkill> findSkillsByEmployeeAndLine(Long employeeId, Long lineId);
+
+    List<EmployeeSkill> findByEmployeeIdIn(List<Long> employeeIds);
 }
