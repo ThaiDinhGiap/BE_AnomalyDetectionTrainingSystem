@@ -17,6 +17,7 @@ public interface AttachmentService {
      * @return the saved Attachment metadata
      */
     Attachment uploadAttachment(MultipartFile file, String entityType, Long entityId, String createdBy);
+
     List<Attachment> uploadAttachments(List<MultipartFile> files, String entityType, Long entityId, String createdBy);
     /**
      * Retrieves all attachments for a specific entity.
@@ -34,4 +35,6 @@ public interface AttachmentService {
      * @param attachmentId the ID of the attachment to delete
      */
     void deleteAttachment(Long attachmentId);
+
+    void deleteAttachments(String entityType, Long entityId);
 }

@@ -808,16 +808,16 @@ VALUES (1, 3, 1, 30, 2,  'ROLE_ADMIN'), -- Review định kỳ vào tháng 3 cho
 INSERT INTO approval_flow_steps (entity_type, step_order, approver_role, is_active, created_by)
 VALUES
 -- DEFECT_REPORT: SV -> ROLE_MANAGER
-('DEFECT_REPORT', 1, 'ROLE_SUPERVISOR',  'system'),
-('DEFECT_REPORT', 2, 'ROLE_MANAGER',  'system'),
+('DEFECT_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
+('DEFECT_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
 
 -- TRAINING_TOPIC_REPORT: SV -> ROLE_MANAGER
-('TRAINING_TOPIC_REPORT', 1, 'ROLE_SUPERVISOR',  'system'),
-('TRAINING_TOPIC_REPORT', 2, 'ROLE_MANAGER',  'system'),
+('TRAINING_TOPIC_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
+('TRAINING_TOPIC_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
 
 -- TRAINING_PLAN: SV -> ROLE_MANAGER
-('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR',  'system'),
-('TRAINING_PLAN', 2, 'ROLE_MANAGER',  'system');
+('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
+('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system');
 
 SET FOREIGN_KEY_CHECKS = 1;
 

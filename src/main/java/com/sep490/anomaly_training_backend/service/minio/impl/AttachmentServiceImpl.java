@@ -150,6 +150,23 @@ public class AttachmentServiceImpl implements AttachmentService {
         outboxRepository.save(outboxItem);
     }
 
+    @Override
+    public void deleteAttachments(String entityType, Long entityId) {
+        List<Attachment> oldAttachments = attachmentRepository
+                .findByEntityTypeAndEntityId(entityType, entityId);
+        if (oldAttachments.isEmpty()) {
+            return;
+        }
+        for (Attachment attachment : oldAttachments) {
+            if (!attachment.isDeleteFlag()) {
+                attachment.setDeleteFlag(true);
+                attachmentRepository.save(attachment);
+                log.debug("Soft-deleted attachment: id={}, entityType={}, entityId={}",
+                        attachment.getId(), entityType, entityId);
+            }
+        }
+    }
+
     private String generateObjectKey(String entityType, String originalFilename) {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         String randomPart = UUID.randomUUID().toString().substring(0, 8);

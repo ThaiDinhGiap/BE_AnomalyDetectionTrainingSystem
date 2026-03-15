@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "training_sample_reviews", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_reviews_period", columnNames = {"product_line_id", "review_year"})
+        @UniqueConstraint(name = "uk_reviews_period", columnNames = {"product_line_id", "review_date"})
 })
 @Data
 @EqualsAndHashCode(callSuper = true)

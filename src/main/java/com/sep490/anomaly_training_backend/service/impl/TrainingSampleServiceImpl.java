@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
@@ -13,6 +14,9 @@ import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
+import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
+import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
 import com.sep490.anomaly_training_backend.util.helper.TrainingSampleImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.TrainingSampleImportValidator;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,9 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final ImportHistoryService importHistoryService;
     private final TrainingSampleImportHelper importHelper;
     private final TrainingSampleImportValidator importValidator;
+    private final ImportImageHandlerService importImageHandlerService;
+    private final AttachmentService attachmentService;
+    private final TrainingCodeGenerator trainingCodeGenerator;
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId) {
@@ -75,48 +82,35 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         List<ImportErrorItem> errors = new ArrayList<>();
         try {
             validateImportFile(file);
-
             try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
                 Sheet sheet = getFirstSheet(workbook);
-
                 ProductLine productLine = getProductLineFromHeader(sheet);
                 if (productLine == null) {
                     errors.add(buildSystemError("ProductLine not found in file header (Row 1)"));
-                    saveImportFailHistory(currentUser, file, errors);
                     throw new AppException(ErrorCode.PRODUCT_LINE_NOT_IN_HEADER);
                 }
-
                 List<TrainingSampleImportDto> parsedRows = importHelper.parseExcelRowsWithCarryForward(sheet, errors);
-
                 if (!errors.isEmpty()) {
-                    saveImportFailHistory(currentUser, file, errors);
                     throw new AppException(ErrorCode.IMPORT_PARSE_ERROR);
                 }
-
-                // Step 4: Validate only file data (NO DB validation)
                 importValidator.validateFileData(parsedRows, errors);
-
                 if (!errors.isEmpty()) {
-                    saveImportFailHistory(currentUser, file, errors);
                     throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
                 }
-
-                // Step 5: Upsert all rows (changed from insert to upsert)
-                List<TrainingSampleResponse> responses = upsertAllRows(parsedRows, productLine, sheet);
-
-                // Step 6: Save success history
+                List<TrainingSampleResponse> responses = upsertAllRows(parsedRows, productLine, currentUser, errors);
                 saveImportPassHistory(currentUser, file);
-
                 return responses;
-
             } catch (AppException e) {
+                if (!errors.isEmpty()) {
+                    saveImportFailHistory(currentUser, file, errors);
+                }
                 throw e;
             } catch (Exception e) {
                 log.error("Import training sample failed", e);
                 if (errors.isEmpty()) {
                     errors.add(buildSystemError("System error: " + e.getMessage()));
-                    saveImportFailHistory(currentUser, file, errors);
                 }
+                saveImportFailHistory(currentUser, file, errors);
                 throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE);
             }
 
@@ -130,73 +124,111 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     /**
      * Upsert all parsed rows into database
-     * - Find by trainingCode
-     * - Update if exists OR Create if new
+     * - If trainingCode is null: always INSERT new
+     * - If trainingCode is not null: find existing, UPDATE if found OR CREATE if new
      * - Handle images from Excel rows
+     * - Soft-delete old attachments when updating
      */
     private List<TrainingSampleResponse> upsertAllRows(
             List<TrainingSampleImportDto> parsedRows,
-            ProductLine productLine,
-            Sheet sheet) {
-
+            ProductLine productLine, User user,
+            List<ImportErrorItem> errors) {
         List<TrainingSampleResponse> responses = new ArrayList<>();
+        for (TrainingSampleImportDto dto : parsedRows) {
+                TrainingSample trainingSample;
+                if (dto.getTrainingCode() != null) {
+                    trainingSample = trainingSampleRepository
+                            .findByTrainingCode(dto.getTrainingCode())
+                            .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
+                } else {
+                    // If defectCode is null, always create new
+                    trainingSample = new TrainingSample();
+                }
+                // If updating, soft-delete old attachments before handling new ones
+                if (trainingSample.getId() != null) {
+                    attachmentService.deleteAttachments("TRAINING_SAMPLE", trainingSample.getId());
+                }
+                trainingSample = upsertTrainingSample(dto, productLine, errors);
+                handleTrainingSampleImages(dto.getImageData(), trainingSample, user);
 
-        for (int rowIndex = 0; rowIndex < parsedRows.size(); rowIndex++) {
-            TrainingSampleImportDto dto = parsedRows.get(rowIndex);
-            
-            try {
-                // Upsert entity
-                TrainingSample sample = upsertTrainingSample(dto, productLine);
-
-                // Handle images from Excel row (if any)
-                // rowIndex + 3 because: row 1 = header, row 2 = column names, row 3 onwards = data
-                int excelRowIndex = rowIndex + 3;
-                handleTrainingSampleImages(sheet, sample, excelRowIndex);
-
-                responses.add(trainingSampleMapper.toDto(sample));
-
-            } catch (Exception e) {
-                log.error("Error upserting training sample with code {}: {}", dto.getTrainingCode(), e.getMessage(), e);
-                // Continue với rows khác, không throw exception
-            }
+                responses.add(trainingSampleMapper.toDto(trainingSample));
         }
-
         return responses;
     }
 
     /**
      * Upsert one TrainingSample by trainingCode
-     * - Find by trainingCode
-     * - If exists: update all fields
-     * - If not exists: create new
+     * - If trainingCode is null: always create new
+     * - If trainingCode is not null: find by trainingCode, update if exists or create if new
+     * - Validate all reference fields (process, defect, product)
+     * - Soft-delete old attachments when updating
      */
     private TrainingSample upsertTrainingSample(
             TrainingSampleImportDto dto,
-            ProductLine productLine) {
+            ProductLine productLine, List<ImportErrorItem> errors) {
 
-        // Find existing by trainingCode
-        TrainingSample sample = trainingSampleRepository
-                .findByTrainingCode(dto.getTrainingCode())
-                .orElseGet(TrainingSample::new);
+        // Find existing by trainingCode only if trainingCode is not null
+        TrainingSample sample;
+        if (dto.getTrainingCode() != null && !dto.getTrainingCode().trim().isEmpty()) {
+            sample = trainingSampleRepository
+                    .findByTrainingCode(dto.getTrainingCode())
+                    .orElseGet(TrainingSample::new);
+        } else {
+            // If trainingCode is null, always create new
+            sample = new TrainingSample();
+        }
 
-        // Resolve relationships
+        // If updating, soft-delete old attachments before handling new ones
+        if (sample.getId() != null) {
+            attachmentService.deleteAttachments("TRAINING_SAMPLE", sample.getId());
+        }
+
+        // Resolve and validate Process
         Process process = null;
-        if (dto.getProcessCode() != null) {
-            process = processRepository.findByCode(dto.getProcessCode()).orElse(null);
+        if (dto.getProcessCode() != null && !dto.getProcessCode().trim().isEmpty()) {
+            process = processRepository.findByCode(dto.getProcessCode())
+                    .orElseThrow(() -> addErrorAndReturn(
+                            errors,
+                            dto.getExcelRowNumber(),
+                            "processCode",
+                            dto.getProcessCode(),
+                            "Process not found with code: " + dto.getProcessCode(),
+                            ErrorCode.PROCESS_NOT_FOUND));
         }
 
+        // Resolve and validate Defect
         Defect defect = null;
-        if (dto.getDefectCode() != null) {
-            defect = defectRepository.findByDefectCode(dto.getDefectCode()).orElse(null);
+        if (dto.getDefectCode() != null && !dto.getDefectCode().trim().isEmpty()) {
+            defect = defectRepository.findByDefectCode(dto.getDefectCode())
+                    .orElseThrow(() -> addErrorAndReturn(
+                            errors,
+                            dto.getExcelRowNumber(),
+                            "defectCode",
+                            dto.getProductCode(),
+                            "Product not found with code: " + dto.getProductCode(),
+                            ErrorCode.DEFECT_NOT_FOUND
+                    ));
         }
 
+        // Resolve and validate Product
         Product product = null;
-        if (dto.getProductCode() != null) {
-            product = productRepository.findByCode(dto.getProductCode()).orElse(null);
+        if (dto.getProductCode() != null && !dto.getProductCode().trim().isEmpty()) {
+            product = productRepository.findByCode(dto.getProductCode())
+                    .orElseThrow(() -> addErrorAndReturn(
+                            errors,
+                            dto.getExcelRowNumber(),
+                            "productCode",
+                            dto.getProductCode(),
+                            "Product not found with code: " + dto.getProductCode(),
+                            ErrorCode.PRODUCT_NOT_FOUND
+                    ));
         }
-
-        // Update all fields (for both insert and update scenarios)
-        sample.setTrainingCode(dto.getTrainingCode());
+        if (dto.getTrainingCode() == null || dto.getTrainingCode().trim().isEmpty()) {
+            String generatedCode = trainingCodeGenerator.generateTrainingCode();
+            sample.setTrainingCode(generatedCode);
+        } else {
+            sample.setTrainingCode(dto.getTrainingCode());
+        }
         sample.setProcess(process);
         sample.setProductLine(productLine);
         sample.setCategoryName(dto.getCategoryName());
@@ -209,12 +241,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         sample.setContentOrder(dto.getContentOrder());
         sample.setNote(dto.getNote());
 
-        TrainingSample saved = trainingSampleRepository.save(sample);
-
-        log.info("Upserted TrainingSample: code={}, id={}, isNew={}", 
-                dto.getTrainingCode(), saved.getId(), sample.getId() == null);
-
-        return saved;
+        return trainingSampleRepository.save(sample);
     }
 
     /**
@@ -223,26 +250,13 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
      * - Delete old attachments (if updating existing record)
      * - Upload new images
      */
-    private void handleTrainingSampleImages(Sheet sheet, TrainingSample sample, int excelRowIndex) {
+    private void handleTrainingSampleImages(ImageData imageData, TrainingSample sample, User user) {
         try {
             if (sample.getId() == null) {
                 log.debug("Sample has no ID, skipping image handling");
                 return;
             }
-
-            Row row = sheet.getRow(excelRowIndex);
-            if (row == null) {
-                log.debug("Row {} is null, skipping image handling", excelRowIndex);
-                return;
-            }
-
-            log.info("Handling images for TrainingSample id={} from row {}", sample.getId(), excelRowIndex);
-
-            // Note: Image handling service is injected and will be called here
-            // Currently images are not extracted from Excel in this import
-            // Future: If Excel format includes images, call importImageHandlerService here
-            // importImageHandlerService.handleRowImages(row, "TRAINING_SAMPLE", sample.getId(), "SYSTEM");
-
+             importImageHandlerService.handleRowImages(imageData, "TRAINING_SAMPLE", sample.getId(), user.getUsername());
         } catch (Exception e) {
             log.error("Error handling images for TrainingSample id={}: {}", sample.getId(), e.getMessage());
             // Don't throw - ảnh handling fail không nên block main import
@@ -356,5 +370,23 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 .value(null)
                 .message(message)
                 .build();
+    }
+
+    private AppException addErrorAndReturn(
+            List<ImportErrorItem> errors,
+            Integer rowNumber,
+            String field,
+            String value,
+            String message,
+            ErrorCode errorCode) {
+
+        errors.add(ImportErrorItem.builder()
+                .rowNumber(rowNumber)
+                .field(field)
+                .value(value)
+                .message(message)
+                .build());
+
+        return new AppException(errorCode);
     }
 }

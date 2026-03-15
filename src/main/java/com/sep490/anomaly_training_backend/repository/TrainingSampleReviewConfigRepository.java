@@ -11,7 +11,6 @@ import java.util.Optional;
 public interface TrainingSampleReviewConfigRepository extends JpaRepository<TrainingSampleReviewConfig, Long> {
     Optional<TrainingSampleReviewConfig> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
 
-    List<TrainingSampleReviewConfig> findByIsActiveTrue();
 
     List<TrainingSampleReviewConfig> findByDeleteFlagFalse();
 }
