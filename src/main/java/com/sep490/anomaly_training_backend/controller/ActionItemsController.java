@@ -5,12 +5,14 @@ import com.sep490.anomaly_training_backend.dto.response.FailedTrainingResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingSignatureResponse;
 import com.sep490.anomaly_training_backend.service.ActionItemsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,21 +28,24 @@ public class ActionItemsController {
     @Operation(summary = "Get pending signatures for Team Lead")
     @GetMapping("/pending-signatures")
     @PreAuthorize("hasAuthority('action_item.view')")
-    public ResponseEntity<List<PendingSignatureResponse>> getPendingSignatures() {
-        return ResponseEntity.ok(actionItemsService.getPendingSignatures());
+    public ResponseEntity<List<PendingSignatureResponse>> getPendingSignatures(
+            @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
+        return ResponseEntity.ok(actionItemsService.getPendingSignatures(lineId));
     }
 
     @Operation(summary = "Get failed trainings for Team Lead")
     @GetMapping("/failed-trainings")
     @PreAuthorize("hasAuthority('action_item.view')")
-    public ResponseEntity<List<FailedTrainingResponse>> getFailedTrainings() {
-        return ResponseEntity.ok(actionItemsService.getFailedTrainings());
+    public ResponseEntity<List<FailedTrainingResponse>> getFailedTrainings(
+            @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
+        return ResponseEntity.ok(actionItemsService.getFailedTrainings(lineId));
     }
 
     @Operation(summary = "Get expiring skills for Team Lead")
     @GetMapping("/expiring-skills")
     @PreAuthorize("hasAuthority('action_item.view')")
-    public ResponseEntity<List<ExpiringSkillResponse>> getExpiringSkills() {
-        return ResponseEntity.ok(actionItemsService.getExpiringSkills());
+    public ResponseEntity<List<ExpiringSkillResponse>> getExpiringSkills(
+            @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
+        return ResponseEntity.ok(actionItemsService.getExpiringSkills(lineId));
     }
 }

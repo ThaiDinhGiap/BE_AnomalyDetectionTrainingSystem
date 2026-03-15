@@ -23,8 +23,8 @@ public class ActionItemsServiceImpl implements ActionItemsService {
     private final EmployeeSkillRepository employeeSkillRepository;
 
     @Override
-    public List<PendingSignatureResponse> getPendingSignatures() {
-        List<TrainingResultDetail> details = trainingResultDetailRepository.findPendingSignatures();
+    public List<PendingSignatureResponse> getPendingSignatures(Long lineId) {
+        List<TrainingResultDetail> details = trainingResultDetailRepository.findPendingSignatures(lineId);
         return details.stream()
                 .map(detail -> PendingSignatureResponse.builder()
                         .detailId(detail.getId())
@@ -39,8 +39,8 @@ public class ActionItemsServiceImpl implements ActionItemsService {
     }
 
     @Override
-    public List<FailedTrainingResponse> getFailedTrainings() {
-        List<TrainingResultDetail> details = trainingResultDetailRepository.findFailedTrainings();
+    public List<FailedTrainingResponse> getFailedTrainings(Long lineId) {
+        List<TrainingResultDetail> details = trainingResultDetailRepository.findFailedTrainings(lineId);
         return details.stream()
                 .map(detail -> FailedTrainingResponse.builder()
                         .detailId(detail.getId())
@@ -55,9 +55,9 @@ public class ActionItemsServiceImpl implements ActionItemsService {
     }
 
     @Override
-    public List<ExpiringSkillResponse> getExpiringSkills() {
+    public List<ExpiringSkillResponse> getExpiringSkills(Long lineId) {
         LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        List<EmployeeSkill> skills = employeeSkillRepository.findExpiringSkills(thirtyDaysFromNow);
+        List<EmployeeSkill> skills = employeeSkillRepository.findExpiringSkills(lineId, thirtyDaysFromNow);
         return skills.stream()
                 .map(skill -> ExpiringSkillResponse.builder()
                         .skillId(skill.getId())

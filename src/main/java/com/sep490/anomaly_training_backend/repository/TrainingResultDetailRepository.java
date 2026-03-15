@@ -30,12 +30,15 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     long countByFiltersAndIsPass(@Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year, @Param("isPass") boolean isPass);
 
 
-    @Query("SELECT d FROM TrainingResultDetail d " +
-            "WHERE d.status = 'NEED_SIGN' OR (d.actualDate IS NOT NULL AND d.signatureProOut IS NULL)")
-    List<TrainingResultDetail> findPendingSignatures();
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE (d.status = 'NEED_SIGN' OR (d.actualDate IS NOT NULL AND d.signatureProOut IS NULL)) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findPendingSignatures(@Param("lineId") Long lineId);
 
-    @Query("SELECT d FROM TrainingResultDetail d WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL)")
-    List<TrainingResultDetail> findFailedTrainings();
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findFailedTrainings(@Param("lineId") Long lineId);
 
     @Query("SELECT trd FROM TrainingResultDetail trd " +
             "JOIN FETCH trd.trainingPlanDetail tpd " +
@@ -55,4 +58,5 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Modifying
     @Transactional
     void deleteByTrainingPlanDetailIdIn(List<Long> trainingPlanDetailIds);
+
 }
