@@ -13,6 +13,8 @@ import java.util.List;
 public interface TrainingResultService {
     void generateTrainingResult(Long planId);
 
+    KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year);
+
     List<TrainingResultOptionResponse> getProductGroupsByLine(Long groupId);
 
     List<TrainingResultOptionResponse> getTrainingTopicsByProcess(Long processId);

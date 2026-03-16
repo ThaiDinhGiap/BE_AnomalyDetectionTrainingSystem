@@ -14,6 +14,32 @@ import java.util.List;
 @Repository
 public interface TrainingResultDetailRepository extends JpaRepository<TrainingResultDetail, Long> {
 
+    @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.actualDate IS NOT NULL " +
+            "AND (:teamId IS NULL OR r.team.id = :teamId) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId) " +
+            "AND (:year IS NULL OR r.year = :year)")
+    long countByFilters(@Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year);
+
+    @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.actualDate IS NOT NULL " +
+            "AND d.isPass = :isPass " +
+            "AND (:teamId IS NULL OR r.team.id = :teamId) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId) " +
+            "AND (:year IS NULL OR r.year = :year)")
+    long countByFiltersAndIsPass(@Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year, @Param("isPass") boolean isPass);
+
+
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE (d.status = 'NEED_SIGN' OR (d.actualDate IS NOT NULL AND d.signatureProOut IS NULL)) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findPendingSignatures(@Param("lineId") Long lineId);
+
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL) " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findFailedTrainings(@Param("lineId") Long lineId);
+
     @Query("SELECT trd FROM TrainingResultDetail trd " +
             "JOIN FETCH trd.trainingPlanDetail tpd " +
             "JOIN FETCH tpd.employee " +
@@ -32,4 +58,10 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Modifying
     @Transactional
     void deleteByTrainingPlanDetailIdIn(List<Long> trainingPlanDetailIds);
+
+    @Query("SELECT d.process.id, COUNT(d) FROM TrainingResultDetail d WHERE d.process.id IN :processIds AND d.status = 'DONE' GROUP BY d.process.id")
+    List<Object[]> countCompletedByProcessIds(@Param("processIds") List<Long> processIds);
+
+    @Query("SELECT d.process.id, COUNT(d) FROM TrainingResultDetail d WHERE d.process.id IN :processIds GROUP BY d.process.id")
+    List<Object[]> countTotalByProcessIds(@Param("processIds") List<Long> processIds);
 }

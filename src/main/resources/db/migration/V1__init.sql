@@ -780,8 +780,8 @@ CREATE TABLE training_plans
     id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
     form_code            VARCHAR(50)      DEFAULT 'TR_PLAN',
     title                TEXT,
-    start_date            DATE,
-    end_date              DATE,
+    start_date           DATE,
+    end_date             DATE,
     team_id              BIGINT,
     line_id              BIGINT COMMENT 'Dây chuyền áp dụng',
     status               ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
@@ -904,13 +904,13 @@ CREATE TABLE training_plan_detail_history
 CREATE TABLE training_plan_special_days
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_plan_id BIGINT NOT NULL,
-    special_date     DATE   NOT NULL,
-    training_slot    INT       DEFAULT 0 COMMENT 'Số lượt huấn luyện',
-    delete_flag              BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    training_plan_id BIGINT  NOT NULL,
+    special_date     DATE    NOT NULL,
+    training_slot    INT              DEFAULT 0 COMMENT 'Số lượt huấn luyện',
+    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
     UNIQUE KEY uk_tp_special_days (training_plan_id, special_date)
@@ -1475,6 +1475,114 @@ CREATE TABLE approval_actions
     INDEX idx_approval_actions_action (action),
     INDEX idx_approval_actions_performed_at (performed_at),
     INDEX idx_approval_actions_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 1) FACTORY CALENDARS
+--    Lưu trữ meta thông tin về 1 calendar (năm, product line, tên, v.v.)
+-- ============================================================================
+CREATE TABLE factory_calendars
+(
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    -- Năm của calendar (2026, 2027, v.v.)
+    calendar_year   INT       NOT NULL,
+
+    -- Tên calendar (optional)
+    calendar_name   VARCHAR(100),
+
+    -- Lấy từ external API
+    source_system   VARCHAR(64),
+    source_endpoint VARCHAR(255),
+    source_version  VARCHAR(32),
+
+    -- Khi calendar được sync từ external
+    synced_at       TIMESTAMP NULL,
+    synced_by       VARCHAR(255),
+
+    -- Start/End date của calendar
+    start_date      DATE      NOT NULL,
+    end_date        DATE      NOT NULL,
+
+    -- Status
+    is_active       BOOLEAN   NOT NULL DEFAULT TRUE,
+
+    -- Soft delete + audit
+    delete_flag     BOOLEAN   NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
+    created_by      VARCHAR(255),
+    updated_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      VARCHAR(255),
+
+    -- Unique key: 1 calendar per product_line per year
+    UNIQUE KEY uk_factory_calendar_line_year (calendar_year),
+
+    INDEX idx_fc_year (calendar_year),
+    INDEX idx_fc_active (is_active),
+    INDEX idx_fc_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 2) FACTORY CALENDAR ENTRIES (Day-by-day)
+-- ============================================================================
+CREATE TABLE factory_calendar_entries
+(
+    id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    -- FK to parent calendar
+    calendar_id  BIGINT       NOT NULL,
+
+    -- Ngày cụ thể
+    work_date    DATE         NOT NULL,
+
+    -- Loại ngày
+    -- WORKING_DAY, HOLIDAY, MAKEUP_DAY, OFF_DAY, NIGHT_SHIFT, SPECIAL_EVENT
+    day_type     ENUM (
+        'WORKING_DAY',
+        'HOLIDAY',
+        'MAKEUP_DAY',
+        'OFF_DAY',
+        'NIGHT_SHIFT',
+        'WEEKEND',
+        'ANNUAL_LEAVE_DAY',
+        'SPECIAL_EVENT'
+        )                     NOT NULL,
+
+    -- Tên ngày lễ (nếu là HOLIDAY)
+    -- VD: "Tết Dương Lịch", "Tết Nguyên Đán", v.v.
+    holiday_name VARCHAR(100) NULL,
+    holiday_code VARCHAR(50)  NULL,
+
+    -- Ghi chú thêm
+    -- VD: "Hợp PAM", "Ngồi PAM", "Phiên thứ thiệt sáp kiểm"
+    note         VARCHAR(255) NULL,
+
+    -- Tags for flexible classification
+    -- VD: ["PAM", "AUDIT", "SPECIAL_TRAINING"]
+    tags_json    JSON         NULL,
+
+    -- Soft delete + audit
+    delete_flag  BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at   TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    created_by   VARCHAR(255),
+    updated_at   TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by   VARCHAR(255),
+
+    -- Unique: 1 entry per calendar per date
+    UNIQUE KEY uk_fce_calendar_date (calendar_id, work_date),
+
+    INDEX idx_fce_calendar (calendar_id),
+    INDEX idx_fce_date (work_date),
+    INDEX idx_fce_day_type (day_type),
+    INDEX idx_fce_delete_flag (delete_flag),
+
+    CONSTRAINT fk_fce_calendar
+        FOREIGN KEY (calendar_id) REFERENCES factory_calendars (id)
+            ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

@@ -1,18 +1,16 @@
 CREATE TABLE priority_snapshots
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    team_id          BIGINT    NOT NULL,
-    policy_id        BIGINT    NOT NULL,
-    policy_snapshot  JSON      NOT NULL,
+    team_id          BIGINT  NOT NULL,
+    policy_id        BIGINT  NOT NULL,
+    policy_snapshot  JSON    NOT NULL,
 
-    generated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    generated_by     VARCHAR(255),
-    training_plan_id BIGINT    NULL,
+    training_plan_id BIGINT  NULL,
 
-    delete_flag      BOOLEAN   NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (team_id) REFERENCES teams (id),

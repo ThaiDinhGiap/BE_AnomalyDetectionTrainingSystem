@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +82,27 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         result.setDetails(resultDetails);
         trainingResultRepository.save(result);
+    }
+
+    @Override
+    public KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year) {
+        long totalExecuted = detailRepository.countByFilters(teamId, lineId, year);
+        long totalPass = detailRepository.countByFiltersAndIsPass(teamId, lineId, year, true);
+        long totalFail = detailRepository.countByFiltersAndIsPass(teamId, lineId, year, false);
+
+        BigDecimal passRate = BigDecimal.ZERO;
+        if (totalExecuted > 0) {
+            passRate = BigDecimal.valueOf(totalPass)
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(totalExecuted), 2, RoundingMode.HALF_UP);
+        }
+
+        return KpiSummaryResponse.builder()
+                .totalExecuted(totalExecuted)
+                .totalPass(totalPass)
+                .totalFail(totalFail)
+                .passRate(passRate)
+                .build();
     }
 
     @Override

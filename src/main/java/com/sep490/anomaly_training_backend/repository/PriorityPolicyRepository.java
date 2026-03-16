@@ -18,6 +18,8 @@ public interface PriorityPolicyRepository extends JpaRepository<PriorityPolicy, 
 
     List<PriorityPolicy> findByStatusAndDeleteFlagFalse(PolicyStatus status);
 
+    Optional<PriorityPolicy> findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType entityType, PolicyStatus status);
+
     List<PriorityPolicy> findByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType entityType, PolicyStatus status);
 
     Optional<PriorityPolicy> findByPolicyCodeAndDeleteFlagFalse(String policyCode);

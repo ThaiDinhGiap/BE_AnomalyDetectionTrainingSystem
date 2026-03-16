@@ -2,13 +2,14 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
@@ -42,18 +43,6 @@ import java.util.List;
 public class TrainingPlanController {
 
     private final TrainingPlanService trainingPlanService;
-
-    @Operation(summary = "Create new training plan", description = "Create a training plan in DRAFT status.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data")
-    })
-    @PostMapping
-    @PreAuthorize("hasAuthority('training_plan.create')")
-    public ResponseEntity<TrainingPlanResponse> createPlan(@Valid @RequestBody TrainingPlanCreateRequest request) {
-        TrainingPlanResponse response = trainingPlanService.createPlan(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
     @Operation(summary = "Get training plan details by ID")
     @GetMapping("/{id}")
@@ -269,14 +258,16 @@ public class TrainingPlanController {
         return ResponseEntity.ok("Plan has been rejected!");
     }
 
-//    @Operation(summary = "Generate Training Plan", description = "Automative generate training plan")
-//    @ApiResponses(value = {
-//            @ApiResponse(responseCode = "200", description = "Plan generated successfully"),
-//            @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
-//    })
-//    @PostMapping("{id}/generate")
-//    @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
-//    public ResponseEntity<TrainingPlanResponse> generatePlan(
-//
-//    )
+    @Operation(summary = "Generate Training Plan", description = "Automative generate training plan")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Plan generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
+    })
+    @PostMapping("{id}/generate")
+    @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
+    public TrainingPlanGenerationResponse generatePlan(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody TrainingPlanGenerationRequest request) {
+        return trainingPlanService.generateTrainingPlans(currentUser, request);
+    }
 }

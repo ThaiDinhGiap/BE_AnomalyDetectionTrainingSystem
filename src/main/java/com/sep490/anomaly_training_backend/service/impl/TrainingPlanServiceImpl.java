@@ -4,7 +4,6 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingPlanCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
@@ -14,16 +13,22 @@ import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.dto.scoring.PrioritySnapshotResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
+import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.PriorityPolicy;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.Team;
@@ -31,12 +36,14 @@ import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
 import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
@@ -49,6 +56,7 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.scoring.impl.PriorityScoringServiceImpl;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -71,8 +79,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanDetailRepository trainingPlanDetailRepository;
-    private final GroupRepository groupRepository;
-    private final TrainingPlanMapper mapper;
+    private final TrainingPlanMapper planMapper;
+    private final PrioritySnapshotMapper prioritySnapshotMapper;
     private final EmployeeRepository employeeRepository;
     private final ProcessRepository processRepository;
     private final UserRepository userRepository;
@@ -84,83 +92,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final TrainingResultRepository trainingResultRepository;
-
-    @Override
-    @Transactional
-    public TrainingPlanResponse createPlan(TrainingPlanCreateRequest request) {
-        if (request.getMonthEnd().isBefore(request.getMonthStart())) {
-            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
-        }
-
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
-
-        if (managedTeams.isEmpty()) {
-            throw new AppException(ErrorCode.USER_NOT_TEAM_LEAD);
-        }
-
-        List<Team> validTeams = managedTeams.stream()
-                .filter(t -> t.getGroup() != null && t.getGroup().getId().equals(request.getGroupId()))
-                .toList();
-
-        if (validTeams.isEmpty()) {
-            throw new AppException(ErrorCode.NO_PERMISSION_FOR_GROUP);
-        }
-        Group selectedGroup = validTeams.get(0).getGroup();
-
-        // Validate và lấy ProductLine
-        ProductLine productLine = productLineRepository.findById(request.getLineId())
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
-
-        // Validate ProductLine thuộc Group đã chọn
-        if (!productLine.getGroup().getId().equals(selectedGroup.getId())) {
-            throw new AppException(ErrorCode.PRODUCT_LINE_NOT_IN_GROUP);
-        }
-
-        TrainingPlan trainingPlan = mapper.toEntity(request);
-        trainingPlan.setCreatedBy(currentUser.getUsername());
-        trainingPlan.setStatus(ReportStatus.DRAFT);
-        trainingPlan.setCurrentVersion(1);
-        trainingPlan.setLine(productLine);
-        trainingPlan.setTeam(validTeams.get(0));
-
-        TrainingPlan savedPlan = trainingPlanRepository.save(trainingPlan);
-
-        TrainingPlanResponse response = mapper.toResponse(savedPlan);
-
-        List<Long> validTeamIds = validTeams.stream().map(Team::getId).toList();
-
-        List<Employee> teamMembers = employeeRepository.findAllByTeamIdIn(validTeamIds);
-
-        // B3: Map Employee sang TrainingPlanDetailResponse
-        List<TrainingPlanDetailResponse> prefilledDetails = new ArrayList<>();
-
-        if (teamMembers != null) {
-            for (Employee emp : teamMembers) {
-                TrainingPlanDetailResponse detailRes = new TrainingPlanDetailResponse();
-
-                detailRes.setEmployeeId(emp.getId());
-                detailRes.setEmployeeCode(emp.getEmployeeCode());
-                detailRes.setEmployeeName(emp.getFullName());
-                detailRes.setBatchId(java.util.UUID.randomUUID().toString());
-
-                detailRes.setId(null);
-                detailRes.setPlannedDate(null);
-                detailRes.setStatus(null);
-                detailRes.setNote("");
-
-                prefilledDetails.add(detailRes);
-            }
-        }
-
-        response.setDetails(prefilledDetails);
-        populateEmployeeProcesses(response, savedPlan);
-
-        return response;
-    }
+    private final PriorityScoringServiceImpl priorityScoringService;
+    private final PriorityPolicyRepository policyRepository;
+    private final PrioritySnapshotRepository prioritySnapshotRepository;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -181,69 +115,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        TrainingPlanResponse response = mapper.toResponse(plan);
+        TrainingPlanResponse response = planMapper.toResponse(plan);
         populateEmployeeProcesses(response, plan);
         return response;
     }
-
-    /**
-     * Populate employeeProcesses cho từng detail + build groupedDetails (group theo batchId)
-     */
-    private void populateEmployeeProcesses(TrainingPlanResponse response, TrainingPlan plan) {
-        Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
-        if (response.getDetails() == null || productLineId == null) return;
-
-        // Cache skill lookup để không query trùng employee
-        Map<Long, List<TrainingPlanDetailResponse.ProcessInfo>> skillCache = new java.util.HashMap<>();
-
-        for (TrainingPlanDetailResponse detail : response.getDetails()) {
-            if (detail.getEmployeeId() != null) {
-                List<TrainingPlanDetailResponse.ProcessInfo> processes = skillCache.computeIfAbsent(
-                        detail.getEmployeeId(),
-                        empId -> {
-                            List<EmployeeSkill> skills = employeeSkillRepository
-                                    .findSkillsByEmployeeAndLine(empId, productLineId);
-                            return skills.stream()
-                                    .map(skill -> {
-                                        TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
-                                        info.setId(skill.getProcess().getId());
-                                        info.setName(skill.getProcess().getName());
-                                        return info;
-                                    })
-                                    .toList();
-                        }
-                );
-                detail.setEmployeeProcesses(processes);
-            }
-        }
-
-        // Build groupedDetails: group theo batchId (phân biệt các lần thêm khác nhau của cùng 1 employee)
-        Map<String, EmployeePlanGroup> groupMap = new java.util.LinkedHashMap<>();
-
-        for (TrainingPlanDetailResponse detail : response.getDetails()) {
-            if (detail.getEmployeeId() == null) continue;
-
-            // Dùng batchId làm key. Nếu batchId null (data cũ chưa có) → fallback dùng "employee_{id}"
-            String key = detail.getBatchId() != null
-                    ? detail.getBatchId()
-                    : "employee_" + detail.getEmployeeId();
-
-            EmployeePlanGroup group = groupMap.computeIfAbsent(key, k -> {
-                EmployeePlanGroup g = new EmployeePlanGroup();
-                g.setBatchId(detail.getBatchId());
-                g.setEmployeeId(detail.getEmployeeId());
-                g.setEmployeeName(detail.getEmployeeName());
-                g.setEmployeeCode(detail.getEmployeeCode());
-                g.setEmployeeProcesses(detail.getEmployeeProcesses());
-                return g;
-            });
-
-            group.getSchedules().add(detail);
-        }
-
-        response.setGroupedDetails(new ArrayList<>(groupMap.values()));
-    }
-
 
     @Override
     public List<TrainingPlanResponse> getAllPlans() {
@@ -251,7 +126,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         return plans.stream()
                 .map(plan -> {
-                    TrainingPlanResponse response = mapper.toResponse(plan);
+                    TrainingPlanResponse response = planMapper.toResponse(plan);
                     populateEmployeeProcesses(response, plan);
                     return response;
                 })
@@ -268,7 +143,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         List<TrainingPlan> plans = trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses);
         return plans.stream()
                 .map(plan -> {
-                    TrainingPlanResponse response = mapper.toResponse(plan);
+                    TrainingPlanResponse response = planMapper.toResponse(plan);
                     populateEmployeeProcesses(response, plan);
                     return response;
                 })
@@ -334,7 +209,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         // Trả về detail đầu tiên kèm employeeProcesses
         TrainingPlanDetail firstAdded = addedDetails.get(0);
-        TrainingPlanDetailResponse response = mapper.toDetailResponse(firstAdded);
+        TrainingPlanDetailResponse response = planMapper.toDetailResponse(firstAdded);
         populateDetailProcesses(response, plan);
         return response;
     }
@@ -386,7 +261,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         trainingPlanRepository.save(plan);
-        TrainingPlanDetailResponse response = mapper.toDetailResponse(detail);
+        TrainingPlanDetailResponse response = planMapper.toDetailResponse(detail);
         populateDetailProcesses(response, plan);
         return response;
     }
@@ -461,9 +336,25 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public List<TrainingPlanResponse> generateTrainingPlans(TrainingPlanGenerationRequest request) {
+    public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser, TrainingPlanGenerationRequest request) {
+        TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
+        TrainingPlanResponse trainingPlanResponse = toTrainingPlanResponse(generatedTrainingPlan);
 
-        return List.of();
+        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
+        PriorityPolicy priorityPolicy = policyRepository.findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND, "No active priority policy found for employees"));
+
+        PrioritySnapshot prioritySnapshot = priorityScoringService.generateSnapshot(priorityPolicy.getId(), request.getTeamId(), teamMembers);
+        prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
+        prioritySnapshotRepository.save(prioritySnapshot);
+
+        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(prioritySnapshot);
+
+        TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
+        response.setPrioritySnapshot(prioritySnapshotResponse);
+        response.setTrainingPlan(trainingPlanResponse);
+
+        return response;
     }
 
     @Override
@@ -498,7 +389,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 //            regenerateResultDetails(savedPlan);
 //        }
 
-        TrainingPlanResponse response = mapper.toResponse(savedPlan);
+        TrainingPlanResponse response = planMapper.toResponse(savedPlan);
         populateEmployeeProcesses(response, savedPlan);
         return response;
     }
@@ -1052,5 +943,126 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         trainingPlanHistoryRepository.save(history);
     }
 
-    
+    private TrainingPlan generateTrainingPlan(TrainingPlanGenerationRequest request) {
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new AppException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
+        Team team = teamRepository.findById(request.getTeamId())
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+
+        ProductLine productLine = productLineRepository.findById(request.getLineId())
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+
+        TrainingPlan trainingPlan = new TrainingPlan();
+        trainingPlan.setTitle(request.getTitle());
+        trainingPlan.setStartDate(request.getStartDate());
+        trainingPlan.setEndDate(request.getEndDate());
+        trainingPlan.setTeam(team);
+        trainingPlan.setLine(productLine);
+        trainingPlan.setMaxTrainingPerDay(request.getMaxTrainingPerDay());
+        trainingPlan.setMinTrainingPerDay(request.getMinTrainingPerDay());
+
+        if (request.getSpecialDays() != null) {
+            List<TrainingPlanSpecialDay> specialDays = request.getSpecialDays().stream()
+                    .map(day -> {
+                        TrainingPlanSpecialDay specialDay = new TrainingPlanSpecialDay();
+                        specialDay.setSpecialDate(day.getSpecialDay());
+                        specialDay.setTrainingSlot(day.getTrainingSlot());
+                        specialDay.setTrainingPlan(trainingPlan);
+                        return specialDay;
+                    }).toList();
+            trainingPlan.setSpecialDays(specialDays);
+        }
+
+        return trainingPlanRepository.save(trainingPlan);
+    }
+
+    private TrainingPlanResponse toTrainingPlanResponse(TrainingPlan trainingPlan) {
+        TrainingPlanResponse response = planMapper.toResponse(trainingPlan);
+        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(trainingPlan.getTeam().getId());
+
+        List<TrainingPlanDetailResponse> prefilledDetails = new ArrayList<>();
+
+        if (teamMembers != null) {
+            for (Employee emp : teamMembers) {
+                TrainingPlanDetailResponse detailRes = new TrainingPlanDetailResponse();
+
+                detailRes.setEmployeeId(emp.getId());
+                detailRes.setEmployeeCode(emp.getEmployeeCode());
+                detailRes.setEmployeeName(emp.getFullName());
+                detailRes.setBatchId(java.util.UUID.randomUUID().toString());
+
+                detailRes.setId(null);
+                detailRes.setPlannedDate(null);
+                detailRes.setStatus(null);
+                detailRes.setNote("");
+
+                prefilledDetails.add(detailRes);
+            }
+        }
+
+        response.setDetails(prefilledDetails);
+        populateEmployeeProcesses(response, trainingPlan);
+
+        return response;
+    }
+
+    /**
+     * Populate employeeProcesses cho từng detail + build groupedDetails (group theo batchId)
+     */
+    private void populateEmployeeProcesses(TrainingPlanResponse response, TrainingPlan plan) {
+        Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
+        if (response.getDetails() == null || productLineId == null) return;
+
+        // Cache skill lookup để không query trùng employee
+        Map<Long, List<TrainingPlanDetailResponse.ProcessInfo>> skillCache = new java.util.HashMap<>();
+
+        for (TrainingPlanDetailResponse detail : response.getDetails()) {
+            if (detail.getEmployeeId() != null) {
+                List<TrainingPlanDetailResponse.ProcessInfo> processes = skillCache.computeIfAbsent(
+                        detail.getEmployeeId(),
+                        empId -> {
+                            List<EmployeeSkill> skills = employeeSkillRepository
+                                    .findSkillsByEmployeeAndLine(empId, productLineId);
+                            return skills.stream()
+                                    .map(skill -> {
+                                        TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
+                                        info.setId(skill.getProcess().getId());
+                                        info.setName(skill.getProcess().getName());
+                                        return info;
+                                    })
+                                    .toList();
+                        }
+                );
+                detail.setEmployeeProcesses(processes);
+            }
+        }
+
+        // Build groupedDetails: group theo batchId (phân biệt các lần thêm khác nhau của cùng 1 employee)
+        Map<String, EmployeePlanGroup> groupMap = new java.util.LinkedHashMap<>();
+
+        for (TrainingPlanDetailResponse detail : response.getDetails()) {
+            if (detail.getEmployeeId() == null) continue;
+
+            // Dùng batchId làm key. Nếu batchId null (data cũ chưa có) → fallback dùng "employee_{id}"
+            String key = detail.getBatchId() != null
+                    ? detail.getBatchId()
+                    : "employee_" + detail.getEmployeeId();
+
+            EmployeePlanGroup group = groupMap.computeIfAbsent(key, k -> {
+                EmployeePlanGroup g = new EmployeePlanGroup();
+                g.setBatchId(detail.getBatchId());
+                g.setEmployeeId(detail.getEmployeeId());
+                g.setEmployeeName(detail.getEmployeeName());
+                g.setEmployeeCode(detail.getEmployeeCode());
+                g.setEmployeeProcesses(detail.getEmployeeProcesses());
+                return g;
+            });
+
+            group.getSchedules().add(detail);
+        }
+
+        response.setGroupedDetails(new ArrayList<>(groupMap.values()));
+    }
 }

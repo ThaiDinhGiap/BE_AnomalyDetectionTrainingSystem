@@ -4,8 +4,10 @@ import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
 @Mapper(componentModel = "spring")
+@Component
 public interface EmployeeSkillMapper {
 
     @Mapping(source = "employee.fullName", target = "employeeName")

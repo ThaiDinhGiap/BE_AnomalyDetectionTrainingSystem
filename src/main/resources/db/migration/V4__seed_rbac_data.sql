@@ -19,7 +19,8 @@ VALUES (1,  'defect_report',                'Báo cáo lỗi sản phẩm',     
        (11, 'system',                       'Cài đặt hệ thống',           'Cài đặt và cấu hình hệ thống',        11, 'system'),
        (12, 'staff_organization',           'Tổ chức nhân sự',            'Quản lí danh sách nhân sự công ty',   12, 'system'),
        (13, 'manufacturing_line',           'Tổ chức sản xuất',           'Quản lí danh sách tổ chức dây chuyền',13, 'system'),
-       (14, 'attachment',             'Quản lý File & Ảnh',     'Upload và xóa tệp MinIO', 15, 'system');
+       (14, 'attachment',                   'Quản lý File & Ảnh',         'Upload và xóa tệp MinIO',             14, 'system'),
+       (15, 'action_item',                  'Việc cần làm',               'Quản lý các mục cần xử lý',           15, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 2: PERMISSIONS
 -- ----------------------------------------------------------------------------
@@ -117,7 +118,10 @@ VALUES
 (54, 'training_sample_review_config.create', 'Tạo lịch kiểm tra định kì',                  13, 'delete', 4, TRUE, 'system'),
 (56, 'attachment.view',   'Xem file/ảnh đính kèm', 14, 'view',   1, TRUE, 'system'),
 (57, 'attachment.create', 'Upload file/ảnh mới',   14, 'create', 2, TRUE, 'system'),
-(58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system');
+(58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system'),
+
+-- action_item (module 15)
+(59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system');
 -- ----------------------------------------------------------------------------
 -- PART 4: ASSIGN PERMISSIONS TO ROLES
 -- ADMIN gets all permissions
@@ -143,7 +147,8 @@ VALUES
 (2, 56),
 (2, 57),
 (2, 58),
-(2, 27);                -- user.view, role.view
+(2, 27),                -- user.view, role.view
+(2, 59); -- action_item.view
 
 -- SUPERVISOR: view/create/edit reports, view plans, manage training results
 INSERT INTO role_permissions (role_id, permission_id)
@@ -157,7 +162,8 @@ VALUES
 (3, 56),
 (3, 57),
 (3, 58),
-(3, 40);                        -- dashboard: view
+(3, 40),                        -- dashboard: view
+(3, 59); -- action_item.view
 
 -- TEAM_LEADER: create and view reports, input training results
 INSERT INTO role_permissions (role_id, permission_id)
@@ -189,7 +195,9 @@ VALUES
     (4, 56),
     (4, 57),
     (4, 58),
-    (4, 47);
+    (4, 47),
+    (4, 59), -- action_item.view
+    (4, 40); -- dashboard.view
 -- FINAL_INSPECTION: view defects, input final check results
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
@@ -199,7 +207,8 @@ VALUES
 (5, 57),
 (5, 58),
 (5, 18),                        -- employee: view
-(5, 40);                        -- dashboard: view
+(5, 40),                        -- dashboard: view
+(5, 59); -- action_item.view
 
 -- ----------------------------------------------------------------------------
 -- PART 5: ASSIGN FINAL_INSPECTION ROLE TO USERS 8 & 9

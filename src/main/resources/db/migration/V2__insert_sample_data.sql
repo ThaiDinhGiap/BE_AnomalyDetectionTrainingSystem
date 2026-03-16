@@ -172,7 +172,14 @@ VALUES (1, 1, 'VALID', '2023-01-15', '2026-01-15', 'ROLE_ADMIN'),
        (4, 3, 'PENDING_REVIEW', '2023-05-01', '2026-05-01', 'ROLE_ADMIN'),
        (5, 3, 'PENDING_REVIEW', '2023-07-01', '2026-07-01', 'ROLE_ADMIN'),
        (7, 4, 'VALID', '2023-04-15', '2026-04-15', 'ROLE_ADMIN'),
-       (7, 5, 'VALID', '2023-06-20', '2026-06-20', 'ROLE_ADMIN');
+       (7, 5, 'VALID', '2023-06-20', '2026-06-20', 'ROLE_ADMIN'),
+       -- Data for Expiring Skills
+       (1, 3, 'VALID', CURDATE() - INTERVAL 1 YEAR, CURDATE() + INTERVAL 15 DAY, 'ROLE_ADMIN'),
+       (2, 2, 'VALID', CURDATE() - INTERVAL 2 YEAR, CURDATE() + INTERVAL 1 DAY, 'ROLE_ADMIN'),
+       (3, 3, 'VALID', CURDATE() - INTERVAL 1 YEAR, CURDATE() + INTERVAL 29 DAY, 'ROLE_ADMIN'),
+       -- Counter-examples (not expiring)
+       (4, 4, 'VALID', CURDATE() - INTERVAL 1 YEAR, CURDATE() + INTERVAL 31 DAY, 'ROLE_ADMIN'),
+       (5, 5, 'VALID', CURDATE() - INTERVAL 1 YEAR, CURDATE() - INTERVAL 1 DAY, 'ROLE_ADMIN');
 
 
 -- ============================================================================
@@ -398,8 +405,8 @@ VALUES (1, 2, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ',
         3, 'Mẫu NG #83', 'TS0028', 3, 2, 2, 'Phải ghi nhận vào checklist', 'system'),
 
        (29, 2, 1, 3, 'Lắp ráp ron cao su',
-        'Sau khi ép ron phải kiểm tra độ kín sơ bộ bằng mắt trước khi chuyển công đoạn.',
-        1, 'Mẫu chuẩn #09', 'TS0029', 1, 3, 3, 'Rà soát trước test', 'system'),
+        'Sau khi lắp xong phải kiểm tra độ kín sơ bộ bằng mắt trước khi chuyển công đoạn.',
+        1, 'Mẫu chuẩn #06', 'TS0029', 1, 3, 2, 'Kiểm 100%', 'system'),
 
        (30, 1, 1, 1, 'Lỗi Ngoại Quan - Xước Mẻ',
         'Đối chiếu vị trí lỗi với hình ảnh hướng dẫn đào tạo để tránh phân loại sai lỗi.',
@@ -613,7 +620,7 @@ VALUES (1, 1, 'Kết quả huấn luyện T3/2026 - Line Tiện', 'TR_RES_TIEN_0
         'Đang ghi nhận (Có 1 DONE, 1 PENDING)', 'tl_prod01'),
        (4, 7, 'Kết quả huấn luyện T5-T7/2026 - Line Phay', 'TR_RES_PHAY_003', 2026, 2, 2, 'ON_GOING', 1,
         'Mới ghi nhận tháng 5', 'tl_prod02'),
-       (5, 10, 'Kết quả huấn luyện T8-T10/2026 - Line Phay', 'TR_RES_PHAY_004', 2026, 2, 2, 'ON_GOING', 1,
+       (5, 10, 'Kế hoạch huấn luyện T8-T10/2026 - Line Phay', 'TR_RES_PHAY_004', 2026, 2, 2, 'ON_GOING', 1,
         'Chưa diễn ra, đang pending toàn bộ', 'tl_prod02'),
        (6, 12, 'Kết quả huấn luyện T1-T4/2026 - Line Tiện', 'TR_RES_TIEN_005', 2026, 1, 1, 'APPROVED', 1,
         'Đã hoàn thành xuất sắc 4 tháng', 'tl_prod01'),
@@ -695,7 +702,28 @@ VALUES
 (7, 49, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, '2026-11-11', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
  'Lịch T11', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
 (7, 50, 3, 2, NULL, NULL, NULL, NULL, NULL, NULL, '2026-12-12', NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL,
- 'Lịch T12', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01');
+ 'Lịch T12', FALSE, NULL, NULL, NULL, NULL, 'tl_prod01'),
+
+-- Data for Pending Signatures
+(1, 8, 3, 1, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-03-10', '2026-03-10', '10:00:00', '10:03:00', '10:18:00',
+ 'NEED_SIGN', 14, TRUE, 'Cần ký', FALSE, 5, 8, NULL, NULL, 'tl_prod01'),
+(1, 11, 1, 2, 1, 1, 1, NULL, 'Mẫu NG #55', 20.00, '2026-04-15', '2026-04-15', '13:00:00', '13:02:00', '13:22:00',
+ 'NEED_SIGN', 19, TRUE, 'Chờ ký xác nhận ra', FALSE, 5, 8, NULL, NULL, 'tl_prod01'),
+(2, 15, 4, 3, 8, 2, 3, NULL, 'Mẫu NG #70', 18.00, '2026-03-07', '2026-03-07', '14:00:00', '14:02:00', '14:20:00',
+ 'NEED_SIGN', 16, TRUE, 'Đã ký vào, chờ ký ra', FALSE, 6, 9, NULL, NULL, 'tl_prod02'),
+
+
+-- Data for Failed Trainings
+(1, 10, 1, 1, 2, 1, 2, NULL, 'Mẫu NG #62', 15.00, '2026-04-05', '2026-04-05', '11:00:00', '11:03:00', '11:20:00',
+ 'APPROVED', 16, FALSE, 'Trượt, cần đào tạo lại', FALSE, 5, 8, 5, 8, 'tl_prod01'),
+(2, 16, 4, 3, 4, 2, 3, NULL, 'Mẫu NG #71', 18.00, '2026-03-14', '2026-03-14', '15:00:00', '15:03:00', '15:25:00',
+ 'APPROVED', 20, FALSE, 'Trượt, chưa có kế hoạch đào tạo lại', NULL, 6, 9, 6, 9, 'tl_prod02'),
+(3, 20, 7, 4, 3, 3, 2, NULL, 'Mẫu chuẩn #01', 25.00, '2026-03-10', '2026-03-10', '16:00:00', '16:02:00', '16:30:00',
+ 'APPROVED', 27, FALSE, 'Trượt, chưa có kế hoạch', FALSE, 7, 8, 7, 8, 'tl_prod03'),
+-- Counter-example (Failed but already retrained)
+(4, 21, 7, 5, 1, 3, 1, NULL, 'Mẫu NG #55', 30.00, '2026-03-20', '2026-03-20', '17:00:00', '17:02:00', '17:35:00',
+ 'APPROVED', 32, FALSE, 'Trượt, đã có kế hoạch đào tạo lại', TRUE, 7, 8, 7, 8, 'tl_prod03');
+
 
 -- ============================================================================
 -- PART 6: NOTIFICATIONS & SYSTEM CONFIGS
@@ -820,6 +848,91 @@ VALUES
 ('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system');
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- 1. Create calendar for Production Line 1 - Year 2026
+INSERT INTO factory_calendars (calendar_year,
+                               calendar_name,
+                               source_system,
+                               source_endpoint,
+                               source_version,
+                               synced_at,
+                               synced_by,
+                               start_date,
+                               end_date,
+                               is_active,
+                               delete_flag,
+                               created_by,
+                               updated_by)
+VALUES (2026,
+        'DMVN Working Calendar 2026',
+        'EXT_HRM_CALENDAR',
+        '/api/v1/calendars/factory/2026',
+        'v1',
+        '2026-03-03 10:00:00',
+        'system',
+        '2026-01-01',
+        '2026-12-31',
+        TRUE,
+        FALSE,
+        'system',
+        'system');
+
+SET @calendar_id := LAST_INSERT_ID();
+
+-- 2. Insert sample entries from ảnh (January 2026)
+-- Working days (ngày làm việc bình thường)
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES
+-- January 2026
+(@calendar_id, '2026-01-01', 'HOLIDAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-07', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-08', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-11', 'WEEKEND', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-12', 'MAKEUP_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-14', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-15', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-16', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-17', 'SPECIAL_EVENT', TRUE, 'system', 'system');
+
+-- February 2026
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES (@calendar_id, '2026-02-02', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-03', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-04', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-07', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-11', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-12', 'SPECIAL_EVENT', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-14', 'WORKING_DAY', FALSE, 'system', 'system');
+
+-- March 2026
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES (@calendar_id, '2026-03-02', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-03', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-04', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-07', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-11', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-12', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-14', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-20', 'SPECIAL_EVENT', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-21', 'MAKEUP_DAY', FALSE, 'system', 'system');
 
 -- ============================================================================
 -- END OF SAMPLE DATA
