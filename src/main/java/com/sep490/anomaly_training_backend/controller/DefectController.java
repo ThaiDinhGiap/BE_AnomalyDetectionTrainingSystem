@@ -3,11 +3,7 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.DefectProposalService;
@@ -51,6 +47,14 @@ public class DefectController {
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProcess(@RequestParam("processId") Long processId) {
         List<DefectResponse> list = defectService.getDefectByProcess(processId);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+
+    @Operation(summary = "Get defect coverage in product and its proportion")
+    @GetMapping("/coverage/{productLineId}")
+    @PreAuthorize("hasAuthority('defect.view')")
+    public ResponseEntity<ApiResponse<List<DefectCoverageResponse>>> getCoverageInProductLine(@PathVariable("productLineId") Long productLineId) {
+        List<DefectCoverageResponse> list =  defectService.getCoverageInProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 

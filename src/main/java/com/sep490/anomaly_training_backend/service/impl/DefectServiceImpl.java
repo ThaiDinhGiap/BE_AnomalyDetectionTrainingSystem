@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
+import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
@@ -141,6 +142,12 @@ public class DefectServiceImpl implements DefectService {
             }
             throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE);
         }
+    }
+
+    @Override
+    public List<DefectCoverageResponse> getCoverageInProductLine(Long productLineId) {
+        List<Defect> result = new ArrayList<>();
+        return null;
     }
 
     private void validateImportFile(MultipartFile file) {

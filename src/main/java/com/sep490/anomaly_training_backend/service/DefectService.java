@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service;
 
+import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import org.apache.coyote.BadRequestException;
@@ -20,4 +21,5 @@ public interface DefectService {
 
     List<DefectResponse> importDefect(User currentUser, MultipartFile file) throws BadRequestException;
 
+    List<DefectCoverageResponse> getCoverageInProductLine(Long productLineId);
 }
