@@ -2,13 +2,12 @@ package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
@@ -35,4 +34,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             "LEFT JOIN User u ON e.employeeCode = u.employeeCode " +
             "WHERE u.id IS NULL AND e.deleteFlag = false")
     List<Employee> findAllEmployeesWithoutAccount();
+    
+    List<Employee> findByDeleteFlagFalse();
 }
