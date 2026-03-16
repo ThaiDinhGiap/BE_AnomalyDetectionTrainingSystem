@@ -747,6 +747,91 @@ VALUES
 
 SET FOREIGN_KEY_CHECKS = 1;
 
+-- 1. Create calendar for Production Line 1 - Year 2026
+INSERT INTO factory_calendars (calendar_year,
+                               calendar_name,
+                               source_system,
+                               source_endpoint,
+                               source_version,
+                               synced_at,
+                               synced_by,
+                               start_date,
+                               end_date,
+                               is_active,
+                               delete_flag,
+                               created_by,
+                               updated_by)
+VALUES (2026,
+        'DMVN Working Calendar 2026',
+        'EXT_HRM_CALENDAR',
+        '/api/v1/calendars/factory/2026',
+        'v1',
+        '2026-03-03 10:00:00',
+        'system',
+        '2026-01-01',
+        '2026-12-31',
+        TRUE,
+        FALSE,
+        'system',
+        'system');
+
+SET @calendar_id := LAST_INSERT_ID();
+
+-- 2. Insert sample entries from ảnh (January 2026)
+-- Working days (ngày làm việc bình thường)
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES
+-- January 2026
+(@calendar_id, '2026-01-01', 'HOLIDAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-07', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-08', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-11', 'WEEKEND', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-12', 'MAKEUP_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-14', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-15', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-16', 'WORKING_DAY', FALSE, 'system', 'system'),
+(@calendar_id, '2026-01-17', 'SPECIAL_EVENT', TRUE, 'system', 'system');
+
+-- February 2026
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES (@calendar_id, '2026-02-02', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-03', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-04', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-07', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-11', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-12', 'SPECIAL_EVENT', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-02-14', 'WORKING_DAY', FALSE, 'system', 'system');
+
+-- March 2026
+INSERT INTO factory_calendar_entries (calendar_id, work_date, day_type, delete_flag,
+                                      created_by, updated_by)
+VALUES (@calendar_id, '2026-03-02', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-03', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-04', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-05', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-06', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-07', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-09', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-10', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-11', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-12', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-13', 'WORKING_DAY', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-14', 'WEEKEND', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-20', 'SPECIAL_EVENT', FALSE, 'system', 'system'),
+       (@calendar_id, '2026-03-21', 'MAKEUP_DAY', FALSE, 'system', 'system');
+
 -- ============================================================================
 -- END OF SAMPLE DATA
 -- ============================================================================

@@ -142,7 +142,17 @@ public enum ErrorCode {
     INVALID_METRIC(7505, "An invalid metric was provided for the entity type.", HttpStatus.BAD_REQUEST),
     MISSING_TIER_FILTER(7506, "At least one filter is required for each tier.", HttpStatus.BAD_REQUEST),
     PRIORITY_POLICY_NOT_FOUND(7507, "Priority policy not found.", HttpStatus.NOT_FOUND),
-    INVALID_ENTITY_TYPE(7508, "Invalid entity type provided.", HttpStatus.BAD_REQUEST);
+    INVALID_ENTITY_TYPE(7508, "Invalid entity type provided.", HttpStatus.BAD_REQUEST),
+    METRIC_NOT_FOUND(7509, "Metric is not found.", HttpStatus.NOT_FOUND),
+    INVALID_METRIC_METHOD(7510, "Invalid metric method provided.", HttpStatus.BAD_REQUEST),
+    METRIC_CALCULATION_ERROR(7511, "An error occurred while calculating the metric; please check the logs for details.", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_METRIC_DEFINITION(7512, "Invalid metric definition provided.", HttpStatus.BAD_REQUEST),
+    CLASSIFICATION_NOT_FOUND(7513, "Classification rules not found.", HttpStatus.NOT_FOUND),
+    INVALID_CLASSIFICATION_RULE(7514, "Invalid classification rule definition.", HttpStatus.BAD_REQUEST),
+    INVALID_CLASSIFICATION_VALUE(7515, "Invalid value for classification.", HttpStatus.BAD_REQUEST),
+    POLICY_NOT_FOUND(7516, "Policy not found.", HttpStatus.NOT_FOUND),
+    SNAPSHOT_NOT_FOUND(7517, "Snapshot not found.", HttpStatus.NOT_FOUND),
+    ;
 
     private final int code;
     private final String message;
