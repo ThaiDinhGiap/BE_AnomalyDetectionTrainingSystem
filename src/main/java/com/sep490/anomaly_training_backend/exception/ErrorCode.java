@@ -152,6 +152,8 @@ public enum ErrorCode {
     INVALID_CLASSIFICATION_VALUE(7515, "Invalid value for classification.", HttpStatus.BAD_REQUEST),
     POLICY_NOT_FOUND(7516, "Policy not found.", HttpStatus.NOT_FOUND),
     SNAPSHOT_NOT_FOUND(7517, "Snapshot not found.", HttpStatus.NOT_FOUND),
+    PRIORITY_SNAPSHOT_NOT_FOUND(7518, "Priority snapshot not found.", HttpStatus.NOT_FOUND),
+    FACTORY_CALENDAR_NOT_FOUND(7519, "Factory calendar not found.", HttpStatus.NOT_FOUND),
     ;
 
     private final int code;

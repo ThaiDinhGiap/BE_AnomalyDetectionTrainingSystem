@@ -45,4 +45,10 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
     List<Long> findEmployeeIdsByTrainingPlanId(@Param("planId") Long planId);
 
     List<TrainingPlanDetail> findByTrainingPlanIdAndDeleteFlagFalse(Long planId);
+
+    void deleteByTrainingPlanId(Long trainingPlanId);
+
+    int countByTrainingPlanIdAndPlannedDate(Long trainingPlanId, LocalDate plannedDate);
+
+    List<TrainingPlanDetail> findByTrainingPlanIdOrderByPlannedDateAsc(Long trainingPlanId);
 }
