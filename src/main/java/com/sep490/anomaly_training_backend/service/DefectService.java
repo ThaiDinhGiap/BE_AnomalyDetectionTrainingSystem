@@ -21,5 +21,5 @@ public interface DefectService {
 
     List<DefectResponse> importDefect(User currentUser, MultipartFile file) throws BadRequestException;
 
-    List<DefectCoverageResponse> getCoverageInProductLine(Long productLineId);
+    DefectCoverageResponse getCoverageInProductLine(Long productLineId);
 }
