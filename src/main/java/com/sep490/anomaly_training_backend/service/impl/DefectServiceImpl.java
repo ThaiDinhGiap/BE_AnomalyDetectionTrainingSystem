@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -55,22 +56,30 @@ public class DefectServiceImpl implements DefectService {
 
     @Override
     public List<DefectResponse> getDefectByProductLine(Long productLineId) {
-        return defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId)
-                .stream()
-                .map(defectMapper::toDto).toList();
+        List<DefectResponse> defectResponseList= defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId)
+                                                                 .stream()
+                                                                 .map(defectMapper::toDto).toList();
+        for(DefectResponse defectResponse:defectResponseList){
+            addAttachment(defectResponse);
+        }
+        return defectResponseList;
     }
 
     @Override
     public List<DefectResponse> getDefectByProcess(Long processId) {
-        return defectRepository.findByProcessIdAndDeleteFlagFalse(processId)
+        List<DefectResponse> defectResponseList = defectRepository.findByProcessIdAndDeleteFlagFalse(processId)
                 .stream()
                 .map(defectMapper::toDto).toList();
+        for(DefectResponse defectResponse:defectResponseList){
+            addAttachment(defectResponse);
+        }
+        return defectResponseList;
     }
 
     @Override
     public DefectResponse getDefectById(Long id) {
         Defect defect = defectRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
-        return defectMapper.toDto(defect);
+        return addAttachment(defectMapper.toDto(defect));
     }
 
     @Override
@@ -390,5 +399,13 @@ public class DefectServiceImpl implements DefectService {
                 .build());
 
         return new AppException(errorCode);
+    }
+    private DefectResponse addAttachment(DefectResponse defectResponse) {
+        if (Objects.isNull(defectResponse)) {
+            return null;
+        }
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT", defectResponse.getDefectId());
+        defectResponse.setAttachments(attachments);
+        return defectResponse;
     }
 }

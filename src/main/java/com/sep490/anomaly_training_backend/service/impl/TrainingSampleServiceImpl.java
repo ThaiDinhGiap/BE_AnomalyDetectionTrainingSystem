@@ -135,22 +135,12 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             List<ImportErrorItem> errors) {
         List<TrainingSampleResponse> responses = new ArrayList<>();
         for (TrainingSampleImportDto dto : parsedRows) {
-                TrainingSample trainingSample;
-                if (dto.getTrainingCode() != null) {
-                    trainingSample = trainingSampleRepository
-                            .findByTrainingCode(dto.getTrainingCode())
-                            .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
-                } else {
-                    // If defectCode is null, always create new
-                    trainingSample = new TrainingSample();
-                }
+                TrainingSample trainingSample = upsertTrainingSample(dto, productLine, errors);
                 // If updating, soft-delete old attachments before handling new ones
-                if (trainingSample.getId() != null) {
+                if (dto.getTrainingCode() != null) {
                     attachmentService.deleteAttachments("TRAINING_SAMPLE", trainingSample.getId());
                 }
-                trainingSample = upsertTrainingSample(dto, productLine, errors);
                 handleTrainingSampleImages(dto.getImageData(), trainingSample, user);
-
                 responses.add(trainingSampleMapper.toDto(trainingSample));
         }
         return responses;
@@ -172,10 +162,17 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         if (dto.getTrainingCode() != null && !dto.getTrainingCode().trim().isEmpty()) {
             sample = trainingSampleRepository
                     .findByTrainingCode(dto.getTrainingCode())
-                    .orElseGet(TrainingSample::new);
+                    .orElseThrow(() -> addErrorAndReturn(
+                            errors,
+                            dto.getExcelRowNumber(),
+                            "trainingCode",
+                            dto.getProcessCode(),
+                            "Training sample not found with code : " + dto.getTrainingCode(),
+                            ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         } else {
             // If trainingCode is null, always create new
             sample = new TrainingSample();
+            sample.setTrainingCode(trainingCodeGenerator.generateTrainingCode());
         }
 
         // If updating, soft-delete old attachments before handling new ones
@@ -223,12 +220,6 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                             ErrorCode.PRODUCT_NOT_FOUND
                     ));
         }
-        if (dto.getTrainingCode() == null || dto.getTrainingCode().trim().isEmpty()) {
-            String generatedCode = trainingCodeGenerator.generateTrainingCode();
-            sample.setTrainingCode(generatedCode);
-        } else {
-            sample.setTrainingCode(dto.getTrainingCode());
-        }
         sample.setProcess(process);
         sample.setProductLine(productLine);
         sample.setCategoryName(dto.getCategoryName());
@@ -240,7 +231,6 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         sample.setCategoryOrder(dto.getCategoryOrder());
         sample.setContentOrder(dto.getContentOrder());
         sample.setNote(dto.getNote());
-
         return trainingSampleRepository.save(sample);
     }
 

@@ -5,7 +5,7 @@ import com.sep490.anomaly_training_backend.model.Defect;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ProductMapper.class})
 public abstract class DefectMapper {
 
     @Mapping(target = "processId", source = "process.id")

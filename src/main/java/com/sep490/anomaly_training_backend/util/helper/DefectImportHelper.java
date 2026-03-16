@@ -47,7 +47,7 @@ public class DefectImportHelper {
     ) {
         List<DefectImportDto> results = new ArrayList<>();
 
-        for (int i = 2; i <= sheet.getLastRowNum(); i++) {
+        for (int i = 3; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (isRowEmpty(row)) {
                 continue;

@@ -159,7 +159,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
         for (Attachment attachment : oldAttachments) {
             if (!attachment.isDeleteFlag()) {
-                attachment.setDeleteFlag(true);
+                attachment.setStatus("DELETING");
                 attachmentRepository.save(attachment);
                 log.debug("Soft-deleted attachment: id={}, entityType={}, entityId={}",
                         attachment.getId(), entityType, entityId);

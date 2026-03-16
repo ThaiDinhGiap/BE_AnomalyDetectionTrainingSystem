@@ -89,8 +89,10 @@ public class DefectController {
     @Operation(summary = "Create new defect proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('defect_proposal.create')")
-    public ResponseEntity<ApiResponse<Void>> createDefectProposal(@RequestBody DefectProposalRequest request) {
-        defectProposalService.createDefectProposalDraft(request);
+    public ResponseEntity<ApiResponse<Void>> createDefectProposal(
+            @RequestPart("request") DefectProposalRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        defectProposalService.createDefectProposalDraft(request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 

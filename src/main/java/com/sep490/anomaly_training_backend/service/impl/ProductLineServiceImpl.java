@@ -229,6 +229,7 @@ public class ProductLineServiceImpl implements ProductLineService {
     private ProductLine findOrCreateProductLine(String code, String name, List<ImportErrorItem> errors) {
             ProductLine productLine =  productLineRepository.findByCode(code).orElseGet(ProductLine::new);
             productLine.setName(name);
+            productLine.setCode(code);
             return productLineRepository.save(productLine);
     }
 

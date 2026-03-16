@@ -27,7 +27,7 @@ public class TrainingSampleImportValidator {
      */
     public void validateFileData(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
         validateRequiredFields(parsedRows, errors);
-        validateTrainingCodeRules(parsedRows, errors);
+//        validateTrainingCodeRules(parsedRows, errors);
         validateBusinessKeyDuplicates(parsedRows, errors);
     }
 
@@ -52,59 +52,55 @@ public class TrainingSampleImportValidator {
                 if (isBlank(row.getTrainingDescription())) {
                     errors.add(buildRowError(row.getExcelRowNumber(), "trainingDescription", null, "trainingDescription is required"));
                 }
-
-                if (isBlank(row.getTrainingCode())) {
-                    errors.add(buildRowError(row.getExcelRowNumber(), "trainingCode", null, "trainingCode is required"));
-                }
             }
         }
     }
 
-    /**
-     * Validate trainingCode rules
-     * - Content rows: trainingCode must not exceed 20 chars
-     * - Content rows: trainingCode must not duplicate
-     */
-    private void validateTrainingCodeRules(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
-        Map<String, Integer> firstRowOfCode = new HashMap<>();
-
-        for (TrainingSampleImportDto row : parsedRows) {
-            boolean isHeaderRow = Boolean.TRUE.equals(row.getIsHeaderRow());
-            if (isHeaderRow) {
-                continue;
-            }
-
-            String code = normalize(row.getTrainingCode());
-
-            // bỏ qua blank vì đã có rule required xử lý
-            if (code.isEmpty()) {
-                continue;
-            }
-
-            // Check length
-            if (code.length() > 20) {
-                errors.add(buildRowError(
-                        row.getExcelRowNumber(),
-                        "trainingCode",
-                        code,
-                        "trainingCode must not exceed 20 characters"
-                ));
-                continue;
-            }
-
-            Integer firstRow = firstRowOfCode.get(code);
-            if (firstRow == null) {
-                firstRowOfCode.put(code, row.getExcelRowNumber());
-            } else {
-                errors.add(buildRowError(
-                        row.getExcelRowNumber(),
-                        "trainingCode",
-                        code,
-                        "trainingCode " + code + " is duplicated with row " + firstRow
-                ));
-            }
-        }
-    }
+//    /**
+//     * Validate trainingCode rules
+//     * - Content rows: trainingCode must not exceed 20 chars
+//     * - Content rows: trainingCode must not duplicate
+//     */
+//    private void validateTrainingCodeRules(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
+//        Map<String, Integer> firstRowOfCode = new HashMap<>();
+//
+//        for (TrainingSampleImportDto row : parsedRows) {
+//            boolean isHeaderRow = Boolean.TRUE.equals(row.getIsHeaderRow());
+//            if (isHeaderRow) {
+//                continue;
+//            }
+//
+//            String code = normalize(row.getTrainingCode());
+//
+//            // bỏ qua blank vì đã có rule required xử lý
+//            if (code.isEmpty()) {
+//                continue;
+//            }
+//
+//            // Check length
+//            if (code.length() > 20) {
+//                errors.add(buildRowError(
+//                        row.getExcelRowNumber(),
+//                        "trainingCode",
+//                        code,
+//                        "trainingCode must not exceed 20 characters"
+//                ));
+//                continue;
+//            }
+//
+//            Integer firstRow = firstRowOfCode.get(code);
+//            if (firstRow == null) {
+//                firstRowOfCode.put(code, row.getExcelRowNumber());
+//            } else {
+//                errors.add(buildRowError(
+//                        row.getExcelRowNumber(),
+//                        "trainingCode",
+//                        code,
+//                        "trainingCode " + code + " is duplicated with row " + firstRow
+//                ));
+//            }
+//        }
+//    }
 
     /**
      * Validate business key duplicates
