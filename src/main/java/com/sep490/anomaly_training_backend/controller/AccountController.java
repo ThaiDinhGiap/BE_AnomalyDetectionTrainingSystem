@@ -2,9 +2,9 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
@@ -29,6 +27,7 @@ import java.util.List;
 public class AccountController {
 
     private final UserRepository userRepository;
+
     @Operation(
             summary = "Get current user",
             description = "Get information of the currently authenticated user"
@@ -39,7 +38,7 @@ public class AccountController {
             @AuthenticationPrincipal User userDetails) {
 
         User user = userRepository.findByUsernameAndDeleteFlagFalse(userDetails.getUsername())
-                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
 
         return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
@@ -48,7 +47,7 @@ public class AccountController {
     @GetMapping("/working-position")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get summary information of current user to display shortly",
-               description = "Get basic information for the current user, including sections and permissions"
+            description = "Get basic information for the current user, including sections and permissions"
     )
     public ResponseEntity<ApiResponse<WorkingPosition>> getWorkingPosition() {
         return null;

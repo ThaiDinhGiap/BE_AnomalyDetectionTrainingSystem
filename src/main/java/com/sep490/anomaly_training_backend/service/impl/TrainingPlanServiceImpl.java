@@ -56,6 +56,7 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.scoring.TrainingPlanScheduleGenerationService;
 import com.sep490.anomaly_training_backend.service.scoring.impl.PriorityScoringServiceImpl;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -95,6 +96,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final PriorityScoringServiceImpl priorityScoringService;
     private final PriorityPolicyRepository policyRepository;
     private final PrioritySnapshotRepository prioritySnapshotRepository;
+    private final TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -352,7 +354,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
         response.setPrioritySnapshot(prioritySnapshotResponse);
-        response.setTrainingPlan(trainingPlanResponse);
+        response.setTrainingPlan(
+                toTrainingPlanResponse(
+                        trainingPlanScheduleGenerationService
+                                .generateOptimalSchedule(
+                                        generatedTrainingPlan.getId(),
+                                        prioritySnapshot.getId(),
+                                        LocalDate.now().getYear())));
 
         return response;
     }
