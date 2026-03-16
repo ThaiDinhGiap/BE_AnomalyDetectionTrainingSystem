@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
@@ -15,6 +16,7 @@ import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
+import com.sep490.anomaly_training_backend.service.ProductService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
@@ -28,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ public class DefectServiceImpl implements DefectService {
     private final ImportImageHandlerService importImageHandlerService;
     private final AttachmentService attachmentService;
     private final DefectCodeGenerator defectCodeGenerator;
+    private final ProductService productService;
 
     @Override
     public List<DefectResponse> getDefectBySupervisor(Long supervisorId) {
@@ -55,22 +59,42 @@ public class DefectServiceImpl implements DefectService {
 
     @Override
     public List<DefectResponse> getDefectByProductLine(Long productLineId) {
-        return defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId)
-                .stream()
-                .map(defectMapper::toDto).toList();
+        List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId);
+        return defects.stream().map(defect -> {
+            DefectResponse response = defectMapper.toDto(defect);
+            if (defect.getProduct() != null) {
+                ProductResponse productResponse = productService.getProductById(defect.getProduct().getId());
+                response.setProduct(productResponse);
+            }
+            addAttachment(response);
+            return response;
+        }).toList();
     }
 
     @Override
     public List<DefectResponse> getDefectByProcess(Long processId) {
         return defectRepository.findByProcessIdAndDeleteFlagFalse(processId)
                 .stream()
-                .map(defectMapper::toDto).toList();
+                .map(defect -> {
+                    DefectResponse response = defectMapper.toDto(defect);
+                    if (defect.getProduct() != null) {
+                        ProductResponse productResponse = productService.getProductById(defect.getProduct().getId());
+                        response.setProduct(productResponse);
+                    }
+                    addAttachment(response);
+                    return response;
+                }).toList();
     }
 
     @Override
     public DefectResponse getDefectById(Long id) {
         Defect defect = defectRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
-        return defectMapper.toDto(defect);
+        DefectResponse response = defectMapper.toDto(defect);
+        if (defect.getProduct() != null) {
+            ProductResponse productResponse = productService.getProductById(defect.getProduct().getId());
+            response.setProduct(productResponse);
+        }
+        return addAttachment(defectMapper.toDto(defect));
     }
 
     @Override
@@ -390,5 +414,16 @@ public class DefectServiceImpl implements DefectService {
                 .build());
 
         return new AppException(errorCode);
+    }
+    private DefectResponse addAttachment(DefectResponse defectResponse) {
+        if (Objects.isNull(defectResponse)) {
+            return null;
+        }
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT", defectResponse.getDefectId());
+        List<String> imageUrls = attachments.stream()
+                .map(Attachment::getUrl)
+                .toList();
+        defectResponse.setAttachmentUrls(imageUrls);
+        return defectResponse;
     }
 }

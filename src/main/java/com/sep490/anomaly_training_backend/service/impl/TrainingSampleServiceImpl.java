@@ -12,6 +12,7 @@ import com.sep490.anomaly_training_backend.mapper.TrainingSampleMapper;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.service.ProductService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -47,18 +49,21 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final ImportImageHandlerService importImageHandlerService;
     private final AttachmentService attachmentService;
     private final TrainingCodeGenerator trainingCodeGenerator;
+    private final ProductService productService;
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId) {
-        List<TrainingSample> listEntity = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
-        return listEntity.stream().map(trainingSampleMapper::toDto).toList();
+        return trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId)
+                .stream()
+                .map(this::enrichResponse)
+                .toList();
     }
 
     @Override
     public TrainingSampleResponse getTrainingSampleById(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
-        return trainingSampleMapper.toDto(entity);
+        return enrichResponse(entity);
     }
 
     @Override
@@ -66,7 +71,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         TrainingSample entity = trainingSampleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         return trainingSampleRepository.findByProcessIdAndDeleteFlagFalse(entity.getProcess().getId())
-                .stream().map(trainingSampleMapper::toDto).toList();
+                .stream().map(this::enrichResponse).toList();
     }
 
     @Override
@@ -74,7 +79,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         TrainingSample entity = trainingSampleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         return trainingSampleRepository.findByCategoryNameAndDeleteFlagFalse(entity.getCategoryName())
-                .stream().map(trainingSampleMapper::toDto).toList();
+                .stream().map(this::enrichResponse).toList();
     }
 
     @Override
@@ -135,22 +140,12 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             List<ImportErrorItem> errors) {
         List<TrainingSampleResponse> responses = new ArrayList<>();
         for (TrainingSampleImportDto dto : parsedRows) {
-                TrainingSample trainingSample;
-                if (dto.getTrainingCode() != null) {
-                    trainingSample = trainingSampleRepository
-                            .findByTrainingCode(dto.getTrainingCode())
-                            .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
-                } else {
-                    // If defectCode is null, always create new
-                    trainingSample = new TrainingSample();
-                }
+                TrainingSample trainingSample = upsertTrainingSample(dto, productLine, errors);
                 // If updating, soft-delete old attachments before handling new ones
-                if (trainingSample.getId() != null) {
+                if (dto.getTrainingCode() != null) {
                     attachmentService.deleteAttachments("TRAINING_SAMPLE", trainingSample.getId());
                 }
-                trainingSample = upsertTrainingSample(dto, productLine, errors);
                 handleTrainingSampleImages(dto.getImageData(), trainingSample, user);
-
                 responses.add(trainingSampleMapper.toDto(trainingSample));
         }
         return responses;
@@ -172,10 +167,17 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         if (dto.getTrainingCode() != null && !dto.getTrainingCode().trim().isEmpty()) {
             sample = trainingSampleRepository
                     .findByTrainingCode(dto.getTrainingCode())
-                    .orElseGet(TrainingSample::new);
+                    .orElseThrow(() -> addErrorAndReturn(
+                            errors,
+                            dto.getExcelRowNumber(),
+                            "trainingCode",
+                            dto.getProcessCode(),
+                            "Training sample not found with code : " + dto.getTrainingCode(),
+                            ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
         } else {
             // If trainingCode is null, always create new
             sample = new TrainingSample();
+            sample.setTrainingCode(trainingCodeGenerator.generateTrainingCode());
         }
 
         // If updating, soft-delete old attachments before handling new ones
@@ -223,12 +225,6 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                             ErrorCode.PRODUCT_NOT_FOUND
                     ));
         }
-        if (dto.getTrainingCode() == null || dto.getTrainingCode().trim().isEmpty()) {
-            String generatedCode = trainingCodeGenerator.generateTrainingCode();
-            sample.setTrainingCode(generatedCode);
-        } else {
-            sample.setTrainingCode(dto.getTrainingCode());
-        }
         sample.setProcess(process);
         sample.setProductLine(productLine);
         sample.setCategoryName(dto.getCategoryName());
@@ -240,7 +236,6 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         sample.setCategoryOrder(dto.getCategoryOrder());
         sample.setContentOrder(dto.getContentOrder());
         sample.setNote(dto.getNote());
-
         return trainingSampleRepository.save(sample);
     }
 
@@ -388,5 +383,24 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 .build());
 
         return new AppException(errorCode);
+    }
+
+    private TrainingSampleResponse addAttachment(TrainingSampleResponse response) {
+        if (Objects.isNull(response)) {
+            return null;
+        }
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE", response.getTrainingSampleId());
+        List<String> imageUrls = attachments.stream()
+                .map(Attachment::getUrl)
+                .toList();
+        response.setAttachmentUrls(imageUrls);
+        return response;
+    }
+    private TrainingSampleResponse enrichResponse(TrainingSample entity) {
+        TrainingSampleResponse response = trainingSampleMapper.toDto(entity);
+        if (entity.getProduct() != null) {
+            response.setProduct(productService.getProductById(entity.getProduct().getId()));
+        }
+        return addAttachment(response);
     }
 }
