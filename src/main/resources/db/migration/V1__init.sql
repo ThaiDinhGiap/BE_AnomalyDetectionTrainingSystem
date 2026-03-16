@@ -309,7 +309,7 @@ CREATE TABLE product_lines
     code        VARCHAR(20)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
 
-    group_id    BIGINT       NOT NULL,
+    group_id    BIGINT,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,

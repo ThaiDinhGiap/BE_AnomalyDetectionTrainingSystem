@@ -1,8 +1,11 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.model.User;
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -53,5 +56,7 @@ public interface ProductService {
      * Check if product code exists (excluding a specific ID for update validation)
      */
     boolean isProductCodeExistsExcludingId(String code, Long excludingId);
+
+    List<ProductResponse> importProduct(User user, MultipartFile productFile) throws BadRequestException;
 }
 

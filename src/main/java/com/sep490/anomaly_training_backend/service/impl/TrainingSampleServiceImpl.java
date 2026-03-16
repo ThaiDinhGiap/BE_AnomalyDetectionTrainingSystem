@@ -186,13 +186,13 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         // Resolve and validate Process
         Process process = null;
         if (dto.getProcessCode() != null && !dto.getProcessCode().trim().isEmpty()) {
-            process = processRepository.findByCode(dto.getProcessCode())
+            process = processRepository.findByProductLineCodeAndCode(productLine.getCode(),dto.getProcessCode())
                     .orElseThrow(() -> addErrorAndReturn(
                             errors,
                             dto.getExcelRowNumber(),
                             "processCode",
                             dto.getProcessCode(),
-                            "Process not found with code: " + dto.getProcessCode(),
+                            "Process not found in productline with code : " + dto.getProcessCode(),
                             ErrorCode.PROCESS_NOT_FOUND));
         }
 
@@ -280,12 +280,12 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 return null;
             }
 
-            String productLineName = getCellStringValue(cell);
-            if (productLineName == null || productLineName.trim().isEmpty()) {
+            String productLineCode = getCellStringValue(cell);
+            if (productLineCode == null || productLineCode.trim().isEmpty()) {
                 return null;
             }
 
-            return productLineRepository.findByName(productLineName.trim()).orElse(null);
+            return productLineRepository.findByCode(productLineCode.trim()).orElse(null);
         } catch (Exception e) {
             log.error("Error reading ProductLine from header", e);
             return null;

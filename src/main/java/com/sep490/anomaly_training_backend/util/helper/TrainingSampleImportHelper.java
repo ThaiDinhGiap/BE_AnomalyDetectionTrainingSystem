@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportRowData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.util.ExcelImageExtractorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -265,163 +266,21 @@ public class TrainingSampleImportHelper {
 
     /**
      * Extract image data from the specified row
-     * Searches for images that overlap with the image column (COL_IMAGE) area
+     * Delegates to ExcelImageExtractorUtil for common image extraction logic
      *
      * @param row the row to search for images
      * @param excelRowNumber the 1-based row number from Excel
      * @return ImageData with image information, or null if no image found
      */
     private ImageData extractImageFromRow(Row row, int excelRowNumber) {
-        try {
-            Sheet sheet = row.getSheet();
-            if (!(sheet instanceof XSSFSheet xssfSheet)) {
-                log.warn("Sheet is not XSSF format, cannot extract images from row {}", excelRowNumber);
-                return null;
-            }
-
-            // Get all drawing shapes/images from the sheet
-            XSSFDrawing drawing = xssfSheet.getDrawingPatriarch();
-            if (drawing == null) {
-                return null;
-            }
-
-            // Search for images that intersect with the image column area
-            ImageData imageData = null;
-
-            for (XSSFShape shape : drawing.getShapes()) {
-                if (shape instanceof XSSFPicture picture) {
-                    // Check if this picture overlaps with the current row and image column
-                    if (isPictureInRowAndColumn(picture, row.getRowNum(), COL_IMAGE)) {
-                        try {
-                            imageData = extractPictureData(picture, excelRowNumber);
-                            if (imageData != null) {
-                                log.info("Successfully extracted image from row {} ({})", excelRowNumber, imageData.getExcelCellReference());
-                                break; // Take the first matching image for this row
-                            }
-                        } catch (Exception e) {
-                            log.error("Error extracting image data from picture in row {}: {}", excelRowNumber, e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-
-            return imageData;
-        } catch (Exception e) {
-            log.error("Error extracting image from row {}: {}", excelRowNumber, e.getMessage(), e);
+        if (row == null) {
             return null;
         }
-    }
 
-    /**
-     * Check if a picture is positioned in the specified row and column area
-     *
-     * @param picture the XSSFPicture to check
-     * @param rowIndex the 0-based row index
-     * @param colIndex the 0-based column index
-     * @return true if picture overlaps with the row/column area
-     */
-    private boolean isPictureInRowAndColumn(XSSFPicture picture, int rowIndex, int colIndex) {
-        try {
-            XSSFClientAnchor anchor = picture.getClientAnchor();
-            if (anchor == null) {
-                return false;
-            }
+        Sheet sheet = row.getSheet();
+        int rowIndex = row.getRowNum(); // 0-based row index
 
-            // Check if picture starts in or overlaps with the target row/column
-            int pictureStartRow = anchor.getRow1();
-            int pictureStartCol = anchor.getCol1();
-            int pictureEndRow = anchor.getRow2();
-            int pictureEndCol = anchor.getCol2();
-
-            // Check if picture overlaps with the specified row and column
-            // Picture overlaps if:
-            // - It starts in the row or before it, and ends in the row or after it
-            // - It starts in the column or before it, and ends in the column or after it
-            boolean rowOverlap = (pictureStartRow <= rowIndex) && (pictureEndRow >= rowIndex);
-            boolean colOverlap = (pictureStartCol <= colIndex) && (pictureEndCol >= colIndex);
-
-            return rowOverlap && colOverlap;
-        } catch (Exception e) {
-            log.error("Error checking picture position: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Extract binary data and metadata from an XSSFPicture
-     *
-     * @param picture the XSSFPicture to extract data from
-     * @param excelRowNumber the 1-based row number from Excel
-     * @return ImageData with image bytes and metadata
-     */
-    private ImageData extractPictureData(XSSFPicture picture, int excelRowNumber) {
-        try {
-            XSSFClientAnchor anchor = picture.getClientAnchor();
-            if (anchor == null) {
-                log.warn("Picture has no anchor information");
-                return null;
-            }
-
-            // Get the picture bytes
-            byte[] imageBytes = picture.getPictureData().getData();
-            if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("Picture contains no data");
-                return null;
-            }
-
-            // Determine MIME type from picture type
-            String mimeType = picture.getPictureData().getMimeType();
-
-            // Cell reference where picture starts
-            String cellReference = getCellReference(anchor.getRow1(), anchor.getCol1());
-
-            // TODO: Extract image dimensions if available from metadata
-            // TODO: Extract image name if available from picture properties
-            // For now, dimensions and name are null - can be added in future
-
-            ImageData imageData = ImageData.builder()
-                .imageBytes(imageBytes)
-                .imageMimeType(mimeType)
-                .excelCellReference(cellReference)
-                .excelRowNumber(excelRowNumber)
-                .isSuccessfullyExtracted(true)
-                .build();
-
-            log.debug("Extracted image data: size={} bytes, mimeType={}, cellRef={}", imageBytes.length, mimeType, cellReference);
-            return imageData;
-        } catch (Exception e) {
-            log.error("Error extracting picture data: {}", e.getMessage(), e);
-            return ImageData.builder()
-                .isSuccessfullyExtracted(false)
-                .extractionErrorMessage(e.getMessage())
-                .excelRowNumber(excelRowNumber)
-                .build();
-        }
-    }
-
-
-
-    /**
-     * Convert row and column indices to Excel cell reference (e.g., "A1", "H3")
-     *
-     * @param rowIndex 0-based row index
-     * @param colIndex 0-based column index
-     * @return Excel cell reference string
-     */
-    private String getCellReference(int rowIndex, int colIndex) {
-        StringBuilder cellRef = new StringBuilder();
-
-        // Convert column index to letters
-        int col = colIndex + 1;
-        while (col > 0) {
-            col--;
-            cellRef.insert(0, (char) ('A' + (col % 26)));
-            col /= 26;
-        }
-
-        // Add row number (1-based)
-        cellRef.append(rowIndex + 1);
-
-        return cellRef.toString();
+        // Delegate to utility class for image extraction
+        return ExcelImageExtractorUtil.extractImageFromRow(sheet, rowIndex, COL_IMAGE, excelRowNumber);
     }
 }

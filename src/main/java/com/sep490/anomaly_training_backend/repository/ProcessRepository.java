@@ -20,4 +20,6 @@ public interface ProcessRepository extends JpaRepository<Process, Long> {
     boolean existsByProductLineIdAndCode(Long productLineId, String code);
 
     Optional<Process> findByCode(String code);
+
+    Optional<Process> findByProductLineCodeAndCode(String productLineCode, String processCode);
 }

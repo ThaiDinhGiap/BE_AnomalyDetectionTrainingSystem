@@ -1,19 +1,32 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.request.ImageData;
+import com.sep490.anomaly_training_backend.dto.request.ProductImportDto;
+import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.enums.ImportStatus;
+import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.ProductMapper;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
+import com.sep490.anomaly_training_backend.util.helper.ProductImportHelper;
+import com.sep490.anomaly_training_backend.util.validator.ProductImportValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,7 +36,202 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final ProcessRepository processRepository;
     private final ProductMapper productMapper;
+    private final ImportHistoryService importHistoryService;
+    private final ProductImportHelper importHelper;
+    private final ProductImportValidator importValidator;
+    private final ImportImageHandlerService importImageHandlerService;
+
+    @Override
+    public List<ProductResponse> importProduct(User user, MultipartFile productFile) {
+        List<ImportErrorItem> errors = new ArrayList<>();
+
+        try (Workbook workbook = WorkbookFactory.create(productFile.getInputStream())) {
+            validateImportFile(productFile);
+            Sheet sheet = getFirstSheet(workbook);
+
+            // Step 1: Parse rows with merge cell handling
+            List<ProductImportDto> parsedRows = importHelper.parseExcelRows(sheet, errors);
+
+            if (!errors.isEmpty()) {
+                throw new AppException(ErrorCode.IMPORT_PARSE_ERROR);
+            }
+
+            // Step 2: Validate file data (NO DB check)
+            importValidator.validateFileData(parsedRows, errors);
+
+            if (!errors.isEmpty()) {
+                throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
+            }
+
+            // Step 3: Process all rows with proper error handling
+            List<ProductResponse> responses = processAllRows(parsedRows, user);
+
+            // Step 4: If any errors occurred during processing, save them
+            if (!errors.isEmpty()) {
+                throw new AppException(ErrorCode.IMPORT_FAILED);
+            }
+
+            // Step 5: Save success history
+            saveImportPassHistory(user, productFile);
+
+            return responses;
+
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Import product failed", e);
+            if (errors.isEmpty()) {
+                errors.add(buildSystemError("System error: " + e.getMessage()));
+                saveImportFailHistory(user, productFile, errors);
+            }
+            throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE);
+        }
+    }
+
+    /**
+     * Process all rows with proper error handling
+     * - Finds existing or creates new Product
+     * - Records all errors in importFailHistory
+     */
+    private List<ProductResponse> processAllRows(
+            List<ProductImportDto> parsedRows,
+            User user) {
+
+        List<ProductResponse> responses = new ArrayList<>();
+
+        for (ProductImportDto dto : parsedRows) {
+            // Step 1: Find or create Product by productCode
+            Product product = findOrCreateProduct(dto);
+            // Step 2: Update Product fields
+            updateProductFields(product, dto);
+            // Step 3: Save to database
+            Product saved = productRepository.save(product);
+            handleProductImages(dto.getImageData(), saved, user);
+            responses.add(productMapper.toDto(saved));
+        }
+        return responses;
+    }
+
+    /**
+     * Find existing Product or create new one
+     * - Lookup by productCode
+     * - If found: return existing (will be updated)
+     * - If not found: create new
+     */
+    private Product findOrCreateProduct(ProductImportDto dto) {
+        Product product;
+
+        // Lookup by productCode
+        product = productRepository.findByCode(dto.getProductCode())
+                .orElseGet(Product::new);
+
+        return product;
+    }
+
+    /**
+     * Update all Product fields from DTO
+     */
+    private void updateProductFields(Product product, ProductImportDto dto) {
+        product.setCode(dto.getProductCode());
+        product.setName(dto.getProductName());
+        product.setDescription(dto.getDescription());
+    }
+
+    /**
+     * Validate import file
+     */
+    private void validateImportFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_IS_EMPTY);
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
+        }
+    }
+
+    /**
+     * Get first sheet from workbook
+     */
+    private Sheet getFirstSheet(Workbook workbook) {
+        if (workbook.getNumberOfSheets() == 0) {
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
+        }
+
+        Sheet sheet = workbook.getSheetAt(0);
+        if (sheet == null) {
+            throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
+        }
+
+        return sheet;
+    }
+
+    /**
+     * Save import fail history
+     */
+    private void saveImportFailHistory(User user, MultipartFile file, List<ImportErrorItem> errors) {
+        try {
+            importHistoryService.saveHistory(
+                    user,
+                    file.getOriginalFilename(),
+                    ImportType.PRODUCT_IMPORT,
+                    ImportStatus.FAIL,
+                    errors
+            );
+        } catch (Exception e) {
+            log.error("Error saving import fail history: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Save import pass history
+     */
+    private void saveImportPassHistory(User user, MultipartFile file) {
+        try {
+            importHistoryService.saveHistory(
+                    user,
+                    file.getOriginalFilename(),
+                    ImportType.PRODUCT_IMPORT,
+                    ImportStatus.PASS,
+                    List.of()
+            );
+        } catch (Exception e) {
+            log.error("Error saving import pass history: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Build system error item
+     */
+    private ImportErrorItem buildSystemError(String message) {
+        return ImportErrorItem.builder()
+                .field("SYSTEM")
+                .message(message)
+                .build();
+    }
+
+    private void handleProductImages(ImageData imageData, Product product, User user) {
+        try {
+            if (product == null || product.getId() == null) {
+                log.debug("Defect has no ID, skipping image handling");
+                return;
+            }
+
+            log.info("Handling images for Defect id={}", product.getId());
+
+            importImageHandlerService.handleRowImages(imageData, "PRODUCT", product.getId(), user.getUsername());
+
+        } catch (Exception e) {
+            if (product != null && product.getId() != null) {
+                log.error("Error handling images for Product id={}: {}", product.getId(), e.getMessage());
+            } else {
+                log.error("Error handling images for Product: {}", e.getMessage());
+            }
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)

@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.util.helper;
 import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.util.ExcelImageExtractorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
@@ -101,98 +102,29 @@ public class DefectImportHelper {
                 .build();
     }
 
-    // ===================== IMAGE =====================
+    // ===================== IMAGE EXTRACTION =====================
 
+    /**
+     * Extract image data from the specified row
+     * Delegates to ExcelImageExtractorUtil for common image extraction logic
+     *
+     * @param row the row to search for images
+     * @param excelRowNumber the 1-based row number from Excel
+     * @return ImageData with image information, or null if no image found
+     */
     private ImageData extractImageFromRow(Row row, int excelRowNumber) {
-        try {
-            Sheet sheet = row.getSheet();
-            if (!(sheet instanceof XSSFSheet xssfSheet)) {
-                log.warn("Sheet is not XSSF, skip image extraction for row {}", excelRowNumber);
-                return null;
-            }
-
-            XSSFDrawing drawing = xssfSheet.getDrawingPatriarch();
-            if (drawing == null) {
-                return null;
-            }
-
-            for (XSSFShape shape : drawing.getShapes()) {
-                if (!(shape instanceof XSSFPicture picture)) {
-                    continue;
-                }
-
-                if (isPictureInRowAndColumn(picture, row.getRowNum(), COL_IMAGE)) {
-                    return extractPictureData(picture, excelRowNumber);
-                }
-            }
-
-            return null;
-        } catch (Exception e) {
-            log.error("Error extracting image from row {}: {}", excelRowNumber, e.getMessage(), e);
+        if (row == null) {
             return null;
         }
+
+        Sheet sheet = row.getSheet();
+        int rowIndex = row.getRowNum(); // 0-based row index
+
+        // Delegate to utility class for image extraction
+        return ExcelImageExtractorUtil.extractImageFromRow(sheet, rowIndex, COL_IMAGE, excelRowNumber);
     }
 
-    private boolean isPictureInRowAndColumn(XSSFPicture picture, int rowIndex, int colIndex) {
-        try {
-            XSSFClientAnchor anchor = picture.getClientAnchor();
-            if (anchor == null) {
-                return false;
-            }
-
-            int startRow = anchor.getRow1();
-            int endRow = anchor.getRow2();
-            int startCol = anchor.getCol1();
-            int endCol = anchor.getCol2();
-
-            boolean rowOverlap = startRow <= rowIndex && endRow >= rowIndex;
-            boolean colOverlap = startCol <= colIndex && endCol >= colIndex;
-
-            return rowOverlap && colOverlap;
-        } catch (Exception e) {
-            log.error("Error checking picture position: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    private ImageData extractPictureData(XSSFPicture picture, int excelRowNumber) {
-        try {
-            XSSFClientAnchor anchor = picture.getClientAnchor();
-            if (anchor == null) {
-                log.warn("Picture has no anchor information");
-                return null;
-            }
-
-            byte[] imageBytes = picture.getPictureData().getData();
-            if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("Picture contains no data");
-                return null;
-            }
-
-            String mimeType = picture.getPictureData().getMimeType();
-            String cellReference = getCellReference(anchor.getRow1(), anchor.getCol1());
-
-            log.debug("Extracted image data: size={} bytes, mimeType={}, cellRef={}", imageBytes.length, mimeType, cellReference);
-
-            return ImageData.builder()
-                    .imageBytes(imageBytes)
-                    .imageMimeType(mimeType)
-                    .excelCellReference(cellReference)
-                    .excelRowNumber(excelRowNumber)
-                    .isSuccessfullyExtracted(true)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error extracting picture data: {}", e.getMessage(), e);
-            return ImageData.builder()
-                    .excelRowNumber(excelRowNumber)
-                    .isSuccessfullyExtracted(false)
-                    .extractionErrorMessage(e.getMessage())
-                    .build();
-        }
-    }
-
-    // ===================== CELL UTILS =====================
+    // ===================== CELL UTILITIES =====================
 
     private boolean isRowEmpty(Row row) {
         if (row == null) {
@@ -339,19 +271,6 @@ public class DefectImportHelper {
                 .build();
     }
 
-    private String getCellReference(int rowIndex, int colIndex) {
-        StringBuilder cellRef = new StringBuilder();
-
-        int col = colIndex + 1;
-        while (col > 0) {
-            col--;
-            cellRef.insert(0, (char) ('A' + (col % 26)));
-            col /= 26;
-        }
-
-        cellRef.append(rowIndex + 1);
-        return cellRef.toString();
-    }
     private Boolean getOptionalBooleanCellValue(Cell cell, String fieldName, int excelRowNumber) throws BadRequestException {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             return false;

@@ -101,36 +101,27 @@ public class DefectImportValidator {
      * Validate defectDescription không được trùng trong cùng file
      */
     private void validateDefectDescriptionDuplicates(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
-        Map<String, Integer> defectDescriptionCount = new HashMap<>();
-        Map<String, Integer> firstRowOfDescription = new HashMap<>();
+        // Map lưu trữ: Key = Nội dung mô tả, Value = Số dòng xuất hiện lần đầu tiên
+        Map<String, Integer> seenDescriptions = new HashMap<>();
 
         for (DefectImportDto row : parsedRows) {
             String defectDescription = normalize(row.getDefectDescription());
-            if (defectDescription == null) {
+
+            if (defectDescription == null || defectDescription.isEmpty()) {
                 continue;
             }
 
-            defectDescriptionCount.put(defectDescription, defectDescriptionCount.getOrDefault(defectDescription, 0) + 1);
-            if (!firstRowOfDescription.containsKey(defectDescription)) {
-                firstRowOfDescription.put(defectDescription, row.getExcelRowNumber());
+            if (seenDescriptions.containsKey(defectDescription)) {
+                Integer firstRow = seenDescriptions.get(defectDescription);
+                errors.add(buildRowError(
+                        row.getExcelRowNumber(),
+                        "defectDescription",
+                        defectDescription,
+                        "defectDescription is duplicated with row " + firstRow
+                ));
             }
-        }
-
-        for (Map.Entry<String, Integer> entry : defectDescriptionCount.entrySet()) {
-            if (entry.getValue() > 1) {
-                String defectDescription = entry.getKey();
-                Integer firstRow = firstRowOfDescription.get(defectDescription);
-
-                for (DefectImportDto row : parsedRows) {
-                    if (defectDescription.equals(normalize(row.getDefectDescription()))) {
-                        errors.add(buildRowError(
-                                row.getExcelRowNumber(),
-                                "defectDescription",
-                                defectDescription,
-                                "defectDescription is duplicated with row " + firstRow
-                        ));
-                    }
-                }
+            else {
+                seenDescriptions.put(defectDescription, row.getExcelRowNumber());
             }
         }
     }

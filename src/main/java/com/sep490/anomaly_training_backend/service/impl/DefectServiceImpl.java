@@ -38,6 +38,7 @@ public class DefectServiceImpl implements DefectService {
     private final DefectMapper defectMapper;
     private final ProcessRepository processRepository;
     private final ProductRepository productRepository;
+    private final ProductLineRepository productLineRepository;
     private final ImportHistoryService importHistoryService;
     private final DefectImportValidator importValidator;
     private final DefectImportHelper importHelper;
@@ -85,22 +86,20 @@ public class DefectServiceImpl implements DefectService {
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = getFirstSheet(workbook);
             List<DefectImportDto> parsedRows = importHelper.parseExcelRows(sheet, errors);
-
-            if (!errors.isEmpty()) {
-                saveImportFailHistory(currentUser, file, errors);
-                throw new AppException(ErrorCode.IMPORT_PARSE_ERROR);
+            ProductLine productLine = getProductLineFromHeader(sheet);
+            if (productLine == null) {
+                errors.add(buildSystemError("ProductLine not found in file header (Row 1)"));
+                throw new AppException(ErrorCode.PRODUCT_LINE_NOT_IN_HEADER);
             }
-
             // Step 4: Validate only file data (NO DB validation)
             importValidator.validateFileData(parsedRows, errors);
 
             if (!errors.isEmpty()) {
-                saveImportFailHistory(currentUser, file, errors);
                 throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
             }
 
             // Step 5: Upsert all rows (changed from insert to upsert)
-            List<DefectResponse> responses = upsertAllRows(parsedRows, currentUser, errors);
+            List<DefectResponse> responses = upsertAllRows(parsedRows, productLine, currentUser, errors);
 
             // Step 6: Save success history
             saveImportPassHistory(currentUser, file);
@@ -143,6 +142,51 @@ public class DefectServiceImpl implements DefectService {
 
         return sheet;
     }
+    /**
+     * Get ProductLine from Excel header row (Row 1)
+     */
+    private ProductLine getProductLineFromHeader(Sheet sheet) {
+        try {
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                return null;
+            }
+
+            Cell cell = headerRow.getCell(1);
+            if (cell == null) {
+                return null;
+            }
+
+            String productLineCode = getCellStringValue(cell);
+            if (productLineCode == null || productLineCode.trim().isEmpty()) {
+                return null;
+            }
+
+            return productLineRepository.findByCode(productLineCode.trim()).orElse(null);
+        } catch (Exception e) {
+            log.error("Error reading ProductLine from header", e);
+            return null;
+        }
+    }
+
+    private String getCellStringValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                double value = cell.getNumericCellValue();
+                if (value == (long) value) {
+                    return String.valueOf((long) value);
+                }
+                return String.valueOf(value);
+            default:
+                return cell.toString();
+        }
+    }
 
 
     /**
@@ -154,6 +198,7 @@ public class DefectServiceImpl implements DefectService {
      */
     private List<DefectResponse> upsertAllRows(
             List<DefectImportDto> parsedRows,
+            ProductLine productLine,
             User user, List<ImportErrorItem> errors) {
 
         List<DefectResponse> responses = new ArrayList<>();
@@ -163,7 +208,7 @@ public class DefectServiceImpl implements DefectService {
             boolean isUpdate = dto.getDefectCode() != null
                     && defectRepository.findByDefectCode(dto.getDefectCode()).isPresent();
 
-            Defect defect = upsertDefect(dto, errors);
+            Defect defect = upsertDefect(dto, productLine, errors);
 
             // If updating, soft-delete old attachments before handling new ones
             if (isUpdate && defect.getId() != null) {
@@ -176,7 +221,7 @@ public class DefectServiceImpl implements DefectService {
         return responses;
     }
 
-    private Defect upsertDefect(DefectImportDto dto, List<ImportErrorItem> errors) {
+    private Defect upsertDefect(DefectImportDto dto, ProductLine productLine,List<ImportErrorItem> errors) {
         // Find existing by defectCode only if defectCode is not null
         Defect defect;
         if (dto.getDefectCode() != null && !dto.getDefectCode().trim().isEmpty()) {
@@ -201,7 +246,7 @@ public class DefectServiceImpl implements DefectService {
         }
 
         // Apply all fields
-        applyImportDtoToDefect(dto, defect, errors);
+        applyImportDtoToDefect(dto, productLine, defect, errors);
         Defect saved = defectRepository.save(defect);
 
         boolean isNew = defect.getId() == null;
@@ -210,11 +255,11 @@ public class DefectServiceImpl implements DefectService {
         return saved;
     }
 
-    private void applyImportDtoToDefect(DefectImportDto dto, Defect defect, List<ImportErrorItem> errors) {
+    private void applyImportDtoToDefect(DefectImportDto dto, ProductLine productLine,Defect defect, List<ImportErrorItem> errors) {
         // Resolve and validate Process
         Process process = null;
         if (dto.getProcessCode() != null && !dto.getProcessCode().trim().isEmpty()) {
-            process = processRepository.findByCode(dto.getProcessCode())
+            process = processRepository.findByProductLineCodeAndCode(productLine.getCode(), dto.getProcessCode())
                     .orElseThrow(() -> addErrorAndReturn(
                             errors,
                             dto.getExcelRowNumber(),

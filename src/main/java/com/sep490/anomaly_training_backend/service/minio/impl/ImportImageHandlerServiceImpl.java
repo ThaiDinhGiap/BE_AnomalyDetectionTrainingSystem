@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.service.minio.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.model.Attachment;
-import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 @Slf4j
 public class ImportImageHandlerServiceImpl implements ImportImageHandlerService {
 
-    private final AttachmentRepository attachmentRepository;
     private final AttachmentService attachmentService;
 
     /**
@@ -132,137 +130,6 @@ public class ImportImageHandlerServiceImpl implements ImportImageHandlerService 
 
         return attachments;
     }
-
-    /**
-     * Xoá tất cả attachments của một entity
-     * 
-     * Flow:
-     * 1. Find all attachments by entityType + entityId
-     * 2. Set deleteFlag = true cho mỗi cái
-     * 3. Save lại
-     */
-
-
-//    /**
-//     * Xoá một attachment cụ thể
-//     */
-//    @Override
-//    @Transactional
-//    public void deleteAttachment(Long attachmentId) {
-//        try {
-//            log.info("Deleting attachment id={}", attachmentId);
-//
-//            attachmentRepository.deleteById(attachmentId);
-//
-//            log.info("Attachment deleted");
-//
-//        } catch (Exception e) {
-//            log.error("Error deleting attachment id={}: {}", attachmentId, e.getMessage());
-//        }
-//    }
-//
-//    /**
-//     * Lấy danh sách attachments của một entity
-//     */
-//    @Override
-//    public List<Attachment> getAttachments(String entityType, Long entityId) {
-//        return attachmentRepository.findByEntityTypeAndEntityId(entityType, entityId);
-//    }
-//
-//    // ========================================================================
-//    // Helper Methods
-//    // ========================================================================
-//
-//    /**
-//     * Extract images từ XSSF row (Excel 2007+)
-//     *
-//     * @param sheet XSSFSheet
-//     * @param rowNum Row number
-//     * @param imageBytes List để chứa image bytes
-//     * @param imageNames List để chứa image names
-//     */
-//    private void extractImagesFromXSSFRow(
-//            XSSFSheet sheet,
-//            int rowNum,
-//            List<byte[]> imageBytes,
-//            List<String> imageNames) {
-//
-//        try {
-//            Drawing<?> drawing = sheet.getDrawingPatriarch();
-//
-//            if (drawing == null) {
-//                log.debug("No drawing found in sheet");
-//                return;
-//            }
-//
-//            if (!(drawing instanceof XSSFDrawing)) {
-//                log.debug("Drawing is not XSSF drawing");
-//                return;
-//            }
-//
-//            XSSFDrawing xssfDrawing = (XSSFDrawing) drawing;
-//
-//            // Iterate through all shapes (images)
-//            for (Object shape : xssfDrawing.getShapes()) {
-//                if (shape instanceof XSSFPicture) {
-//                    XSSFPicture picture = (XSSFPicture) shape;
-//
-//                    // Check if picture is in the same row
-//                    int picRow = picture.getClientAnchor().getRow1();
-//                    if (picRow == rowNum) {
-//                        try {
-//                            byte[] pictureData = picture.getPictureData().getData();
-//                            String pictureName = "image_" + System.currentTimeMillis() + ".png";
-//
-//                            imageBytes.add(pictureData);
-//                            imageNames.add(pictureName);
-//
-//                            log.debug("Extracted image from row {}: {} bytes", rowNum, pictureData.length);
-//
-//                        } catch (Exception e) {
-//                            log.error("Error extracting picture from row {}: {}", rowNum, e.getMessage());
-//                        }
-//                    }
-//                }
-//            }
-//
-//        } catch (Exception e) {
-//            log.error("Error extracting images from XSSF row {}: {}", rowNum, e.getMessage());
-//        }
-//    }
-//
-//    /**
-//     * Detect MIME type từ filename
-//     */
-//    private String detectMimeType(String fileName) {
-//        if (fileName == null) return "application/octet-stream";
-//
-//        String lowerName = fileName.toLowerCase();
-//
-//        if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
-//            return "image/jpeg";
-//        } else if (lowerName.endsWith(".png")) {
-//            return "image/png";
-//        } else if (lowerName.endsWith(".gif")) {
-//            return "image/gif";
-//        } else if (lowerName.endsWith(".webp")) {
-//            return "image/webp";
-//        }
-//
-//        return "application/octet-stream";
-//    }
-//
-//    /**
-//     * Validate entity type
-//     */
-//    private boolean isValidEntityType(String entityType) {
-//        return entityType != null && (
-//            entityType.equals("DEFECT") ||
-//            entityType.equals("TRAINING_SAMPLE") ||
-//            entityType.equals("DEFECT_PROPOSAL_DETAIL") ||
-//            entityType.equals("TRAINING_SAMPLE_PROPOSAL_DETAIL")
-//        );
-//    }
 }
 
 /**

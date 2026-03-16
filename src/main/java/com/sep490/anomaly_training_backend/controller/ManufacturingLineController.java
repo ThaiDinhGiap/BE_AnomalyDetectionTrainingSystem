@@ -9,12 +9,16 @@ import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.ProcessService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 @RestController
@@ -111,5 +115,20 @@ public class ManufacturingLineController {
     public ResponseEntity<Void> deleteEmployeeSkill(@PathVariable Long id) {
         employeeSkillService.deleteEmployeeSkill(id);
         return ResponseEntity.noContent().build();
+    }
+    // ====================== IMPORT ======================
+    @Operation(summary = "Import Product data")
+    @PostMapping("/import-products")
+    @PreAuthorize("hasAuthority('manufacturing_line.import')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> importProduct(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
+        List<ProductResponse> data = productService.importProduct(currentUser, file);
+        return ResponseEntity.ok(ApiResponse.success( data));
+    }
+    @Operation(summary = "Import ProductLine data")
+    @PostMapping("/import-product-lines")
+    @PreAuthorize("hasAuthority('manufacturing_line.import')")
+    public ResponseEntity<ApiResponse<List<ProductLineResponse>>> importProductLine(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
+        List<ProductLineResponse> data = productLineService.importProductLine(currentUser, file);
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
