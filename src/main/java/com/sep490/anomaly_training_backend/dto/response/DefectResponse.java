@@ -28,5 +28,5 @@ public class DefectResponse {
     Integer quantity;
     String conclusion;
     ProductResponse product;
-    List<Attachment> attachments;
+    List<String> attachmentUrls;
 }

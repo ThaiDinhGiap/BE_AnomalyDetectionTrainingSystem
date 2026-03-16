@@ -16,10 +16,12 @@ import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingSampleProposalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -36,6 +38,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     private final ProcessRepository processRepository;
     private final ProductRepository productRepository;
     private final ApprovalService approvalService;
+    private final AttachmentService attachmentService;
 
     @Override
     public List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username) {
@@ -48,14 +51,14 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public void createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest) {
+    public void createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest, User currentUser) {
         ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         TrainingSampleProposal proposal = new TrainingSampleProposal();
         proposal.setProductLine(productLine);
         proposal.setStatus(ReportStatus.DRAFT);
-        proposal.setDetails(createDetail(proposalRequest.getListDetail(), proposal));
-        trainingSampleProposalRepository.save(proposal);
+        proposal = trainingSampleProposalRepository.save(proposal);
+        createDetail(proposalRequest.getListDetail(), proposal, currentUser);
     }
 
     @Override
@@ -183,26 +186,32 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         trainingSampleProposalRepository.save(proposal);
     }
 
-    private List<TrainingSampleProposalDetail> createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal) {
-        List<TrainingSampleProposalDetail> detailList = new ArrayList<>();
+    private void createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal, User currentUser) {
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
+            
+            // Handle trainingSample - can be null
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
             }
+            
+            // Handle defect - validate if not null
             if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId())
                         .orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
                 entity.setDefect(defect);
             }
+            
+            // Handle product - validate if not null
             if (detailRequest.getProductId() != null) {
                 Product product = productRepository.findById(detailRequest.getProductId())
                         .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
                 entity.setProduct(product);
             }
+            
             entity.setTrainingSampleProposal(proposal);
             entity.setProposalType(detailRequest.getProposalType());
             entity.setCategoryName(detailRequest.getCategoryName());
@@ -210,9 +219,15 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
             entity.setTrainingSampleCode(detailRequest.getTrainingSampleCode());
             entity.setNote(detailRequest.getNote());
-            detailList.add(entity);
+            
+            // Save detail first to get ID for attachment
+            entity = trainingSampleProposalDetailRepository.save(entity);
+            
+            // Upload images for this detail if provided
+            if (detailRequest.getImages() != null && !detailRequest.getImages().isEmpty()) {
+                attachmentService.uploadAttachments(detailRequest.getImages(), "TRAINING_SAMPLE_PROPOSAL", entity.getId(), currentUser.getUsername());
+            }
         }
-        return detailList;
     }
 
     private TrainingSampleProposalDetail mapToEntity(TrainingSampleProposalDetailRequest request, TrainingSampleProposal proposal) {

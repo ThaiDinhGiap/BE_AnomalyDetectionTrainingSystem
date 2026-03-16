@@ -80,8 +80,10 @@ public class TrainingSampleController {
     @Operation(summary = "Create new training sample proposal")
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('training_sample_proposal.create')")
-    public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(@RequestBody TrainingSampleProposalRequest request) {
-        trainingSampleProposalService.createTrainingSampleProposal(request);
+    public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(
+            @RequestPart("request") TrainingSampleProposalRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        trainingSampleProposalService.createTrainingSampleProposal(request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 

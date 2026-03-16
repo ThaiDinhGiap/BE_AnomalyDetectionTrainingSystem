@@ -4,7 +4,7 @@ import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResp
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ProductMapper.class})
 public abstract class DefectProposalDetailMapper {
 
     @Mapping(target = "defectId", source = "defect.id")

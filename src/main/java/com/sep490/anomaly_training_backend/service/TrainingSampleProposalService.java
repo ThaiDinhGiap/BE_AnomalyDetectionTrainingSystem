@@ -14,7 +14,7 @@ import java.util.List;
 public interface TrainingSampleProposalService {
     List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username);
 
-    void createTrainingSampleProposal(TrainingSampleProposalRequest request);
+    void createTrainingSampleProposal(TrainingSampleProposalRequest request, User currentUser);
 
     void deleteTrainingSampleProposal(Long id);
 

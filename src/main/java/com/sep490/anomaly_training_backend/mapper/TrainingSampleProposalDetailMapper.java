@@ -13,7 +13,5 @@ public abstract class TrainingSampleProposalDetailMapper {
     @Mapping(target = "defectDescription", source = "defect.defectDescription")
     @Mapping(target = "defectId", source = "defect.id")
     @Mapping(target = "trainingSampleId", source = "trainingSample.id")
-    @Mapping(target = "productCode", source = "product.code")
-    @Mapping(target = "productId", source = "product.id")
     public abstract TrainingSampleProposalDetailResponse toResponse(TrainingSampleProposalDetail entity);
 }

@@ -19,13 +19,10 @@ import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,8 +64,8 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         DefectProposal proposalHeader = new DefectProposal();
         proposalHeader.setProductLine(productLine);
         proposalHeader.setStatus(ReportStatus.DRAFT);
-        proposalHeader.setDetails(createDetail(reportRequest.getListDetail(), proposalHeader, currentUser));
-        defectProposalRepository.save(proposalHeader);
+        proposalHeader = defectProposalRepository.save(proposalHeader);
+        createDetail(reportRequest.getListDetail(), proposalHeader, currentUser);
     }
 
     @Override
@@ -81,7 +78,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     }
 
     @Override
-    public DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request) {
+    public DefectProposalUpdateResponse updateDefectProposal(Long id, DefectProposalRequest request, User currentUser) {
         DefectProposal proposal = defectProposalRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
 
@@ -108,7 +105,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         for (DefectProposalDetailRequest item : items) {
             // create
             if (item.getId() == null) {
-                DefectProposalDetail newEntity = mapToEntity(item, proposal);
+                DefectProposalDetail newEntity = mapToEntity(item, proposal, currentUser);
                 defectProposalDetailRepository.save(newEntity);
                 continue;
             }
@@ -153,7 +150,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setCustomer(item.getCustomer());
             entity.setQuantity(item.getQuantity());
             entity.setConclusion(item.getConclusion());
-            
+            if (item.getImages() != null && !item.getImages().isEmpty()) {
+                attachmentService.uploadAttachments(item.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
+                attachmentService.deleteAttachments("DEFECT_PROPOSAL", item.getId());
+            }
             defectProposalDetailRepository.save(entity);
         }
         for (DefectProposalDetail existing : existingDetails) {
@@ -230,8 +230,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         approvalService.revise(proposal, currentUser, request);
     }
 
-    private List<DefectProposalDetail> createDetail(List<DefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal, User currentUser) {
-        List<DefectProposalDetail> details = new ArrayList<>();
+    private void createDetail(List<DefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal, User currentUser) {
         for (DefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
@@ -273,23 +272,12 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             
             // Upload images for this detail if provided
             if (detailRequest.getImages() != null && !detailRequest.getImages().isEmpty()) {
-                for (MultipartFile image : detailRequest.getImages()) {
-                    if (!image.isEmpty()) {
-                        try {
-                            attachmentService.uploadAttachment(image, "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
-                        } catch (Exception e) {
-                            throw new AppException(ErrorCode.MINIO_UPLOAD_ERROR, "Failed to upload image for detail: " + e.getMessage());
-                        }
-                    }
-                }
+                attachmentService.uploadAttachments(detailRequest.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
             }
-            
-            details.add(entity);
         }
-        return details;
     }
 
-    private DefectProposalDetail mapToEntity(DefectProposalDetailRequest request, DefectProposal proposal) {
+    private DefectProposalDetail mapToEntity(DefectProposalDetailRequest request, DefectProposal proposal, User user) {
         if (request == null) throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT);
         if (request.getProcessId() == null) throw new AppException(ErrorCode.MISSING_PROCESS_ID);
         if (request.getProposalType() == null) throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
@@ -335,6 +323,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         entity.setCustomer(request.getCustomer());
         entity.setQuantity(request.getQuantity());
         entity.setConclusion(request.getConclusion());
+
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            attachmentService.uploadAttachments(request.getImages(), "DEFECT_PROPOSAL", entity.getId(), user.getUsername());
+        }
 
         entity.setDeleteFlag(false);
 

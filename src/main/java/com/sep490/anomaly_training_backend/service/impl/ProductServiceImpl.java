@@ -14,6 +14,7 @@ import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import com.sep490.anomaly_training_backend.util.helper.ProductImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.ProductImportValidator;
@@ -36,12 +37,12 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ProcessRepository processRepository;
     private final ProductMapper productMapper;
     private final ImportHistoryService importHistoryService;
     private final ProductImportHelper importHelper;
     private final ProductImportValidator importValidator;
     private final ImportImageHandlerService importImageHandlerService;
+    private final AttachmentService attachmentService;
 
     @Override
     public List<ProductResponse> importProduct(User user, MultipartFile productFile) {
@@ -242,7 +243,14 @@ public class ProductServiceImpl implements ProductService {
         if (product.isDeleteFlag()) {
             throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
         }
-        return productMapper.toDto(product);
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+        List<String> urls = new ArrayList<>();
+        for (Attachment attachment : attachments) {
+            urls.add(attachment.getUrl());
+        }
+        ProductResponse response = productMapper.toDto(product);
+        response.setAttachmentUrl(urls);
+        return response;
     }
 
     @Override
