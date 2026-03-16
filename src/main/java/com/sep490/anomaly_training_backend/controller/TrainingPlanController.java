@@ -263,7 +263,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "200", description = "Plan generated successfully"),
             @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
     })
-    @PostMapping("{id}/generate")
+    @PostMapping("/generate")
     @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
     public TrainingPlanGenerationResponse generatePlan(
             @AuthenticationPrincipal User currentUser,
