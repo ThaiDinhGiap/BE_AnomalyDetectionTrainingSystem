@@ -14,8 +14,8 @@ public class TrainingPlanResponse {
     private String title;
     private String formCode;
 
-    private LocalDate monthStart;
-    private LocalDate monthEnd;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
     private Long groupId;
     private String groupName;
@@ -31,9 +31,7 @@ public class TrainingPlanResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedBy;
 
-    // Flat list - tất cả detail rows
     private List<TrainingPlanDetailResponse> details = new ArrayList<>();
 
-    // Grouped by batchId - FE dùng để hiển thị (mỗi group = 1 row trên FE)
     private List<EmployeePlanGroup> groupedDetails = new ArrayList<>();
 }

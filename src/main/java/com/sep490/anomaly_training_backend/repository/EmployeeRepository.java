@@ -18,6 +18,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     List<Employee> findByTeamId(Long teamId);
 
+    List<Employee> findByTeamIdAndDeleteFlagFalse(Long teamId);
+
     @Query("SELECT e FROM Employee e WHERE e.team.teamLeader.id = :leaderId")
     List<Employee> findAllByTeamLeaderId(@Param("leaderId") Long leaderId);
 
@@ -34,4 +36,3 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             "WHERE u.id IS NULL AND e.deleteFlag = false")
     List<Employee> findAllEmployeesWithoutAccount();
 }
-

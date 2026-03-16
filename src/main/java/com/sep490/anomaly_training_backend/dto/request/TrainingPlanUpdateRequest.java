@@ -13,8 +13,8 @@ public class TrainingPlanUpdateRequest {
     private String title;
     private String note;
     private Long lineId;
-    private LocalDate monthStart;
-    private LocalDate monthEnd;
+    private LocalDate startDate;
+    private LocalDate endDate;
 
     // ===== DETAILS (null = không thay đổi details) =====
     @Valid
