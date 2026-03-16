@@ -260,6 +260,7 @@ CREATE TABLE teams
     group_id       BIGINT       NOT NULL,
     name           VARCHAR(100) NOT NULL,
     team_leader_id BIGINT       NOT NULL,
+    final_inspection_id BIGINT  NOT NULL,
 
     delete_flag    BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -269,6 +270,7 @@ CREATE TABLE teams
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
     FOREIGN KEY (team_leader_id) REFERENCES users (id),
+    FOREIGN KEY (final_inspection_id) REFERENCES users (id),
     INDEX idx_teams_group (group_id),
     INDEX idx_teams_team_leader (team_leader_id),
     INDEX idx_teams_delete_flag (delete_flag)

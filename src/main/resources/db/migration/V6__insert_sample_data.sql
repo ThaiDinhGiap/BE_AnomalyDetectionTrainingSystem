@@ -343,13 +343,13 @@ VALUES (1, 'PL-TIEN-P1', 'Dòng Máy Bơm Nước P-Series (Tiện)', 1, 'admin'
        (4, 'PL-LA-E1', 'Dây Chuyền Lắp Ráp Động Cơ E-Series', 5, 'admin'),
        (5, 'PL-LA-B1', 'Dây Chuyền Lắp Ráp Máy Bơm B-Series', 4, 'admin');
 
-INSERT INTO teams (id, group_id, name, team_leader_id, created_by)
-VALUES (1, 1, 'Tổ Tiện Ca Ngày', 6, 'admin'),
-       (2, 2, 'Tổ Phay Ca Ngày', 7, 'admin'),
-       (3, 3, 'Tổ Hàn & Nhiệt Luyện', 10, 'admin'),
-       (4, 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 'admin'),
-       (5, 5, 'Tổ Lắp Ráp Động Cơ', 9, 'admin'),
-       (6, 6, 'Tổ KCS & Kiểm Cuối', 11, 'admin');
+INSERT INTO teams (id, group_id, name, team_leader_id, final_inspection_id, created_by)
+VALUES (1, 1, 'Tổ Tiện Ca Ngày', 6, 12,'admin'),
+       (2, 2, 'Tổ Phay Ca Ngày', 7, 12,'admin'),
+       (3, 3, 'Tổ Hàn & Nhiệt Luyện', 10, 12,'admin'),
+       (4, 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 13,'admin'),
+       (5, 5, 'Tổ Lắp Ráp Động Cơ', 9, 13,'admin'),
+       (6, 6, 'Tổ KCS & Kiểm Cuối', 11, 13,'admin');
 
 INSERT INTO employees (id, employee_code, full_name, team_id, status, created_by)
 VALUES

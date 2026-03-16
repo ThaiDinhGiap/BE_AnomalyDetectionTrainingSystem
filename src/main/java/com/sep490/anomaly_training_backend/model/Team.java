@@ -45,5 +45,11 @@ public class Team extends BaseEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User teamLeader;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "final_inspection_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User finalInspection;
 }
 
