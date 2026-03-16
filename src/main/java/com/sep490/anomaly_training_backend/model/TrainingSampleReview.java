@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,7 +32,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "training_sample_reviews", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_reviews_period", columnNames = {"product_line_id", "review_year"})
+        @UniqueConstraint(name = "uk_reviews_period", columnNames = {"product_line_id", "review_date"})
 })
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -55,8 +57,8 @@ public class TrainingSampleReview extends BaseEntity {
     @EqualsAndHashCode.Exclude
     ProductLine productLine;
 
-    @Column(name = "review_year", nullable = false)
-    Integer reviewYear;
+    @Column(name = "review_date", nullable = false)
+    Integer reviewDate;
 
     @Column(name = "due_date", nullable = false)
     LocalDate dueDate;
@@ -84,6 +86,4 @@ public class TrainingSampleReview extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User confirmedBy;
 
-    @Column(name = "confirmed_at")
-    LocalDateTime confirmedAt;
 }

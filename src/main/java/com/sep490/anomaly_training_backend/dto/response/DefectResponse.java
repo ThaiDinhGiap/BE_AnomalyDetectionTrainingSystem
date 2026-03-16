@@ -18,4 +18,12 @@ public class DefectResponse {
     String originCause;
     String outflowCause;
     String causePoint;
+    String originMeasures;
+    String outflowMeasures;
+    String defectType;
+    // New fields
+    String customer;
+    Integer quantity;
+    String conclusion;
+    ProductResponse productResponse;
 }

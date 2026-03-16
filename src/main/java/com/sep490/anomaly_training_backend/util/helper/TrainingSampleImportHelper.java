@@ -1,13 +1,14 @@
-package com.sep490.anomaly_training_backend.util.import_helper;
+package com.sep490.anomaly_training_backend.util.helper;
 
+import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportRowData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.model.*;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.util.ExcelImageExtractorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.*;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -33,8 +34,9 @@ public class TrainingSampleImportHelper {
     private static final int COL_TRAINING_DESCRIPTION = 4;
     private static final int COL_TRAINING_SAMPLE_CODE = 5;
     private static final int COL_PRODUCT_CODE = 6;
-    private static final int COL_TRAINING_CODE =7;
-    private static final int COL_NOTE = 8;
+    private static final int COL_TRAINING_CODE = 7;
+    private static final int COL_IMAGE = 8;           // NEW: Column for embedded image
+    private static final int COL_NOTE = 9;            // UPDATED: Note moved to column 9
 
     /**
      * Parse Excel file starting from row 3
@@ -117,6 +119,7 @@ public class TrainingSampleImportHelper {
                 .trainingSampleCode(normalize(rawRow.getTrainingSampleCodeColumn()))
                 .productCode(normalize(rawRow.getProductCodeColumn()))
                 .trainingCode(normalize(rawRow.getTrainingCodeColumn()))
+                .imageData(rawRow.getImageData())  // Carry forward image data
                 .processOrder(lastProcessCode != null ? processOrderCounter : 1)
                 .categoryOrder(categoryOrder)
                 .contentOrder(contentOrder)
@@ -141,8 +144,11 @@ public class TrainingSampleImportHelper {
         String trainingDescriptionColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_DESCRIPTION));
         String trainingSampleCodeColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_SAMPLE_CODE));
         String productCodeColumn = getOptionalStringCellValue(row.getCell(COL_PRODUCT_CODE));
-        String noteColumn = getOptionalStringCellValue(row.getCell(COL_NOTE));
         String trainingCodeColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_CODE));
+        String noteColumn = getOptionalStringCellValue(row.getCell(COL_NOTE));
+        
+        // Extract image data from column 8 (COL_IMAGE)
+        ImageData imageData = extractImageFromRow(row, excelRowNumber);
 
         return TrainingSampleImportRowData.builder()
             .processColumn(processColumn)
@@ -151,8 +157,9 @@ public class TrainingSampleImportHelper {
             .trainingDescriptionColumn(trainingDescriptionColumn)
             .trainingSampleCodeColumn(trainingSampleCodeColumn)
             .productCodeColumn(productCodeColumn)
-            .noteColumn(noteColumn)
             .trainingCodeColumn(trainingCodeColumn)
+            .noteColumn(noteColumn)
+            .imageData(imageData)
             .excelRowNumber(excelRowNumber)
             .isEmpty(false)
             .isHeaderRow(isBlank(trainingDescriptionColumn))
@@ -253,5 +260,27 @@ public class TrainingSampleImportHelper {
             .value(value)
             .message(message)
             .build();
+    }
+
+    // ============= Image Reading Methods =============
+
+    /**
+     * Extract image data from the specified row
+     * Delegates to ExcelImageExtractorUtil for common image extraction logic
+     *
+     * @param row the row to search for images
+     * @param excelRowNumber the 1-based row number from Excel
+     * @return ImageData with image information, or null if no image found
+     */
+    private ImageData extractImageFromRow(Row row, int excelRowNumber) {
+        if (row == null) {
+            return null;
+        }
+
+        Sheet sheet = row.getSheet();
+        int rowIndex = row.getRowNum(); // 0-based row index
+
+        // Delegate to utility class for image extraction
+        return ExcelImageExtractorUtil.extractImageFromRow(sheet, rowIndex, COL_IMAGE, excelRowNumber);
     }
 }

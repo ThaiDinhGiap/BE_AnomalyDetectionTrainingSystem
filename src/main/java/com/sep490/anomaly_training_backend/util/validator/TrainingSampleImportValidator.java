@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.util.import_helper;
+package com.sep490.anomaly_training_backend.util.validator;
 
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
@@ -66,60 +66,42 @@ public class TrainingSampleImportValidator {
      * - Content rows: trainingCode must not duplicate
      */
     private void validateTrainingCodeRules(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
-        Map<String, Integer> trainingCodeCount = new HashMap<>();
         Map<String, Integer> firstRowOfCode = new HashMap<>();
 
-        // First pass: collect trainingCode for content rows only
         for (TrainingSampleImportDto row : parsedRows) {
-            boolean isHeaderRow = row.getIsHeaderRow() != null && row.getIsHeaderRow();
+            boolean isHeaderRow = Boolean.TRUE.equals(row.getIsHeaderRow());
             if (isHeaderRow) {
-                continue; // Skip header rows
+                continue;
             }
 
             String code = normalize(row.getTrainingCode());
-            if (code == null) {
-                continue; // Already validated as required
+
+            // bỏ qua blank vì đã có rule required xử lý
+            if (code.isEmpty()) {
+                continue;
             }
 
             // Check length
             if (code.length() > 20) {
                 errors.add(buildRowError(
-                    row.getExcelRowNumber(),
-                    "trainingCode",
-                    code,
-                    "trainingCode must not exceed 20 characters"
+                        row.getExcelRowNumber(),
+                        "trainingCode",
+                        code,
+                        "trainingCode must not exceed 20 characters"
                 ));
                 continue;
             }
 
-            // Track for duplicate detection
-            trainingCodeCount.put(code, trainingCodeCount.getOrDefault(code, 0) + 1);
-            if (!firstRowOfCode.containsKey(code)) {
+            Integer firstRow = firstRowOfCode.get(code);
+            if (firstRow == null) {
                 firstRowOfCode.put(code, row.getExcelRowNumber());
-            }
-        }
-
-        // Second pass: report duplicates
-        for (Map.Entry<String, Integer> entry : trainingCodeCount.entrySet()) {
-            if (entry.getValue() > 1) {
-                String code = entry.getKey();
-                Integer firstRow = firstRowOfCode.get(code);
-
-                for (TrainingSampleImportDto row : parsedRows) {
-                    boolean isHeaderRow = row.getIsHeaderRow() != null && row.getIsHeaderRow();
-                    if (isHeaderRow) {
-                        continue;
-                    }
-
-                    if (normalize(row.getTrainingCode()).equals(code)) {
-                        errors.add(buildRowError(
-                            row.getExcelRowNumber(),
-                            "trainingCode",
-                            code,
-                            "trainingCode " + code + " is duplicated with row " + firstRow
-                        ));
-                    }
-                }
+            } else {
+                errors.add(buildRowError(
+                        row.getExcelRowNumber(),
+                        "trainingCode",
+                        code,
+                        "trainingCode " + code + " is duplicated with row " + firstRow
+                ));
             }
         }
     }
@@ -130,59 +112,41 @@ public class TrainingSampleImportValidator {
      * Only for content rows
      */
     private void validateBusinessKeyDuplicates(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
-        Map<String, Integer> businessKeyMap = new HashMap<>();
         Map<String, Integer> firstRowOfKey = new HashMap<>();
 
-        // Collect keys for content rows only
         for (TrainingSampleImportDto row : parsedRows) {
-            boolean isHeaderRow = row.getIsHeaderRow() != null && row.getIsHeaderRow();
+            boolean isHeaderRow = Boolean.TRUE.equals(row.getIsHeaderRow());
             if (isHeaderRow) {
-                continue; // Skip header rows
+                continue;
+            }
+
+            // bỏ qua những row chưa đủ dữ liệu bắt buộc để tránh báo lỗi chồng chéo
+            if (isBlank(row.getProcessCode())
+                    || isBlank(row.getCategoryName())
+                    || isBlank(row.getTrainingDescription())) {
+                continue;
             }
 
             String key = buildBusinessKey(
-                row.getProcessCode(),
-                row.getCategoryName(),
-                row.getTrainingDescription(),
-                row.getTrainingSampleCode(),
-                row.getProductCode()
+                    row.getProcessCode(),
+                    row.getCategoryName(),
+                    row.getTrainingDescription(),
+                    row.getTrainingSampleCode(),
+                    row.getProductCode()
             );
 
-            businessKeyMap.put(key, businessKeyMap.getOrDefault(key, 0) + 1);
-            if (!firstRowOfKey.containsKey(key)) {
+            Integer firstRow = firstRowOfKey.get(key);
+            if (firstRow == null) {
                 firstRowOfKey.put(key, row.getExcelRowNumber());
-            }
-        }
-
-        // Report duplicates
-        for (Map.Entry<String, Integer> entry : businessKeyMap.entrySet()) {
-            if (entry.getValue() > 1) {
-                String key = entry.getKey();
-                Integer firstRow = firstRowOfKey.get(key);
-
-                for (TrainingSampleImportDto row : parsedRows) {
-                    boolean isHeaderRow = row.getIsHeaderRow() != null && row.getIsHeaderRow();
-                    if (isHeaderRow) {
-                        continue;
-                    }
-
-                    String rowKey = buildBusinessKey(
-                        row.getProcessCode(),
-                        row.getCategoryName(),
-                        row.getTrainingDescription(),
-                        row.getTrainingSampleCode(),
-                        row.getProductCode()
-                    );
-
-                    if (rowKey.equals(key)) {
-                        errors.add(buildRowError(
-                            row.getExcelRowNumber(),
-                            "DUPLICATE_BUSINESS_KEY",
-                            null,
-                            "Row " + row.getExcelRowNumber() + " is duplicated with row " + firstRow + " by (processCode, categoryName, trainingDescription, trainingSampleCode, productCode)"
-                        ));
-                    }
-                }
+            } else {
+                errors.add(buildRowError(
+                        row.getExcelRowNumber(),
+                        "DUPLICATE_BUSINESS_KEY",
+                        null,
+                        "Row " + row.getExcelRowNumber()
+                                + " is duplicated with row " + firstRow
+                                + " by (processCode, categoryName, trainingDescription, trainingSampleCode, productCode)"
+                ));
             }
         }
     }

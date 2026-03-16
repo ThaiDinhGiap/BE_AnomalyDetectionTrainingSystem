@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Repository
 public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSampleReview, Long> {
-    Optional<TrainingSampleReview> findByProductLineIdAndReviewYear(Long productLineId, Integer reviewYear);
+    Optional<TrainingSampleReview> findByProductLineIdAndReviewDate(Long productLineId, Integer reviewDate);
 
     List<TrainingSampleReview> findByResult(TrainingSampleReviewResult result);
 

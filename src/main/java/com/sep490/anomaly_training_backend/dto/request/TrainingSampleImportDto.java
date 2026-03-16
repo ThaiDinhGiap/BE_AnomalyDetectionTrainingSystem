@@ -25,6 +25,9 @@ public class TrainingSampleImportDto {
     private String trainingSampleCode;
     private String productCode;
 
+    // Image data from Excel
+    private ImageData imageData;
+
     // Metadata for ordering
     private Integer processOrder;
     private Integer categoryOrder;

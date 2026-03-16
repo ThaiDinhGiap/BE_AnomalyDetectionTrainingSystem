@@ -1,19 +1,20 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
+/**
+ * DTO for parsing Defect from Excel import
+ * Represents a single parsed row after carry-forward logic applied
+ */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class DefectImportDto {
+    // Resolved values after carry-forward logic
     private String defectCode;
     private String defectDescription;
     private LocalDate detectedDate;
@@ -22,10 +23,19 @@ public class DefectImportDto {
     private String outflowCause;
     private String causePoint;
 
+    private ImageData imageData;
     private String originMeasures;
     private String outflowMeasures;
-    private String defectType;
+    private Boolean isEscape;
+    private Boolean customerClaim;
+    private Boolean startledClaim;
 
     private String processCode;
-    private Integer excelRowNumber;  // NEW! Track which row this came from
+
+    private String customer;
+    private Integer quantity;
+    private String conclusion;
+    private String productCode;
+
+    private Integer excelRowNumber;
 }

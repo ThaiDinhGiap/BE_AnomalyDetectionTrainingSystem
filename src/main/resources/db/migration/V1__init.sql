@@ -309,7 +309,7 @@ CREATE TABLE product_lines
     code        VARCHAR(20)  NOT NULL,
     name        VARCHAR(100) NOT NULL,
 
-    group_id    BIGINT       NOT NULL,
+    group_id    BIGINT,
 
     delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
@@ -443,6 +443,12 @@ CREATE TABLE defects
     outflow_measures   VARCHAR(255),
     defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
+    -- 4 new fields for Defect
+    customer           VARCHAR(255) COMMENT 'Tên khách hàng',
+    quantity           INT          COMMENT 'Số lượng',
+    conclusion         LONGTEXT     COMMENT 'Kết luận',
+    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+
     note               TEXT,
 
     delete_flag        BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -453,7 +459,9 @@ CREATE TABLE defects
 
     UNIQUE KEY uk_defect (defect_code),
     FOREIGN KEY (process_id) REFERENCES processes (id),
+    FOREIGN KEY (product_id) REFERENCES products (id),
     INDEX idx_defects_process (process_id),
+    INDEX idx_defects_product (product_id),
     INDEX idx_defects_detected_date (detected_date),
     INDEX idx_defects_delete_flag (delete_flag)
 ) ENGINE = InnoDB
@@ -507,6 +515,12 @@ CREATE TABLE defect_proposal_details
     outflow_measures   VARCHAR(255),
     defect_type        ENUM ('DEFECTIVE_GOODS', 'CLAIM', 'STARTLED_CLAIM'),
 
+    -- 4 new fields for DefectProposalDetail
+    customer           VARCHAR(255) COMMENT 'Tên khách hàng',
+    quantity           INT          COMMENT 'Số lượng',
+    conclusion         LONGTEXT     COMMENT 'Kết luận',
+    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
@@ -516,9 +530,11 @@ CREATE TABLE defect_proposal_details
     FOREIGN KEY (defect_proposal_id) REFERENCES defect_proposals (id) ON DELETE CASCADE,
     FOREIGN KEY (defect_id) REFERENCES defects (id) ON DELETE SET NULL,
     FOREIGN KEY (process_id) REFERENCES processes (id),
+    FOREIGN KEY (product_id) REFERENCES products (id),
     INDEX idx_defect_proposal_details_proposal (defect_proposal_id),
     INDEX idx_defect_proposal_details_defect (defect_id),
     INDEX idx_defect_proposal_details_process (process_id),
+    INDEX idx_defect_proposal_details_product (product_id),
     INDEX idx_defect_proposal_details_type (proposal_type),
     INDEX idx_defect_proposal_details_delete_flag (delete_flag)
 ) ENGINE = InnoDB
@@ -1308,11 +1324,10 @@ CREATE TABLE training_sample_review_configs
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
+    review_policy_id BIGINT  NOT NULL,
     trigger_month   INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
     trigger_day     INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
     due_days        INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
-    assignee_id     BIGINT COMMENT 'TL phụ trách review (mặc định)',
-    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
 
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
@@ -1321,9 +1336,8 @@ CREATE TABLE training_sample_review_configs
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
-    FOREIGN KEY (assignee_id) REFERENCES users (id),
+    FOREIGN KEY (review_policy_id) REFERENCES training_sample_review_policies (id),
     UNIQUE KEY uk_review_configs_product_line (product_line_id),
-    INDEX idx_review_configs_active (is_active),
     INDEX idx_review_configs_delete_flag (delete_flag)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
@@ -1336,15 +1350,14 @@ CREATE TABLE training_sample_reviews
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     config_id       BIGINT    NOT NULL,
     product_line_id BIGINT    NOT NULL,
-    review_year     INT       NOT NULL COMMENT 'Năm review (2026)',
+    review_date     INT       NOT NULL COMMENT 'Năm review (2026)',
     due_date        DATE      NOT NULL COMMENT 'Hạn chót phải hoàn thành',
-    completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    completed_date  DATE               COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT    NOT NULL COMMENT 'TL thực hiện review',
     result          ENUM ('PENDING', 'NO_CHANGE', 'CHANGE_PROPOSED', 'OVERDUE')
                               NOT NULL DEFAULT 'PENDING',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
-    confirmed_at    TIMESTAMP NULL COMMENT 'Thời điểm SV xác nhận',
 
     delete_flag     BOOLEAN   NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
@@ -1356,7 +1369,7 @@ CREATE TABLE training_sample_reviews
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
     FOREIGN KEY (reviewed_by) REFERENCES users (id),
     FOREIGN KEY (confirmed_by) REFERENCES users (id),
-    UNIQUE KEY uk_reviews_period (product_line_id, review_year),
+    UNIQUE KEY uk_reviews_period (product_line_id, review_date),
     INDEX idx_reviews_config (config_id),
     INDEX idx_reviews_result (result),
     INDEX idx_reviews_due_date (due_date),
@@ -1365,6 +1378,28 @@ CREATE TABLE training_sample_reviews
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
+
+-- Training Sample Review Policies table
+
+CREATE TABLE training_sample_review_policies (
+                                                 id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                                                 policy_code VARCHAR(50) UNIQUE NOT NULL,
+                                                 effective_date DATE NOT NULL,
+                                                 expiration_date DATE,
+                                                 status ENUM('DEACTIVE', 'ACTIVE') NOT NULL DEFAULT 'ACTIVE',
+                                                 description TEXT,
+
+                                                 delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
+                                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                 created_by VARCHAR(255),
+                                                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                 updated_by VARCHAR(255),
+
+                                                 INDEX idx_training_review_policies_effective (effective_date, expiration_date),
+                                                 INDEX idx_training_review_policies_status (status),
+                                                 INDEX idx_training_review_policies_delete_flag (delete_flag)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 CREATE TABLE approval_flow_steps
 (

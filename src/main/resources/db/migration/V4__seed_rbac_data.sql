@@ -109,6 +109,7 @@ VALUES
 (48, 'manufacturing_line.create',        'Tạo danh sách cấu trúc dây chuyền',13, 'create', 2, TRUE, 'system'),
 (49, 'manufacturing_line.edit',          'Sửa danh sách cấu trúc dây chuyền',13, 'edit',   3, TRUE, 'system'),
 (50, 'manufacturing_line.delete',        'Xoá danh sách cấu trúc dây chuyền',13, 'delete', 4, TRUE, 'system'),
+(200, 'manufacturing_line.import',        'Xoá danh sách cấu trúc dây chuyền',13, 'import', 4, TRUE, 'system'),
 
 -- training sample review (module 14)
 (51, 'training_sample_review.view',          'Lấy danh sách kết quả rà soát hàng năm',             13, 'view',   1, TRUE, 'system'),
@@ -190,6 +191,7 @@ VALUES
     (4, 112),
     (4, 113),
     (4, 102),
+    (4, 200),  -- manufacturing_line.import
     (4, 56),
     (4, 57),
     (4, 58),

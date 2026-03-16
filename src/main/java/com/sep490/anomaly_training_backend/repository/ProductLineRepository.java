@@ -32,4 +32,6 @@ public interface ProductLineRepository extends JpaRepository<ProductLine, Long> 
      * Find ProductLine by name (case-sensitive, used for import)
      */
     Optional<ProductLine> findByName(String name);
+
+    Optional<ProductLine> findByCode(String name);
 }

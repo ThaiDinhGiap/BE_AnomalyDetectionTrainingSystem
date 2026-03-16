@@ -38,6 +38,12 @@ public class TrainingSampleReviewConfig extends BaseEntity {
     Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "review_policy_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    TrainingSampleReviewPolicy reviewPolicy;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_line_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -55,13 +61,4 @@ public class TrainingSampleReviewConfig extends BaseEntity {
     @Builder.Default
     Integer dueDays = 30;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignee_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    User assignee;
-
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    Boolean isActive = true;
 }

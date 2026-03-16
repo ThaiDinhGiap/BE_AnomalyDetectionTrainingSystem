@@ -21,6 +21,9 @@ public class TrainingSampleImportRowData {
     private String productCodeColumn;
     private String noteColumn;
     private String trainingCodeColumn;
+    
+    // Image data from Excel (from column 8/I)
+    private ImageData imageData;
 
     // Excel position
     private Integer excelRowNumber;
