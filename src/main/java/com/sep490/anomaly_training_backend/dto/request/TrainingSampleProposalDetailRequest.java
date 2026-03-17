@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrainingSampleProposalDetailRequest {
-    Long id;
+    Long trainingSampleProposalDetailId;
     Long trainingSampleId; // chỉ định mẫu huan luyen nào đc tác động
     ProposalType proposalType; //CREATE, UPDATE, DELETE
     Long processId; //Công doan

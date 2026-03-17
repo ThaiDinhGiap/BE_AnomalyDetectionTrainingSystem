@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DefectProposalDetailRequest {
-    Long id;
+    Long defectProposalDetailId;
     Long defectId;
     ProposalType proposalType;
     String defectDescription;

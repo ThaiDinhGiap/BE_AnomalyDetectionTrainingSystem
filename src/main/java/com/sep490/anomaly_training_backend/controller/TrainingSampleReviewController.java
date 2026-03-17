@@ -81,8 +81,8 @@ public class TrainingSampleReviewController {
     }
 
 
-    @PostMapping("/reviews/{reviewId}/assign-team-lead")
-    @PreAuthorize("hasAuthority('training_sample_proposal.update')")
+    @PutMapping("/reviews/{reviewId}/assign-team-lead")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     @Operation(summary = "Assign team lead to review", description = "Assign a team lead to perform the training sample review")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> assignTeamLeadToReview(
             @PathVariable Long reviewId,
@@ -93,8 +93,8 @@ public class TrainingSampleReviewController {
     }
 
 
-    @PostMapping("/reviews/{reviewId}/confirm")
-    @PreAuthorize("hasAuthority('training_sample_proposal.update')")
+    @PutMapping("/reviews/{reviewId}/confirm")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     @Operation(summary = "Confirm review by team lead", description = "Confirm training sample review results")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> confirmReviewByTeamLead(
             @PathVariable Long reviewId,
@@ -104,17 +104,17 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
     }
 
-//    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
-//    @PutMapping("/{id}/revise")
-//    @PreAuthorize("hasAuthority('defect.revise')")
-//    public ResponseEntity<String> revise(
-//            @AuthenticationPrincipal User currentUser,
-//            @PathVariable Long id,
-//            HttpServletRequest request
-//    ) {
-//        defectProposalService.revise(id, currentUser, request);
-//        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
-//    }
+    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
+    @PutMapping("/{id}/revise")
+    @PreAuthorize("hasAuthority('defect.revise')")
+    public ResponseEntity<String> revise(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        trainingSampleReviewPolicyService.revise(id, currentUser, request);
+        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
+    }
 
     @Operation(summary = "Approve defect proposal", description = "Approve the defect proposal.")
     @ApiResponses(value = {
@@ -134,21 +134,21 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok("Defect Proposal has been approved successfully!");
     }
 
-//    @Operation(summary = "Reject defect proposal", description = "Reject and request revision of the defect proposal.")
-//    @ApiResponses(value = {
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Defect Proposal rejected"),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
-//    })
-//    @PutMapping("/{id}/reject")
-//    @PreAuthorize("hasAuthority('defect_proposal.edit')")
-//    public ResponseEntity<String> rejectProposal(
-//            @PathVariable Long id,
-//            @AuthenticationPrincipal User currentUser,
-//            @Valid @RequestBody RejectRequest rejectRequest,
-//            HttpServletRequest request) {
-//
-//        defectProposalService.reject(id, currentUser, rejectRequest, request);
-//        return ResponseEntity.ok("Defect Proposal has been rejected!");
-//    }
+    @Operation(summary = "Reject Training Sample Review", description = "Reject and request revision of the defect proposal.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Training Sample Proposal rejected"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
+    })
+    @PutMapping("/{id}/reject")
+    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+    public ResponseEntity<String> rejectProposal(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody RejectRequest rejectRequest,
+            HttpServletRequest request) {
+
+        trainingSampleReviewPolicyService.reject(id, currentUser, rejectRequest, request);
+        return ResponseEntity.ok("Defect Proposal has been rejected!");
+    }
 
 }

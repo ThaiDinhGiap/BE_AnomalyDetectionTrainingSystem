@@ -40,7 +40,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingSampleReview extends BaseEntity {
+public class TrainingSampleReview extends BaseEntity implements Approvable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -86,4 +86,38 @@ public class TrainingSampleReview extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User confirmedBy;
 
+    @Override
+    public ApprovalEntityType getEntityType() {
+        return null;
+    }
+
+    @Override
+    public ReportStatus getStatus() {
+        return null;
+    }
+
+    @Override
+    public void setStatus(ReportStatus status) {
+
+    }
+
+    @Override
+    public Integer getCurrentVersion() {
+        return 0;
+    }
+
+    @Override
+    public void setCurrentVersion(Integer version) {
+
+    }
+
+    @Override
+    public Long getGroupId() {
+        return 0L;
+    }
+
+    @Override
+    public String computeContentHash() {
+        return "";
+    }
 }
