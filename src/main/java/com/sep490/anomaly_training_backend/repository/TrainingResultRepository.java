@@ -21,6 +21,8 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
 
     List<TrainingResult> findByLineIdAndDeleteFlagFalse(Long lineId);
 
+    List<TrainingResult> findByCreatedByAndLineIdAndDeleteFlagFalse(String createdBy, Long lineId);
+
     List<TrainingResult> findByYear(Integer year);
 
     List<TrainingResult> findByStatus(ReportStatus status);
@@ -29,6 +31,8 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     List<TrainingResult> findByTrainingPlanId(Long trainingPlanId);
 
     List<TrainingResult> findByDeleteFlagFalse();
+
+    List<TrainingResult> findByCreatedByAndDeleteFlagFalse(String createdBy);
 
     @Query("SELECT tr FROM TrainingResult tr LEFT JOIN FETCH tr.details WHERE tr.id = :id")
     Optional<TrainingResult> findByIdWithDetails(@Param("id") Long id);

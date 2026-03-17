@@ -6,7 +6,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.PermissionResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
-import com.sep490.anomaly_training_backend.service.RoleManagementService;
+import com.sep490.anomaly_training_backend.service.account.RoleManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

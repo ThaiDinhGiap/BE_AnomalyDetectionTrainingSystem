@@ -5,6 +5,9 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewReque
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewConfigService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleReviewPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +25,7 @@ import java.util.List;
 @Tag(name = "Training Sample Review Management", description = "API sắp xếp lịch rà soát danh sách mẫu huấn luyện hàng năm và báo cáo kết quả")
 public class TrainingSampleReviewController {
     private final TrainingSampleReviewPolicyService trainingSampleReviewPolicyService;
-    
+
     @GetMapping("/policies/product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_proposal.approve')")
     @Operation(summary = "Get review policies by product line", description = "Lấy danh sách chính sách rà soát theo dây chuyền sản xuất")

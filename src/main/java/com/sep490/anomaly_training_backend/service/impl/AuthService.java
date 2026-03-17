@@ -1,6 +1,10 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.request.LoginRequest;
+import com.sep490.anomaly_training_backend.dto.request.RefreshTokenRequest;
+import com.sep490.anomaly_training_backend.dto.request.RegisterRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
@@ -17,12 +21,11 @@ import com.sep490.anomaly_training_backend.repository.RefreshTokenRepository;
 import com.sep490.anomaly_training_backend.repository.RoleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.JwtService;
-import com.sep490.anomaly_training_backend.service.MailService;
+import com.sep490.anomaly_training_backend.service.notification.impl.MailDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -48,7 +51,7 @@ public class AuthService {
     private final CustomUserDetailsService userDetailsService;
     private final RoleRepository roleRepository;
     private final EmployeeRepository employeeRepository;
-    private final MailService mailService;
+    private final MailDispatcher mailDispatcher;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -203,7 +206,7 @@ public class AuthService {
                 + "- Password: " + rawPassword + "\n\n"
                 + "Please log in and change your password immediately for security.\n\n"
                 + "Best regards,\nThe System Administration Team.";
-        mailService.sendSimpleMail(savedUser.getEmail(), subject, body);
+        mailDispatcher.send(savedUser.getEmail(), subject, body);
 
         return toUserDashboard(savedUser);
     }

@@ -125,8 +125,9 @@ public class TrainingResultController {
     @Operation(summary = "Get all training result records (Overview)")
     @GetMapping("/list-all")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<TrainingResultListResponse>> getAllResults() {
-        return ResponseEntity.ok(trainingResultService.getAllTrainingResults());
+    public ResponseEntity<List<TrainingResultListResponse>> getAllResults(
+            @Parameter(description = "Filter by Product Line ID") @RequestParam(required = false) Long lineId) {
+        return ResponseEntity.ok(trainingResultService.getAllTrainingResults(lineId));
     }
 
     @Operation(summary = "Get product lines managed by current user",
