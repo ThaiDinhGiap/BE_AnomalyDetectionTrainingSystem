@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @Builder
 public class DefectProposalDetailResponse {
+    Long  defectProposalDetailId;
     Long defectProposalId;
     ProposalType proposalType;
     Long defectId;

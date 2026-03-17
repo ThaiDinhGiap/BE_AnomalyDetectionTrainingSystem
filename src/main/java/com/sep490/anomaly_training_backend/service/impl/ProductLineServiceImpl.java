@@ -196,6 +196,9 @@ public class ProductLineServiceImpl implements ProductLineService {
             workingPosition.setFinalInspectionName(team.getFinalInspection().getFullName());
             workingPosition.setSectionId(group.getSection().getId());
             workingPosition.setSectionName(group.getSection().getName());
+            workingPosition.setManagerId(group.getSection().getManager().getId());
+            workingPosition.setManagerName(group.getSection().getManager().getFullName());
+            workingPosition.setManagerCode(group.getSection().getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;
@@ -219,6 +222,9 @@ public class ProductLineServiceImpl implements ProductLineService {
             }
             workingPosition.setSectionId(group.getSection().getId());
             workingPosition.setSectionName(group.getSection().getName());
+            workingPosition.setManagerId(group.getSection().getManager().getId());
+            workingPosition.setManagerName(group.getSection().getManager().getFullName());
+            workingPosition.setManagerCode(group.getSection().getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;
@@ -237,6 +243,9 @@ public class ProductLineServiceImpl implements ProductLineService {
             }
             workingPosition.setSectionId(section.getId());
             workingPosition.setSectionName(section.getName());
+            workingPosition.setManagerId(section.getManager().getId());
+            workingPosition.setManagerName(section.getManager().getFullName());
+            workingPosition.setManagerCode(section.getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;

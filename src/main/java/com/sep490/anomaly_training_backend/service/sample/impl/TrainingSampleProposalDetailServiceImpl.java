@@ -33,7 +33,7 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
         if (Objects.isNull(response)) {
             return null;
         }
-        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE", response.getTrainingSampleId());
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", response.getTrainingSampleId());
         List<String> imageUrls = attachments.stream()
                 .map(Attachment::getUrl)
                 .toList();
