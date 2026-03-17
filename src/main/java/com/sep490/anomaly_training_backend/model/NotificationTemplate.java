@@ -26,11 +26,11 @@ public class NotificationTemplate extends BaseEntity {
     @Column(length = 50)
     String code;
 
-    @Column(name = "subject_template", nullable = false, length = 200)
+    @Column(name = "subject_template", nullable = false, length = 300)
     String subjectTemplate;
 
-    @Column(name = "body_template", nullable = false, columnDefinition = "TEXT")
-    String bodyTemplate;
+    @Column(name = "html_template_name", nullable = false, length = 100)
+    String htmlTemplateName;
 
     @Column(length = 500)
     String description;

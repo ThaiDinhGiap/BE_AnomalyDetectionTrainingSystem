@@ -344,12 +344,12 @@ VALUES (1, 'PL-TIEN-P1', 'Dòng Máy Bơm Nước P-Series (Tiện)', 1, 'admin'
        (5, 'PL-LA-B1', 'Dây Chuyền Lắp Ráp Máy Bơm B-Series', 4, 'admin');
 
 INSERT INTO teams (id, group_id, name, team_leader_id, final_inspection_id, created_by)
-VALUES (1, 1, 'Tổ Tiện Ca Ngày', 6, 12,'admin'),
-       (2, 2, 'Tổ Phay Ca Ngày', 7, 12,'admin'),
-       (3, 3, 'Tổ Hàn & Nhiệt Luyện', 10, 12,'admin'),
-       (4, 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 13,'admin'),
-       (5, 5, 'Tổ Lắp Ráp Động Cơ', 9, 13,'admin'),
-       (6, 6, 'Tổ KCS & Kiểm Cuối', 11, 13,'admin');
+VALUES (1, 1, 'Tổ Tiện Ca Ngày', 6, 12, 'admin'),
+       (2, 2, 'Tổ Phay Ca Ngày', 7, 12, 'admin'),
+       (3, 3, 'Tổ Hàn & Nhiệt Luyện', 10, 12, 'admin'),
+       (4, 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 13, 'admin'),
+       (5, 5, 'Tổ Lắp Ráp Động Cơ', 9, 13, 'admin'),
+       (6, 6, 'Tổ KCS & Kiểm Cuối', 11, 13, 'admin');
 
 INSERT INTO employees (id, employee_code, full_name, team_id, status, created_by)
 VALUES
@@ -1453,6 +1453,43 @@ VALUES (1, 3, 1, 30, 1, 'admin'),
        (3, 6, 1, 30, 1, 'admin'),
        (4, 9, 1, 30, 1, 'admin'),
        (5, 12, 1, 30, 1, 'admin');
+
+INSERT INTO notification_templates (code, subject_template, html_template_name, description, created_by)
+VALUES ('APPROVAL_NUDGE',
+        '[Nhắc ký] {entityTypeLabel}: {documentTitle}',
+        'approval-nudge-request',
+        'TL chủ động nhắc SV/Manager ký duyệt một phiếu đang chờ xử lý',
+        'system'),
+
+       ('APPROVAL_OVERDUE',
+        '[Cần xử lý] Bạn có {pendingCount} phiếu chờ phê duyệt quá {overdueHours} giờ',
+        'approval-overdue',
+        'Tự động nhắc SV/Manager khi có phiếu chờ duyệt vượt quá thời hạn SLA',
+        'system'),
+
+       ('PLAN_APPROVAL_REQUEST',
+        '[Cần phê duyệt] Kế hoạch huấn luyện: {planTitle}',
+        'plan-approval-request',
+        'Gửi cho SV/Manager ngay khi TL nộp kế hoạch huấn luyện mới',
+        'system'),
+
+       ('PLAN_REJECTED',
+        '[Bị trả lại] Kế hoạch huấn luyện cần chỉnh sửa: {planTitle}',
+        'plan-rejected',
+        'Gửi cho TL khi kế hoạch huấn luyện bị SV hoặc Manager từ chối',
+        'system'),
+
+       ('TRAINING_REMINDER_TODAY',
+        '[Nhắc lịch] Hôm nay bạn có {trainingCount} lịch kiểm tra huấn luyện',
+        'training-reminder-today',
+        'Gửi tự động mỗi sáng cho TL khi có lịch huấn luyện trong ngày hôm đó',
+        'system'),
+
+       ('TRAINING_OVERDUE_WARNING',
+        '[Cảnh báo] Bạn có {overdueCount} lịch huấn luyện quá hạn chưa ghi kết quả',
+        'training-overdue-warning',
+        'Gửi tự động cho TL khi có lịch huấn luyện đã qua ngày mà chưa cập nhật kết quả',
+        'system');
 
 SET FOREIGN_KEY_CHECKS = 1;
 

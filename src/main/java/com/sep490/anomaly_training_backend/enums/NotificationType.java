@@ -52,5 +52,7 @@ public enum NotificationType {
     // ============================================
     APPROVAL_OVERDUE_SV,          // Nhắc SV: có phê duyệt tồn đọng
     APPROVAL_OVERDUE_MANAGER,     // Nhắc Manager: có phê duyệt tồn đọng
-    APPROVAL_OVERDUE_FI           // Nhắc TL(FI): có xác nhận kết quả tồn đọng
+    APPROVAL_OVERDUE_FI,           // Nhắc TL(FI): có xác nhận kết quả tồn đọng
+
+    APPROVAL_NUDGE
 }

@@ -5,8 +5,8 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewConfigResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.TrainingSampleReviewConfigService;
-import com.sep490.anomaly_training_backend.service.TrainingSampleReviewService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewConfigService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
