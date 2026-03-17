@@ -81,8 +81,8 @@ public class TrainingSampleReviewController {
     }
 
 
-    @PostMapping("/reviews/{reviewId}/assign-team-lead")
-    @PreAuthorize("hasAuthority('training_sample_proposal.update')")
+    @PutMapping("/reviews/{reviewId}/assign-team-lead")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     @Operation(summary = "Assign team lead to review", description = "Assign a team lead to perform the training sample review")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> assignTeamLeadToReview(
             @PathVariable Long reviewId,
@@ -93,8 +93,8 @@ public class TrainingSampleReviewController {
     }
 
 
-    @PostMapping("/reviews/{reviewId}/confirm")
-    @PreAuthorize("hasAuthority('training_sample_proposal.update')")
+    @PutMapping("/reviews/{reviewId}/confirm")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     @Operation(summary = "Confirm review by team lead", description = "Confirm training sample review results")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> confirmReviewByTeamLead(
             @PathVariable Long reviewId,
