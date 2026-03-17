@@ -37,6 +37,13 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
 
     }
+    @GetMapping("/user/working-positions")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<List<WorkingPosition>>> getWorkingPosition(@AuthenticationPrincipal User user) {
+        List<WorkingPosition> result = productLineService.getWorkingPosition(user);
+        return ResponseEntity.ok(ApiResponse.success(result));
+
+    }
     @GetMapping("/product-lines-detail")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> getProductLineDetail(@RequestParam Long productLineId) {
