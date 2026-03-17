@@ -15,7 +15,6 @@ public class DefectResponse {
     Long processId;
     String processName;
     LocalDate detectedDate;
-    Boolean isEscaped;
     String note;
     String originCause;
     String outflowCause;

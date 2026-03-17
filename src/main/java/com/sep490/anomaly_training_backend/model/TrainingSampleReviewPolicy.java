@@ -1,23 +1,12 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "training_sample_review_policies")
@@ -49,5 +38,14 @@ public class TrainingSampleReviewPolicy extends BaseEntity {
 
     @Column(name = "description", columnDefinition = "TEXT")
     String description;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_line_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    ProductLine productLine;
+
+    @OneToMany(mappedBy = "reviewPolicy", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<TrainingSampleReviewConfig> reviewConfigs;
 }
 
