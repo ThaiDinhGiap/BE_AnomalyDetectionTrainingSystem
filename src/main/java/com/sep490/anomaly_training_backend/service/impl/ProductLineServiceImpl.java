@@ -2,10 +2,7 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ProductLineImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
-import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
@@ -14,14 +11,9 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
 import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
-import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
 import com.sep490.anomaly_training_backend.util.helper.ProductLineImportHelper;
@@ -55,6 +47,8 @@ public class ProductLineServiceImpl implements ProductLineService {
     private final ProductLineImportHelper importHelper;
     private final ProductLineImportValidator importValidator;
     private final ProcessMapper processMapper;
+    private final TeamRepository teamRepository;
+    private final SectionRepository sectionRepository;
 
     @Override
     public List<ProductLineResponse> getAllProductLine() {
@@ -165,6 +159,76 @@ public class ProductLineServiceImpl implements ProductLineService {
         }
     }
 
+    @Override
+    public List<WorkingPosition> getWorkingPosition(User user) {
+        Role role = user.getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        if (("ROLE_TEAM_LEADER").equals(role.getRoleCode())) {
+            return positionTeamLead(user);
+        }
+        else if (("ROLE_SUPERVISOR").equals(role.getRoleCode())){
+            return positionSuperVisor(user);
+        }
+        return positionManager(user);
+
+    }
+    private List<WorkingPosition> positionTeamLead(User user) {
+        List<WorkingPosition> resultTeamLead = new ArrayList<>();
+        List<Team> teams = teamRepository.findAllByTeamLeaderId(user.getId());
+        for (Team team : teams) {
+            WorkingPosition workingPosition = new WorkingPosition();
+            Group group = team.getGroup();
+            List<ProductLine> productLine = productLineRepository.findByGroupId(group.getId());
+            for (ProductLine pl : productLine) {
+                workingPosition.setProductLineId(pl.getId());
+                workingPosition.setProductLineName(pl.getName());
+                workingPosition.setGroupId(group.getId());
+                workingPosition.setGroupName(group.getName());
+            }
+            workingPosition.setTeamId(team.getId());
+            workingPosition.setTeamName(team.getName());
+            workingPosition.setTeamLead(team.getTeamLeader().getFullName());
+            workingPosition.setSectionId(group.getSection().getId());
+            workingPosition.setSectionName(group.getSection().getName());
+            resultTeamLead.add(workingPosition);
+        }
+        return resultTeamLead;
+    }
+
+    private List<WorkingPosition> positionSuperVisor(User user) {
+        List<WorkingPosition> resultTeamLead = new ArrayList<>();
+        List<Group> groups = groupRepository.findBySupervisorId(user.getId());
+        for (Group group : groups) {
+            WorkingPosition workingPosition = new WorkingPosition();
+            List<ProductLine> productLine = productLineRepository.findByGroupId(group.getId());
+            for (ProductLine pl : productLine) {
+                workingPosition.setProductLineId(pl.getId());
+                workingPosition.setProductLineName(pl.getName());
+                workingPosition.setGroupId(group.getId());
+                workingPosition.setGroupName(group.getName());
+            }
+            workingPosition.setSectionId(group.getSection().getId());
+            workingPosition.setSectionName(group.getSection().getName());
+            resultTeamLead.add(workingPosition);
+        }
+        return resultTeamLead;
+    }
+
+    private List<WorkingPosition> positionManager(User user) {
+        List<WorkingPosition> resultTeamLead = new ArrayList<>();
+        List<Section> sections = sectionRepository.findByManagerId(user.getId());
+        for (Section section : sections) {
+            WorkingPosition workingPosition = new WorkingPosition();
+            List<ProductLine> productLine = productLineRepository.findBySection(section.getId());
+            for (ProductLine pl : productLine) {
+                workingPosition.setProductLineId(pl.getId());
+                workingPosition.setProductLineName(pl.getName());
+            }
+            workingPosition.setSectionId(section.getId());
+            workingPosition.setSectionName(section.getName());
+            resultTeamLead.add(workingPosition);
+        }
+        return resultTeamLead;
+    }
     /**
      * Process all rows - group by ProductLine, then create/update
      */

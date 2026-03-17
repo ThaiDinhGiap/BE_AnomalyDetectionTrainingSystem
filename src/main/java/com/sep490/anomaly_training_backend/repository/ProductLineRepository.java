@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
+import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,4 +35,7 @@ public interface ProductLineRepository extends JpaRepository<ProductLine, Long> 
     Optional<ProductLine> findByName(String name);
 
     Optional<ProductLine> findByCode(String name);
+
+    @Query("SELECT DISTINCT p FROM ProductLine p WHERE p.group.section.id = :sectionId")
+    List<ProductLine> findBySection(Long sectionId);
 }
