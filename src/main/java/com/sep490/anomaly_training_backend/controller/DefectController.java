@@ -95,7 +95,7 @@ public class DefectController {
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('defect_proposal.create')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(
-            @RequestBody DefectProposalRequest request,
+            @ModelAttribute DefectProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
         defectProposalService.createDefectProposalDraft(request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
@@ -112,7 +112,7 @@ public class DefectController {
     @PreAuthorize("hasAuthority('defect_proposal.edit')")
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
-            @RequestBody DefectProposalRequest request, @AuthenticationPrincipal User currentUser) throws BadRequestException {
+            @ModelAttribute DefectProposalRequest request, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         DefectProposalUpdateResponse response = defectProposalService.updateDefectProposal(id, request, currentUser);
         return ResponseEntity.ok(response);
     }
