@@ -16,6 +16,9 @@ public class WorkingPosition {
     String sectionName;
     Long groupId;
     String groupName;
+    Long supervisorId;
+    String supervisorName;
+    String supervisorCode;
     Long teamId;
     String teamName;
     String teamLeadName;
