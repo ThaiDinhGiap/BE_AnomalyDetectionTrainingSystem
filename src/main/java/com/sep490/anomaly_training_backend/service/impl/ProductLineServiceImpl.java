@@ -184,6 +184,9 @@ public class ProductLineServiceImpl implements ProductLineService {
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
+                workingPosition.setSupervisorId(group.getSupervisor().getId());
+                workingPosition.setSupervisorName(group.getSupervisor().getFullName());
+                workingPosition.setSupervisorCode(group.getSupervisor().getEmployeeCode());
             }
             workingPosition.setTeamId(team.getId());
             workingPosition.setTeamName(team.getName());
@@ -210,6 +213,9 @@ public class ProductLineServiceImpl implements ProductLineService {
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
+                workingPosition.setSupervisorId(group.getSupervisor().getId());
+                workingPosition.setSupervisorName(group.getSupervisor().getFullName());
+                workingPosition.setSupervisorCode(group.getSupervisor().getEmployeeCode());
             }
             workingPosition.setSectionId(group.getSection().getId());
             workingPosition.setSectionName(group.getSection().getName());
