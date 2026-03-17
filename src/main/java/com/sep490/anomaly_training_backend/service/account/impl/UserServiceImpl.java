@@ -6,12 +6,14 @@ import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.UserMapper;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final EmployeeRepository employeeRepository;
+    private final ProductLineRepository productLineRepository;
+    private final TeamRepository teamRepository;
 
     @Override
     @Transactional
@@ -87,4 +91,19 @@ public class UserServiceImpl implements UserService {
         return employeeRepository.findByEmployeeCode(user.getEmployeeCode())
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
     }
+
+    @Override
+    public List<UserResponse> getTeamLeadInProductLine(Long productLineId) {
+        ProductLine productLine = productLineRepository.findById(productLineId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+        Group group = productLine.getGroup();
+        List<Team> teams = teamRepository.findByGroupId(group.getId());
+        List<User> teamLeads = teams.stream()
+                                    .map(Team::getTeamLeader)
+                                    .toList();
+        return teamLeads.stream()
+                        .map(userMapper::toDTO)
+                        .collect(Collectors.toList());
+    }
 }
+

@@ -21,4 +21,6 @@ public interface UserService {
     List<UserDashboard> getAllUserDashboard();
 
     Employee getEmployeeOfUser(Long userId);
+
+    List<UserResponse> getTeamLeadInProductLine(Long productLineId);
 }

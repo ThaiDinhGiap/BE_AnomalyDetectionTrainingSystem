@@ -11,6 +11,7 @@ import java.util.List;
 public class TrainingSampleReviewPolicyResponse {
     Long id;
     String policyCode;
+    String policyName;
     LocalDate effectiveDate;
     LocalDate expirationDate;
     PolicyStatus status;

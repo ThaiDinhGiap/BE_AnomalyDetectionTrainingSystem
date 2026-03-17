@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.repository;
 
-import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
 import org.springframework.data.domain.Page;

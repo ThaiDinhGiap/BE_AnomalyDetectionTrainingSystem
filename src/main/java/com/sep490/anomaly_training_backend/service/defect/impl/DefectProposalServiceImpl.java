@@ -224,7 +224,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     public void revise(Long id, User currentUser, HttpServletRequest request) {
         DefectProposal proposal = defectProposalRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
-        if (!proposal.getCreatedBy().equals(proposal.getCreatedBy())) {
+        if (!currentUser.getUsername().equals(proposal.getCreatedBy())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
         approvalService.revise(proposal, currentUser, request);

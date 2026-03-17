@@ -94,19 +94,19 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         Set<Long> requestDetailIds = new HashSet<>();
 
         for (TrainingSampleProposalDetailRequest item : items) {
-            if (item.getId() != null && !existingMap.containsKey(item.getId())) {
+            if (item.getTrainingSampleProposalDetailId() != null && !existingMap.containsKey(item.getTrainingSampleProposalDetailId())) {
                 throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
             }
         }
         for (TrainingSampleProposalDetailRequest item : items) {
-            if (item.getId() == null) {
+            if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
                 trainingSampleProposalDetailRepository.save(newEntity);
                 continue;
             }
-            requestDetailIds.add(item.getId());
+            requestDetailIds.add(item.getTrainingSampleProposalDetailId());
             TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
-            entity.setId(item.getId());
+            entity.setId(item.getTrainingSampleProposalDetailId());
             trainingSampleProposalDetailRepository.save(entity);
         }
         for (TrainingSampleProposalDetail existing : existingDetails) {

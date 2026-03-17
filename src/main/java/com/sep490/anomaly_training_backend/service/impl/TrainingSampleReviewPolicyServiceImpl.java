@@ -1,9 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewConfigRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
+import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
@@ -18,6 +15,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicy
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingSampleReviewPolicyService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +34,7 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
     private final TrainingSampleReviewMapper trainingSampleReviewMapper;
     private final UserRepository userRepository;
     private final TrainingSampleReviewPolicyMapper trainingSampleReviewPolicyMapper;
+    private final ApprovalService approvalService;
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int SUFFIX_LENGTH = 3; // Độ dài phần đuôi ngẫu nhiên
@@ -128,7 +127,24 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
     public void approve(Long id, User currentUser, ApproveRequest approveRequest, HttpServletRequest request) {
             TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                     .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+            approvalService.canApprove(review, currentUser);
+    }
 
+    @Override
+    public void revise(Long id, User currentUser, HttpServletRequest request) {
+            TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+        if (!currentUser.getUsername().equals(review.getCreatedBy())) {
+            throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
+        }
+        approvalService.revise(review, currentUser, request);
+    }
+
+    @Override
+    public void reject(Long id, User currentUser, RejectRequest req, HttpServletRequest request) {
+        TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+        approvalService.reject(review, currentUser, req, request);
     }
 
     private String generateReviewPolicyCode() {

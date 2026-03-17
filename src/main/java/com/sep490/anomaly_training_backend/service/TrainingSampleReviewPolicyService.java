@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
@@ -27,4 +28,8 @@ public interface TrainingSampleReviewPolicyService {
     TrainingSampleReviewResponse confirmReviewByTeamLead(TrainingSampleReviewRequest request);
 
     void approve(Long id, User currentUser,  ApproveRequest approveRequest, HttpServletRequest request);
+
+    void revise(Long id, User currentUser, HttpServletRequest request);
+
+    void reject(Long id, User currentUser, RejectRequest rejectRequest, HttpServletRequest request);
 }
