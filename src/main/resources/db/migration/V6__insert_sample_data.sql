@@ -245,6 +245,7 @@ VALUES (2, 1),
        (2, 44),
        (2, 45),
        (2, 46),
+       (2, 47),
        (2, 56),
        (2, 57),
        (2, 58),
@@ -270,6 +271,7 @@ VALUES (3, 1),
        (3, 20),
        (3, 36),
        (3, 40),
+       (3, 47),
        (3, 56),
        (3, 57),
        (3, 58),
@@ -1455,7 +1457,7 @@ INSERT INTO training_sample_review_policies (policy_code, policy_name, product_l
                                              status, description, created_by, updated_by)
 VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1,'2026-01-01', '2026-12-31', 'ACTIVE',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm cho tất cả dây chuyền năm 2026', 'admin', 'admin'),
-       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1,'2025-01-01', '2025-12-31', 'DEACTIVE',
+       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1,'2025-01-01', '2025-12-31', 'ARCHIVED',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm năm 2025', 'admin', 'admin');
 
 INSERT INTO training_sample_review_configs (review_policy_id, trigger_month, trigger_day, due_days,
@@ -1465,6 +1467,24 @@ VALUES (1, 3, 1, 30,  'admin'),
        (1, 6, 1, 30,  'admin'),
        (2, 9, 1, 30,  'admin'),
        (2, 12, 1, 30,  'admin');
+
+INSERT INTO training_sample_reviews
+(config_id, product_line_id, review_date, due_date, completed_date, reviewed_by, result, sample_snapshot, confirmed_by, delete_flag, created_at, created_by, updated_at, updated_by)
+VALUES
+-- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
+(1, 1, '2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{"total_samples": 50}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+
+-- 2. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 2: Đã làm xong, không có thay đổi, Sếp (ID=2) đã duyệt
+(1, 2, '2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{"total_samples": 45}', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+
+-- 3. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 1: Đợt rà soát tháng 5, mới lên lịch chờ làm
+(2, 1, '2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{"total_samples": 50}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+
+-- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
+(2, 2, '2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED', '{"total_samples": 45}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+
+-- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
+(4, 1, '2026-03-01', '2025-10-01', NULL, 1, 'OVERDUE', '{"total_samples": 50}', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
 
 INSERT INTO notification_templates (code, subject_template, html_template_name, description, created_by)
 VALUES ('APPROVAL_NUDGE',

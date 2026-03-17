@@ -1349,11 +1349,11 @@ CREATE TABLE training_sample_reviews
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     config_id       BIGINT  NOT NULL,
     product_line_id BIGINT  NOT NULL,
-    review_date     INT     NOT NULL COMMENT 'Năm review (2026)',
+    review_date     DATE    COMMENT 'Năm review (2026)',
     due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
     completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT  NOT NULL COMMENT 'TL thực hiện review',
-    result          ENUM ('PENDING', 'NO_CHANGE', 'CHANGE_PROPOSED', 'OVERDUE')
+    result          ENUM ('NEED_ASSIGNED', 'PENDING', 'NEED_VERIFIED', 'REJECTED', 'APPROVED', 'OVERDUE')
                             NOT NULL DEFAULT 'PENDING',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
@@ -1368,7 +1368,6 @@ CREATE TABLE training_sample_reviews
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
     FOREIGN KEY (reviewed_by) REFERENCES users (id),
     FOREIGN KEY (confirmed_by) REFERENCES users (id),
-    UNIQUE KEY uk_reviews_period (product_line_id, review_date),
     INDEX idx_reviews_config (config_id),
     INDEX idx_reviews_result (result),
     INDEX idx_reviews_due_date (due_date),
@@ -1387,7 +1386,7 @@ CREATE TABLE training_sample_review_policies (
     product_line_id BIGINT NOT NULL,
     effective_date DATE NOT NULL,
     expiration_date DATE,
-    status ENUM('DEACTIVE', 'ACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    status ENUM('ACTIVE', 'ARCHIVED','DRAFT') NOT NULL DEFAULT 'ACTIVE',
     description TEXT,
 
     delete_flag BOOLEAN NOT NULL DEFAULT FALSE,

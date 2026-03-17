@@ -16,13 +16,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class TrainingSampleReviewResponse {
     Long id;
-    Long productLine;
-    Integer reviewYear;
+    String productLine;
+    LocalDate reviewDate;
     LocalDate dueDate;
     LocalDate completedDate;
     String reviewedBy;
-    TrainingSampleReviewResult result;
+    String result;
     String sampleSnapshot;
     String confirmedBy;
-    LocalDateTime confirmedAt;
 }

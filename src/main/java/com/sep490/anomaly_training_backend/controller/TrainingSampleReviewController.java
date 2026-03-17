@@ -1,17 +1,24 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingSampleReviewPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -96,4 +103,52 @@ public class TrainingSampleReviewController {
         TrainingSampleReviewResponse response = trainingSampleReviewPolicyService.confirmReviewByTeamLead(request);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
     }
+
+//    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
+//    @PutMapping("/{id}/revise")
+//    @PreAuthorize("hasAuthority('defect.revise')")
+//    public ResponseEntity<String> revise(
+//            @AuthenticationPrincipal User currentUser,
+//            @PathVariable Long id,
+//            HttpServletRequest request
+//    ) {
+//        defectProposalService.revise(id, currentUser, request);
+//        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
+//    }
+
+    @Operation(summary = "Approve defect proposal", description = "Approve the defect proposal.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Approved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "No approval permission"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Defect Proposal is not found")
+    })
+    @PutMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    public ResponseEntity<String> approveProposal(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ApproveRequest approveRequest,
+            HttpServletRequest request) {
+
+        trainingSampleReviewPolicyService.approve(id, currentUser, approveRequest, request);
+        return ResponseEntity.ok("Defect Proposal has been approved successfully!");
+    }
+
+//    @Operation(summary = "Reject defect proposal", description = "Reject and request revision of the defect proposal.")
+//    @ApiResponses(value = {
+//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Defect Proposal rejected"),
+//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
+//    })
+//    @PutMapping("/{id}/reject")
+//    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+//    public ResponseEntity<String> rejectProposal(
+//            @PathVariable Long id,
+//            @AuthenticationPrincipal User currentUser,
+//            @Valid @RequestBody RejectRequest rejectRequest,
+//            HttpServletRequest request) {
+//
+//        defectProposalService.reject(id, currentUser, rejectRequest, request);
+//        return ResponseEntity.ok("Defect Proposal has been rejected!");
+//    }
+
 }

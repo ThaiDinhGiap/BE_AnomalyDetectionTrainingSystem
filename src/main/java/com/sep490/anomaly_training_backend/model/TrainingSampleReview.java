@@ -58,7 +58,7 @@ public class TrainingSampleReview extends BaseEntity {
     ProductLine productLine;
 
     @Column(name = "review_date", nullable = false)
-    Integer reviewDate;
+    LocalDate reviewDate;
 
     @Column(name = "due_date", nullable = false)
     LocalDate dueDate;
