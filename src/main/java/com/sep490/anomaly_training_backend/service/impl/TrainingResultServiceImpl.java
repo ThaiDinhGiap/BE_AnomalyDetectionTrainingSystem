@@ -278,8 +278,14 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public List<TrainingResultListResponse> getAllTrainingResults() {
-        List<TrainingResult> entities = trainingResultRepository.findByDeleteFlagFalse();
+    public List<TrainingResultListResponse> getAllTrainingResults(Long lineId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<TrainingResult> entities;
+        if (lineId != null) {
+            entities = trainingResultRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUsername, lineId);
+        } else {
+            entities = trainingResultRepository.findByCreatedByAndDeleteFlagFalse(currentUsername);
+        }
         return mapToListResponse(entities);
     }
 
