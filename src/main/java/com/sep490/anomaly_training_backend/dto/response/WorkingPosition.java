@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,7 +18,11 @@ public class WorkingPosition {
     String groupName;
     Long teamId;
     String teamName;
-    String teamLead;
+    String teamLeadName;
+    String teamLeadCode;
+    String finalInspectionName;
+    String finalInspectionCode;
     Long productLineId;
     String productLineName;
+    List<ProcessResponse> processes;
 }
