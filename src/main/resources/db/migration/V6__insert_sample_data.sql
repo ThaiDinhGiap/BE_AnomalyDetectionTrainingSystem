@@ -204,7 +204,11 @@ VALUES (1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 's
        (111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
        (112, 'defect.detail', 'Xem chi tiết lỗi quá khứ', 1, 'view', 7, TRUE, 'system'),
        (113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 8, TRUE, 'system'),
-       (200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system');
+       (200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
+       (201, 'training_sample_review.view', 'Xem chính sách kểm tra mẫu huấn luyện hằng n', 2, 'view', 5, TRUE, 'system'),
+       (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 5, TRUE, 'system'),
+       (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 5, TRUE, 'system'),
+       (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 5, TRUE, 'system');
 
 -- ADMIN: tất cả quyền
 INSERT INTO role_permissions (role_id, permission_id)
@@ -269,6 +273,10 @@ VALUES (3, 1),
        (3, 56),
        (3, 57),
        (3, 58),
+       (3, 201),
+       (3, 202),
+       (3, 203),
+       (3, 204),
        (3, 59);
 
 -- TEAM LEADER
@@ -302,7 +310,11 @@ VALUES (4, 1),
        (4, 111),
        (4, 112),
        (4, 113),
-       (4, 200);
+       (4, 200),
+       (4, 201),
+       (4, 202),
+       (4, 203),
+       (4, 204);
 
 -- FINAL INSPECTION
 INSERT INTO role_permissions (role_id, permission_id)
