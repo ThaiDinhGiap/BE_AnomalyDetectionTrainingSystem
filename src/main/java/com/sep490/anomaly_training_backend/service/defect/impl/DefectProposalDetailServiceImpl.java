@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service.defect.impl;
 
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.model.Attachment;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
@@ -38,7 +37,7 @@ public class DefectProposalDetailServiceImpl implements DefectProposalDetailServ
         if (Objects.isNull(response)) {
             return null;
         }
-        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT", response.getDefectProposalId());
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", response.getDefectProposalId());
         List<String> imageUrls = attachments.stream()
                 .map(Attachment::getUrl)
                 .toList();

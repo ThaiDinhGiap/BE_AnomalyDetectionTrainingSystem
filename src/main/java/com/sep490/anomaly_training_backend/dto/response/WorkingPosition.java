@@ -14,6 +14,9 @@ import java.util.List;
 public class WorkingPosition {
     Long sectionId;
     String sectionName;
+    Long managerId;
+    String managerName;
+    String managerCode;
     Long groupId;
     String groupName;
     Long supervisorId;

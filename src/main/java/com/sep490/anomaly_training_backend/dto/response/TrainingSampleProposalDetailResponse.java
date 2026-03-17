@@ -9,7 +9,8 @@ import java.util.List;
 @Data
 @Builder
 public class TrainingSampleProposalDetailResponse {
-    Long id;
+    Long trainingSampleProposalDetailId;
+    Long trainingSampleProposalId;
     Long trainingSampleId;
     ProposalType proposalType;
     ProductResponse product;

@@ -13,5 +13,7 @@ public abstract class TrainingSampleProposalDetailMapper {
     @Mapping(target = "defectDescription", source = "defect.defectDescription")
     @Mapping(target = "defectId", source = "defect.id")
     @Mapping(target = "trainingSampleId", source = "trainingSample.id")
+    @Mapping(target = "trainingSampleProposalId", source = "trainingSampleProposal.id")
+    @Mapping(target = "trainingSampleProposalDetailId", source = "id")
     public abstract TrainingSampleProposalDetailResponse toResponse(TrainingSampleProposalDetail entity);
 }
