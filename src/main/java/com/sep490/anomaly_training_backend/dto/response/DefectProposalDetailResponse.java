@@ -29,6 +29,7 @@ public class DefectProposalDetailResponse {
     String customer;
     Integer quantity;
     String conclusion;
+    ProductResponse product;
     List<String> attachmentUrls;
     ProductResponse productResponse;
 }
