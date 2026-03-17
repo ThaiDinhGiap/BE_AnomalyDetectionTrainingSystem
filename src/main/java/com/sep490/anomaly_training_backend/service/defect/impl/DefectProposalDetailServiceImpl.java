@@ -37,7 +37,7 @@ public class DefectProposalDetailServiceImpl implements DefectProposalDetailServ
         if (Objects.isNull(response)) {
             return null;
         }
-        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", response.getDefectProposalId());
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", response.getDefectProposalDetailId());
         List<String> imageUrls = attachments.stream()
                 .map(Attachment::getUrl)
                 .toList();

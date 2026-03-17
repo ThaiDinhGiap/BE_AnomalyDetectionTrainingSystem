@@ -26,7 +26,8 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
     public List<TrainingSampleProposalDetailResponse> getTrainingSampleProposalDetails(Long trainingTopicReportId) {
         return TrainingSampleProposalDetailRepository.findByTrainingSampleProposalIdAndDeleteFlagFalse(trainingTopicReportId)
                                                    .stream()
-                                                   .map(trainingSampleProposalDetailMapper::toResponse).toList();
+                                                   .map(this::enrichResponse)
+                                                   .toList();
     }
 
     private TrainingSampleProposalDetailResponse addAttachment(TrainingSampleProposalDetailResponse response) {
