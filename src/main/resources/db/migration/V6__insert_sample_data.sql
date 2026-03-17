@@ -1439,20 +1439,20 @@ VALUES
 -- PART 15: TRAINING SAMPLE REVIEW CONFIG & POLICIES
 -- ============================================================================
 
-INSERT INTO training_sample_review_policies (policy_code, effective_date, expiration_date,
+INSERT INTO training_sample_review_policies (policy_code, policy_name, product_line_id, effective_date, expiration_date,
                                              status, description, created_by, updated_by)
-VALUES ('TSRP-2026-001', '2026-01-01', '2026-12-31', 'ACTIVE',
+VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1,'2026-01-01', '2026-12-31', 'ACTIVE',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm cho tất cả dây chuyền năm 2026', 'admin', 'admin'),
-       ('TSRP-2025-001', '2025-01-01', '2025-12-31', 'DEACTIVE',
+       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1,'2025-01-01', '2025-12-31', 'DEACTIVE',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm năm 2025', 'admin', 'admin');
 
-INSERT INTO training_sample_review_configs (product_line_id, trigger_month, trigger_day, due_days,
-                                            review_policy_id, created_by)
-VALUES (1, 3, 1, 30, 1, 'admin'),
-       (2, 3, 1, 30, 1, 'admin'),
-       (3, 6, 1, 30, 1, 'admin'),
-       (4, 9, 1, 30, 1, 'admin'),
-       (5, 12, 1, 30, 1, 'admin');
+INSERT INTO training_sample_review_configs (review_policy_id, trigger_month, trigger_day, due_days,
+                                             created_by)
+VALUES (1, 3, 1, 30,  'admin'),
+       (1, 5, 2, 30,  'admin'),
+       (1, 6, 1, 30,  'admin'),
+       (2, 9, 1, 30,  'admin'),
+       (2, 12, 1, 30,  'admin');
 
 SET FOREIGN_KEY_CHECKS = 1;
 

@@ -25,6 +25,9 @@ public class TrainingSampleReviewPolicy extends BaseEntity {
     @Column(name = "policy_code", length = 50, unique = true, nullable = false)
     String policyCode;
 
+    @Column(name = "policy_name", length = 100, nullable = false)
+    String policyName;
+
     @Column(name = "effective_date", nullable = false)
     LocalDate effectiveDate;
 

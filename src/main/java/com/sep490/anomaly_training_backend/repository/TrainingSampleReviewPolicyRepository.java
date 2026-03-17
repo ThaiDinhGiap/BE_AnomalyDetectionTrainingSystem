@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
+import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
 import org.springframework.data.domain.Page;
@@ -29,7 +30,7 @@ public interface TrainingSampleReviewPolicyRepository extends JpaRepository<Trai
     /**
      * Tìm tất cả policy theo status
      */
-    List<TrainingSampleReviewPolicy> findByStatusAndDeleteFlagFalse(PolicyStatus status);
+    List<TrainingSampleReviewPolicy> findByProductLineIdAndStatusAndDeleteFlagFalse(Long productLineId, PolicyStatus status);
 
     /**
      * Tìm tất cả policy không bị xoá (pagination)

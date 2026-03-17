@@ -10,5 +10,6 @@ public abstract class DefectProposalDetailMapper {
     @Mapping(target = "defectId", source = "defect.id")
     @Mapping(target = "processName", source = "process.name")
     @Mapping(target = "processId", source = "process.id")
+    @Mapping(target = "defectProposalId", source = "id")
     public abstract DefectProposalDetailResponse toResponse(final DefectProposalDetail entity);
 }

@@ -89,6 +89,8 @@ public enum ErrorCode {
     DUPLICATE_TRAINING_SCHEDULE(7024, "Duplicate schedule: The same employee is scheduled for the same date and process.", HttpStatus.CONFLICT),
     PROCESS_NOT_FOUND(7025, "Process not found.", HttpStatus.NOT_FOUND),
     PROCESS_NOT_IN_PRODUCT_LINE(7026, "The selected process does not belong to the plan's product line.", HttpStatus.BAD_REQUEST),
+    REVIEW_POLICY_NOT_FOUND(7027, "The selected review policy not found.", HttpStatus.NOT_FOUND),
+    REVIEW_REPORT_NOT_FOUND(7028, "The selected review report not found.", HttpStatus.NOT_FOUND),
 
     // Training Result Errors (range 71xx)
     TRAINING_RESULT_NOT_FOUND(7100, "Training result not found.", HttpStatus.NOT_FOUND),

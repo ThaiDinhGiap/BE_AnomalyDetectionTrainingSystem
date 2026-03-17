@@ -7,8 +7,6 @@ import lombok.Data;
 @Builder
 public class TrainingSampleReviewConfigResponse {
     Long id;
-    TrainingSampleReviewPolicyResponse reviewPolicy;
-    ProductLineResponse productLine;
     Integer triggerMonth;
     Integer triggerDay;
     Integer dueDays;
