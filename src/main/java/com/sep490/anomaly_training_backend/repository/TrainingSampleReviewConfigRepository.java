@@ -9,7 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface TrainingSampleReviewConfigRepository extends JpaRepository<TrainingSampleReviewConfig, Long> {
-
-
     List<TrainingSampleReviewConfig> findByDeleteFlagFalse();
 }
