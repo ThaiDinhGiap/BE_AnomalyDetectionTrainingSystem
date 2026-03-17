@@ -43,4 +43,19 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
 
     @Query("SELECT MAX(CAST(SUBSTRING(d.defectCode, 3) AS long)) FROM Defect d WHERE d.defectCode LIKE 'DF%'")
     Optional<Long> findMaxDefectCodeSequence();
+
+    @Query("""
+        SELECT d 
+        FROM Defect d
+        JOIN d.process p
+        WHERE p.productLine.id = :productLineId 
+          AND d.deleteFlag = false
+          AND NOT EXISTS (
+              SELECT 1 
+              FROM TrainingSample ts 
+              WHERE ts.defect.id = d.id 
+                AND ts.deleteFlag = false
+          )
+    """)
+    List<Defect> findDefectsWithoutTrainingSample(@Param("productLineId") Long productLineId);
 }

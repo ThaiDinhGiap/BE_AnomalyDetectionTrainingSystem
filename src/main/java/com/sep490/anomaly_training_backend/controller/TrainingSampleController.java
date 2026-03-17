@@ -94,7 +94,7 @@ public class TrainingSampleController {
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('training_sample_proposal.create')")
     public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(
-            @RequestPart("request") TrainingSampleProposalRequest request,
+            @ModelAttribute("request") TrainingSampleProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
         trainingSampleProposalService.createTrainingSampleProposal(request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
@@ -111,7 +111,7 @@ public class TrainingSampleController {
     @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingProposal(
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,
-            @Valid @RequestBody TrainingSampleProposalRequest request) throws BadRequestException {
+            @Valid @ModelAttribute TrainingSampleProposalRequest request) throws BadRequestException {
         TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request);
         return ResponseEntity.ok(response);
     }

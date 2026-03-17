@@ -145,9 +145,14 @@ public class DefectServiceImpl implements DefectService {
     }
 
     @Override
-    public List<DefectCoverageResponse> getCoverageInProductLine(Long productLineId) {
-        List<Defect> result = new ArrayList<>();
-        return null;
+    public DefectCoverageResponse getCoverageInProductLine(Long productLineId) {
+        List<Defect> defects = defectRepository.findDefectsWithoutTrainingSample(productLineId);
+        List<Defect> totalDefectInProductLIne = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId);
+        Double coverage = totalDefectInProductLIne.isEmpty() ? 0.0 : (double) (totalDefectInProductLIne.size() - defects.size()) / totalDefectInProductLIne.size() * 100;
+        return DefectCoverageResponse.builder()
+                .defects(defects.stream().map(defectMapper::toDto).toList())
+                .coverageRate(coverage)
+                .build();
     }
 
     private void validateImportFile(MultipartFile file) {
