@@ -1,14 +1,17 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.TrainingSampleProposalDetailService;
-import com.sep490.anomaly_training_backend.service.TrainingSampleProposalService;
-import com.sep490.anomaly_training_backend.service.TrainingSampleService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,7 +24,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -51,11 +63,12 @@ public class TrainingSampleController {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByCategory(id);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
+
     @Operation(summary = "Get training samples group by process")
     @GetMapping("/process")
     @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProcess(@RequestParam("id") Long id) {
-        List<TrainingSampleResponse> list =  trainingSampleService.getTrainingSampleByProcess(id);
+        List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProcess(id);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -151,8 +164,9 @@ public class TrainingSampleController {
     @PreAuthorize("hasAuthority('training_sample.import')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> importTrainingSample(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<TrainingSampleResponse> data = trainingSampleService.importTrainingSample(currentUser, file);
-        return ResponseEntity.ok(ApiResponse.success( data));
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
+
     @Operation(summary = "Submit training sample proposal for approval", description = "Change training sample proposal  status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('training_sample_proposal.edit')")

@@ -5,8 +5,6 @@ import com.sep490.anomaly_training_backend.dto.request.RefreshTokenRequest;
 import com.sep490.anomaly_training_backend.dto.request.RegisterRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
-import com.sep490.anomaly_training_backend.service.MailService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,8 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final MailService mailService;
 
     @Operation(
             summary = "Register new user",

@@ -9,8 +9,8 @@ import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.NotificationQueueRepository;
 import com.sep490.anomaly_training_backend.repository.NotificationTemplateRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
-import com.sep490.anomaly_training_backend.service.MailService;
-import com.sep490.anomaly_training_backend.service.NotificationTemplateService;
+import com.sep490.anomaly_training_backend.service.notification.NotificationTemplateService;
+import com.sep490.anomaly_training_backend.service.notification.impl.MailDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -27,7 +27,7 @@ import java.time.Instant;
 @ConditionalOnProperty(prefix = "app.rabbitmq", name = "enabled", havingValue = "true")
 public class NotificationConsumer {
 
-    private final MailService mailService;
+    private final MailDispatcher mailDispatcher;
     private final NotificationTemplateService templateService;
     private final NotificationTemplateRepository templateRepository;
     private final NotificationQueueRepository queueRepository;
@@ -50,19 +50,19 @@ public class NotificationConsumer {
                     .orElseThrow(() -> new RuntimeException("Template not found:  " + typeCode));
 
             // 2. Render subject và body
-            String subject = templateService.renderSubject(template.getSubjectTemplate(), request.getVariables());
-            String body = templateService.renderBody(template.getBodyTemplate(), request.getVariables());
+            String subject = templateService.renderSubject(template.getCode(), request.getVariables());
+            String body = templateService.renderBody(template.getCode(), request.getVariables());
 
             // 3. Gửi email
             if (request.getCcEmails() != null && !request.getCcEmails().isEmpty()) {
-                mailService.sendMailWithCc(
+                mailDispatcher.sendWithCc(
                         request.getRecipientEmail(),
                         request.getCcEmails().toArray(new String[0]),
                         subject,
                         body
                 );
             } else {
-                mailService.sendHtmlMail(request.getRecipientEmail(), subject, body);
+                mailDispatcher.send(request.getRecipientEmail(), subject, body);
             }
 
             // 4. Lưu history - SUCCESS

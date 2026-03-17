@@ -7,7 +7,7 @@ import com.sep490.anomaly_training_backend.dto.scoring.PriorityPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.scoring.PriorityPolicyResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
-import com.sep490.anomaly_training_backend.service.scoring.PriorityPolicyService;
+import com.sep490.anomaly_training_backend.service.priority.PriorityPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

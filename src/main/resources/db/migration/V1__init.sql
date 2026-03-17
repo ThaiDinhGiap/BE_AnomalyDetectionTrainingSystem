@@ -256,17 +256,17 @@ CREATE TABLE `groups`
 -- 1.10 TEAMS (Tổ sản xuất)
 CREATE TABLE teams
 (
-    id             BIGINT PRIMARY KEY AUTO_INCREMENT,
-    group_id       BIGINT       NOT NULL,
-    name           VARCHAR(100) NOT NULL,
-    team_leader_id BIGINT       NOT NULL,
-    final_inspection_id BIGINT  NOT NULL,
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    group_id            BIGINT       NOT NULL,
+    name                VARCHAR(100) NOT NULL,
+    team_leader_id      BIGINT       NOT NULL,
+    final_inspection_id BIGINT       NOT NULL,
 
-    delete_flag    BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
-    created_by     VARCHAR(255),
-    updated_at     TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by     VARCHAR(255),
+    delete_flag         BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    created_by          VARCHAR(255),
+    updated_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by          VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
     FOREIGN KEY (team_leader_id) REFERENCES users (id),
@@ -447,9 +447,9 @@ CREATE TABLE defects
 
     -- 4 new fields for Defect
     customer           VARCHAR(255) COMMENT 'Tên khách hàng',
-    quantity           INT          COMMENT 'Số lượng',
-    conclusion         LONGTEXT     COMMENT 'Kết luận',
-    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+    quantity           INT COMMENT 'Số lượng',
+    conclusion         LONGTEXT COMMENT 'Kết luận',
+    product_id         BIGINT COMMENT 'Sản phẩm tham chiếu',
 
     note               TEXT,
 
@@ -519,9 +519,9 @@ CREATE TABLE defect_proposal_details
 
     -- 4 new fields for DefectProposalDetail
     customer           VARCHAR(255) COMMENT 'Tên khách hàng',
-    quantity           INT          COMMENT 'Số lượng',
-    conclusion         LONGTEXT     COMMENT 'Kết luận',
-    product_id         BIGINT       COMMENT 'Sản phẩm tham chiếu',
+    quantity           INT COMMENT 'Số lượng',
+    conclusion         LONGTEXT COMMENT 'Kết luận',
+    product_id         BIGINT COMMENT 'Sản phẩm tham chiếu',
 
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
@@ -1107,16 +1107,16 @@ CREATE TABLE training_result_detail_history
 -- 6.1 NOTIFICATION_TEMPLATES
 CREATE TABLE notification_templates
 (
-    code             VARCHAR(50) PRIMARY KEY,
-    subject_template VARCHAR(255) NOT NULL,
-    body_template    TEXT         NOT NULL,
-    description      VARCHAR(500),
+    code               VARCHAR(50) PRIMARY KEY,
+    subject_template   VARCHAR(255) NOT NULL,
+    html_template_name TEXT         NOT NULL,
+    description        VARCHAR(500),
 
-    delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
-    created_by       VARCHAR(255),
-    updated_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by       VARCHAR(255),
+    delete_flag        BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    created_by         VARCHAR(255),
+    updated_at         TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by         VARCHAR(255),
 
     INDEX idx_notification_templates_delete_flag (delete_flag)
 ) ENGINE = InnoDB
@@ -1324,18 +1324,18 @@ CREATE TABLE approval_detail_comments
 -- 8.1 TRAINING_SAMPLE_REVIEW_CONFIGS (Cấu hình review định kỳ)
 CREATE TABLE training_sample_review_configs
 (
-    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    product_line_id BIGINT  NOT NULL,
+    id               BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_line_id  BIGINT  NOT NULL,
     review_policy_id BIGINT  NOT NULL,
-    trigger_month   INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
-    trigger_day     INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
-    due_days        INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
+    trigger_month    INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
+    trigger_day      INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
+    due_days         INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
 
-    delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
-    created_by      VARCHAR(255),
-    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by      VARCHAR(255),
+    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    created_by       VARCHAR(255),
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by       VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
     FOREIGN KEY (review_policy_id) REFERENCES training_sample_review_policies (id),
@@ -1350,21 +1350,21 @@ CREATE TABLE training_sample_review_configs
 CREATE TABLE training_sample_reviews
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    config_id       BIGINT    NOT NULL,
-    product_line_id BIGINT    NOT NULL,
-    review_date     INT       NOT NULL COMMENT 'Năm review (2026)',
-    due_date        DATE      NOT NULL COMMENT 'Hạn chót phải hoàn thành',
-    completed_date  DATE               COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
-    reviewed_by     BIGINT    NOT NULL COMMENT 'TL thực hiện review',
+    config_id       BIGINT  NOT NULL,
+    product_line_id BIGINT  NOT NULL,
+    review_date     INT     NOT NULL COMMENT 'Năm review (2026)',
+    due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
+    completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    reviewed_by     BIGINT  NOT NULL COMMENT 'TL thực hiện review',
     result          ENUM ('PENDING', 'NO_CHANGE', 'CHANGE_PROPOSED', 'OVERDUE')
-                              NOT NULL DEFAULT 'PENDING',
+                            NOT NULL DEFAULT 'PENDING',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
 
-    delete_flag     BOOLEAN   NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
+    delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
-    updated_at      TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      VARCHAR(255),
 
     FOREIGN KEY (config_id) REFERENCES training_sample_review_configs (id),
@@ -1383,24 +1383,27 @@ CREATE TABLE training_sample_reviews
 
 -- Training Sample Review Policies table
 
-CREATE TABLE training_sample_review_policies (
-                                                 id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                                 policy_code VARCHAR(50) UNIQUE NOT NULL,
-                                                 effective_date DATE NOT NULL,
-                                                 expiration_date DATE,
-                                                 status ENUM('DEACTIVE', 'ACTIVE') NOT NULL DEFAULT 'ACTIVE',
-                                                 description TEXT,
+CREATE TABLE training_sample_review_policies
+(
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    policy_code     VARCHAR(50) UNIQUE          NOT NULL,
+    effective_date  DATE                        NOT NULL,
+    expiration_date DATE,
+    status          ENUM ('DEACTIVE', 'ACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    description     TEXT,
 
-                                                 delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-                                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                                 created_by VARCHAR(255),
-                                                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                                 updated_by VARCHAR(255),
+    delete_flag     BOOLEAN                     NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP                            DEFAULT CURRENT_TIMESTAMP,
+    created_by      VARCHAR(255),
+    updated_at      TIMESTAMP                            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      VARCHAR(255),
 
-                                                 INDEX idx_training_review_policies_effective (effective_date, expiration_date),
-                                                 INDEX idx_training_review_policies_status (status),
-                                                 INDEX idx_training_review_policies_delete_flag (delete_flag)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    INDEX idx_training_review_policies_effective (effective_date, expiration_date),
+    INDEX idx_training_review_policies_status (status),
+    INDEX idx_training_review_policies_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 
 CREATE TABLE approval_flow_steps
