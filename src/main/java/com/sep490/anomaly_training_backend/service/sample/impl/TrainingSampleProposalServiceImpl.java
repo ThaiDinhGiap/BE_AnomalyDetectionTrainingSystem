@@ -40,8 +40,17 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     private final AttachmentService attachmentService;
 
     @Override
-    public List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username) {
-        List<TrainingSampleProposal> entityList = trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+    public List<TrainingSampleProposalResponse> getTrainingSampleProposalByProductLine(Long id, String username) {
+
+        List<TrainingSampleProposal> entityList = new ArrayList<>();
+        Role userRole = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND))
+                .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        if (("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
+            entityList = trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+        }else {
+            entityList = trainingSampleProposalRepository.findByProductLineForSupervisorAndManager(id);
+        }
         List<TrainingSampleProposalResponse> trainingSampleProposalResponses = new ArrayList<>();
         for (TrainingSampleProposal entity : entityList) {
             trainingSampleProposalResponses.add(trainingSampleProposalMapper.toResponse(entity, userRepository));

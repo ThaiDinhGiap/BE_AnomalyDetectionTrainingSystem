@@ -12,7 +12,7 @@ import org.apache.coyote.BadRequestException;
 import java.util.List;
 
 public interface TrainingSampleProposalService {
-    List<TrainingSampleProposalResponse> getTrainingSampleProposalsByTeamLeadAndProductLine(Long id, String username);
+    List<TrainingSampleProposalResponse> getTrainingSampleProposalByProductLine(Long id, String username);
 
     void createTrainingSampleProposal(TrainingSampleProposalRequest request, User currentUser);
 

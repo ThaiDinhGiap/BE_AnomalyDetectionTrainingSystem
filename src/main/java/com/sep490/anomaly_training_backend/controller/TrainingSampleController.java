@@ -69,7 +69,7 @@ public class TrainingSampleController {
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingSampleProposalByProductLine(
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
-        List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalsByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
+        List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalByProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
