@@ -43,6 +43,9 @@ public class DefectProposalDetailServiceImpl implements DefectProposalDetailServ
             if (detail.getProduct() != null) {
                 responseItem.setProduct(productService.getProductById(detail.getProduct().getId()));
             }
+            if (detail.getRejectFeedback() != null) {
+                responseItem.setRejectFeedback(detail.getRejectFeedback());
+            }
             return addAttachment(responseItem);
         }).toList();
     }

@@ -116,6 +116,9 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
 
     private TrainingSampleProposalDetailResponse enrichResponse(TrainingSampleProposalDetail entity) {
         TrainingSampleProposalDetailResponse response = trainingSampleProposalDetailMapper.toResponse(entity);
+        if (entity.getRejectFeedback() != null) {
+            response.setRejectFeedback(response.getRejectFeedback());
+        }
         if (entity.getProduct() != null) {
             response.setProduct(productService.getProductById(entity.getProduct().getId()));
         }
