@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,13 +13,7 @@ public class TrainingTaskMissed {
     private Long id;
     private String employeeName;
     private String employeeCode;
-    private List<TrainingTaskToday.ProcessInfo> employeeProcesses;
-
-    @Data
-    public static class ProcessInfo {
-        private Long id;
-        private String name;
-    }
+    private String employeeProcesses; // Changed to String
     private String date;
     private String reason;
     private String action;
