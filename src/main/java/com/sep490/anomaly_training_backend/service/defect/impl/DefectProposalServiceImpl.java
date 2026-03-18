@@ -47,9 +47,17 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     private final ProductRepository productRepository;
 
     @Override
-    public List<DefectProposalResponse> getDefectProposalByTeamLeadAndProductLine(Long id, String username) {
+    public List<DefectProposalResponse> getDefectProposalByProductLine(Long id, String username) {
         List<DefectProposalResponse> result = new ArrayList<>();
-        List<DefectProposal> listEntity = defectProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+        List<DefectProposal> listEntity = new ArrayList<>();
+        Role userRole = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND))
+                .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        if (!("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
+            listEntity = defectProposalRepository.findByProductLineId(id);
+        } else{
+            listEntity = defectProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+        }
         for (DefectProposal entity : listEntity) {
             result.add(defectProposalMapper.toResponse(entity, userRepository));
         }
