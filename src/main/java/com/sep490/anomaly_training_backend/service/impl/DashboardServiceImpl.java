@@ -43,10 +43,12 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 1. KPI ========================
 
     @Override
-    public KpiData getKpi(Long lineId, int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1);
-        LocalDate monthEnd = YearMonth.of(year, month).atEndOfMonth();
+    public KpiData getKpi(Long lineId, Integer year, Integer month) {
         LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // Get all approved training plans for this line
@@ -285,10 +287,12 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 4. Training Heatmap ========================
 
     @Override
-    public Map<String, Integer> getTrainingHeatmap(Long lineId, int year) {
+    public Map<String, Integer> getTrainingHeatmap(Long lineId, Integer year) {
         Map<String, Integer> heatmap = new LinkedHashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        int targetYear = year != null ? year : LocalDate.now().getYear();
 
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> planIds = plans.stream()
@@ -303,15 +307,15 @@ public class DashboardServiceImpl implements DashboardService {
         for (Long planId : planIds) {
             List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
-                if (d.getPlannedDate() != null && d.getPlannedDate().getYear() == year) {
+                if (d.getPlannedDate() != null && d.getPlannedDate().getYear() == targetYear) {
                     countByDate.merge(d.getPlannedDate(), 1, Integer::sum);
                 }
             }
         }
 
         // Fill all days of the year
-        LocalDate start = LocalDate.of(year, 1, 1);
-        LocalDate end = LocalDate.of(year, 12, 31);
+        LocalDate start = LocalDate.of(targetYear, 1, 1);
+        LocalDate end = LocalDate.of(targetYear, 12, 31);
         LocalDate current = start;
         while (!current.isAfter(end)) {
             heatmap.put(current.format(formatter), countByDate.getOrDefault(current, 0));
@@ -324,9 +328,12 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 5. Training Execution Chart ========================
 
     @Override
-    public List<TrainingExecutionPoint> getTrainingExecution(Long lineId, int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1);
-        LocalDate monthEnd = YearMonth.of(year, month).atEndOfMonth();
+    public List<TrainingExecutionPoint> getTrainingExecution(Long lineId, Integer year, Integer month) {
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM");
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -376,8 +383,6 @@ public class DashboardServiceImpl implements DashboardService {
         int cumulativePlan = 0;
         int cumulativeActual = 0;
         int cumulativeMissed = 0;
-
-        LocalDate today = LocalDate.now();
 
         for (LocalDate date : allDates) {
             // Planned for this date

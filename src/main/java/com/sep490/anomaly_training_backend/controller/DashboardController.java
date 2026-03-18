@@ -26,8 +26,8 @@ public class DashboardController {
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<KpiData>> getKpi(
             @RequestParam("lineId") Long lineId,
-            @RequestParam("year") int year,
-            @RequestParam("month") int month) {
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
         KpiData data = dashboardService.getKpi(lineId, year, month);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -56,7 +56,7 @@ public class DashboardController {
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> getTrainingHeatmap(
             @RequestParam("lineId") Long lineId,
-            @RequestParam("year") int year) {
+            @RequestParam(value = "year", required = false) Integer year) {
         Map<String, Integer> data = dashboardService.getTrainingHeatmap(lineId, year);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -66,8 +66,8 @@ public class DashboardController {
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<TrainingExecutionPoint>>> getTrainingExecution(
             @RequestParam("lineId") Long lineId,
-            @RequestParam("year") int year,
-            @RequestParam("month") int month) {
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
         List<TrainingExecutionPoint> data = dashboardService.getTrainingExecution(lineId, year, month);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
