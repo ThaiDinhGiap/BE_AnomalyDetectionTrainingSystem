@@ -43,6 +43,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingResultDetailReposi
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository; // Import GroupRepository
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,6 +57,7 @@ import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,6 +84,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
+    private final GroupRepository groupRepository; // Inject GroupRepository
 
     @Override
     @Transactional
@@ -320,24 +323,45 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
 
         if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
+            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
+            if (teams.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
             if (lineId != null) {
                 return mapToListResponse(
-                        trainingResultRepository.findAllByLineIdForFinalInspection(lineId));
+                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
             } else {
                 return mapToListResponse(
-                        trainingResultRepository.findAllForFinalInspection());
+                        trainingResultRepository.findAllByGroupIds(groupIds));
             }
         }
 
-        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
-            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+        if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses));
+            }
+        }
+
+        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+            if (groups.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
 
             if (lineId != null) {
                 return mapToListResponse(
-                        trainingResultRepository.findAllByLineIdExcludingStatuses(lineId, excludedStatuses));
+                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
             } else {
                 return mapToListResponse(
-                        trainingResultRepository.findAllExcludingStatuses(excludedStatuses));
+                        trainingResultRepository.findAllByGroupIds(groupIds));
             }
         }
 
