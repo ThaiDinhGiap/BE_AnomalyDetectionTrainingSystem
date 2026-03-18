@@ -28,7 +28,7 @@ public class DefectProposalDetailServiceImpl implements DefectProposalDetailServ
         return responsesList.stream().map(detail -> {
             DefectProposalDetailResponse responseItem = defectProposalDetailMapper.toResponse(detail);
             if (detail.getProduct() != null) {
-                responseItem.setProductResponse(productService.getProductById(detail.getProduct().getId()));
+                responseItem.setProduct(productService.getProductById(detail.getProduct().getId()));
             }
             return addAttachment(responseItem);
             }).toList();

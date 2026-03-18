@@ -225,6 +225,30 @@ VALUES
 -- action_item (15)
 (59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system');
 
+INSERT INTO required_actions (action_name, created_by) VALUES
+('Chỉnh sửa và gửi lại', 'system'),
+('Bổ sung thông tin', 'system'),
+('Làm lại hoàn toàn', 'system'),
+('Trao đổi với cấp trên', 'system'),
+('Không cần hành động', 'system');
+
+INSERT INTO reject_reasons (category_name, reason_name, created_by) VALUES
+-- Nhóm Dữ liệu
+('Dữ liệu', 'Thiếu dữ liệu', 'system'),
+('Dữ liệu', 'Dữ liệu không chính xác', 'system'),
+('Dữ liệu', 'Dữ liệu không nhất quán', 'system'),
+
+-- Nhóm Quy trình
+('Quy trình', 'Sai quy trình', 'system'),
+('Quy trình', 'Thiếu bước xử lý', 'system'),
+
+-- Nhóm Nội dung
+('Nội dung', 'Nội dung chưa đầy đủ', 'system'),
+('Nội dung', 'Nội dung không rõ ràng', 'system'),
+('Nội dung', 'Trùng lặp nội dung', 'system'),
+
+-- Nhóm Khác
+('Khác', 'Lý do khác', 'system');
 -- ============================================================================
 -- ROLE_PERMISSIONS
 -- ============================================================================
