@@ -1,4 +1,3 @@
-// src/main/java/com/sep490/anomaly_training_backend/service/impl/TrainingPlanServiceImpl.java
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
@@ -27,6 +26,7 @@ import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.PriorityPolicy;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
@@ -43,6 +43,7 @@ import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
@@ -71,6 +72,8 @@ import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,6 +103,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
+    private final GroupRepository groupRepository;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -124,18 +128,62 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     @Override
     public List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId) {
-        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+
+        // 1. Role: FINAL_INSPECTION
+        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
+            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
+            if (teams.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
+
             if (lineId != null) {
-                return trainingPlanRepository.findByLineIdAndDeleteFlagFalseForSupervisorAndManager(lineId).stream()
+                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             } else {
-                return trainingPlanRepository.findByDeleteFlagFalseForSupervisorAndManager().stream()
+                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             }
         }
 
+        // Trạng thái loại trừ cho Manager
+        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+        // 2. Role: MANAGER
+        if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(currentUser.getId(), lineId, excludedStatuses).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            } else {
+                return trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(currentUser.getId(), excludedStatuses).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // 3. Role: SUPERVISOR
+        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            List<Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+            if (groups.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+
+            if (lineId != null) {
+                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            } else {
+                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // 4. Role mặc định (Người tạo)
         if (lineId != null) {
             return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId).stream()
                     .map(this::toGenerationResponse)
