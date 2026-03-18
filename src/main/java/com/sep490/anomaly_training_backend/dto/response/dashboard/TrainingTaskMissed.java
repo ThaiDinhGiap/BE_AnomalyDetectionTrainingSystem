@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TrainingTaskMissed {
     private Long id;
+    private Long planId;
+    private Long resultId;
     private String employeeName;
     private String employeeCode;
     private String employeeProcesses; // Changed to String
