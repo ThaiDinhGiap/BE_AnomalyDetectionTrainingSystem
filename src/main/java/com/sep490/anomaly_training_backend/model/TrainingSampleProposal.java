@@ -26,7 +26,6 @@ import lombok.experimental.FieldDefaults;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -82,15 +81,6 @@ public class TrainingSampleProposal extends BaseEntity implements Approvable {
         StringBuilder sb = new StringBuilder();
         sb.append(id).append("|");
         sb.append(currentVersion).append("|");
-
-        details.stream()
-                .sorted(Comparator.comparing(TrainingSampleProposalDetail::getId))
-                .forEach(spd -> {
-                    sb.append(spd.getId()).append(":");
-                    sb.append(spd.getTrainingSampleCode()).append(":");
-                    sb.append(spd.getProcess()).append(";");
-                });
-
         return DigestUtils.sha256Hex(sb.toString());
     }
 }

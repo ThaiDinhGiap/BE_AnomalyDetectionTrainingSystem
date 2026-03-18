@@ -1,5 +1,6 @@
 -- ============================================================================
--- V7__insert_dashboard_mock_data.sql
+-- V7__insert_dashboard_data.sql
+
 -- Thêm dữ liệu giả lập cho màn hình Dashboard cực kỳ lớn (hơn 50 record/bảng)
 -- Viết tường minh (explicit INSERT) theo yêu cầu!
 -- ============================================================================
@@ -248,6 +249,25 @@ VALUES
 ('DF148', 'Lỗi giả lập MOCK 48', 4, DATE_SUB(@today, INTERVAL 30 DAY), 'DEFECTIVE_GOODS', 'Measure 1', 'Measure 2', 'N/A', 'Dashboard mock defect', 'system', 0, NOW(), NOW()),
 ('DF149', 'Lỗi giả lập MOCK 49', 1, DATE_SUB(@today, INTERVAL 31 DAY), 'DEFECTIVE_GOODS', 'Measure 1', 'Measure 2', 'N/A', 'Dashboard mock defect', 'system', 0, NOW(), NOW()),
 ('DF150', 'Lỗi giả lập MOCK 50', 2, DATE_SUB(@today, INTERVAL 31 DAY), 'DEFECTIVE_GOODS', 'Measure 1', 'Measure 2', 'N/A', 'Dashboard mock defect', 'system', 0, NOW(), NOW());
+
+
+-- 1. Rejected Training Plan for tl_tien01
+INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version, note, min_training_per_day, max_training_per_day, created_by)
+VALUES (901, 'TP-REJ-TIEN-01', 'Kế hoạch đào tạo tháng 3 - Bị từ chối', '2026-03-01', '2026-03-31', 1, 1, 'REJECTED_BY_MANAGER', 1, 'Thiếu thông tin nhân viên G54.', 1, 3, 'tl_tien01');
+
+-- 2. Rejected Training Result for tl_tien01
+-- Note: status REJECTED_BY_MANAGER since REJECTED_BY_SV is not in the results enum
+INSERT INTO training_results (id, training_plan_id, title, form_code, year, line_id, team_id, status, current_version, note, created_by)
+VALUES (901, 1, 'Kết quả đào tạo T1/2026 - Bị từ chối', 'TR-REJ-TIEN-01', 2026, 1, 1, 'REJECTED_BY_MANAGER', 1, 'Hình ảnh minh chứng không rõ ràng.', 'tl_tien01');
+
+-- 3. Rejected Defect Proposal for tl_tien01
+INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, delete_flag, created_by)
+VALUES (901, 1, 'REJECTED_BY_MANAGER', 1, 'DEF-REJ-TIEN-01', FALSE, 'tl_tien01');
+
+-- 4. Rejected Training Sample Proposal for tl_tien01
+INSERT INTO training_sample_proposals (id, product_line_id, status, current_version, form_code, delete_flag, created_by)
+VALUES (901, 1, 'REJECTED_BY_SV', 1, 'SAM-REJ-TIEN-01', FALSE, 'tl_tien01');
+
 
 -- Bật lại foreign key check
 SET FOREIGN_KEY_CHECKS = 1;

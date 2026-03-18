@@ -4,7 +4,15 @@ import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -23,7 +31,7 @@ public interface TrainingResultService {
 
     void signDetailsByFi(List<FiSignRequest> requests);
 
-    List<TrainingResultListResponse> getAllTrainingResults(Long lineId);
+    List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId);
 
     List<TrainingResultListResponse> getResultsByLine(Long lineId);
 
@@ -38,11 +46,14 @@ public interface TrainingResultService {
     List<TrainingResultProcessResponse> getProcessesByEmployeeSkill(Long employeeId, Long lineId);
 
     List<TrainingResultProductOptionResponse> getProductsByProcess(Long processId);
+
     List<SampleResultResponse> getSamplesByProduct(Long productId);
 
     void rejectDetail(Long detailId, String reason);
 
     void retrainDetail(Long detailId);
+
+    List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long resultId);
 
     // Relate approval methods
     void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request);

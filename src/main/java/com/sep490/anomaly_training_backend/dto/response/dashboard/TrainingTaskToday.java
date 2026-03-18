@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TrainingTaskToday {
     private Long id;
+    private Long planId;
+    private Long resultId;
     private String employeeName;
     private String employeeCode;
-    private String processName;
-    private String type;        // "Định kỳ", "Bất thường (Lỗi)", "Đào tạo lại"
+    private String employeeProcesses; // Changed to String
     private String timeSlot;    // "14:00 - 15:00"
 }

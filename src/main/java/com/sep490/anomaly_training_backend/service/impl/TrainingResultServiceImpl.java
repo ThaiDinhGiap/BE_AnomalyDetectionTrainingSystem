@@ -5,12 +5,45 @@ import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.*;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductProcess;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository; // Import GroupRepository
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +56,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -43,6 +80,11 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingSampleRepository trainingSampleRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final ProductProcessRepository productProcessRepository;
+    private final EmployeeRepository employeeRepository;
+    private final TrainingResultDetailRepository trainingResultDetailRepository;
+    private final PrioritySnapshotRepository prioritySnapshotRepository;
+    private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
+    private final GroupRepository groupRepository; // Inject GroupRepository
 
     @Override
     @Transactional
@@ -278,15 +320,58 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public List<TrainingResultListResponse> getAllTrainingResults(Long lineId) {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<TrainingResult> entities;
-        if (lineId != null) {
-            entities = trainingResultRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUsername, lineId);
-        } else {
-            entities = trainingResultRepository.findByCreatedByAndDeleteFlagFalse(currentUsername);
+    public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
+
+        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
+            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
+            if (teams.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByGroupIds(groupIds));
+            }
         }
-        return mapToListResponse(entities);
+
+        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+        if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses));
+            }
+        }
+
+        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+            if (groups.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByGroupIds(groupIds));
+            }
+        }
+
+        if (lineId != null) {
+            return mapToListResponse(
+                    trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId));
+        } else {
+            return mapToListResponse(
+                    trainingResultRepository.findAllByCreatedBy(currentUser.getUsername()));
+        }
     }
 
     @Override
@@ -613,6 +698,29 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long resultId) {
+        TrainingResult result = trainingResultRepository.findById(resultId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        Long teamId = result.getTeam() != null ? result.getTeam().getId() : null;
+        if (teamId == null) return List.of();
+
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+
+        Set<Long> inResultIds = new java.util.HashSet<>(
+                trainingResultDetailRepository.findEmployeeIdsByTrainingResultId(resultId));
+
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(result.getTrainingPlan().getId());
+
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
+
+        return allEmployees.stream()
+                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inResultIds))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
         TrainingResultDetail detail = getDetailtById(resultId);
     }
@@ -634,7 +742,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
 
-
     @Override
     public boolean canApprove(Long reportId, User currentUser) {
         return false;
@@ -643,5 +750,64 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private TrainingResultDetail getDetailtById(Long id) {
         return detailRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
+    }
+
+    private Map<Long, PrioritySnapshotDetail> loadSnapshotMap(Long planId) {
+        return prioritySnapshotRepository.findByTrainingPlanId(planId)
+                .map(snapshot -> prioritySnapshotDetailRepository
+                        .findBySnapshotId(snapshot.getId())
+                        .stream()
+                        .collect(Collectors.toMap(
+                                d -> d.getEmployee().getId(),
+                                d -> d,
+                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2
+                        )))
+                .orElse(Map.of());
+    }
+
+    private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
+        if (employeeIds.isEmpty()) return Map.of();
+        return trainingResultDetailRepository
+                .findLatestByEmployeeIds(employeeIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        d -> d.getEmployee().getId(),
+                        d -> d,
+                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2
+                ));
+    }
+
+    private PrioritizedEmployeeResponse buildEmployeePlanResponse(
+            Employee emp,
+            Map<Long, PrioritySnapshotDetail> snapshotMap,
+            Map<Long, TrainingResultDetail> lastTrainingMap,
+            Set<Long> inPlanIds) {
+
+        PrioritySnapshotDetail snapshot = snapshotMap.get(emp.getId());
+        TrainingResultDetail lastTraining = lastTrainingMap.get(emp.getId());
+
+        return PrioritizedEmployeeResponse.builder()
+                .id(emp.getId())
+                .employeeCode(emp.getEmployeeCode())
+                .fullName(emp.getFullName())
+                .status(emp.getStatus())
+                .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
+                .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
+                .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
+                        ? emp.getTeam().getGroup().getName() : null)
+                .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
+                .tierName(snapshot != null ? snapshot.getTierName() : null)
+                .sortRank(snapshot != null ? snapshot.getSortRank() : null)
+                .priorityReason(buildPriorityReason(snapshot))
+                .lastTrainedDate(lastTraining != null ? lastTraining.getActualDate() : null)
+                .lastTrainedPassed(lastTraining != null ? lastTraining.getIsPass() : null)
+                .inCurrentPlan(inPlanIds.contains(emp.getId()))
+                .build();
+    }
+
+    private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
+        if (snapshot == null) return null;
+        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
+        return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }

@@ -64,4 +64,19 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
 
     @Query("SELECT d.process.id, COUNT(d) FROM TrainingResultDetail d WHERE d.process.id IN :processIds GROUP BY d.process.id")
     List<Object[]> countTotalByProcessIds(@Param("processIds") List<Long> processIds);
+
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.employee.id IN :employeeIds
+                AND t.actualDate = (
+                    SELECT MAX(t2.actualDate) FROM TrainingResultDetail t2
+                    WHERE t2.employee.id = t.employee.id
+                )
+            """)
+    List<TrainingResultDetail> findLatestByEmployeeIds(@Param("employeeIds") List<Long> employeeIds);
+
+
+    @Query("SELECT DISTINCT trd.employee.id FROM TrainingResultDetail trd " +
+            "WHERE trd.trainingResult.id = :resultId AND trd.deleteFlag = false")
+    List<Long> findEmployeeIdsByTrainingResultId(@Param("resultId") Long resultId);
 }

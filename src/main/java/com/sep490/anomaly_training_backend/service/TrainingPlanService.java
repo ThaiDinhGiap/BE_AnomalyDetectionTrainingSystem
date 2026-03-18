@@ -5,8 +5,8 @@ import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
@@ -22,7 +22,7 @@ public interface TrainingPlanService {
 
     TrainingPlanGenerationResponse getPlanDetail(Long id);
 
-    List<TrainingPlanGenerationResponse> getAllPlans();
+    List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId);
 
     List<TrainingPlanGenerationResponse> getRejectedPlans();
 
@@ -50,9 +50,9 @@ public interface TrainingPlanService {
 
     List<ProductLineResponse> getProductLinesByGroupId(Long groupId);
 
-    List<EmployeeResponse> getEmployeesNotInPlan(Long planId);
+    List<PrioritizedEmployeeResponse> getEmployeesNotInPlan(Long planId);
 
-    List<EmployeeResponse> getEmployeesInTeams(Long planId);
+    List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long planId);
 
     // ── Approval workflow ────────────────────────────────────────────────────
 

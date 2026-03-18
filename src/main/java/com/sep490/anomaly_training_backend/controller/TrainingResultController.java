@@ -2,8 +2,17 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +24,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -126,8 +142,9 @@ public class TrainingResultController {
     @GetMapping("/list-all")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultListResponse>> getAllResults(
-            @Parameter(description = "Filter by Product Line ID") @RequestParam(required = false) Long lineId) {
-        return ResponseEntity.ok(trainingResultService.getAllTrainingResults(lineId));
+            @Parameter(description = "Filter by Product Line ID") @RequestParam(required = false) Long lineId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(trainingResultService.getAllTrainingResults(currentUser, lineId));
     }
 
     @Operation(summary = "Get product lines managed by current user",
@@ -136,6 +153,15 @@ public class TrainingResultController {
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<ProductLineResponse>> getMyProductLines() {
         return ResponseEntity.ok(trainingResultService.getMyProductLines());
+    }
+
+    @Operation(summary = "Get all employees in result's team",
+            description = "Returns list of all active employees in the same team as the result.")
+    @GetMapping("/{resultId}/employees")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<PrioritizedEmployeeResponse>> getEmployeesInTeam(
+            @Parameter(description = "Result ID") @PathVariable Long resultId) {
+        return ResponseEntity.ok(trainingResultService.getEmployeesInTeams(resultId));
     }
 
     @Operation(summary = "Get training results by product line (dây chuyền)",
