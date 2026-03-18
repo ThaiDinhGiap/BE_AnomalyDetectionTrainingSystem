@@ -102,10 +102,10 @@ VALUES (1, 'admin', 'admin@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UK
 
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
 VALUES (1, 'ROLE_ADMIN', 'Quản trị', 'Quyền truy cập toàn hệ thống', TRUE, TRUE, 'system'),
-       (2, 'ROLE_MANAGER', 'Quản lý', 'Phê duyệt cấp quản lý', TRUE, TRUE, 'system'),
-       (3, 'ROLE_SUPERVISOR', 'Giám sát', 'Phê duyệt cấp giám sát', TRUE, TRUE, 'system'),
-       (4, 'ROLE_TEAM_LEADER', 'Trưởng tổ', 'Khởi tạo và nhập liệu', TRUE, TRUE, 'system'),
-       (5, 'ROLE_FINAL_INSPECTION', 'KCS Cuối', 'Kiểm tra cuối dây chuyền', TRUE, TRUE, 'system');
+       (2, 'ROLE_MANAGER', 'Quản lý', 'Phê duyệt cấp quản lý', FALSE, TRUE, 'system'),
+       (3, 'ROLE_SUPERVISOR', 'Giám sát', 'Phê duyệt cấp giám sát', FALSE, TRUE, 'system'),
+       (4, 'ROLE_TEAM_LEADER', 'Tổ trưởng', 'Khởi tạo và nhập liệu', FALSE, TRUE, 'system'),
+       (5, 'ROLE_FINAL_INSPECTION', 'Kiểm soát chất lượng', 'Kiểm tra cuối dây chuyền', FALSE, TRUE, 'system');
 
 INSERT INTO user_roles (user_id, role_id)
 VALUES (1, 1),
@@ -123,12 +123,13 @@ VALUES (1, 1),
        (13, 5);
 
 -- ============================================================================
--- PART 2: MODULES & PERMISSIONS (từ V4)
+-- PART 2: MODULES & PERMISSIONS
+-- Bỏ: training_sample.detail (101), defect.detail (112)
 -- ============================================================================
 
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
 VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cáo lỗi', 1, 'system'),
-       (2, 'training_sample', 'Chủ đề đào tạo', 'Quản lý chủ đề đào tạo', 2, 'system'),
+       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý chủ đề đào tạo', 2, 'system'),
        (3, 'training_plan', 'Kế hoạch đào tạo', 'Quản lý kế hoạch đào tạo', 3, 'system'),
        (4, 'training_result', 'Kết quả đào tạo', 'Quản lý kết quả đào tạo', 4, 'system'),
        (5, 'employee', 'Nhân viên', 'Quản lý thông tin nhân viên', 5, 'system'),
@@ -139,188 +140,262 @@ VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cá
        (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard và báo cáo tổng hợp', 10, 'system'),
        (11, 'system', 'Cài đặt hệ thống', 'Cài đặt và cấu hình hệ thống', 11, 'system'),
        (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lí danh sách nhân sự công ty', 12, 'system'),
-       (13, 'manufacturing_line', 'Tổ chức sản xuất', 'Quản lí danh sách tổ chức dây chuyền', 13, 'system'),
+       (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lí danh sách tổ chức dây chuyền', 13, 'system'),
        (14, 'attachment', 'Quản lý File & Ảnh', 'Upload và xóa tệp MinIO', 14, 'system'),
        (15, 'action_item', 'Việc cần làm', 'Quản lý các mục cần xử lý', 15, 'system');
 
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
-VALUES (1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 'system'),
-       (2, 'defect_proposal.create', 'Tạo báo cáo lỗi', 1, 'create', 2, TRUE, 'system'),
-       (3, 'defect_proposal.edit', 'Sửa báo cáo lỗi', 1, 'edit', 3, TRUE, 'system'),
-       (4, 'defect_proposal.delete', 'Xoá báo cáo lỗi', 1, 'delete', 4, TRUE, 'system'),
-       (5, 'defect_proposal.approve', 'Phê duyệt báo cáo lỗi', 1, 'approve', 5, TRUE, 'system'),
-       (6, 'training_sample_proposal.view', 'Xem chủ đề đào tạo', 2, 'view', 1, TRUE, 'system'),
-       (7, 'training_sample_proposal.create', 'Tạo chủ đề đào tạo', 2, 'create', 2, TRUE, 'system'),
-       (8, 'training_sample_proposal.edit', 'Sửa chủ đề đào tạo', 2, 'edit', 3, TRUE, 'system'),
-       (9, 'training_sample_proposal.delete', 'Xoá chủ đề đào tạo', 2, 'delete', 4, TRUE, 'system'),
-       (10, 'training_plan.view', 'Xem kế hoạch đào tạo', 3, 'view', 1, TRUE, 'system'),
-       (11, 'training_plan.create', 'Tạo kế hoạch đào tạo', 3, 'create', 2, TRUE, 'system'),
-       (12, 'training_plan.edit', 'Sửa kế hoạch đào tạo', 3, 'edit', 3, TRUE, 'system'),
-       (13, 'training_plan.delete', 'Xoá kế hoạch đào tạo', 3, 'delete', 4, TRUE, 'system'),
-       (14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
-       (15, 'training_result.view', 'Xem kết quả đào tạo', 4, 'view', 1, TRUE, 'system'),
-       (16, 'training_result.edit', 'Cập nhật kết quả đào tạo', 4, 'edit', 2, TRUE, 'system'),
-       (17, 'training_result.approve', 'Phê duyệt kết quả đào tạo', 4, 'approve', 3, TRUE, 'system'),
-       (18, 'employee.view', 'Xem thông tin nhân viên', 5, 'view', 1, TRUE, 'system'),
-       (19, 'employee.create', 'Thêm nhân viên', 5, 'create', 2, TRUE, 'system'),
-       (20, 'employee.edit', 'Sửa thông tin nhân viên', 5, 'edit', 3, TRUE, 'system'),
-       (21, 'employee.delete', 'Xoá nhân viên', 5, 'delete', 4, TRUE, 'system'),
-       (22, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
-       (23, 'user.create', 'Tạo tài khoản người dùng', 6, 'create', 2, TRUE, 'system'),
-       (24, 'user.edit', 'Sửa tài khoản người dùng', 6, 'edit', 3, TRUE, 'system'),
-       (25, 'user.delete', 'Xoá tài khoản người dùng', 6, 'delete', 4, TRUE, 'system'),
-       (26, 'user.assign_role', 'Gán vai trò cho người dùng', 6, 'assign_role', 5, TRUE, 'system'),
-       (27, 'role.view', 'Xem vai trò', 7, 'view', 1, TRUE, 'system'),
-       (28, 'role.create', 'Tạo vai trò', 7, 'create', 2, TRUE, 'system'),
-       (29, 'role.edit', 'Sửa vai trò', 7, 'edit', 3, TRUE, 'system'),
-       (30, 'role.delete', 'Xoá vai trò', 7, 'delete', 4, TRUE, 'system'),
-       (31, 'role.assign_permission', 'Gán quyền cho vai trò', 7, 'assign_permission', 5, TRUE, 'system'),
-       (32, 'master_data.view', 'Xem dữ liệu danh mục', 8, 'view', 1, TRUE, 'system'),
-       (33, 'master_data.create', 'Thêm dữ liệu danh mục', 8, 'create', 2, TRUE, 'system'),
-       (34, 'master_data.edit', 'Sửa dữ liệu danh mục', 8, 'edit', 3, TRUE, 'system'),
-       (35, 'master_data.delete', 'Xoá dữ liệu danh mục', 8, 'delete', 4, TRUE, 'system'),
-       (36, 'scoring.view', 'Xem chính sách chấm điểm', 9, 'view', 1, TRUE, 'system'),
-       (37, 'scoring.create', 'Tạo chính sách chấm điểm', 9, 'create', 2, TRUE, 'system'),
-       (38, 'scoring.edit', 'Sửa chính sách chấm điểm', 9, 'edit', 3, TRUE, 'system'),
-       (39, 'scoring.delete', 'Xoá chính sách chấm điểm', 9, 'delete', 4, TRUE, 'system'),
-       (40, 'dashboard.view', 'Xem dashboard', 10, 'view', 1, TRUE, 'system'),
-       (41, 'dashboard.export', 'Xuất báo cáo', 10, 'export', 2, TRUE, 'system'),
-       (42, 'system.config', 'Cấu hình hệ thống', 11, 'config', 1, TRUE, 'system'),
-       (43, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
-       (44, 'staff_organization.create', 'Tạo cấu trúc nhân sự', 12, 'create', 2, TRUE, 'system'),
-       (45, 'staff_organization.edit', 'Sửa cấu trúc nhân sự', 12, 'edit', 3, TRUE, 'system'),
-       (46, 'staff_organization.delete', 'Xoá cấu trúc nhân sự', 12, 'delete', 4, TRUE, 'system'),
-       (47, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền', 13, 'view', 1, TRUE, 'system'),
-       (48, 'manufacturing_line.create', 'Tạo cấu trúc dây chuyền', 13, 'create', 2, TRUE, 'system'),
-       (49, 'manufacturing_line.edit', 'Sửa cấu trúc dây chuyền', 13, 'edit', 3, TRUE, 'system'),
-       (50, 'manufacturing_line.delete', 'Xoá cấu trúc dây chuyền', 13, 'delete', 4, TRUE, 'system'),
-       (56, 'attachment.view', 'Xem file/ảnh đính kèm', 14, 'view', 1, TRUE, 'system'),
-       (57, 'attachment.create', 'Upload file/ảnh mới', 14, 'create', 2, TRUE, 'system'),
-       (58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system'),
-       (59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system'),
-       (100, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 5, TRUE, 'system'),
-       (101, 'training_sample.detail', 'Xem chi tiết mẫu huấn luyện', 2, 'view', 6, TRUE, 'system'),
-       (102, 'training_sample.import', 'Nhập danh sách mẫu huấn luyện', 2, 'create', 7, TRUE, 'system'),
-       (111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
-       (112, 'defect.detail', 'Xem chi tiết lỗi quá khứ', 1, 'view', 7, TRUE, 'system'),
-       (113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 8, TRUE, 'system'),
-       (200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
-       (201, 'training_sample_review.view', 'Xem chính sách kểm tra mẫu huấn luyện hằng n', 2, 'view', 5, TRUE,
-        'system'),
-       (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 5, TRUE, 'system'),
-       (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 5, TRUE, 'system'),
-       (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 5, TRUE, 'system');
+VALUES
+-- defect_report (1)
+(1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 'system'),
+(2, 'defect_proposal.create', 'Tạo báo cáo lỗi', 1, 'create', 2, TRUE, 'system'),
+(3, 'defect_proposal.edit', 'Sửa báo cáo lỗi', 1, 'edit', 3, TRUE, 'system'),
+(4, 'defect_proposal.delete', 'Xoá báo cáo lỗi', 1, 'delete', 4, TRUE, 'system'),
+(5, 'defect_proposal.approve', 'Phê duyệt báo cáo lỗi', 1, 'approve', 5, TRUE, 'system'),
+(111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
+(113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 7, TRUE, 'system'),
+-- training_sample (2)
+(6, 'training_sample_proposal.view', 'Xem chủ đề đào tạo', 2, 'view', 1, TRUE, 'system'),
+(7, 'training_sample_proposal.create', 'Tạo chủ đề đào tạo', 2, 'create', 2, TRUE, 'system'),
+(8, 'training_sample_proposal.edit', 'Sửa chủ đề đào tạo', 2, 'edit', 3, TRUE, 'system'),
+(9, 'training_sample_proposal.delete', 'Xoá chủ đề đào tạo', 2, 'delete', 4, TRUE, 'system'),
+(100, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 5, TRUE, 'system'),
+(102, 'training_sample.import', 'Nhập danh sách mẫu huấn luyện', 2, 'create', 6, TRUE, 'system'),
+(201, 'training_sample_review.view', 'Xem chính sách kiểm tra mẫu huấn luyện hằng năm', 2, 'view', 7, TRUE, 'system'),
+(202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 8, TRUE, 'system'),
+(203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 9, TRUE, 'system'),
+(204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
+-- training_plan (3)
+(10, 'training_plan.view', 'Xem kế hoạch đào tạo', 3, 'view', 1, TRUE, 'system'),
+(11, 'training_plan.create', 'Tạo kế hoạch đào tạo', 3, 'create', 2, TRUE, 'system'),
+(12, 'training_plan.edit', 'Sửa kế hoạch đào tạo', 3, 'edit', 3, TRUE, 'system'),
+(13, 'training_plan.delete', 'Xoá kế hoạch đào tạo', 3, 'delete', 4, TRUE, 'system'),
+(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
+-- training_result (4)
+(15, 'training_result.view', 'Xem kết quả đào tạo', 4, 'view', 1, TRUE, 'system'),
+(16, 'training_result.edit', 'Cập nhật kết quả đào tạo', 4, 'edit', 2, TRUE, 'system'),
+(17, 'training_result.approve', 'Phê duyệt kết quả đào tạo', 4, 'approve', 3, TRUE, 'system'),
+-- employee (5)
+(18, 'employee.view', 'Xem thông tin nhân viên', 5, 'view', 1, TRUE, 'system'),
+(19, 'employee.create', 'Thêm nhân viên', 5, 'create', 2, TRUE, 'system'),
+(20, 'employee.edit', 'Sửa thông tin nhân viên', 5, 'edit', 3, TRUE, 'system'),
+(21, 'employee.delete', 'Xoá nhân viên', 5, 'delete', 4, TRUE, 'system'),
+-- user (6)
+(22, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
+(23, 'user.create', 'Tạo tài khoản người dùng', 6, 'create', 2, TRUE, 'system'),
+(24, 'user.edit', 'Sửa tài khoản người dùng', 6, 'edit', 3, TRUE, 'system'),
+(25, 'user.delete', 'Xoá tài khoản người dùng', 6, 'delete', 4, TRUE, 'system'),
+(26, 'user.assign_role', 'Gán vai trò cho người dùng', 6, 'assign_role', 5, TRUE, 'system'),
+-- role (7)
+(27, 'role.view', 'Xem vai trò', 7, 'view', 1, TRUE, 'system'),
+(28, 'role.create', 'Tạo vai trò', 7, 'create', 2, TRUE, 'system'),
+(29, 'role.edit', 'Sửa vai trò', 7, 'edit', 3, TRUE, 'system'),
+(30, 'role.delete', 'Xoá vai trò', 7, 'delete', 4, TRUE, 'system'),
+(31, 'role.assign_permission', 'Gán quyền cho vai trò', 7, 'assign_permission', 5, TRUE, 'system'),
+-- master_data (8)
+(32, 'master_data.view', 'Xem dữ liệu danh mục', 8, 'view', 1, TRUE, 'system'),
+(33, 'master_data.create', 'Thêm dữ liệu danh mục', 8, 'create', 2, TRUE, 'system'),
+(34, 'master_data.edit', 'Sửa dữ liệu danh mục', 8, 'edit', 3, TRUE, 'system'),
+(35, 'master_data.delete', 'Xoá dữ liệu danh mục', 8, 'delete', 4, TRUE, 'system'),
+-- scoring (9)
+(36, 'scoring.view', 'Xem chính sách chấm điểm', 9, 'view', 1, TRUE, 'system'),
+(37, 'scoring.create', 'Tạo chính sách chấm điểm', 9, 'create', 2, TRUE, 'system'),
+(38, 'scoring.edit', 'Sửa chính sách chấm điểm', 9, 'edit', 3, TRUE, 'system'),
+(39, 'scoring.delete', 'Xoá chính sách chấm điểm', 9, 'delete', 4, TRUE, 'system'),
+-- dashboard (10)
+(40, 'dashboard.view', 'Xem dashboard', 10, 'view', 1, TRUE, 'system'),
+(41, 'dashboard.export', 'Xuất báo cáo', 10, 'export', 2, TRUE, 'system'),
+-- system (11)
+(42, 'system.config', 'Cấu hình hệ thống', 11, 'config', 1, TRUE, 'system'),
+-- staff_organization (12)
+(43, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
+(44, 'staff_organization.create', 'Tạo cấu trúc nhân sự', 12, 'create', 2, TRUE, 'system'),
+(45, 'staff_organization.edit', 'Sửa cấu trúc nhân sự', 12, 'edit', 3, TRUE, 'system'),
+(46, 'staff_organization.delete', 'Xoá cấu trúc nhân sự', 12, 'delete', 4, TRUE, 'system'),
+-- manufacturing_line (13)
+(47, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền', 13, 'view', 1, TRUE, 'system'),
+(48, 'manufacturing_line.create', 'Tạo cấu trúc dây chuyền', 13, 'create', 2, TRUE, 'system'),
+(49, 'manufacturing_line.edit', 'Sửa cấu trúc dây chuyền', 13, 'edit', 3, TRUE, 'system'),
+(50, 'manufacturing_line.delete', 'Xoá cấu trúc dây chuyền', 13, 'delete', 4, TRUE, 'system'),
+(200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
+-- attachment (14)
+(56, 'attachment.view', 'Xem file/ảnh đính kèm', 14, 'view', 1, TRUE, 'system'),
+(57, 'attachment.create', 'Upload file/ảnh mới', 14, 'create', 2, TRUE, 'system'),
+(58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system'),
+-- action_item (15)
+(59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system');
+
+-- ============================================================================
+-- ROLE_PERMISSIONS
+-- ============================================================================
 
 -- ADMIN: tất cả quyền
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 1, id
 FROM permissions;
 
--- MANAGER
+-- ── MANAGER ──────────────────────────────────────────────────────────────────
+-- Giữ nguyên cũ + bổ sung xem list defect, training_sample, review ngang TL
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (2, 1),
-       (2, 2),
-       (2, 3),
-       (2, 5),
-       (2, 6),
-       (2, 7),
-       (2, 8),
-       (2, 10),
-       (2, 11),
-       (2, 12),
-       (2, 14),
-       (2, 15),
-       (2, 16),
-       (2, 17),
-       (2, 18),
-       (2, 19),
-       (2, 20),
-       (2, 22),
-       (2, 27),
-       (2, 36),
-       (2, 37),
-       (2, 38),
-       (2, 40),
-       (2, 41),
-       (2, 43),
-       (2, 44),
-       (2, 45),
-       (2, 46),
-       (2, 47),
-       (2, 56),
-       (2, 57),
-       (2, 58),
-       (2, 59);
+VALUES
+-- defect proposal
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 5),
+-- defect list (bổ sung)
+(2, 111),
+(2, 113),
+-- training sample proposal
+(2, 6),
+(2, 7),
+(2, 8),
+-- training sample list (bổ sung)
+(2, 100),
+(2, 102),
+-- training sample review (bổ sung)
+(2, 201),
+(2, 202),
+(2, 203),
+(2, 204),
+-- training plan
+(2, 10),
+(2, 11),
+(2, 12),
+(2, 14),
+-- training result
+(2, 15),
+(2, 16),
+(2, 17),
+-- employee
+(2, 18),
+(2, 19),
+(2, 20),
+-- user, role (readonly)
+(2, 22),
+(2, 27),
+-- scoring
+(2, 36),
+(2, 37),
+(2, 38),
+-- dashboard
+(2, 40),
+(2, 41),
+-- staff org
+(2, 43),
+(2, 44),
+(2, 45),
+(2, 46),
+-- manufacturing line
+(2, 47),
+(2, 200),
+-- attachment
+(2, 56),
+(2, 57),
+(2, 58),
+-- action item
+(2, 59);
 
--- SUPERVISOR
+-- ── SUPERVISOR ───────────────────────────────────────────────────────────────
+-- Giữ nguyên cũ + bổ sung xem list defect, training_sample, review ngang TL
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (3, 1),
-       (3, 2),
-       (3, 3),
-       (3, 5),
-       (3, 6),
-       (3, 7),
-       (3, 8),
-       (3, 10),
-       (3, 11),
-       (3, 12),
-       (3, 14),
-       (3, 15),
-       (3, 16),
-       (3, 18),
-       (3, 19),
-       (3, 20),
-       (3, 36),
-       (3, 40),
-       (3, 43),
-       (3, 47),
-       (3, 56),
-       (3, 57),
-       (3, 58),
-       (3, 201),
-       (3, 202),
-       (3, 203),
-       (3, 204),
-       (3, 59);
+VALUES
+-- defect proposal
+(3, 1),
+(3, 2),
+(3, 3),
+(3, 5),
+-- defect list (bổ sung)
+(3, 111),
+(3, 113),
+-- training sample proposal
+(3, 6),
+(3, 7),
+(3, 8),
+-- training sample list (bổ sung)
+(3, 100),
+(3, 102),
+-- training sample review
+(3, 201),
+(3, 202),
+(3, 203),
+(3, 204),
+-- training plan
+(3, 10),
+(3, 11),
+(3, 12),
+(3, 14),
+-- training result
+(3, 15),
+(3, 16),
+-- employee
+(3, 18),
+(3, 19),
+(3, 20),
+-- scoring (view only)
+(3, 36),
+-- dashboard
+(3, 40),
+-- staff org
+(3, 43),
+-- manufacturing line (bổ sung)
+(3, 47),
+(3, 200),
+-- attachment
+(3, 56),
+(3, 57),
+(3, 58),
+-- action item
+(3, 59);
 
--- TEAM LEADER
+-- ── TEAM LEADER ──────────────────────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (4, 1),
-       (4, 2),
-       (4, 3),
-       (4, 4),
-       (4, 5),
-       (4, 6),
-       (4, 7),
-       (4, 8),
-       (4, 9),
-       (4, 10),
-       (4, 11),
-       (4, 12),
-       (4, 13),
-       (4, 14),
-       (4, 15),
-       (4, 16),
-       (4, 17),
-       (4, 40),
-       (4, 47),
-       (4, 56),
-       (4, 57),
-       (4, 58),
-       (4, 59),
-       (4, 100),
-       (4, 101),
-       (4, 102),
-       (4, 111),
-       (4, 112),
-       (4, 113),
-       (4, 200),
-       (4, 201),
-       (4, 202),
-       (4, 203),
-       (4, 204);
+VALUES
+-- defect proposal
+(4, 1),
+(4, 2),
+(4, 3),
+(4, 4),
+(4, 5),
+-- defect list
+(4, 111),
+(4, 113),
+-- training sample proposal
+(4, 6),
+(4, 7),
+(4, 8),
+(4, 9),
+-- training sample list
+(4, 100),
+(4, 102),
+-- training sample review
+(4, 201),
+(4, 202),
+(4, 203),
+(4, 204),
+-- training plan
+(4, 10),
+(4, 11),
+(4, 12),
+(4, 13),
+(4, 14),
+-- training result
+(4, 15),
+(4, 16),
+(4, 17),
+-- dashboard
+(4, 40),
+-- manufacturing line
+(4, 47),
+(4, 200),
+-- attachment
+(4, 56),
+(4, 57),
+(4, 58),
+-- action item
+(4, 59);
 
--- FINAL INSPECTION
+-- ── FINAL INSPECTION ─────────────────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES (5, 1),
        (5, 2),
@@ -1010,329 +1085,215 @@ VALUES
 (38, 9, 15, 6, 5, '2026-03-07', '2026-03-07', 'DONE', TRUE, 'Đạt T3', 'tl_tien01');
 
 -- ============================================================================
--- PART 10: PRIORITY SYSTEM – PROCESS ENTITY
--- Chính sách ưu tiên cho Công đoạn (PROCESS)
--- Logic: Ưu tiên dựa trên tầm quan trọng + số lỗi + đặc điểm kỹ thuật
+-- PRIORITY SYSTEM – EMPLOYEE ENTITY ONLY
 -- ============================================================================
 
--- 10.1 COMPUTED METRICS cho PROCESS
+-- ── 1. COMPUTED METRICS cho EMPLOYEE ──────────────────────────────────────
+
 INSERT INTO computed_metrics (metric_name, display_name, entity_type, compute_method,
                               compute_definition, return_type, unit, description, is_active, created_by)
-VALUES ('process_classification',
-        'Phân loại công đoạn',
-        'PROCESS',
-        'CLASSIFICATION',
-        'classification_level',
-        'INT', 'Cấp',
-        'Phân loại mức độ quan trọng: 1=FI bắt buộc, 2=KCS kiểm, 3=Tự kiểm, 4=Thường',
-        TRUE, 'system'),
-
-       ('total_defects_6m',
-        'Số lỗi 6 tháng gần nhất',
-        'PROCESS',
-        'SQL',
-        'SELECT COUNT(*) FROM defects d JOIN defect_proposal_details dpd ON dpd.defect_id = d.id WHERE dpd.process_id = :entityId AND d.detected_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND d.delete_flag = FALSE',
-        'INT', 'Lỗi',
-        'Tổng số lỗi ghi nhận tại công đoạn trong 6 tháng gần nhất',
-        TRUE, 'system'),
-
-       ('total_defects_all',
-        'Tổng số lỗi lịch sử',
-        'PROCESS',
-        'SQL',
-        'SELECT COUNT(*) FROM defects d JOIN defect_proposal_details dpd ON dpd.defect_id = d.id WHERE dpd.process_id = :entityId AND d.delete_flag = FALSE',
-        'INT', 'Lỗi',
-        'Tổng số lỗi tất cả thời gian tại công đoạn',
-        TRUE, 'system'),
-
-       ('claim_defect_count',
-        'Số lỗi khách hàng (CLAIM)',
-        'PROCESS',
-        'SQL',
-        'SELECT COUNT(*) FROM defects d JOIN defect_proposal_details dpd ON dpd.defect_id = d.id WHERE dpd.process_id = :entityId AND d.defect_type = ''CLAIM'' AND d.delete_flag = FALSE',
-        'INT', 'Lỗi',
-        'Số lỗi từ khiếu nại khách hàng tại công đoạn',
-        TRUE, 'system'),
-
-       ('days_since_last_training',
-        'Ngày kể từ lần đào tạo cuối',
-        'PROCESS',
-        'SQL',
-        'SELECT DATEDIFF(CURDATE(), MAX(trd.actual_date)) FROM training_result_details trd JOIN training_plan_details tpd ON trd.training_plan_detail_id = tpd.id JOIN training_samples ts ON trd.training_sample_id = ts.id WHERE ts.process_id = :entityId AND trd.is_pass = TRUE AND trd.delete_flag = FALSE',
+VALUES ('days_since_last_training',
+        'Số ngày chưa huấn luyện',
+        'EMPLOYEE', 'SQL',
+        'SELECT DATEDIFF(CURDATE(), MAX(trd.actual_date)) '
+            'FROM training_result_details trd '
+            'WHERE trd.employee_id = :entityId AND trd.is_pass = TRUE AND trd.delete_flag = FALSE',
         'INT', 'Ngày',
-        'Số ngày kể từ lần đào tạo mẫu huấn luyện đạt gần nhất cho công đoạn này',
+        'Số ngày kể từ lần huấn luyện đạt gần nhất của nhân viên',
         TRUE, 'system'),
 
-       ('fail_rate_process',
-        'Tỷ lệ trượt đào tạo tại công đoạn',
-        'PROCESS',
-        'SQL',
-        'SELECT ROUND(COUNT(CASE WHEN trd.is_pass = FALSE THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) FROM training_result_details trd JOIN training_samples ts ON trd.training_sample_id = ts.id WHERE ts.process_id = :entityId AND trd.delete_flag = FALSE',
+       ('fail_rate',
+        'Tỷ lệ trượt huấn luyện',
+        'EMPLOYEE', 'SQL',
+        'SELECT ROUND(COUNT(CASE WHEN trd.is_pass = FALSE THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 2) '
+            'FROM training_result_details trd '
+            'WHERE trd.employee_id = :entityId AND trd.delete_flag = FALSE',
         'DECIMAL', '%',
-        'Tỷ lệ % nhân viên không đạt khi học mẫu HLV của công đoạn này',
+        'Tỷ lệ % các lần huấn luyện không đạt của nhân viên',
         TRUE, 'system'),
 
-       ('active_employee_count',
-        'Số nhân viên đang làm tại công đoạn',
-        'PROCESS',
-        'SQL',
-        'SELECT COUNT(DISTINCT es.employee_id) FROM employee_skills es JOIN employees e ON es.employee_id = e.id WHERE es.process_id = :entityId AND e.status = ''ACTIVE'' AND e.delete_flag = FALSE',
-        'INT', 'Người',
-        'Số nhân viên ACTIVE được phân công tại công đoạn',
+       ('years_of_service',
+        'Thâm niên làm việc',
+        'EMPLOYEE', 'SQL',
+        'SELECT FLOOR(DATEDIFF(CURDATE(), e.created_at) / 365) '
+            'FROM employees e '
+            'WHERE e.id = :entityId AND e.delete_flag = FALSE',
+        'INT', 'Năm',
+        'Số năm làm việc tại công ty (tính từ ngày tạo hồ sơ)',
         TRUE, 'system'),
 
-       ('standard_time_jt',
-        'Thời gian tiêu chuẩn (giây)',
-        'PROCESS',
-        'PROPERTY',
-        'process.standardTimeJt',
-        'DECIMAL', 'Giây',
-        'Thời gian gia công tiêu chuẩn của công đoạn theo JT',
+       ('is_on_watchlist',
+        'Trong danh sách theo dõi đặc biệt',
+        'EMPLOYEE', 'PROPERTY',
+        'employee.isOnWatchlist',
+        'BOOLEAN', 'True/False',
+        'Nhân viên có đang nằm trong danh sách cần giám sát đặc biệt không',
+        TRUE, 'system'),
+
+       ('total_training_count',
+        'Tổng số lần huấn luyện',
+        'EMPLOYEE', 'SQL',
+        'SELECT COUNT(*) '
+            'FROM training_result_details trd '
+            'WHERE trd.employee_id = :entityId AND trd.delete_flag = FALSE',
+        'INT', 'Lần',
+        'Tổng số lần đã tham gia huấn luyện (kể cả đạt và không đạt)',
+        TRUE, 'system'),
+
+       ('pass_count',
+        'Số lần huấn luyện đạt',
+        'EMPLOYEE', 'SQL',
+        'SELECT COUNT(*) '
+            'FROM training_result_details trd '
+            'WHERE trd.employee_id = :entityId AND trd.is_pass = TRUE AND trd.delete_flag = FALSE',
+        'INT', 'Lần',
+        'Tổng số lần huấn luyện đạt kết quả của nhân viên',
+        TRUE, 'system'),
+
+       ('distinct_process_trained',
+        'Số công đoạn đã được huấn luyện',
+        'EMPLOYEE', 'SQL',
+        'SELECT COUNT(DISTINCT ts.process_id) '
+            'FROM training_result_details trd '
+            'JOIN training_samples ts ON trd.training_sample_id = ts.id '
+            'WHERE trd.employee_id = :entityId AND trd.is_pass = TRUE AND trd.delete_flag = FALSE',
+        'INT', 'Công đoạn',
+        'Số công đoạn khác nhau mà nhân viên đã huấn luyện đạt ít nhất 1 lần',
         TRUE, 'system');
 
--- 10.2 METRIC CLASSIFICATIONS (cho process_classification)
-INSERT INTO metric_classifications (classification_name, metric_source, condition_expression,
-                                    output_level, output_label, priority, is_active, created_by)
-VALUES ('process_importance', 'process_classification', 'classification = 1', 1, 'Đặc biệt quan trọng – FI ký', 1, TRUE,
-        'system'),
-       ('process_importance', 'process_classification', 'classification = 2', 2, 'Quan trọng – KCS kiểm tra', 2, TRUE,
-        'system'),
-       ('process_importance', 'process_classification', 'classification = 3', 3, 'Trung bình – Tự kiểm', 3, TRUE,
-        'system'),
-       ('process_importance', 'process_classification', 'classification = 4', 4, 'Thường – Không ưu tiên', 4, TRUE,
-        'system');
-
--- 10.3 PRIORITY POLICIES (2 chính sách PROCESS)
-INSERT INTO priority_policies (id, policy_code, policy_name, entity_type,
-                               effective_date, expiration_date, status, description, created_by)
-VALUES (1, 'PROC-RISK-2026',
-        'Chính sách ưu tiên huấn luyện theo Rủi ro Công đoạn 2026',
-        'PROCESS',
-        '2026-01-01', '2026-12-31',
-        'ACTIVE',
-        'Xếp hạng công đoạn theo tầm quan trọng kỹ thuật kết hợp lịch sử lỗi. '
-            'Ưu tiên cao nhất cho công đoạn classification 1 có nhiều lỗi khách hàng.',
-        'nguyen.quanly'),
-       (2, 'PROC-DEFECT-FOCUS-2026',
-        'Chính sách ưu tiên tập trung giảm lỗi khách hàng 2026',
-        'PROCESS',
-        '2026-01-01', '2026-12-31',
-        'ACTIVE',
-        'Tập trung vào các công đoạn có nhiều CLAIM khách hàng và tỷ lệ trượt đào tạo cao. '
-            'Bổ sung tiêu chí ngày chưa đào tạo để phát hiện vùng trắng.',
-        'nguyen.quanly');
-
--- 10.4 PRIORITY TIERS (cho Policy 1: PROC-RISK-2026)
--- Tier 1: Công đoạn classification 1 (đặc biệt quan trọng) → ưu tiên tuyệt đối
--- Tier 2: Cls 1 hoặc 2 có ≥ 3 lỗi KH
--- Tier 3: Còn lại cls 2-3 có lỗi trong 6T
--- Tier 4: Tất cả cls 3-4 còn lại
-INSERT INTO priority_tiers (id, policy_id, tier_order, tier_name, filter_logic,
-                            ranking_metric, ranking_direction, secondary_metric, secondary_direction, is_active,
-                            created_by)
-VALUES (1, 1, 1, 'Tier 1 – Công đoạn FI (Đặc biệt quan trọng + Có lỗi KH)',
-        'AND', 'claim_defect_count', 'DESC', 'total_defects_6m', 'DESC', TRUE, 'system'),
-       (2, 1, 2, 'Tier 2 – Công đoạn KCS (Quan trọng + Lỗi cao)',
-        'AND', 'total_defects_6m', 'DESC', 'claim_defect_count', 'DESC', TRUE, 'system'),
-       (3, 1, 3, 'Tier 3 – Công đoạn Tự Kiểm + Đào tạo lâu ngày',
-        'OR', 'days_since_last_training', 'DESC', 'total_defects_all', 'DESC', TRUE, 'system'),
-       (4, 1, 4, 'Tier 4 – Công đoạn Thường (Ưu tiên cuối)',
-        'AND', 'standard_time_jt', 'DESC', NULL, NULL, TRUE, 'system');
-
--- 10.5 PRIORITY TIER FILTERS (Policy 1)
-INSERT INTO priority_tier_filters (tier_id, metric_name, operator, filter_value, filter_unit, filter_order, created_by)
-VALUES
--- Tier 1: classification = 1 VÀ có ít nhất 1 lỗi CLAIM
-(1, 'process_classification', 'EQ', '1', 'Cấp', 1, 'system'),
-(1, 'claim_defect_count', 'GTE', '1', 'Lỗi', 2, 'system'),
--- Tier 2: classification = 2 VÀ tổng lỗi 6T >= 2
-(2, 'process_classification', 'EQ', '2', 'Cấp', 1, 'system'),
-(2, 'total_defects_6m', 'GTE', '2', 'Lỗi', 2, 'system'),
--- Tier 3: (classification IN 2,3) OR (ngày chưa train > 90 ngày)
-(3, 'process_classification', 'LTE', '3', 'Cấp', 1, 'system'),
-(3, 'days_since_last_training', 'GTE', '90', 'Ngày', 2, 'system'),
--- Tier 4: classification = 4 (thường)
-(4, 'process_classification', 'EQ', '4', 'Cấp', 1, 'system');
-
--- 10.6 PRIORITY TIERS (cho Policy 2: PROC-DEFECT-FOCUS-2026)
-INSERT INTO priority_tiers (id, policy_id, tier_order, tier_name, filter_logic,
-                            ranking_metric, ranking_direction, secondary_metric, secondary_direction, is_active,
-                            created_by)
-VALUES (5, 2, 1, 'Focus Tier 1 – CLAIM cao + Tỷ lệ trượt HLV cao',
-        'AND', 'claim_defect_count', 'DESC', 'fail_rate_process', 'DESC', TRUE, 'system'),
-       (6, 2, 2, 'Focus Tier 2 – Lỗi nhiều + Chưa đào tạo lâu',
-        'AND', 'total_defects_6m', 'DESC', 'days_since_last_training', 'DESC', TRUE, 'system'),
-       (7, 2, 3, 'Focus Tier 3 – Công đoạn quan trọng chưa ổn định',
-        'OR', 'fail_rate_process', 'DESC', 'claim_defect_count', 'DESC', TRUE, 'system');
-
-INSERT INTO priority_tier_filters (tier_id, metric_name, operator, filter_value, filter_unit, filter_order, created_by)
-VALUES
--- Focus Tier 1: claim >= 3 VÀ fail_rate >= 15%
-(5, 'claim_defect_count', 'GTE', '3', 'Lỗi', 1, 'system'),
-(5, 'fail_rate_process', 'GTE', '15', '%', 2, 'system'),
--- Focus Tier 2: total_defects_6m >= 2 VÀ ngày chưa train >= 60
-(6, 'total_defects_6m', 'GTE', '2', 'Lỗi', 1, 'system'),
-(6, 'days_since_last_training', 'GTE', '60', 'Ngày', 2, 'system'),
--- Focus Tier 3: fail_rate > 10% OR claim > 1
-(7, 'fail_rate_process', 'GT', '10', '%', 1, 'system'),
-(7, 'claim_defect_count', 'GT', '1', 'Lỗi', 2, 'system');
-
--- 10.7 PRIORITY SNAPSHOTS (Kết quả xếp hạng giả lập cho Tổ Lắp Ráp Bơm T3/2026)
-INSERT INTO priority_snapshots (id, team_id, policy_id, policy_snapshot, training_plan_id, created_by)
-VALUES (1, 4, 1,
-        JSON_OBJECT(
-                'policy_code', 'PROC-RISK-2026',
-                'policy_name', 'Chính sách ưu tiên huấn luyện theo Rủi ro Công đoạn 2026',
-                'snapshot_at', '2026-03-01',
-                'tiers', JSON_ARRAY(
-                        JSON_OBJECT('tier_order', 1, 'tier_name', 'Tier 1 – FI + Lỗi KH', 'filter_logic', 'AND'),
-                        JSON_OBJECT('tier_order', 2, 'tier_name', 'Tier 2 – KCS + Lỗi cao', 'filter_logic', 'AND'),
-                        JSON_OBJECT('tier_order', 3, 'tier_name', 'Tier 3 – Tự Kiểm + Lâu ngày', 'filter_logic', 'OR'),
-                        JSON_OBJECT('tier_order', 4, 'tier_name', 'Tier 4 – Thường', 'filter_logic', 'AND')
-                         )
-        ),
-        10,
-        'system'),
-
-       (2, 5, 2,
-        JSON_OBJECT(
-                'policy_code', 'PROC-DEFECT-FOCUS-2026',
-                'policy_name', 'Chính sách ưu tiên tập trung giảm lỗi khách hàng 2026',
-                'snapshot_at', '2026-03-01',
-                'tiers', JSON_ARRAY(
-                        JSON_OBJECT('tier_order', 1, 'tier_name', 'Focus Tier 1 – CLAIM + Fail Rate', 'filter_logic',
-                                    'AND'),
-                        JSON_OBJECT('tier_order', 2, 'tier_name', 'Focus Tier 2 – Lỗi + Chưa train', 'filter_logic',
-                                    'AND'),
-                        JSON_OBJECT('tier_order', 3, 'tier_name', 'Focus Tier 3 – Không ổn định', 'filter_logic', 'OR')
-                         )
-        ),
-        13,
-        'system');
-
--- 10.8 PRIORITY SNAPSHOT DETAILS (xếp hạng 21 công đoạn theo Policy 1)
--- process_id → tier_order, sort_rank, metric_values (giả lập thực tế)
-INSERT INTO priority_snapshot_details (snapshot_id, employee_id, employee_code, full_name,
-                                       tier_order, tier_name, sort_rank, priority_tags, metric_values, created_by)
-VALUES
--- NOTE: Ở đây employee_id/code/full_name đang được dùng để lưu PROCESS (bảng thiết kế cũ employee-based)
--- Để phù hợp schema, ta map process_id → employee_id (giữ nguyên FK employee nhưng note là PROCESS context)
--- Snapshot 1 – Policy PROC-RISK-2026, Team 4 (Lắp Ráp Bơm), Line 5
-(1, 1, 'PROC-LA-B-03', 'Test Áp Lực Thủy Lực',
- 1, 'Tier 1 – Công đoạn FI', 1,
- JSON_ARRAY('FI_REQUIRED', 'HIGH_CLAIM', 'URGENT'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 4, 'total_defects_6m', 5, 'days_since_last_training',
-             72, 'fail_rate_process', 14.3, 'standard_time_jt', 60),
- 'system'),
-(1, 2, 'PROC-LA-B-02', 'Lắp Ron Cao Su & Gioăng',
- 1, 'Tier 1 – Công đoạn FI', 2,
- JSON_ARRAY('FI_REQUIRED', 'HIGH_CLAIM'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 3, 'total_defects_6m', 4, 'days_since_last_training',
-             45, 'fail_rate_process', 8.0, 'standard_time_jt', 45),
- 'system'),
-(1, 3, 'PROC-LA-B-01', 'Lắp Bánh Công Tác',
- 1, 'Tier 1 – Công đoạn FI', 3,
- JSON_ARRAY('FI_REQUIRED', 'MEDIUM_CLAIM'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 2, 'total_defects_6m', 3, 'days_since_last_training',
-             38, 'fail_rate_process', 5.0, 'standard_time_jt', 80),
- 'system'),
-(1, 4, 'PROC-LA-B-04', 'Đóng Gói & Dán Nhãn',
- 4, 'Tier 4 – Công đoạn Thường', 4,
- JSON_ARRAY('LOW_PRIORITY'),
- JSON_OBJECT('process_classification', 4, 'claim_defect_count', 1, 'total_defects_6m', 1, 'days_since_last_training',
-             30, 'fail_rate_process', 0.0, 'standard_time_jt', 15),
- 'system'),
-
--- Snapshot 2 – Policy PROC-DEFECT-FOCUS-2026, Team 5 (Lắp Ráp Động Cơ), Line 4
-(2, 5, 'PROC-DC-04', 'Test Nổ Máy & Điều Chỉnh',
- 1, 'Focus Tier 1 – CLAIM + Fail Rate', 1,
- JSON_ARRAY('FI_REQUIRED', 'HIGH_CLAIM', 'FAIL_RATE_HIGH'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 5, 'total_defects_6m', 6, 'days_since_last_training',
-             88, 'fail_rate_process', 20.0, 'standard_time_jt', 200),
- 'system'),
-(2, 6, 'PROC-DC-01', 'Lắp Trục Khuỷu & Piston',
- 1, 'Focus Tier 1 – CLAIM + Fail Rate', 2,
- JSON_ARRAY('FI_REQUIRED', 'HIGH_CLAIM'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 4, 'total_defects_6m', 5, 'days_since_last_training',
-             62, 'fail_rate_process', 16.7, 'standard_time_jt', 180),
- 'system'),
-(2, 7, 'PROC-DC-02', 'Lắp Nắp Máy & Ron Nắp',
- 2, 'Focus Tier 2 – Lỗi + Chưa train', 3,
- JSON_ARRAY('KCS_REQUIRED', 'NEEDS_TRAINING'),
- JSON_OBJECT('process_classification', 1, 'claim_defect_count', 2, 'total_defects_6m', 4, 'days_since_last_training',
-             95, 'fail_rate_process', 12.5, 'standard_time_jt', 90),
- 'system'),
-(2, 8, 'PROC-DC-03', 'Căn Chỉnh & Cân Bằng',
- 3, 'Focus Tier 3 – Không ổn định', 4,
- JSON_ARRAY('WATCH'),
- JSON_OBJECT('process_classification', 2, 'claim_defect_count', 1, 'total_defects_6m', 2, 'days_since_last_training',
-             55, 'fail_rate_process', 11.0, 'standard_time_jt', 60),
- 'system');
-
--- ============================================================================
--- EMPLOYEE PRIORITY POLICIES
--- Logic: Xếp hạng nhân viên cần được huấn luyện ưu tiên dựa trên
---        thời gian chưa huấn luyện + tỷ lệ trượt + watchlist
--- ============================================================================
-
--- ── computed_metrics cho EMPLOYEE (bổ sung vào V8 đã có) ──────────────────
--- Các metric này đã seed trong V3, chỉ cần đảm bảo tồn tại:
---   days_since_last_training  (EMPLOYEE)
---   fail_rate                 (EMPLOYEE)
---   years_of_service          (EMPLOYEE)
---   is_on_watchlist           (EMPLOYEE)
-
--- ── Policy ────────────────────────────────────────────────────────────────
+-- ── 2. PRIORITY POLICIES cho EMPLOYEE ────────────────────────────────────
 
 INSERT INTO priority_policies (id, policy_code, policy_name, entity_type,
                                effective_date, expiration_date, status, description, created_by)
-VALUES (3, 'EMP-BASIC-2026',
+VALUES (1, 'EMP-BASIC-2026',
         'Chính sách ưu tiên nhân viên cần huấn luyện 2026',
         'EMPLOYEE',
-        '2026-01-01', '2026-12-31',
-        'ACTIVE',
-        'Xếp hạng nhân viên theo mức độ cần huấn luyện: ưu tiên nhân viên trong watchlist, '
-            'tiếp theo là nhân viên chưa học lâu hoặc tỷ lệ trượt cao.',
+        '2026-01-01', '2026-12-31', 'ACTIVE',
+        'Xếp hạng nhân viên theo mức độ cần huấn luyện. '
+            'Ưu tiên: watchlist trước → chưa học lâu → tỷ lệ trượt cao → thâm niên thấp.',
         'nguyen.quanly');
 
--- ── Tiers ─────────────────────────────────────────────────────────────────
--- Tier 1: Nhân viên trong watchlist   → xử lý ngay
--- Tier 2: Chưa huấn luyện > 60 ngày  → ưu tiên cao
--- Tier 3: Tỷ lệ trượt >= 30%         → cần ôn lại
--- Tier 4: Còn lại                     → theo thâm niên
+-- ── 3. PRIORITY TIERS ─────────────────────────────────────────────────────
+-- Tier 1: Watchlist            – nguy cơ cao nhất, xử lý ngay
+-- Tier 2: Chưa học > 60 ngày  – vùng trắng kỹ năng
+-- Tier 3: Tỷ lệ trượt >= 30%  – cần ôn lại kiến thức
+-- Tier 4: Còn lại              – xếp theo thâm niên thấp → mới vào trước
 
 INSERT INTO priority_tiers (id, policy_id, tier_order, tier_name, filter_logic,
                             ranking_metric, ranking_direction, secondary_metric, secondary_direction,
                             is_active, created_by)
-VALUES (8, 3, 1, 'Tier 1 – Nhân viên trong danh sách theo dõi',
+VALUES (1, 1, 1, 'Tier 1 – Nhân viên trong danh sách theo dõi đặc biệt',
         'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
-
-       (9, 3, 2, 'Tier 2 – Chưa huấn luyện lâu ngày',
+       (2, 1, 2, 'Tier 2 – Nhân viên chưa huấn luyện lâu ngày',
         'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
-
-       (10, 3, 3, 'Tier 3 – Tỷ lệ trượt cao',
+       (3, 1, 3, 'Tier 3 – Nhân viên có tỷ lệ trượt cao',
         'AND', 'fail_rate', 'DESC', 'days_since_last_training', 'DESC', TRUE, 'system'),
+       (4, 1, 4, 'Tier 4 – Nhân viên còn lại (theo thâm niên)',
+        'AND', 'years_of_service', 'ASC', 'fail_rate', 'DESC', TRUE, 'system');
 
-       (11, 3, 4, 'Tier 4 – Nhân viên thâm niên thấp (ưu tiên cuối)',
-        'AND', 'years_of_service', 'ASC', NULL, NULL, TRUE, 'system');
-
--- ── Filters ───────────────────────────────────────────────────────────────
+-- ── 4. PRIORITY TIER FILTERS ─────────────────────────────────────────────
 
 INSERT INTO priority_tier_filters
 (tier_id, metric_name, operator, filter_value, filter_unit, filter_order, created_by)
 VALUES
 -- Tier 1: is_on_watchlist = true
-(8, 'is_on_watchlist', 'EQ', 'true', 'True/False', 1, 'system'),
+(1, 'is_on_watchlist', 'EQ', 'true', 'True/False', 1, 'system'),
 
--- Tier 2: chưa huấn luyện > 60 ngày VÀ không trong watchlist
-(9, 'days_since_last_training', 'GTE', '60', 'Ngày', 1, 'system'),
-(9, 'is_on_watchlist', 'EQ', 'false', 'True/False', 2, 'system'),
+-- Tier 2: chưa học > 60 ngày VÀ không trong watchlist
+(2, 'days_since_last_training', 'GTE', '60', 'Ngày', 1, 'system'),
+(2, 'is_on_watchlist', 'EQ', 'false', 'True/False', 2, 'system'),
 
--- Tier 3: tỷ lệ trượt >= 30%
-(10, 'fail_rate', 'GTE', '30', '%', 1, 'system'),
+-- Tier 3: fail_rate >= 30% VÀ không trong watchlist
+(3, 'fail_rate', 'GTE', '30', '%', 1, 'system'),
+(3, 'is_on_watchlist', 'EQ', 'false', 'True/False', 2, 'system'),
 
--- Tier 4: không điều kiện đặc biệt, chỉ rank theo thâm niên tăng dần
-(11, 'years_of_service', 'GTE', '0', 'Năm', 1, 'system');
+-- Tier 4: phần còn lại (years_of_service >= 0 = tất cả)
+(4, 'years_of_service', 'GTE', '0', 'Năm', 1, 'system');
+
+-- ── 5. PRIORITY SNAPSHOTS (Tổ Tiện Ca Ngày – T3/2026) ────────────────────
+
+INSERT INTO priority_snapshots (id, team_id, policy_id, policy_snapshot, training_plan_id, created_by)
+VALUES (1, 1, 1,
+        JSON_OBJECT(
+                'policy_code', 'EMP-BASIC-2026',
+                'policy_name', 'Chính sách ưu tiên nhân viên cần huấn luyện 2026',
+                'snapshot_at', '2026-03-01',
+                'tiers', JSON_ARRAY(
+                        JSON_OBJECT('tier_order', 1, 'tier_name', 'Tier 1 – Watchlist', 'filter_logic', 'AND'),
+                        JSON_OBJECT('tier_order', 2, 'tier_name', 'Tier 2 – Chưa học lâu ngày', 'filter_logic', 'AND'),
+                        JSON_OBJECT('tier_order', 3, 'tier_name', 'Tier 3 – Tỷ lệ trượt cao', 'filter_logic', 'AND'),
+                        JSON_OBJECT('tier_order', 4, 'tier_name', 'Tier 4 – Theo thâm niên', 'filter_logic', 'AND')
+                         )
+        ),
+        3, -- training_plan_id = 3 (Tổ Tiện T3/2026)
+        'system');
+
+-- ── 6. PRIORITY SNAPSHOT DETAILS (6 nhân viên Tổ Tiện) ───────────────────
+-- Dữ liệu giả lập metric thực tế tại thời điểm 2026-03-01
+
+INSERT INTO priority_snapshot_details (snapshot_id, employee_id, employee_code, full_name,
+                                       tier_order, tier_name, sort_rank, priority_tags, metric_values, created_by)
+VALUES
+
+-- NV003 – Lê Văn Cường: chưa học 47 ngày (DONE T2), fail_rate cao
+(1, 3, 'NV003', 'Lê Văn Cường',
+ 2, 'Tier 2 – Chưa huấn luyện lâu ngày', 1,
+ JSON_ARRAY('NEEDS_TRAINING', 'HIGH_FAIL_RATE'),
+ JSON_OBJECT(
+         'days_since_last_training', 47, 'fail_rate', 0.0,
+         'years_of_service', 3, 'is_on_watchlist', false,
+         'total_training_count', 3, 'pass_count', 3, 'distinct_process_trained', 2
+ ), 'system'),
+
+-- NV004 – Võ Thị Dung: bổ sung T2 mới đạt, vẫn chưa train gần
+(1, 4, 'NV004', 'Võ Thị Dung',
+ 2, 'Tier 2 – Chưa huấn luyện lâu ngày', 2,
+ JSON_ARRAY('NEEDS_TRAINING'),
+ JSON_OBJECT(
+         'days_since_last_training', 44, 'fail_rate', 0.0,
+         'years_of_service', 2, 'is_on_watchlist', false,
+         'total_training_count', 1, 'pass_count', 1, 'distinct_process_trained', 1
+ ), 'system'),
+
+-- NV001 – Nguyễn Văn An: đã train T3 gần đây, ổn định
+(1, 1, 'NV001', 'Nguyễn Văn An',
+ 4, 'Tier 4 – Theo thâm niên', 3,
+ JSON_ARRAY('ON_TRACK'),
+ JSON_OBJECT(
+         'days_since_last_training', 22, 'fail_rate', 0.0,
+         'years_of_service', 5, 'is_on_watchlist', false,
+         'total_training_count', 5, 'pass_count', 5, 'distinct_process_trained', 4
+ ), 'system'),
+
+-- NV002 – Trần Thị Bình: đã train T3, ổn định
+(1, 2, 'NV002', 'Trần Thị Bình',
+ 4, 'Tier 4 – Theo thâm niên', 4,
+ JSON_ARRAY('ON_TRACK'),
+ JSON_OBJECT(
+         'days_since_last_training', 21, 'fail_rate', 0.0,
+         'years_of_service', 4, 'is_on_watchlist', false,
+         'total_training_count', 5, 'pass_count', 5, 'distinct_process_trained', 3
+ ), 'system'),
+
+-- NV006 – Bùi Văn Phúc: đã train T3, thâm niên thấp nhất
+(1, 6, 'NV006', 'Bùi Văn Phúc',
+ 4, 'Tier 4 – Theo thâm niên', 5,
+ JSON_ARRAY('ON_TRACK'),
+ JSON_OBJECT(
+         'days_since_last_training', 20, 'fail_rate', 0.0,
+         'years_of_service', 1, 'is_on_watchlist', false,
+         'total_training_count', 3, 'pass_count', 3, 'distinct_process_trained', 2
+ ), 'system'),
+
+-- NV005 – Đặng Văn Em: đang nghỉ thai sản, không tính vào lịch
+(1, 5, 'NV005', 'Đặng Văn Em',
+ 4, 'Tier 4 – Theo thâm niên', 6,
+ JSON_ARRAY('MATERNITY_LEAVE', 'SKIP'),
+ JSON_OBJECT(
+         'days_since_last_training', NULL, 'fail_rate', 0.0,
+         'years_of_service', 3, 'is_on_watchlist', false,
+         'total_training_count', 0, 'pass_count', 0, 'distinct_process_trained', 0
+ ), 'system');
 
 -- ============================================================================
 -- PART 11: APPROVAL ACTIONS (lịch sử phê duyệt)

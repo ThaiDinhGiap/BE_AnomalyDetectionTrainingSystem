@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PrioritySnapshotRepository extends JpaRepository<PrioritySnapshot, Long> {
@@ -12,4 +13,6 @@ public interface PrioritySnapshotRepository extends JpaRepository<PrioritySnapsh
     List<PrioritySnapshot> findByPolicyIdAndTeamId(Long policyId, Long teamId);
 
     PrioritySnapshot findLatestByPolicyIdAndTeamId(Long policyId, Long teamId);
+
+    Optional<PrioritySnapshot> findByTrainingPlanId(Long trainingPlanId);
 }

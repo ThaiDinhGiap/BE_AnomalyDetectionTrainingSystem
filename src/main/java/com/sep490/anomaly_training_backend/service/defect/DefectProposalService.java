@@ -12,7 +12,7 @@ import org.apache.coyote.BadRequestException;
 import java.util.List;
 
 public interface DefectProposalService {
-    List<DefectProposalResponse> getDefectProposalByTeamLeadAndProductLine(Long id, String username);
+    List<DefectProposalResponse> getDefectProposalByProductLine(Long id, String username);
 
     void createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser);
 

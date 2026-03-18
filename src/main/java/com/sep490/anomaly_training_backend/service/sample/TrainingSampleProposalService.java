@@ -18,7 +18,7 @@ public interface TrainingSampleProposalService {
 
     void deleteTrainingSampleProposal(Long id);
 
-    TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest trainingSampleProposalRequest) throws BadRequestException;
+    TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest trainingSampleProposalRequest, User user) throws BadRequestException;
 
     void revise(Long id, User currentUser, HttpServletRequest request);
 

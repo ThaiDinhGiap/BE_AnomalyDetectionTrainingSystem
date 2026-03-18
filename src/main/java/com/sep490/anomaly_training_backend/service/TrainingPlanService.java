@@ -11,7 +11,6 @@ import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -19,17 +18,31 @@ import java.util.List;
 
 public interface TrainingPlanService {
 
-    TrainingPlanResponse getPlanDetail(Long id);
+    // ── Query ────────────────────────────────────────────────────────────────
 
-    List<TrainingPlanResponse> getAllPlans();
+    TrainingPlanGenerationResponse getPlanDetail(Long id);
 
-    List<TrainingPlanResponse> getRejectedPlans();
+    List<TrainingPlanGenerationResponse> getAllPlans();
 
-    TrainingPlanResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
+    List<TrainingPlanGenerationResponse> getRejectedPlans();
+
+    // ── Mutation ─────────────────────────────────────────────────────────────
+
+    TrainingPlanGenerationResponse updatePlan(Long id, TrainingPlanUpdateRequest request);
 
     void deletePlan(Long id);
 
     void deleteDetail(Long planId, Long detailId);
+
+    TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request);
+
+    TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request);
+
+    // ── Generate ─────────────────────────────────────────────────────────────
+
+    TrainingPlanGenerationResponse generateTrainingPlans(User currentUser, TrainingPlanGenerationRequest request);
+
+    // ── Lookup ───────────────────────────────────────────────────────────────
 
     List<GroupResponse> getMyManagedGroups();
 
@@ -37,17 +50,12 @@ public interface TrainingPlanService {
 
     List<ProductLineResponse> getProductLinesByGroupId(Long groupId);
 
-    TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request);
-
-    TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request);
-
     List<EmployeeResponse> getEmployeesNotInPlan(Long planId);
 
     List<EmployeeResponse> getEmployeesInTeams(Long planId);
 
-    TrainingPlanGenerationResponse generateTrainingPlans(User currentUser, TrainingPlanGenerationRequest request);
+    // ── Approval workflow ────────────────────────────────────────────────────
 
-    // Relate approval methods
     void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request);
 
     void submit(Long reportId, User currentUser, HttpServletRequest request);

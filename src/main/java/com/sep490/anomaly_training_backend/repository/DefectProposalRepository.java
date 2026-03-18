@@ -20,7 +20,7 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
     List<DefectProposal> findByDeleteFlagFalse();
 
     @Query("""
-            SELECT d 
+            SELECT d
             FROM DefectProposal d
             WHERE d.productLine.id = :productLineId
               AND d.createdBy = :username
