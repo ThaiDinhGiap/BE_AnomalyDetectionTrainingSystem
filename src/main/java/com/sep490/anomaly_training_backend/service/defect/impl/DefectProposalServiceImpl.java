@@ -53,10 +53,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         Role userRole = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND))
                 .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-        if (!("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
-            listEntity = defectProposalRepository.findByProductLineId(id);
-        } else{
+        if (("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
             listEntity = defectProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+        } else{
+            listEntity = defectProposalRepository.findByProductLineForSupervisorAndManager(id);
         }
         for (DefectProposal entity : listEntity) {
             result.add(defectProposalMapper.toResponse(entity, userRepository));

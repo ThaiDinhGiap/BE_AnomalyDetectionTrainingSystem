@@ -477,7 +477,7 @@ CREATE TABLE defect_proposals
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
+        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
                                      DEFAULT 'DRAFT',
     current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
@@ -656,7 +656,7 @@ CREATE TABLE training_sample_proposals
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
     status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
+        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
                                      DEFAULT 'DRAFT',
     current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
@@ -787,7 +787,7 @@ CREATE TABLE training_plans
     team_id              BIGINT,
     line_id              BIGINT COMMENT 'Dây chuyền áp dụng',
     status               ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED')
+        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
                                           DEFAULT 'DRAFT',
     current_version      INT              DEFAULT 1,
     note                 TEXT,
@@ -935,7 +935,7 @@ CREATE TABLE training_results
     team_id          BIGINT  NOT NULL,
     line_id          BIGINT COMMENT 'Dây chuyền áp dụng',
     status           ENUM ('ON_GOING', 'DONE', 'WAITING_MANAGER',
-        'REJECTED_BY_MANAGER', 'APPROVED')
+        'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
                                       DEFAULT 'ON_GOING',
     current_version  INT              DEFAULT 1,
     note             TEXT,

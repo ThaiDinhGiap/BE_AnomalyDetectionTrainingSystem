@@ -44,15 +44,12 @@ public class TrainingSampleReviewConfig extends BaseEntity {
     TrainingSampleReviewPolicy reviewPolicy;
 
     @Column(name = "trigger_month", nullable = false)
-    @Builder.Default
-    Integer triggerMonth = 3;
+    Integer triggerMonth;
 
     @Column(name = "trigger_day", nullable = false)
-    @Builder.Default
-    Integer triggerDay = 1;
+    Integer triggerDay;
 
     @Column(name = "due_days", nullable = false)
-    @Builder.Default
-    Integer dueDays = 30;
+    Integer dueDays;
 
 }
