@@ -229,6 +229,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate today = LocalDate.now();
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // 1. Lấy danh sách active Plan
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> activePlanIds = plans.stream()
                 .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING))
@@ -240,12 +241,26 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingTaskFailed> failedList = new ArrayList<>();
         List<TrainingTaskMissed> missedList = new ArrayList<>();
 
+        if (activePlanIds.isEmpty()) {
+            return TrainingTaskData.builder()
+                    .todayList(todayList).failedList(failedList).missedList(missedList).build();
+        }
+
+        // 2. Lấy danh sách Detail của Plan và Result
         List<TrainingPlanDetail> allPlanDetails = new ArrayList<>();
         for (Long planId : activePlanIds) {
             allPlanDetails.addAll(trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId));
         }
-
         List<TrainingResultDetail> allFailedResultDetails = trainingResultDetailRepository.findFailedTrainings(lineId);
+
+        List<TrainingResult> activeResults = trainingResultRepository.findByTrainingPlanIdIn(activePlanIds);
+        Map<Long, Long> resultIdByPlanId = activeResults.stream()
+                .filter(r -> r.getTrainingPlan() != null)
+                .collect(Collectors.toMap(
+                        r -> r.getTrainingPlan().getId(),
+                        TrainingResult::getId,
+                        (existing, replacement) -> existing
+                ));
 
         // --- Consolidated Employee ID Collection ---
         Set<Long> allEmployeeIds = new HashSet<>();
@@ -269,16 +284,22 @@ public class DashboardServiceImpl implements DashboardService {
         }
         // --- End Consolidated Employee ID Collection ---
 
+        // 3. Phân loại Today và Missed
         for (TrainingPlanDetail d : allPlanDetails) {
             Employee emp = d.getEmployee();
             String empName = emp != null ? emp.getFullName() : "N/A";
             String empCode = emp != null ? emp.getEmployeeCode() : "N/A";
-            String employeeProcessesString = String.join(", ", skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList()));
+            String employeeProcessesString = String.join(", ", skillsByEmployeeId.getOrDefault(emp != null ? emp.getId() : null, Collections.emptyList()));
+
+            Long planId = d.getTrainingPlan() != null ? d.getTrainingPlan().getId() : null;
+            Long resultId = planId != null ? resultIdByPlanId.get(planId) : null; // Lấy resultId từ Map
 
             // Today's tasks
             if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
                 todayList.add(TrainingTaskToday.builder()
                         .id(d.getId())
+                        .planId(planId)
+                        .resultId(resultId)
                         .employeeName(empName)
                         .employeeCode(empCode)
                         .employeeProcesses(employeeProcessesString)
@@ -291,6 +312,8 @@ public class DashboardServiceImpl implements DashboardService {
                     && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
                 missedList.add(TrainingTaskMissed.builder()
                         .id(d.getId())
+                        .planId(planId)
+                        .resultId(resultId)
                         .employeeName(empName)
                         .employeeCode(empCode)
                         .employeeProcesses(employeeProcessesString)
@@ -301,13 +324,18 @@ public class DashboardServiceImpl implements DashboardService {
             }
         }
 
-        // Failed trainings
-        List<TrainingResultDetail> allFailed = trainingResultDetailRepository.findFailedTrainings(lineId);
-        for (TrainingResultDetail rd : allFailed) {
+        for (TrainingResultDetail rd : allFailedResultDetails) {
             if (rd.getActualDate() != null) {
                 Employee emp = rd.getEmployee();
+
+                Long parentResultId = rd.getTrainingResult() != null ? rd.getTrainingResult().getId() : null;
+                Long parentPlanId = (rd.getTrainingResult() != null && rd.getTrainingResult().getTrainingPlan() != null)
+                        ? rd.getTrainingResult().getTrainingPlan().getId() : null;
+
                 failedList.add(TrainingTaskFailed.builder()
-                        .id(rd.getId())
+                        .id(rd.getId()) // detailId
+                        .planId(parentPlanId)
+                        .resultId(parentResultId)
                         .employeeName(emp != null ? emp.getFullName() : "N/A")
                         .employeeCode(emp != null ? emp.getEmployeeCode() : "N/A")
                         .processName(rd.getProcess() != null
