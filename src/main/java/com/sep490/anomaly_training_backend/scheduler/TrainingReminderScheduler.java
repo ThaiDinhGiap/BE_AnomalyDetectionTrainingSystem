@@ -31,11 +31,7 @@ public class TrainingReminderScheduler {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    /**
-     * Use Case 3a: Nhắc nhở lịch kiểm tra hôm nay
-     * Chạy lúc 6:00 sáng hàng ngày
-     */
-    @Scheduled(cron = "${app.scheduler.training-reminder-today:0 0 6 * * ?}")
+    @Scheduled(cron = "${app.scheduler.training-reminder-today:0 0 7 * * ?}")
     @Transactional(readOnly = true)
     public void sendTodayTrainingReminders() {
         log.info("=== Starting Today Training Reminder Job ===");
@@ -43,7 +39,6 @@ public class TrainingReminderScheduler {
         LocalDate today = LocalDate.now();
 
         try {
-            // Lấy tất cả training plan details có planned_date = hôm nay và chưa thực hiện
             List<TrainingPlanDetail> todayTrainings = planDetailRepository
                     .findByPlannedDateAndResultStatusPending(today);
 

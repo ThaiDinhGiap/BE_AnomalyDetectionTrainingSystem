@@ -1254,6 +1254,71 @@ VALUES
  'system');
 
 -- ============================================================================
+-- EMPLOYEE PRIORITY POLICIES
+-- Logic: Xếp hạng nhân viên cần được huấn luyện ưu tiên dựa trên
+--        thời gian chưa huấn luyện + tỷ lệ trượt + watchlist
+-- ============================================================================
+
+-- ── computed_metrics cho EMPLOYEE (bổ sung vào V8 đã có) ──────────────────
+-- Các metric này đã seed trong V3, chỉ cần đảm bảo tồn tại:
+--   days_since_last_training  (EMPLOYEE)
+--   fail_rate                 (EMPLOYEE)
+--   years_of_service          (EMPLOYEE)
+--   is_on_watchlist           (EMPLOYEE)
+
+-- ── Policy ────────────────────────────────────────────────────────────────
+
+INSERT INTO priority_policies (id, policy_code, policy_name, entity_type,
+                               effective_date, expiration_date, status, description, created_by)
+VALUES (3, 'EMP-BASIC-2026',
+        'Chính sách ưu tiên nhân viên cần huấn luyện 2026',
+        'EMPLOYEE',
+        '2026-01-01', '2026-12-31',
+        'ACTIVE',
+        'Xếp hạng nhân viên theo mức độ cần huấn luyện: ưu tiên nhân viên trong watchlist, '
+            'tiếp theo là nhân viên chưa học lâu hoặc tỷ lệ trượt cao.',
+        'nguyen.quanly');
+
+-- ── Tiers ─────────────────────────────────────────────────────────────────
+-- Tier 1: Nhân viên trong watchlist   → xử lý ngay
+-- Tier 2: Chưa huấn luyện > 60 ngày  → ưu tiên cao
+-- Tier 3: Tỷ lệ trượt >= 30%         → cần ôn lại
+-- Tier 4: Còn lại                     → theo thâm niên
+
+INSERT INTO priority_tiers (id, policy_id, tier_order, tier_name, filter_logic,
+                            ranking_metric, ranking_direction, secondary_metric, secondary_direction,
+                            is_active, created_by)
+VALUES (8, 3, 1, 'Tier 1 – Nhân viên trong danh sách theo dõi',
+        'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
+
+       (9, 3, 2, 'Tier 2 – Chưa huấn luyện lâu ngày',
+        'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
+
+       (10, 3, 3, 'Tier 3 – Tỷ lệ trượt cao',
+        'AND', 'fail_rate', 'DESC', 'days_since_last_training', 'DESC', TRUE, 'system'),
+
+       (11, 3, 4, 'Tier 4 – Nhân viên thâm niên thấp (ưu tiên cuối)',
+        'AND', 'years_of_service', 'ASC', NULL, NULL, TRUE, 'system');
+
+-- ── Filters ───────────────────────────────────────────────────────────────
+
+INSERT INTO priority_tier_filters
+(tier_id, metric_name, operator, filter_value, filter_unit, filter_order, created_by)
+VALUES
+-- Tier 1: is_on_watchlist = true
+(8, 'is_on_watchlist', 'EQ', 'true', 'True/False', 1, 'system'),
+
+-- Tier 2: chưa huấn luyện > 60 ngày VÀ không trong watchlist
+(9, 'days_since_last_training', 'GTE', '60', 'Ngày', 1, 'system'),
+(9, 'is_on_watchlist', 'EQ', 'false', 'True/False', 2, 'system'),
+
+-- Tier 3: tỷ lệ trượt >= 30%
+(10, 'fail_rate', 'GTE', '30', '%', 1, 'system'),
+
+-- Tier 4: không điều kiện đặc biệt, chỉ rank theo thâm niên tăng dần
+(11, 'years_of_service', 'GTE', '0', 'Năm', 1, 'system');
+
+-- ============================================================================
 -- PART 11: APPROVAL ACTIONS (lịch sử phê duyệt)
 -- ============================================================================
 

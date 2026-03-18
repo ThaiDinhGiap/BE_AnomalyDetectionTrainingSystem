@@ -3,7 +3,12 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
@@ -21,7 +26,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -42,6 +57,7 @@ public class DefectController {
         List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
+
     @Operation(summary = "Get defects by process ")
     @GetMapping("/process")
     @PreAuthorize("hasAuthority('defect.view')")
@@ -54,17 +70,18 @@ public class DefectController {
     @GetMapping("/coverage/{productLineId}")
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<DefectCoverageResponse>> getCoverageInProductLine(@PathVariable("productLineId") Long productLineId) {
-        DefectCoverageResponse result =  defectService.getCoverageInProductLine(productLineId);
+        DefectCoverageResponse result = defectService.getCoverageInProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @Operation(summary = "Get defects detail information")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('defect.detail')")
+    @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<DefectResponse>> getDefectDetail(@PathVariable("id") Long id) {
         DefectResponse response = defectService.getDefectById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
     @Operation(summary = "Validate duplicate defect Description")
     @GetMapping("/check-exist")
     @PreAuthorize("hasAuthority('defect.view')")
@@ -79,8 +96,8 @@ public class DefectController {
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 
-            List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
-            return ResponseEntity.ok(ApiResponse.success(list));
+        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(list));
     }
 
     @Operation(summary = "Get defect proposal details")
@@ -119,7 +136,7 @@ public class DefectController {
 
     @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('defect.revise')")
+    @PreAuthorize("hasAuthority('defect.edit')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -169,16 +186,17 @@ public class DefectController {
     @PreAuthorize("hasAuthority('defect.import')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> importDefect(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<DefectResponse> data = defectService.importDefect(currentUser, file);
-        return ResponseEntity.ok(ApiResponse.success( data));
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
+
     @Operation(summary = "Submit defect proposal for approval", description = "Change defect proposal status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_sample_proposal.submit')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             HttpServletRequest request) {
-            defectProposalService.submitDefectProposalForApproval(id, currentUser, request);
+        defectProposalService.submitDefectProposalForApproval(id, currentUser, request);
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
 }
