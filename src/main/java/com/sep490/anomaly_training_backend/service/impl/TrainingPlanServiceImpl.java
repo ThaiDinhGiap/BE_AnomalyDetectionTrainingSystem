@@ -8,8 +8,8 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
-import com.sep490.anomaly_training_backend.dto.response.EmployeePlanResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
@@ -276,7 +276,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public List<EmployeePlanResponse> getEmployeesNotInPlan(Long planId) {
+    public List<PrioritizedEmployeeResponse> getEmployeesNotInPlan(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
@@ -297,12 +297,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         return allEmployees.stream()
                 .filter(emp -> !inPlanIds.contains(emp.getId()))
-                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<EmployeePlanResponse> getEmployeesInTeams(Long planId) {
+    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
@@ -320,7 +320,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
 
         return allEmployees.stream()
-                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
@@ -1084,7 +1084,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 ));
     }
 
-    private EmployeePlanResponse buildEmployeePlanResponse(
+    private PrioritizedEmployeeResponse buildPrioritizedEmployeeResponsee(
             Employee emp,
             Map<Long, PrioritySnapshotDetail> snapshotMap,
             Map<Long, TrainingResultDetail> lastTrainingMap,
@@ -1093,7 +1093,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         PrioritySnapshotDetail snapshot = snapshotMap.get(emp.getId());
         TrainingResultDetail lastTraining = lastTrainingMap.get(emp.getId());
 
-        return EmployeePlanResponse.builder()
+        return PrioritizedEmployeeResponse.builder()
                 .id(emp.getId())
                 .employeeCode(emp.getEmployeeCode())
                 .fullName(emp.getFullName())

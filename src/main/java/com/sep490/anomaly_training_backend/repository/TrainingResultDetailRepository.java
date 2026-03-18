@@ -74,4 +74,9 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
                 )
             """)
     List<TrainingResultDetail> findLatestByEmployeeIds(@Param("employeeIds") List<Long> employeeIds);
+
+
+    @Query("SELECT DISTINCT trd.employee.id FROM TrainingResultDetail trd " +
+            "WHERE trd.trainingResult.id = :resultId AND trd.deleteFlag = false")
+    List<Long> findEmployeeIdsByTrainingResultId(@Param("resultId") Long resultId);
 }

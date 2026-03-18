@@ -5,7 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeePlanResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
@@ -165,7 +165,7 @@ public class TrainingPlanController {
             description = "Returns list of employees in the same group who have not been added to this plan.")
     @GetMapping("/{planId}/employees-not-in-plan")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<EmployeePlanResponse>> getEmployeesNotInPlan(
+    public ResponseEntity<List<PrioritizedEmployeeResponse>> getEmployeesNotInPlan(
             @Parameter(description = "Plan ID") @PathVariable Long planId) {
         return ResponseEntity.ok(trainingPlanService.getEmployeesNotInPlan(planId));
     }
@@ -174,7 +174,7 @@ public class TrainingPlanController {
             description = "Returns list of all active employees in the same team as the plan.")
     @GetMapping("/{planId}/employees")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<EmployeePlanResponse>> getEmployeesInTeam(
+    public ResponseEntity<List<PrioritizedEmployeeResponse>> getEmployeesInTeam(
             @Parameter(description = "Plan ID") @PathVariable Long planId) {
         return ResponseEntity.ok(trainingPlanService.getEmployeesInTeams(planId));
     }

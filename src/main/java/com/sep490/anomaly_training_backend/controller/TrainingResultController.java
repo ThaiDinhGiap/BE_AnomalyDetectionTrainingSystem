@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
@@ -152,6 +153,15 @@ public class TrainingResultController {
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<ProductLineResponse>> getMyProductLines() {
         return ResponseEntity.ok(trainingResultService.getMyProductLines());
+    }
+
+    @Operation(summary = "Get all employees in result's team",
+            description = "Returns list of all active employees in the same team as the result.")
+    @GetMapping("/{resultId}/employees")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<PrioritizedEmployeeResponse>> getEmployeesInTeam(
+            @Parameter(description = "Result ID") @PathVariable Long resultId) {
+        return ResponseEntity.ok(trainingResultService.getEmployeesInTeams(resultId));
     }
 
     @Operation(summary = "Get training results by product line (dây chuyền)",
