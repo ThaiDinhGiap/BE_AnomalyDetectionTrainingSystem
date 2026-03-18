@@ -13,7 +13,7 @@ public class TrainingTaskMissed {
     private Long id;
     private String employeeName;
     private String employeeCode;
-    private String processName;
+    private String employeeProcesses; // Changed to String
     private String date;
     private String reason;
     private String action;
