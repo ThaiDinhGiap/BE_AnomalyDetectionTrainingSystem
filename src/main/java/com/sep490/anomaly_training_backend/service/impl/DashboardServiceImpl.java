@@ -227,7 +227,6 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public TrainingTaskData getTrainingTasks(Long lineId) {
         LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
@@ -237,54 +236,78 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(TrainingPlan::getId)
                 .toList();
 
-        // Today's training tasks
         List<TrainingTaskToday> todayList = new ArrayList<>();
-        // Failed yesterday
         List<TrainingTaskFailed> failedList = new ArrayList<>();
-        // Missed
         List<TrainingTaskMissed> missedList = new ArrayList<>();
 
+        List<TrainingPlanDetail> allDetails = new ArrayList<>();
         for (Long planId : activePlanIds) {
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository
-                    .findByTrainingPlanIdAndDeleteFlagFalse(planId);
+            allDetails.addAll(trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId));
+        }
 
-            for (TrainingPlanDetail d : details) {
-                Employee emp = d.getEmployee();
-                String empName = emp != null ? emp.getFullName() : "N/A";
-                String empCode = emp != null ? emp.getEmployeeCode() : "N/A";
+        // --- Optimized Skill Fetching for Today and Missed Tasks ---
+        List<Long> employeeIdsForPlanDetails = allDetails.stream()
+                .filter(d -> d.getStatus() == TrainingPlanDetailStatus.PENDING &&
+                        (today.equals(d.getPlannedDate()) || d.getPlannedDate().isBefore(today)))
+                .map(d -> d.getEmployee().getId())
+                .distinct()
+                .toList();
 
-                // Today's tasks
-                if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
-                    todayList.add(TrainingTaskToday.builder()
-                            .id(d.getId())
-                            .employeeName(empName)
-                            .employeeCode(empCode)
-                            .processName("")
-                            .type("Định kỳ")
-                            .timeSlot("")
-                            .build());
-                }
+        Map<Long, List<TrainingTaskToday.ProcessInfo>> skillsByEmployeeId = new HashMap<>();
+        if (!employeeIdsForPlanDetails.isEmpty()) {
+            List<EmployeeSkill> allSkills = employeeSkillRepository.findByEmployeeIdIn(employeeIdsForPlanDetails);
+            skillsByEmployeeId = allSkills.stream()
+                    .collect(Collectors.groupingBy(
+                            skill -> skill.getEmployee().getId(),
+                            Collectors.mapping(skill -> {
+                                TrainingTaskToday.ProcessInfo processInfo = new TrainingTaskToday.ProcessInfo();
+                                processInfo.setId(skill.getProcess().getId());
+                                processInfo.setName(skill.getProcess().getName());
+                                return processInfo;
+                            }, Collectors.toList())
+                    ));
+        }
+        // --- End Optimization ---
 
-                // Missed (past & still PENDING)
-                if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
-                        && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
-                    missedList.add(TrainingTaskMissed.builder()
-                            .id(d.getId())
-                            .employeeName(empName)
-                            .employeeCode(empCode)
-                            .processName("")
-                            .date(d.getPlannedDate().format(DateTimeFormatter.ofPattern("dd/MM")))
-                            .reason("Chưa thực hiện")
-                            .action("Xếp lịch lại")
-                            .build());
-                }
+        for (TrainingPlanDetail d : allDetails) {
+            Employee emp = d.getEmployee();
+            String empName = emp != null ? emp.getFullName() : "N/A";
+            String empCode = emp != null ? emp.getEmployeeCode() : "N/A";
+
+            // Today's tasks
+            if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                List<TrainingTaskToday.ProcessInfo> processInfos = skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList());
+
+                todayList.add(TrainingTaskToday.builder()
+                        .id(d.getId())
+                        .employeeName(empName)
+                        .employeeCode(empCode)
+                        .employeeProcesses(processInfos)
+                        .timeSlot(String.valueOf(d.getPlannedDate()))
+                        .build());
+            }
+
+            // Missed (past & still PENDING)
+            if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
+                    && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                List<TrainingTaskToday.ProcessInfo> processInfos = skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList());
+
+                missedList.add(TrainingTaskMissed.builder()
+                        .id(d.getId())
+                        .employeeName(empName)
+                        .employeeCode(empCode)
+                        .employeeProcesses(processInfos)
+                        .date(d.getPlannedDate().format(DateTimeFormatter.ofPattern("dd/MM")))
+                        .reason("Chưa thực hiện")
+                        .action("Xếp lịch lại")
+                        .build());
             }
         }
 
-        // Failed yesterday — from result details
+        // Failed trainings
         List<TrainingResultDetail> allFailed = trainingResultDetailRepository.findFailedTrainings(lineId);
         for (TrainingResultDetail rd : allFailed) {
-            if (rd.getActualDate() != null && rd.getActualDate().equals(yesterday)) {
+            if (rd.getActualDate() != null) {
                 Employee emp = rd.getEmployee();
                 failedList.add(TrainingTaskFailed.builder()
                         .id(rd.getId())
@@ -293,7 +316,7 @@ public class DashboardServiceImpl implements DashboardService {
                         .processName(rd.getProcess() != null
                                 ? rd.getProcess().getCode() + " (" + rd.getProcess().getName() + ")"
                                 : "")
-                        .date(yesterday.format(DateTimeFormatter.ofPattern("dd/MM")))
+                        .date(rd.getActualDate().format(DateTimeFormatter.ofPattern("dd/MM")))
                         .reason(rd.getNote() != null ? rd.getNote() : "Không đạt thực hành")
                         .action("Đào tạo lại")
                         .build());
