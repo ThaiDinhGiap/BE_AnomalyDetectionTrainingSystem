@@ -49,6 +49,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -305,22 +306,35 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
-        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+
+        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
             if (lineId != null) {
                 return mapToListResponse(
-                        trainingResultRepository.findByLineIdAndDeleteFlagFalseForSupervisorAndManager(lineId));
+                        trainingResultRepository.findAllByLineIdForFinalInspection(lineId));
             } else {
                 return mapToListResponse(
-                        trainingResultRepository.findByDeleteFlagFalseForSupervisorAndManager());
+                        trainingResultRepository.findAllForFinalInspection());
+            }
+        }
+
+        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findAllByLineIdExcludingStatuses(lineId, excludedStatuses));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findAllExcludingStatuses(excludedStatuses));
             }
         }
 
         if (lineId != null) {
             return mapToListResponse(
-                    trainingResultRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId));
+                    trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId));
         } else {
             return mapToListResponse(
-                    trainingResultRepository.findByCreatedByAndDeleteFlagFalse(currentUser.getUsername()));
+                    trainingResultRepository.findAllByCreatedBy(currentUser.getUsername()));
         }
     }
 
