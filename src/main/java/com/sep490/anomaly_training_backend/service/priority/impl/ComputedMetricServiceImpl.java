@@ -127,7 +127,8 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
         // Tạm thời return null - cần bổ sung
 
         log.warn("PROPERTY method not fully implemented for: {}", propertyPath);
-        return null;
+        throw new AppException(ErrorCode.METRIC_NOT_IMPLEMENTED,
+                "PROPERTY method not implemented for: " + propertyPath);
     }
 
     /**

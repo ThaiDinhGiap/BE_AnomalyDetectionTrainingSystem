@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -51,7 +52,7 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
     public TrainingSampleReviewPolicyResponse createNewReviewPolicy(TrainingSampleReviewPolicyRequest request) {
         ProductLine productLine = productLineRepository.findById(request.getProductLineId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
-
+        List<TrainingSampleReviewConfig> configList = new ArrayList<>();
         TrainingSampleReviewPolicy entity = new TrainingSampleReviewPolicy();
         entity.setProductLine(productLine);
         entity.setDescription(request.getDescription());
@@ -62,8 +63,10 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
             config.setTriggerDay(config.getTriggerDay());
             config.setTriggerMonth(config.getTriggerMonth());
             config.setDueDays(config.getDueDays());
-            entity.getReviewConfigs().add(config);
+            config.setReviewPolicy(entity);
+            configList.add(config);
         }
+        entity.setReviewConfigs(configList);
         entity.setPolicyCode(generateReviewPolicyCode());
         List<TrainingSampleReviewPolicy> listPolicy = trainingSampleReviewPolicyRepository.findByProductLineIdAndStatusAndDeleteFlagFalse(request.getProductLineId(), PolicyStatus.ACTIVE);
         for (TrainingSampleReviewPolicy policy : listPolicy) {

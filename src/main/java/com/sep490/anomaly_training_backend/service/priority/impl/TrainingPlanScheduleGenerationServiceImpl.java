@@ -77,8 +77,8 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                 prioritySnapshotDetailRepository.findBySnapshotIdOrderByTierOrderAscSortRankAsc(prioritySnapshotId);
 
         if (priorityDetails.isEmpty()) {
-            throw new AppException(ErrorCode.PRIORITY_SNAPSHOT_NOT_FOUND,
-                    "No employees in priority snapshot: " + prioritySnapshotId);
+            log.warn("No employees in priority snapshot: {} — returning plan with empty schedule", prioritySnapshotId);
+            return trainingPlan;
         }
 
         // 3. Load factory calendar
