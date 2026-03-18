@@ -43,6 +43,9 @@ import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -429,8 +432,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public TrainingResultDetailResponse getTrainingResultDetail(Long id) {
-        TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
+    public TrainingResultDetailResponse getTrainingResultDetail(Long id, Pageable pageable) {
+        TrainingResult result = trainingResultRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
         TrainingResultDetailResponse response = new TrainingResultDetailResponse();
@@ -458,107 +461,108 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             response.setTrainingPlanTitle(result.getTrainingPlan().getTitle());
         }
 
-        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = new ArrayList<>();
-
-        for (TrainingResultDetail detail : result.getDetails()) {
-            TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
-
-            row.setId(detail.getId());
-            row.setPlannedDate(detail.getPlannedDate());
-            row.setActualDate(detail.getActualDate());
-            row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
-
-            TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
-            if (planDetail != null) {
-                row.setTrainingPlanDetailId(planDetail.getId());
-                row.setBatchId(planDetail.getBatchId());
-
-                if (planDetail.getEmployee() != null) {
-                    row.setEmployeeId(planDetail.getEmployee().getId());
-                    row.setEmployeeName(planDetail.getEmployee().getFullName());
-                    row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
-                }
-            }
-
-            if (detail.getEmployee() != null) {
-                row.setEmployeeId(detail.getEmployee().getId());
-                row.setEmployeeName(detail.getEmployee().getFullName());
-                row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
-            }
-
-            if (detail.getProcess() != null) {
-                row.setProcessId(detail.getProcess().getId());
-                row.setProcessCode(detail.getProcess().getCode());
-                row.setProcessName(detail.getProcess().getName());
-                if (detail.getClassification() != null) {
-                    row.setClassification(String.valueOf(detail.getClassification()));
-                } else if (detail.getProcess().getClassification() != null) {
-                    row.setClassification("C" + detail.getProcess().getClassification().getValue());
-                }
-                if (detail.getCycleTimeStandard() != null) {
-                    row.setStandardTime(detail.getCycleTimeStandard());
-                } else if (detail.getProcess().getStandardTimeJt() != null) {
-                    row.setStandardTime(detail.getProcess().getStandardTimeJt());
-                }
-            }
-
-            if (detail.getProduct() != null) {
-                row.setProductId(detail.getProduct().getId());
-                row.setProductCode(detail.getProduct().getCode());
-                row.setProductName(detail.getProduct().getName());
-            }
-
-            if (detail.getTrainingSample() != null) {
-                row.setTrainingSampleId(detail.getTrainingSample().getId());
-                row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
-            }
-
-            if (detail.getSampleCode() != null) {
-                row.setSampleCode(detail.getSampleCode());
-            } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
-                row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
-            }
-
-            row.setTrainingTopic(detail.getTrainingTopic());
-
-            if (row.getClassification() == null && detail.getClassification() != null) {
-                row.setClassification(String.valueOf(detail.getClassification()));
-            }
-            if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
-                row.setStandardTime(detail.getCycleTimeStandard());
-            }
-
-            row.setTimeIn(detail.getTimeIn());
-            row.setTimeStartOp(detail.getTimeStartOp());
-            row.setTimeOut(detail.getTimeOut());
-            row.setDetectionTime(detail.getDetectionTime());
-
-            row.setIsPass(detail.getIsPass());
-            row.setIsRetrained(detail.getIsRetrained());
-            row.setNote(detail.getNote());
-
-            if (detail.getSignatureProIn() != null) {
-                row.setSignatureProInId(detail.getSignatureProIn().getId());
-                row.setSignatureProInName(detail.getSignatureProIn().getFullName());
-            }
-            if (detail.getSignatureFiIn() != null) {
-                row.setSignatureFiInId(detail.getSignatureFiIn().getId());
-                row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
-            }
-            if (detail.getSignatureProOut() != null) {
-                row.setSignatureProOutId(detail.getSignatureProOut().getId());
-                row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
-            }
-            if (detail.getSignatureFiOut() != null) {
-                row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
-                row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
-            }
-
-            detailDtos.add(row);
-        }
+        Page<TrainingResultDetail> detailPage = detailRepository.findByTrainingResultId(id, pageable);
+        Page<TrainingResultDetailResponse.DetailRowDto> detailDtos = detailPage.map(this::mapToDetailRowDto);
 
         response.setDetails(detailDtos);
         return response;
+    }
+
+    private TrainingResultDetailResponse.DetailRowDto mapToDetailRowDto(TrainingResultDetail detail) {
+        TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
+
+        row.setId(detail.getId());
+        row.setPlannedDate(detail.getPlannedDate());
+        row.setActualDate(detail.getActualDate());
+        row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
+
+        TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
+        if (planDetail != null) {
+            row.setTrainingPlanDetailId(planDetail.getId());
+            row.setBatchId(planDetail.getBatchId());
+
+            if (planDetail.getEmployee() != null) {
+                row.setEmployeeId(planDetail.getEmployee().getId());
+                row.setEmployeeName(planDetail.getEmployee().getFullName());
+                row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
+            }
+        }
+
+        if (detail.getEmployee() != null) {
+            row.setEmployeeId(detail.getEmployee().getId());
+            row.setEmployeeName(detail.getEmployee().getFullName());
+            row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
+        }
+
+        if (detail.getProcess() != null) {
+            row.setProcessId(detail.getProcess().getId());
+            row.setProcessCode(detail.getProcess().getCode());
+            row.setProcessName(detail.getProcess().getName());
+            if (detail.getClassification() != null) {
+                row.setClassification(String.valueOf(detail.getClassification()));
+            } else if (detail.getProcess().getClassification() != null) {
+                row.setClassification("C" + detail.getProcess().getClassification().getValue());
+            }
+            if (detail.getCycleTimeStandard() != null) {
+                row.setStandardTime(detail.getCycleTimeStandard());
+            } else if (detail.getProcess().getStandardTimeJt() != null) {
+                row.setStandardTime(detail.getProcess().getStandardTimeJt());
+            }
+        }
+
+        if (detail.getProduct() != null) {
+            row.setProductId(detail.getProduct().getId());
+            row.setProductCode(detail.getProduct().getCode());
+            row.setProductName(detail.getProduct().getName());
+        }
+
+        if (detail.getTrainingSample() != null) {
+            row.setTrainingSampleId(detail.getTrainingSample().getId());
+            row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
+        }
+
+        if (detail.getSampleCode() != null) {
+            row.setSampleCode(detail.getSampleCode());
+        } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
+            row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
+        }
+
+        row.setTrainingTopic(detail.getTrainingTopic());
+
+        if (row.getClassification() == null && detail.getClassification() != null) {
+            row.setClassification(String.valueOf(detail.getClassification()));
+        }
+        if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
+            row.setStandardTime(detail.getCycleTimeStandard());
+        }
+
+        row.setTimeIn(detail.getTimeIn());
+        row.setTimeStartOp(detail.getTimeStartOp());
+        row.setTimeOut(detail.getTimeOut());
+        row.setDetectionTime(detail.getDetectionTime());
+
+        row.setIsPass(detail.getIsPass());
+        row.setIsRetrained(detail.getIsRetrained());
+        row.setNote(detail.getNote());
+
+        if (detail.getSignatureProIn() != null) {
+            row.setSignatureProInId(detail.getSignatureProIn().getId());
+            row.setSignatureProInName(detail.getSignatureProIn().getFullName());
+        }
+        if (detail.getSignatureFiIn() != null) {
+            row.setSignatureFiInId(detail.getSignatureFiIn().getId());
+            row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
+        }
+        if (detail.getSignatureProOut() != null) {
+            row.setSignatureProOutId(detail.getSignatureProOut().getId());
+            row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
+        }
+        if (detail.getSignatureFiOut() != null) {
+            row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
+            row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
+        }
+
+        return row;
     }
 
     @Override

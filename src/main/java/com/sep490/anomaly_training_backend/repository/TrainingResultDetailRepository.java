@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Repository
 public interface TrainingResultDetailRepository extends JpaRepository<TrainingResultDetail, Long> {
+
+    Page<TrainingResultDetail> findByTrainingResultId(Long trainingResultId, Pageable pageable);
 
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +

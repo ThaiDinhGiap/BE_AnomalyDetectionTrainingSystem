@@ -14,6 +14,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessRes
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface TrainingResultService {
 
     List<ProductLineResponse> getMyProductLines();
 
-    TrainingResultDetailResponse getTrainingResultDetail(Long id);
+    TrainingResultDetailResponse getTrainingResultDetail(Long id, Pageable pageable);
 
     void submitResult(Long resultId);
 
