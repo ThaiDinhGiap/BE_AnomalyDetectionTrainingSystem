@@ -24,6 +24,7 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
 
     @Query("SELECT tr FROM TrainingResult tr WHERE tr.deleteFlag = false")
     List<TrainingResult> findAllForFinalInspection();
+
     @Query("SELECT tr FROM TrainingResult tr " +
             "WHERE tr.line.id = :lineId " +
             "AND tr.status NOT IN :excludedStatuses " +
@@ -37,6 +38,7 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
             "AND tr.deleteFlag = false")
     List<TrainingResult> findAllExcludingStatuses(
             @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
     @Query("SELECT tr FROM TrainingResult tr " +
             "WHERE tr.createdBy = :createdBy " +
             "AND tr.line.id = :lineId " +
@@ -90,4 +92,57 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
               AND pl.deleteFlag = false
             """)
     List<TrainingResult> findByDeleteFlagFalseForSupervisorAndManager();
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "JOIN tr.line.group.section s " +
+            "WHERE s.manager.id = :managerId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByManager(
+            @Param("managerId") Long managerId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "JOIN tr.line.group.section s " +
+            "WHERE s.manager.id = :managerId " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByManagerAndLineId(
+            @Param("managerId") Long managerId,
+            @Param("lineId") Long lineId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "JOIN tr.team t " +
+            "WHERE t.teamLeader.id = :supervisorId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllBySupervisor(
+            @Param("supervisorId") Long supervisorId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "JOIN tr.team t " +
+            "WHERE t.teamLeader.id = :supervisorId " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllBySupervisorAndLineId(
+            @Param("supervisorId") Long supervisorId,
+            @Param("lineId") Long lineId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.line.group.id IN :groupIds " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByGroupIds(@Param("groupIds") List<Long> groupIds);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.line.group.id IN :groupIds " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByGroupIdsAndLineId(
+            @Param("groupIds") List<Long> groupIds,
+            @Param("lineId") Long lineId);
 }
