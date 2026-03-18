@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.service.sample;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.model.User;

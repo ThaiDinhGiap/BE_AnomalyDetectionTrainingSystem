@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
-import com.sep490.anomaly_training_backend.dto.response.ApprovalHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;

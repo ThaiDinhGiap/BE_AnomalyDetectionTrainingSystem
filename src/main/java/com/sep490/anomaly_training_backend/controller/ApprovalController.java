@@ -1,12 +1,18 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
+import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.RequiredActionResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalMetadataService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalTimelineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +36,8 @@ public class ApprovalController {
     private final ApprovalService approvalService;
     private final ApprovalQueryService approvalQueryService;
     private final ApprovalMetadataService approvalMetadataService;
+    private final ApprovalTimelineService approvalTimelineService;
+
     // ==================== PENDING LIST ====================
 
     @GetMapping("/pending")
@@ -108,6 +116,13 @@ public class ApprovalController {
         return ResponseEntity.ok(ApiResponse.success(actions));
     }
 
+    @GetMapping("/{entityType}/{entityId}")
+    public ResponseEntity<ApprovalTimelineResponse> getTimeline(
+            @PathVariable ApprovalEntityType entityType,
+            @PathVariable Long entityId) {
+
+        return ResponseEntity.ok(approvalTimelineService.getTimeline(entityType, entityId));
+    }
 
     // ==================== HELPER ====================
 

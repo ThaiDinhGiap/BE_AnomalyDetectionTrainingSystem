@@ -31,4 +31,20 @@ public interface ApprovalActionRepository extends JpaRepository<ApprovalActionLo
     List<ApprovalActionLog> findByPerformedByUserIdOrderByPerformedAtDesc(
             @Param("userId") Long userId,
             Pageable pageable);
+
+    @Query("""
+            SELECT MAX(a.entityVersion)
+            FROM ApprovalActionLog a
+            WHERE a.entityType = :entityType
+              AND a.entityId   = :entityId
+              AND a.deleteFlag = false
+            """)
+    Optional<Integer> findMaxVersionByEntityTypeAndEntityId(
+            @Param("entityType") ApprovalEntityType entityType,
+            @Param("entityId") Long entityId);
+
+    List<ApprovalActionLog> findByEntityTypeAndEntityIdAndEntityVersionAndDeleteFlagFalseOrderByStepOrderAsc(
+            ApprovalEntityType entityType,
+            Long entityId,
+            Integer entityVersion);
 }

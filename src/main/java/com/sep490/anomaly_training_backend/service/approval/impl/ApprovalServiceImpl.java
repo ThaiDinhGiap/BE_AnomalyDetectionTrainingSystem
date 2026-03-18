@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
@@ -8,7 +8,13 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.UserRole;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Approvable;
+import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
+import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.RejectReason;
+import com.sep490.anomaly_training_backend.model.RequiredAction;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
@@ -216,7 +222,8 @@ public class ApprovalServiceImpl implements ApprovalService {
         return switch (status) {
             case WAITING_SV -> UserRole.ROLE_SUPERVISOR;
             case WAITING_MANAGER -> UserRole.ROLE_MANAGER;
-            default -> throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Invalid status for approve/reject operation: " + status);
+            default ->
+                    throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Invalid status for approve/reject operation: " + status);
         };
     }
 
