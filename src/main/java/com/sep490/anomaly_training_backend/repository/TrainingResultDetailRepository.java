@@ -17,7 +17,7 @@ import java.util.List;
 public interface TrainingResultDetailRepository extends JpaRepository<TrainingResultDetail, Long> {
 
     Page<TrainingResultDetail> findByTrainingResultId(Long trainingResultId, Pageable pageable);
-
+    List<TrainingResultDetail> findByTrainingResultId(Long trainingResultId);
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +
             "AND (:teamId IS NULL OR r.team.id = :teamId) " +

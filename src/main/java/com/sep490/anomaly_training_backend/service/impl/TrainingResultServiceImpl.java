@@ -313,6 +313,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
 
+        List<TrainingResult> results;
+
         if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
             List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
             if (teams.isEmpty()) {
@@ -320,49 +322,40 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
             List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
             if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
+                results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
             } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIds(groupIds));
+                results = trainingResultRepository.findAllByGroupIds(groupIds);
             }
-        }
-
-        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
-
-        if (currentUser.hasRole("ROLE_MANAGER")) {
-            if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses));
-            } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses));
-            }
-        }
-
-        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
-            List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
-            if (groups.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
-
-            if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
-            } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIds(groupIds));
-            }
-        }
-
-        if (lineId != null) {
-            return mapToListResponse(
-                    trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId));
         } else {
-            return mapToListResponse(
-                    trainingResultRepository.findAllByCreatedBy(currentUser.getUsername()));
+            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+            if (currentUser.hasRole("ROLE_MANAGER")) {
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses);
+                } else {
+                    results = trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses);
+                }
+            } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+                List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+                if (groups.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
+                } else {
+                    results = trainingResultRepository.findAllByGroupIds(groupIds);
+                }
+            } else {
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId);
+                } else {
+                    results = trainingResultRepository.findAllByCreatedBy(currentUser.getUsername());
+                }
+            }
         }
+        return mapToListResponse(results);
     }
 
     @Override
@@ -426,6 +419,27 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             } else {
                 dto.setMonthList("");
             }
+
+            // Fetch details for the current TrainingResult to calculate progress statistics
+            List<TrainingResultDetail> details = detailRepository.findByTrainingResultId(entity.getId());
+
+            long totalItems = details.size();
+            long totalPass = details.stream().filter(d -> d.getIsPass() != null && d.getIsPass()).count();
+            long totalFail = details.stream().filter(d -> d.getIsPass() != null && !d.getIsPass()).count();
+            long totalNotYetTrained = details.stream().filter(d -> d.getIsPass() == null).count();
+
+            BigDecimal passRate = BigDecimal.ZERO;
+            if (totalPass + totalFail > 0) { // Only calculate if there are any trained items
+                passRate = BigDecimal.valueOf(totalPass)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(totalPass + totalFail), 2, RoundingMode.HALF_UP);
+            }
+
+            dto.setTotalItems(totalItems);
+            dto.setTotalPass(totalPass);
+            dto.setTotalFail(totalFail);
+            dto.setTotalNotYetTrained(totalNotYetTrained);
+            dto.setPassRate(passRate);
 
             return dto;
         }).collect(Collectors.toList());
