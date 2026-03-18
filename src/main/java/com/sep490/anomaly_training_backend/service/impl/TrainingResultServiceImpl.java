@@ -52,6 +52,9 @@ import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -328,6 +331,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
 
+        List<TrainingResult> results;
+
         if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
             List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
             if (teams.isEmpty()) {
@@ -335,49 +340,40 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
             List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
             if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
+                results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
             } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIds(groupIds));
+                results = trainingResultRepository.findAllByGroupIds(groupIds);
             }
-        }
-
-        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
-
-        if (currentUser.hasRole("ROLE_MANAGER")) {
-            if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses));
-            } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses));
-            }
-        }
-
-        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
-            List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
-            if (groups.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
-
-            if (lineId != null) {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId));
-            } else {
-                return mapToListResponse(
-                        trainingResultRepository.findAllByGroupIds(groupIds));
-            }
-        }
-
-        if (lineId != null) {
-            return mapToListResponse(
-                    trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId));
         } else {
-            return mapToListResponse(
-                    trainingResultRepository.findAllByCreatedBy(currentUser.getUsername()));
+            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+            if (currentUser.hasRole("ROLE_MANAGER")) {
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses);
+                } else {
+                    results = trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses);
+                }
+            } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+                List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+                if (groups.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
+                } else {
+                    results = trainingResultRepository.findAllByGroupIds(groupIds);
+                }
+            } else {
+                if (lineId != null) {
+                    results = trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId);
+                } else {
+                    results = trainingResultRepository.findAllByCreatedBy(currentUser.getUsername());
+                }
+            }
         }
+        return mapToListResponse(results);
     }
 
     @Override
@@ -442,13 +438,34 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 dto.setMonthList("");
             }
 
+            // Fetch details for the current TrainingResult to calculate progress statistics
+            List<TrainingResultDetail> details = detailRepository.findByTrainingResultId(entity.getId());
+
+            long totalItems = details.size();
+            long totalPass = details.stream().filter(d -> d.getIsPass() != null && d.getIsPass()).count();
+            long totalFail = details.stream().filter(d -> d.getIsPass() != null && !d.getIsPass()).count();
+            long totalNotYetTrained = details.stream().filter(d -> d.getIsPass() == null).count();
+
+            BigDecimal passRate = BigDecimal.ZERO;
+            if (totalPass + totalFail > 0) { // Only calculate if there are any trained items
+                passRate = BigDecimal.valueOf(totalPass)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(BigDecimal.valueOf(totalPass + totalFail), 2, RoundingMode.HALF_UP);
+            }
+
+            dto.setTotalItems(totalItems);
+            dto.setTotalPass(totalPass);
+            dto.setTotalFail(totalFail);
+            dto.setTotalNotYetTrained(totalNotYetTrained);
+            dto.setPassRate(passRate);
+
             return dto;
         }).collect(Collectors.toList());
     }
 
     @Override
-    public TrainingResultDetailResponse getTrainingResultDetail(Long id) {
-        TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
+    public TrainingResultDetailResponse getTrainingResultDetail(Long id, Pageable pageable) {
+        TrainingResult result = trainingResultRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
         TrainingResultDetailResponse response = new TrainingResultDetailResponse();
@@ -476,107 +493,108 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             response.setTrainingPlanTitle(result.getTrainingPlan().getTitle());
         }
 
-        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = new ArrayList<>();
-
-        for (TrainingResultDetail detail : result.getDetails()) {
-            TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
-
-            row.setId(detail.getId());
-            row.setPlannedDate(detail.getPlannedDate());
-            row.setActualDate(detail.getActualDate());
-            row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
-
-            TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
-            if (planDetail != null) {
-                row.setTrainingPlanDetailId(planDetail.getId());
-                row.setBatchId(planDetail.getBatchId());
-
-                if (planDetail.getEmployee() != null) {
-                    row.setEmployeeId(planDetail.getEmployee().getId());
-                    row.setEmployeeName(planDetail.getEmployee().getFullName());
-                    row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
-                }
-            }
-
-            if (detail.getEmployee() != null) {
-                row.setEmployeeId(detail.getEmployee().getId());
-                row.setEmployeeName(detail.getEmployee().getFullName());
-                row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
-            }
-
-            if (detail.getProcess() != null) {
-                row.setProcessId(detail.getProcess().getId());
-                row.setProcessCode(detail.getProcess().getCode());
-                row.setProcessName(detail.getProcess().getName());
-                if (detail.getClassification() != null) {
-                    row.setClassification(String.valueOf(detail.getClassification()));
-                } else if (detail.getProcess().getClassification() != null) {
-                    row.setClassification("C" + detail.getProcess().getClassification().getValue());
-                }
-                if (detail.getCycleTimeStandard() != null) {
-                    row.setStandardTime(detail.getCycleTimeStandard());
-                } else if (detail.getProcess().getStandardTimeJt() != null) {
-                    row.setStandardTime(detail.getProcess().getStandardTimeJt());
-                }
-            }
-
-            if (detail.getProduct() != null) {
-                row.setProductId(detail.getProduct().getId());
-                row.setProductCode(detail.getProduct().getCode());
-                row.setProductName(detail.getProduct().getName());
-            }
-
-            if (detail.getTrainingSample() != null) {
-                row.setTrainingSampleId(detail.getTrainingSample().getId());
-                row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
-            }
-
-            if (detail.getSampleCode() != null) {
-                row.setSampleCode(detail.getSampleCode());
-            } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
-                row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
-            }
-
-            row.setTrainingTopic(detail.getTrainingTopic());
-
-            if (row.getClassification() == null && detail.getClassification() != null) {
-                row.setClassification(String.valueOf(detail.getClassification()));
-            }
-            if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
-                row.setStandardTime(detail.getCycleTimeStandard());
-            }
-
-            row.setTimeIn(detail.getTimeIn());
-            row.setTimeStartOp(detail.getTimeStartOp());
-            row.setTimeOut(detail.getTimeOut());
-            row.setDetectionTime(detail.getDetectionTime());
-
-            row.setIsPass(detail.getIsPass());
-            row.setIsRetrained(detail.getIsRetrained());
-            row.setNote(detail.getNote());
-
-            if (detail.getSignatureProIn() != null) {
-                row.setSignatureProInId(detail.getSignatureProIn().getId());
-                row.setSignatureProInName(detail.getSignatureProIn().getFullName());
-            }
-            if (detail.getSignatureFiIn() != null) {
-                row.setSignatureFiInId(detail.getSignatureFiIn().getId());
-                row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
-            }
-            if (detail.getSignatureProOut() != null) {
-                row.setSignatureProOutId(detail.getSignatureProOut().getId());
-                row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
-            }
-            if (detail.getSignatureFiOut() != null) {
-                row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
-                row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
-            }
-
-            detailDtos.add(row);
-        }
+        Page<TrainingResultDetail> detailPage = detailRepository.findByTrainingResultId(id, pageable);
+        Page<TrainingResultDetailResponse.DetailRowDto> detailDtos = detailPage.map(this::mapToDetailRowDto);
 
         response.setDetails(detailDtos);
         return response;
+    }
+
+    private TrainingResultDetailResponse.DetailRowDto mapToDetailRowDto(TrainingResultDetail detail) {
+        TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
+
+        row.setId(detail.getId());
+        row.setPlannedDate(detail.getPlannedDate());
+        row.setActualDate(detail.getActualDate());
+        row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
+
+        TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
+        if (planDetail != null) {
+            row.setTrainingPlanDetailId(planDetail.getId());
+            row.setBatchId(planDetail.getBatchId());
+
+            if (planDetail.getEmployee() != null) {
+                row.setEmployeeId(planDetail.getEmployee().getId());
+                row.setEmployeeName(planDetail.getEmployee().getFullName());
+                row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
+            }
+        }
+
+        if (detail.getEmployee() != null) {
+            row.setEmployeeId(detail.getEmployee().getId());
+            row.setEmployeeName(detail.getEmployee().getFullName());
+            row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
+        }
+
+        if (detail.getProcess() != null) {
+            row.setProcessId(detail.getProcess().getId());
+            row.setProcessCode(detail.getProcess().getCode());
+            row.setProcessName(detail.getProcess().getName());
+            if (detail.getClassification() != null) {
+                row.setClassification(String.valueOf(detail.getClassification()));
+            } else if (detail.getProcess().getClassification() != null) {
+                row.setClassification("C" + detail.getProcess().getClassification().getValue());
+            }
+            if (detail.getCycleTimeStandard() != null) {
+                row.setStandardTime(detail.getCycleTimeStandard());
+            } else if (detail.getProcess().getStandardTimeJt() != null) {
+                row.setStandardTime(detail.getProcess().getStandardTimeJt());
+            }
+        }
+
+        if (detail.getProduct() != null) {
+            row.setProductId(detail.getProduct().getId());
+            row.setProductCode(detail.getProduct().getCode());
+            row.setProductName(detail.getProduct().getName());
+        }
+
+        if (detail.getTrainingSample() != null) {
+            row.setTrainingSampleId(detail.getTrainingSample().getId());
+            row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
+        }
+
+        if (detail.getSampleCode() != null) {
+            row.setSampleCode(detail.getSampleCode());
+        } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
+            row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
+        }
+
+        row.setTrainingTopic(detail.getTrainingTopic());
+
+        if (row.getClassification() == null && detail.getClassification() != null) {
+            row.setClassification(String.valueOf(detail.getClassification()));
+        }
+        if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
+            row.setStandardTime(detail.getCycleTimeStandard());
+        }
+
+        row.setTimeIn(detail.getTimeIn());
+        row.setTimeStartOp(detail.getTimeStartOp());
+        row.setTimeOut(detail.getTimeOut());
+        row.setDetectionTime(detail.getDetectionTime());
+
+        row.setIsPass(detail.getIsPass());
+        row.setIsRetrained(detail.getIsRetrained());
+        row.setNote(detail.getNote());
+
+        if (detail.getSignatureProIn() != null) {
+            row.setSignatureProInId(detail.getSignatureProIn().getId());
+            row.setSignatureProInName(detail.getSignatureProIn().getFullName());
+        }
+        if (detail.getSignatureFiIn() != null) {
+            row.setSignatureFiInId(detail.getSignatureFiIn().getId());
+            row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
+        }
+        if (detail.getSignatureProOut() != null) {
+            row.setSignatureProOutId(detail.getSignatureProOut().getId());
+            row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
+        }
+        if (detail.getSignatureFiOut() != null) {
+            row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
+            row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
+        }
+
+        return row;
     }
 
     @Override
