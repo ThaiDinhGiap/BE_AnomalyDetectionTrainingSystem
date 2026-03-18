@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +24,5 @@ public class TrainingSampleProposalDetailResponse {
     String trainingDescription;
     String note;
     List<String> attachmentUrls;
+    RejectFeedbackJson rejectFeedback;
 }
