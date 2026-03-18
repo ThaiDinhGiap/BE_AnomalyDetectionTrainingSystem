@@ -3,12 +3,7 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
@@ -63,6 +58,13 @@ public class DefectController {
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProcess(@RequestParam("processId") Long processId) {
         List<DefectResponse> list = defectService.getDefectByProcess(processId);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+    @Operation(summary = "Count defect type in product line in each process ")
+    @GetMapping("/count-defect/{productLineId}")
+    @PreAuthorize("hasAuthority('defect.view')")
+    public ResponseEntity<ApiResponse<List<DefectInProcess>>> countDefectInProcess(@PathVariable("productLineId") Long productLineId) {
+        List<DefectInProcess> list = defectService.countDefectInProcess(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 

@@ -2,10 +2,7 @@ package com.sep490.anomaly_training_backend.service.defect.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
-import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
-import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
@@ -158,6 +155,39 @@ public class DefectServiceImpl implements DefectService {
                 .totalDefect((long) totalDefect)
                 .totalTrainingSample((long) totalTrainingSample)
                 .build();
+    }
+
+    @Override
+    public List<DefectInProcess> countDefectInProcess(Long productLineId) {
+        List<Process> processes = processRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
+        List<DefectInProcess> defectsInProcess = new ArrayList<>();
+        for (Process process : processes) {
+            List<Defect> defects = defectRepository.findByProcessIdAndDeleteFlagFalse(process.getId());
+            long totalDefect = defects.size();
+            long totalDefectiveGood = 0;
+            long totalClaim = 0;
+            long totalStartedClaim = 0;
+            for (Defect defect : defects) {
+                if (defect.getDefectType().equals(DefectType.DEFECTIVE_GOODS)){
+                    totalDefectiveGood++;
+                } else if (defect.getDefectType().equals(DefectType.STARTLED_CLAIM)) {
+                    totalStartedClaim++;
+                } else {
+                    totalClaim++;
+                }
+            }
+            DefectInProcess defectInProcess = DefectInProcess.builder()
+                    .processId(process.getId())
+                    .processCode(process.getCode())
+                    .processName(process.getName())
+                    .totalDefects(totalDefect)
+                    .totalDefectiveGood(totalDefectiveGood)
+                    .totalClaim(totalClaim)
+                    .totalStartledClaim(totalStartedClaim)
+                    .build();
+            defectsInProcess.add(defectInProcess);
+        }
+        return defectsInProcess;
     }
 
     private void validateImportFile(MultipartFile file) {

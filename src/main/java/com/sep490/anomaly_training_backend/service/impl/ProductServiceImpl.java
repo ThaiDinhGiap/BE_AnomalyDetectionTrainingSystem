@@ -250,7 +250,7 @@ public class ProductServiceImpl implements ProductService {
             urls.add(attachment.getUrl());
         }
         ProductResponse response = productMapper.toDto(product);
-        response.setAttachmentUrl(urls);
+        response.setAttachmentUrls(urls);
         List<ProcessResponse>  processResponses = product.getProductProcesses()
                 .stream()
                 .filter(pp -> !pp.isDeleteFlag())
@@ -303,7 +303,7 @@ public class ProductServiceImpl implements ProductService {
             for (Attachment attachment : attachments) {
                 urls.add(attachment.getUrl());
             }
-            productItem.setAttachmentUrl(urls);
+            productItem.setAttachmentUrls(urls);
         }
         return responses;
     }
