@@ -26,6 +26,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanDetailRepository trainingPlanDetailRepository;
+    private final TrainingResultRepository trainingResultRepository;
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final DefectRepository defectRepository;
     private final DefectProposalRepository defectProposalRepository;
@@ -34,7 +35,8 @@ public class DashboardServiceImpl implements DashboardService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final TrainingSampleRepository trainingSampleRepository;
 
-    // ======================== Color palette for pie charts ========================
+    // ======================== Color palette for pie charts
+    // ========================
     private static final String[] PIE_COLORS = {
             "#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6",
             "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16"
@@ -54,7 +56,8 @@ public class DashboardServiceImpl implements DashboardService {
         // Get all approved training plans for this line
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> approvedPlanIds = plans.stream()
-                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING || p.getStatus() == ReportStatus.DONE))
+                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING
+                        || p.getStatus() == ReportStatus.DONE))
                 .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
@@ -65,7 +68,8 @@ public class DashboardServiceImpl implements DashboardService {
 
         if (!approvedPlanIds.isEmpty()) {
             for (Long planId : approvedPlanIds) {
-                List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
+                List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                        .findByTrainingPlanIdAndDeleteFlagFalse(planId);
                 for (TrainingPlanDetail d : details) {
                     if (d.getPlannedDate() != null &&
                             !d.getPlannedDate().isBefore(monthStart) &&
@@ -89,7 +93,8 @@ public class DashboardServiceImpl implements DashboardService {
         int todayMiss = 0;
 
         for (Long planId : approvedPlanIds) {
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
                 if (today.equals(d.getPlannedDate())) {
                     todayCount++;
@@ -110,7 +115,8 @@ public class DashboardServiceImpl implements DashboardService {
 
         // Count missed plan details
         for (Long planId : approvedPlanIds) {
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
                 if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
                         && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
@@ -151,11 +157,10 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REJECTED_BY_SV,
-                ReportStatus.REJECTED_BY_MANAGER
-        );
+                ReportStatus.REJECTED_BY_MANAGER);
 
         // Rejected Training Plans
-        if (type == null || "tất cả".equalsIgnoreCase(type) || "Kế hoạch huấn luyện".equalsIgnoreCase(type)) {
+        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Kế hoạch huấn luyện".equalsIgnoreCase(type)) {
             List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
             plans.stream()
                     .filter(p -> rejectedStatuses.contains(p.getStatus()))
@@ -169,8 +174,23 @@ public class DashboardServiceImpl implements DashboardService {
                             .build()));
         }
 
+        // Rejected Training Results
+        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Kết quả huấn luyện".equalsIgnoreCase(type)) {
+            List<TrainingResult> results = trainingResultRepository.findByLineIdAndDeleteFlagFalse(lineId);
+            results.stream()
+                    .filter(r -> rejectedStatuses.contains(r.getStatus()))
+                    .filter(r -> currentUser.equals(r.getCreatedBy()))
+                    .forEach(r -> items.add(RejectedReportItem.builder()
+                            .id(r.getId())
+                            .type("Kết quả huấn luyện")
+                            .title(r.getTitle() != null ? r.getTitle() : "Báo cáo kết quả #" + r.getId())
+                            .description(r.getNote() != null ? r.getNote() : "")
+                            .entityType("TRAINING_RESULT")
+                            .build()));
+        }
+
         // Rejected Defect Proposals
-        if (type == null || "tất cả".equalsIgnoreCase(type) || "Lỗi quá khứ".equalsIgnoreCase(type)) {
+        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Lỗi quá khứ".equalsIgnoreCase(type)) {
             List<DefectProposal> defectProposals = defectProposalRepository.findByProductLineId(lineId);
             defectProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
@@ -185,7 +205,7 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // Rejected Training Sample Proposals
-        if (type == null || "tất cả".equalsIgnoreCase(type) || "Mẫu huấn luyện".equalsIgnoreCase(type)) {
+        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Mẫu huấn luyện".equalsIgnoreCase(type)) {
             List<TrainingSampleProposal> sampleProposals = trainingSampleProposalRepository.findByProductLineId(lineId);
             sampleProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
@@ -225,7 +245,8 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingTaskMissed> missedList = new ArrayList<>();
 
         for (Long planId : activePlanIds) {
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(planId);
 
             for (TrainingPlanDetail d : details) {
                 Employee emp = d.getEmployee();
@@ -269,7 +290,9 @@ public class DashboardServiceImpl implements DashboardService {
                         .id(rd.getId())
                         .employeeName(emp != null ? emp.getFullName() : "N/A")
                         .employeeCode(emp != null ? emp.getEmployeeCode() : "N/A")
-                        .processName(rd.getProcess() != null ? rd.getProcess().getCode() + " (" + rd.getProcess().getName() + ")" : "")
+                        .processName(rd.getProcess() != null
+                                ? rd.getProcess().getCode() + " (" + rd.getProcess().getName() + ")"
+                                : "")
                         .date(yesterday.format(DateTimeFormatter.ofPattern("dd/MM")))
                         .reason(rd.getNote() != null ? rd.getNote() : "Không đạt thực hành")
                         .action("Đào tạo lại")
@@ -291,7 +314,7 @@ public class DashboardServiceImpl implements DashboardService {
         Map<String, Integer> heatmap = new LinkedHashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        
+
         int targetYear = year != null ? year : LocalDate.now().getYear();
 
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
@@ -305,7 +328,8 @@ public class DashboardServiceImpl implements DashboardService {
         Map<LocalDate, Integer> countByDate = new HashMap<>();
 
         for (Long planId : planIds) {
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
                 if (d.getPlannedDate() != null && d.getPlannedDate().getYear() == targetYear) {
                     countByDate.merge(d.getPlannedDate(), 1, Integer::sum);
@@ -345,8 +369,10 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingPlanDetail> allDetails = new ArrayList<>();
 
         for (TrainingPlan plan : plans) {
-            if (plan.getStatus() == ReportStatus.DRAFT) continue;
-            List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            if (plan.getStatus() == ReportStatus.DRAFT)
+                continue;
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
             for (TrainingPlanDetail d : details) {
                 if (d.getPlannedDate() != null &&
                         !d.getPlannedDate().isBefore(monthStart) &&
@@ -359,7 +385,8 @@ public class DashboardServiceImpl implements DashboardService {
         // Get result details for this line
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
         for (TrainingPlan plan : plans) {
-            List<TrainingPlanDetail> planDetails = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            List<TrainingPlanDetail> planDetails = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
             for (TrainingPlanDetail pd : planDetails) {
                 List<TrainingResultDetail> rds = trainingResultDetailRepository.findByTrainingPlanDetailId(pd.getId());
                 resultDetails.addAll(rds);
@@ -442,7 +469,8 @@ public class DashboardServiceImpl implements DashboardService {
         return processes.stream()
                 .sorted(Comparator.comparing(Process::getCode))
                 .map(process -> {
-                    List<EmployeeSkill> skills = employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(process.getId());
+                    List<EmployeeSkill> skills = employeeSkillRepository
+                            .findByProcessIdAndDeleteFlagFalse(process.getId());
 
                     List<String> validNames = new ArrayList<>();
                     List<String> expiringNames = new ArrayList<>();
@@ -499,8 +527,7 @@ public class DashboardServiceImpl implements DashboardService {
                     Map<String, List<Defect>> byDescription = defects.stream()
                             .collect(Collectors.groupingBy(
                                     d -> d.getDefectDescription() + "|" +
-                                            (d.getProcess() != null ? d.getProcess().getName() : "N/A")
-                            ));
+                                            (d.getProcess() != null ? d.getProcess().getName() : "N/A")));
 
                     List<DefectErrorDetail> errors = byDescription.entrySet().stream()
                             .map(e -> {
@@ -548,7 +575,8 @@ public class DashboardServiceImpl implements DashboardService {
         return result;
     }
 
-    // ======================== 10. Training Samples by Process ========================
+    // ======================== 10. Training Samples by Process
+    // ========================
 
     @Override
     public List<StageDistribution> getSampleByProcess(Long lineId) {
