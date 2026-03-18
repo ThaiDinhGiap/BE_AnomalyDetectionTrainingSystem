@@ -106,7 +106,10 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             // create
             if (item.getDefectProposalDetailId() == null) {
                 DefectProposalDetail newEntity = mapToEntity(item, proposal, currentUser);
-                defectProposalDetailRepository.save(newEntity);
+                newEntity = defectProposalDetailRepository.save(newEntity);
+                if (item.getImages() != null && !item.getImages().isEmpty()) {
+                    attachmentService.uploadAttachments(item.getImages(), "DEFECT_PROPOSAL", newEntity.getId(), currentUser.getUsername());
+                }
                 continue;
             }
             requestDetailIds.add(item.getDefectProposalDetailId());
@@ -324,9 +327,6 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         entity.setQuantity(request.getQuantity());
         entity.setConclusion(request.getConclusion());
 
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            attachmentService.uploadAttachments(request.getImages(), "DEFECT_PROPOSAL", entity.getId(), user.getUsername());
-        }
 
         entity.setDeleteFlag(false);
 
