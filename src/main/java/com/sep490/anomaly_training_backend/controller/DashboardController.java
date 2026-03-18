@@ -37,7 +37,7 @@ public class DashboardController {
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<RejectedReportItem>>> getRejectedReports(
             @RequestParam("lineId") Long lineId,
-            @RequestParam(value = "type", required = false) String type) {
+            @RequestParam(value = "type", required = false) Integer type) {
         List<RejectedReportItem> data = dashboardService.getRejectedReports(lineId, type);
         return ResponseEntity.ok(ApiResponse.success(data));
     }

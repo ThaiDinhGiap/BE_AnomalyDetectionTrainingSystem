@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RejectedReportItem {
     private Long id;
-    private String type;        // "Kế hoạch huấn luyện", "Kết quả huấn luyện", "Lỗi quá khứ", "Mẫu huấn luyện"
+    private Integer type;       // 1: Kế hoạch, 2: Kết quả, 3: Lỗi, 4: Mẫu
     private String title;
     private String description;
     private String entityType;  // TRAINING_PLAN, TRAINING_RESULT, DEFECT_PROPOSAL, TRAINING_SAMPLE_PROPOSAL

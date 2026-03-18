@@ -9,7 +9,7 @@ public interface DashboardService {
 
     KpiData getKpi(Long lineId, Integer year, Integer month);
 
-    List<RejectedReportItem> getRejectedReports(Long lineId, String type);
+    List<RejectedReportItem> getRejectedReports(Long lineId, Integer type);
 
     TrainingTaskData getTrainingTasks(Long lineId);
 

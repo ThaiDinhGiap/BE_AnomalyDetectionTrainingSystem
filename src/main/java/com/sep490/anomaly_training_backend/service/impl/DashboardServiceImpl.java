@@ -151,7 +151,7 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 2. Rejected Reports ========================
 
     @Override
-    public List<RejectedReportItem> getRejectedReports(Long lineId, String type) {
+    public List<RejectedReportItem> getRejectedReports(Long lineId, Integer type) {
         List<RejectedReportItem> items = new ArrayList<>();
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -160,14 +160,14 @@ public class DashboardServiceImpl implements DashboardService {
                 ReportStatus.REJECTED_BY_MANAGER);
 
         // Rejected Training Plans
-        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Kế hoạch huấn luyện".equalsIgnoreCase(type)) {
+        if (type == null || type == 1) {
             List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
             plans.stream()
                     .filter(p -> rejectedStatuses.contains(p.getStatus()))
                     .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
-                            .type("Kế hoạch huấn luyện")
+                            .type(1)
                             .title(p.getTitle() != null ? p.getTitle() : "Kế hoạch huấn luyện #" + p.getId())
                             .description(p.getNote() != null ? p.getNote() : "")
                             .entityType("TRAINING_PLAN")
@@ -175,14 +175,14 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // Rejected Training Results
-        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Kết quả huấn luyện".equalsIgnoreCase(type)) {
+        if (type == null || type == 2) {
             List<TrainingResult> results = trainingResultRepository.findByLineIdAndDeleteFlagFalse(lineId);
             results.stream()
                     .filter(r -> rejectedStatuses.contains(r.getStatus()))
                     .filter(r -> currentUser.equals(r.getCreatedBy()))
                     .forEach(r -> items.add(RejectedReportItem.builder()
                             .id(r.getId())
-                            .type("Kết quả huấn luyện")
+                            .type(2)
                             .title(r.getTitle() != null ? r.getTitle() : "Báo cáo kết quả #" + r.getId())
                             .description(r.getNote() != null ? r.getNote() : "")
                             .entityType("TRAINING_RESULT")
@@ -190,14 +190,14 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // Rejected Defect Proposals
-        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Lỗi quá khứ".equalsIgnoreCase(type)) {
+        if (type == null || type == 3) {
             List<DefectProposal> defectProposals = defectProposalRepository.findByProductLineId(lineId);
             defectProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
                     .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
-                            .type("Lỗi quá khứ")
+                            .type(3)
                             .title("Đề xuất lỗi #" + p.getId())
                             .description(p.getFormCode() != null ? p.getFormCode() : "")
                             .entityType("DEFECT_PROPOSAL")
@@ -205,14 +205,14 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // Rejected Training Sample Proposals
-        if (type == null || "Tất cả".equalsIgnoreCase(type) || "Mẫu huấn luyện".equalsIgnoreCase(type)) {
+        if (type == null || type == 4) {
             List<TrainingSampleProposal> sampleProposals = trainingSampleProposalRepository.findByProductLineId(lineId);
             sampleProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
                     .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
-                            .type("Mẫu huấn luyện")
+                            .type(4)
                             .title("Đề xuất mẫu #" + p.getId())
                             .description(p.getFormCode() != null ? p.getFormCode() : "")
                             .entityType("TRAINING_SAMPLE_PROPOSAL")
