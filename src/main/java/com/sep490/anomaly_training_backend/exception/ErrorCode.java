@@ -156,7 +156,10 @@ public enum ErrorCode {
     SNAPSHOT_NOT_FOUND(7517, "Snapshot not found.", HttpStatus.NOT_FOUND),
     PRIORITY_SNAPSHOT_NOT_FOUND(7518, "Priority snapshot not found.", HttpStatus.NOT_FOUND),
     FACTORY_CALENDAR_NOT_FOUND(7519, "Factory calendar not found.", HttpStatus.NOT_FOUND),
-    METRIC_NOT_IMPLEMENTED(7520, "This metric's compute method is not implemented yet.", HttpStatus.INTERNAL_SERVER_ERROR);
+    METRIC_NOT_IMPLEMENTED(7520, "This metric's compute method is not implemented yet.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    PROPOSAL_DETAIL_NOT_FOUND(10000, "Proposal detail not found.", HttpStatus.NOT_FOUND),
+    ;
 
     private final int code;
     private final String message;

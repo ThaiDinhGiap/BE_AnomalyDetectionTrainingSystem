@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;

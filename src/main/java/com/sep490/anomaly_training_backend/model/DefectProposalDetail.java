@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
 import jakarta.persistence.Column;
@@ -21,6 +22,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 
@@ -105,4 +108,8 @@ public class DefectProposalDetail extends BaseEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     Product product;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "reject_feedback", columnDefinition = "JSON")
+    private RejectFeedbackJson rejectFeedback;
 }

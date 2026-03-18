@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
@@ -13,6 +14,7 @@ import com.sep490.anomaly_training_backend.service.approval.ApprovalMetadataServ
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalTimelineService;
+import com.sep490.anomaly_training_backend.service.approval.RejectDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,6 +41,7 @@ public class ApprovalController {
     private final ApprovalQueryService approvalQueryService;
     private final ApprovalMetadataService approvalMetadataService;
     private final ApprovalTimelineService approvalTimelineService;
+    private final RejectDetailService rejectDetailService;
 
     // ==================== PENDING LIST ====================
 
@@ -116,12 +121,26 @@ public class ApprovalController {
         return ResponseEntity.ok(ApiResponse.success(actions));
     }
 
+    @Operation(summary = "Get approval timeline for a report")
     @GetMapping("/{entityType}/{entityId}")
     public ResponseEntity<ApprovalTimelineResponse> getTimeline(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId) {
 
         return ResponseEntity.ok(approvalTimelineService.getTimeline(entityType, entityId));
+    }
+
+    @Operation(summary = "Save feedback reject for 1 detail")
+    @PutMapping("/details/{detailId}/{entityType}/feedback")
+    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    public ResponseEntity<ApiResponse<Void>> saveDetailFeedback(
+            @PathVariable ApprovalEntityType entityType,
+            @PathVariable Long detailId,
+            @RequestBody DetailFeedbackRequest request,
+            @AuthenticationPrincipal User currentUser) {
+
+        rejectDetailService.saveFeedback(entityType, detailId, request, currentUser);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ==================== HELPER ====================

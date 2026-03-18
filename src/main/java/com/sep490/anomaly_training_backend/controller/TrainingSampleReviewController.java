@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;

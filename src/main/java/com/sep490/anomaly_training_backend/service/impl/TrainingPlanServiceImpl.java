@@ -1,7 +1,9 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
@@ -49,6 +51,8 @@ import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepo
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
@@ -64,11 +68,13 @@ import com.sep490.anomaly_training_backend.service.priority.impl.PriorityScoring
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -81,6 +87,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     private final TrainingPlanRepository trainingPlanRepository;
@@ -104,6 +111,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
     private final GroupRepository groupRepository;
+    private final RejectReasonRepository rejectReasonRepository;
+    private final RequiredActionRepository requiredActionRepository;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -871,6 +880,78 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public boolean canApprove(Long reportId, User currentUser) {
         TrainingPlan report = getReportById(reportId);
         return approvalService.canApprove(report, currentUser);
+    }
+
+    // ── Save feedback ─────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
+
+        TrainingPlanDetail detail = trainingPlanDetailRepository.findByIdAndDeleteFlagFalse(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
+
+        // Tất cả null/empty → xoá feedback
+        if (isEmptyFeedback(request)) {
+            detail.setRejectFeedback(null);
+            trainingPlanDetailRepository.save(detail);
+            return;
+        }
+
+        // Batch load reasons + action
+        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
+        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
+            reasonSnapshots = rejectReasonRepository
+                    .findAllById(request.getRejectReasonIds())
+                    .stream()
+                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
+                            .id(r.getId())
+                            .category(r.getCategoryName())
+                            .label(r.getReasonName())
+                            .build())
+                    .toList();
+        }
+
+        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
+        if (request.getRequiredActionId() != null) {
+            actionSnapshot = requiredActionRepository
+                    .findById(request.getRequiredActionId())
+                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
+                            .id(a.getId())
+                            .label(a.getActionName())
+                            .build())
+                    .orElse(null);
+        }
+
+        detail.setRejectFeedback(RejectFeedbackJson.builder()
+                .savedAt(Instant.now())
+                .savedBy(currentUser.getFullName())
+                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
+                .requiredAction(actionSnapshot)
+                .comment(request.getComment())
+                .build());
+
+        trainingPlanDetailRepository.save(detail);
+        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
+    }
+
+    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
+                && r.getRequiredActionId() == null
+                && (r.getComment() == null || r.getComment().isBlank());
+    }
+
+    // ── Clear feedback (khi TL revise lại) ───────────────────────────────────
+
+    @Override
+    @Transactional
+    public void clearFeedback(Long proposalId) {
+        List<TrainingPlanDetail> details =
+                trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+
+        details.forEach(d -> d.setRejectFeedback(null));
+        trainingPlanDetailRepository.saveAll(details);
+
+        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
     }
 
     private TrainingPlan getReportById(Long id) {

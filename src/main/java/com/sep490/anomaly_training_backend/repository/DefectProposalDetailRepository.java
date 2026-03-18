@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DefectProposalDetailRepository extends JpaRepository<DefectProposalDetail, Long> {
@@ -13,4 +14,6 @@ public interface DefectProposalDetailRepository extends JpaRepository<DefectProp
     List<DefectProposalDetail> findByDefectProposalIdAndDeleteFlagFalse(Long defectProposalId);
 
     List<DefectProposalDetail> findByProcessId(Long processId);
+
+    Optional<DefectProposalDetail> findByIdAndDeleteFlagFalse(Long id);
 }

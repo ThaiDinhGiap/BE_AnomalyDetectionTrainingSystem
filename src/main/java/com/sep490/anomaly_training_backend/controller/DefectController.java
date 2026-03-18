@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectInProcess;

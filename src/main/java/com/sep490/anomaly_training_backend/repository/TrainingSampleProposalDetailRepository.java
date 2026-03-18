@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TrainingSampleProposalDetailRepository extends JpaRepository<TrainingSampleProposalDetail, Long> {
@@ -13,4 +14,6 @@ public interface TrainingSampleProposalDetailRepository extends JpaRepository<Tr
     List<TrainingSampleProposalDetail> findByTrainingSampleProposalIdAndDeleteFlagFalse(Long trainingSampleProposalId);
 
     List<TrainingSampleProposalDetail> findByProcessId(Long processId);
+
+    Optional<TrainingSampleProposalDetail> findByIdAndDeleteFlagFalse(Long id);
 }
