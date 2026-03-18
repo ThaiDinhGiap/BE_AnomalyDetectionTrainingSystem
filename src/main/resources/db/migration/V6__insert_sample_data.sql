@@ -205,7 +205,8 @@ VALUES (1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 's
        (112, 'defect.detail', 'Xem chi tiết lỗi quá khứ', 1, 'view', 7, TRUE, 'system'),
        (113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 8, TRUE, 'system'),
        (200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
-       (201, 'training_sample_review.view', 'Xem chính sách kểm tra mẫu huấn luyện hằng n', 2, 'view', 5, TRUE, 'system'),
+       (201, 'training_sample_review.view', 'Xem chính sách kểm tra mẫu huấn luyện hằng n', 2, 'view', 5, TRUE,
+        'system'),
        (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 5, TRUE, 'system'),
        (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 5, TRUE, 'system'),
        (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 5, TRUE, 'system');
@@ -1269,6 +1270,71 @@ VALUES
  'system');
 
 -- ============================================================================
+-- EMPLOYEE PRIORITY POLICIES
+-- Logic: Xếp hạng nhân viên cần được huấn luyện ưu tiên dựa trên
+--        thời gian chưa huấn luyện + tỷ lệ trượt + watchlist
+-- ============================================================================
+
+-- ── computed_metrics cho EMPLOYEE (bổ sung vào V8 đã có) ──────────────────
+-- Các metric này đã seed trong V3, chỉ cần đảm bảo tồn tại:
+--   days_since_last_training  (EMPLOYEE)
+--   fail_rate                 (EMPLOYEE)
+--   years_of_service          (EMPLOYEE)
+--   is_on_watchlist           (EMPLOYEE)
+
+-- ── Policy ────────────────────────────────────────────────────────────────
+
+INSERT INTO priority_policies (id, policy_code, policy_name, entity_type,
+                               effective_date, expiration_date, status, description, created_by)
+VALUES (3, 'EMP-BASIC-2026',
+        'Chính sách ưu tiên nhân viên cần huấn luyện 2026',
+        'EMPLOYEE',
+        '2026-01-01', '2026-12-31',
+        'ACTIVE',
+        'Xếp hạng nhân viên theo mức độ cần huấn luyện: ưu tiên nhân viên trong watchlist, '
+            'tiếp theo là nhân viên chưa học lâu hoặc tỷ lệ trượt cao.',
+        'nguyen.quanly');
+
+-- ── Tiers ─────────────────────────────────────────────────────────────────
+-- Tier 1: Nhân viên trong watchlist   → xử lý ngay
+-- Tier 2: Chưa huấn luyện > 60 ngày  → ưu tiên cao
+-- Tier 3: Tỷ lệ trượt >= 30%         → cần ôn lại
+-- Tier 4: Còn lại                     → theo thâm niên
+
+INSERT INTO priority_tiers (id, policy_id, tier_order, tier_name, filter_logic,
+                            ranking_metric, ranking_direction, secondary_metric, secondary_direction,
+                            is_active, created_by)
+VALUES (8, 3, 1, 'Tier 1 – Nhân viên trong danh sách theo dõi',
+        'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
+
+       (9, 3, 2, 'Tier 2 – Chưa huấn luyện lâu ngày',
+        'AND', 'days_since_last_training', 'DESC', 'fail_rate', 'DESC', TRUE, 'system'),
+
+       (10, 3, 3, 'Tier 3 – Tỷ lệ trượt cao',
+        'AND', 'fail_rate', 'DESC', 'days_since_last_training', 'DESC', TRUE, 'system'),
+
+       (11, 3, 4, 'Tier 4 – Nhân viên thâm niên thấp (ưu tiên cuối)',
+        'AND', 'years_of_service', 'ASC', NULL, NULL, TRUE, 'system');
+
+-- ── Filters ───────────────────────────────────────────────────────────────
+
+INSERT INTO priority_tier_filters
+(tier_id, metric_name, operator, filter_value, filter_unit, filter_order, created_by)
+VALUES
+-- Tier 1: is_on_watchlist = true
+(8, 'is_on_watchlist', 'EQ', 'true', 'True/False', 1, 'system'),
+
+-- Tier 2: chưa huấn luyện > 60 ngày VÀ không trong watchlist
+(9, 'days_since_last_training', 'GTE', '60', 'Ngày', 1, 'system'),
+(9, 'is_on_watchlist', 'EQ', 'false', 'True/False', 2, 'system'),
+
+-- Tier 3: tỷ lệ trượt >= 30%
+(10, 'fail_rate', 'GTE', '30', '%', 1, 'system'),
+
+-- Tier 4: không điều kiện đặc biệt, chỉ rank theo thâm niên tăng dần
+(11, 'years_of_service', 'GTE', '0', 'Năm', 1, 'system');
+
+-- ============================================================================
 -- PART 11: APPROVAL ACTIONS (lịch sử phê duyệt)
 -- ============================================================================
 
@@ -1315,10 +1381,10 @@ VALUES
 -- ============================================================================
 
 INSERT INTO approval_flow_steps (entity_type, step_order, approver_role, is_active, created_by)
-VALUES ('DEFECT_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('DEFECT_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
-       ('TRAINING_TOPIC_REPORT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('TRAINING_TOPIC_REPORT', 2, 'ROLE_MANAGER', TRUE, 'system'),
+VALUES ('DEFECT_PROPOSAL', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
+       ('DEFECT_PROPOSAL', 2, 'ROLE_MANAGER', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 2, 'ROLE_MANAGER', TRUE, 'system'),
        ('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
        ('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system'),
        ('TRAINING_RESULT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
@@ -1456,36 +1522,47 @@ VALUES
 
 INSERT INTO training_sample_review_policies (policy_code, policy_name, product_line_id, effective_date, expiration_date,
                                              status, description, created_by, updated_by)
-VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1,'2026-01-01', '2026-12-31', 'ACTIVE',
+VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1, '2026-01-01', '2026-12-31', 'ACTIVE',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm cho tất cả dây chuyền năm 2026', 'admin', 'admin'),
-       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1,'2025-01-01', '2025-12-31', 'ARCHIVED',
+       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1, '2025-01-01', '2025-12-31', 'ARCHIVED',
         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm năm 2025', 'admin', 'admin');
 
 INSERT INTO training_sample_review_configs (review_policy_id, trigger_month, trigger_day, due_days,
-                                             created_by)
-VALUES (1, 3, 1, 30,  'admin'),
-       (1, 5, 2, 30,  'admin'),
-       (1, 6, 1, 30,  'admin'),
-       (2, 9, 1, 30,  'admin'),
-       (2, 12, 1, 30,  'admin');
+                                            created_by)
+VALUES (1, 3, 1, 30, 'admin'),
+       (1, 5, 2, 30, 'admin'),
+       (1, 6, 1, 30, 'admin'),
+       (2, 9, 1, 30, 'admin'),
+       (2, 12, 1, 30, 'admin');
 
 INSERT INTO training_sample_reviews
-(config_id, product_line_id, review_date, due_date, completed_date, reviewed_by, result, sample_snapshot, confirmed_by, delete_flag, created_at, created_by, updated_at, updated_by)
+(config_id, product_line_id, review_date, due_date, completed_date, reviewed_by, result, sample_snapshot, confirmed_by,
+ delete_flag, created_at, created_by, updated_at, updated_by)
 VALUES
 -- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
-(1, 1, '2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{"total_samples": 50}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+(1, 1, '2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{
+  "total_samples": 50
+}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 2. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 2: Đã làm xong, không có thay đổi, Sếp (ID=2) đã duyệt
-(1, 2, '2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{"total_samples": 45}', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+(1, 2, '2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{
+  "total_samples": 45
+}', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 3. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 1: Đợt rà soát tháng 5, mới lên lịch chờ làm
-(2, 1, '2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{"total_samples": 50}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+(2, 1, '2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{
+  "total_samples": 50
+}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
-(2, 2, '2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED', '{"total_samples": 45}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+(2, 2, '2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED', '{
+  "total_samples": 45
+}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
-(4, 1, '2026-03-01', '2025-10-01', NULL, 1, 'OVERDUE', '{"total_samples": 50}', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
+(4, 1, '2026-03-01', '2025-10-01', NULL, 1, 'OVERDUE', '{
+  "total_samples": 50
+}', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
 
 INSERT INTO notification_templates (code, subject_template, html_template_name, description, created_by)
 VALUES ('APPROVAL_NUDGE',

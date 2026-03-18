@@ -24,96 +24,81 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Implementation của PriorityScoringService
- * <p>
- * Luồng xử lý:
- * 1. Load Policy + Tiers + Filters từ DB
- * 2. Tính metrics cho tất cả employees (batch)
- * 3. Duyệt từng tier:
- * a. Evaluate filters → filter employees
- * b. Rank employees trong tier
- * 4. Lưu results vào priority_snapshots + priority_snapshot_details
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class PriorityScoringServiceImpl implements PriorityScoringService {
 
-    // Repositories
     private final PriorityPolicyRepository policyRepository;
     private final PrioritySnapshotRepository snapshotRepository;
     private final PrioritySnapshotDetailRepository snapshotDetailRepository;
     private final TeamRepository teamRepository;
     private final EmployeeRepository employeeRepository;
 
-    // Services
     private final ComputedMetricService metricCalculationService;
     private final PriorityTierFilterEvaluationService filterEvaluationService;
     private final PriorityTierRankingService rankingService;
 
     private final ObjectMapper objectMapper;
 
-    /**
-     * Generate priority snapshot
-     */
     @Override
     public PrioritySnapshot generateSnapshot(Long policyId, Long teamId, List<Employee> employees) {
         log.info("Generating priority snapshot for policy: {}, team: {}, employees count: {}",
                 policyId, teamId, employees.size());
 
-        // 1. Load policy
         PriorityPolicy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND,
                         "Policy not found: " + policyId));
 
-        // 2. Load team
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND,
                         "Team not found: " + teamId));
 
-        // 3. Collect all metric names từ tất cả tiers
         Set<String> metricsNeeded = collectMetricsFromPolicy(policy);
 
-        // 4. Tính metrics cho tất cả employees (batch)
-        log.info("Calculating metrics for {} employees", employees.size());
         Map<Long, Map<String, Object>> employeesMetrics =
                 metricCalculationService.batchCalculateMetrics(employees, metricsNeeded);
 
-        // 5. Tạo snapshot
         PrioritySnapshot snapshot = PrioritySnapshot.builder()
                 .team(team)
                 .policy(policy)
                 .policySnapshot(serializePolicy(policy))
                 .build();
-
         PrioritySnapshot savedSnapshot = snapshotRepository.save(snapshot);
 
-        // 6. Duyệt từng tier và generate snapshot details
         List<PriorityTier> tiers = policy.getTiers().stream()
                 .filter(tier -> tier.getIsActive() && !tier.isDeleteFlag())
                 .sorted((t1, t2) -> Integer.compare(t1.getTierOrder(), t2.getTierOrder()))
                 .toList();
 
-        int globalRank = 1;
+        // FIX vấn đề 2: track employees đã được assign vào tier nào rồi
+        // Mỗi employee chỉ thuộc 1 tier — tier đầu tiên mà họ khớp filter (tier order thấp = ưu tiên cao)
+        Set<Long> assignedEmployeeIds = new HashSet<>();
+        List<PrioritySnapshotDetail> detailsToSave = new ArrayList<>();
+
         for (PriorityTier tier : tiers) {
             log.info("Processing tier: {} (order: {})", tier.getTierName(), tier.getTierOrder());
 
-            // Evaluate filters → lấy employees fit tier này
-            List<Employee> tierEmployees = employees.stream()
-                    .filter(emp -> filterEvaluationService.evaluateTierFilters(tier, emp, employeesMetrics.get(emp.getId())))
+            // FIX: chỉ xét employees chưa được assign tier nào
+            List<Employee> unassignedEmployees = employees.stream()
+                    .filter(emp -> !assignedEmployeeIds.contains(emp.getId()))
                     .toList();
 
-            // Rank employees trong tier
+            List<Employee> tierEmployees = unassignedEmployees.stream()
+                    .filter(emp -> filterEvaluationService.evaluateTierFilters(
+                            tier, emp, employeesMetrics.get(emp.getId())))
+                    .toList();
+
             List<PriorityTierRankingService.EmployeeRankingResult> rankedEmployees =
                     rankingService.rankEmployees(tier, tierEmployees, employeesMetrics);
 
-            // Save snapshot details
             for (PriorityTierRankingService.EmployeeRankingResult result : rankedEmployees) {
                 PrioritySnapshotDetail detail = PrioritySnapshotDetail.builder()
                         .snapshot(savedSnapshot)
@@ -126,95 +111,104 @@ public class PriorityScoringServiceImpl implements PriorityScoringService {
                         .metricValues(serializeMetrics(result.metricValues))
                         .build();
 
-                snapshotDetailRepository.save(detail);
+                detailsToSave.add(detail);
+                assignedEmployeeIds.add(result.employee.getId());
             }
 
-            globalRank += rankedEmployees.size();
         }
 
-        log.info("Priority snapshot generated successfully. Snapshot ID: {}", savedSnapshot.getId());
+        // FIX vấn đề 1: employees không khớp tier nào vẫn phải được đưa vào snapshot
+        // với tier đặc biệt "UNTIERED" — ưu tiên thấp nhất, xếp sau tất cả
+        List<Employee> untieredEmployees = employees.stream()
+                .filter(emp -> !assignedEmployeeIds.contains(emp.getId()))
+                .toList();
+
+        if (!untieredEmployees.isEmpty()) {
+            log.info("{} employees không khớp tier nào → xếp vào UNTIERED (ưu tiên thấp nhất)",
+                    untieredEmployees.size());
+
+            // Untiered employees không có ranking metric → sắp xếp theo employeeCode cho ổn định
+            List<Employee> sortedUntiered = untieredEmployees.stream()
+                    .sorted((e1, e2) -> e1.getEmployeeCode().compareTo(e2.getEmployeeCode()))
+                    .toList();
+
+            int untieredRank = 1;
+            int untieredTierOrder = tiers.isEmpty() ? 1 : tiers.get(tiers.size() - 1).getTierOrder() + 1;
+
+            for (Employee emp : sortedUntiered) {
+                PrioritySnapshotDetail detail = PrioritySnapshotDetail.builder()
+                        .snapshot(savedSnapshot)
+                        .employee(emp)
+                        .employeeCode(emp.getEmployeeCode())
+                        .fullName(emp.getFullName())
+                        .tierOrder(untieredTierOrder)
+                        .tierName("UNTIERED")
+                        .sortRank(untieredRank)
+                        .metricValues("{}")
+                        .build();
+
+                detailsToSave.add(detail);
+                untieredRank++;
+            }
+        }
+
+        snapshotDetailRepository.saveAll(detailsToSave);
+
+        log.info("Snapshot generated: {} employees ({} tiered, {} untiered)",
+                detailsToSave.size(), assignedEmployeeIds.size(), untieredEmployees.size());
         return savedSnapshot;
     }
 
-    /**
-     * Recalculate priorities cho team
-     */
     @Override
     public PrioritySnapshot recalculatePriorities(Long policyId, Long teamId) {
         log.info("Recalculating priorities for policy: {}, team: {}", policyId, teamId);
 
-        // Get employees của team
         List<Employee> employees = employeeRepository.findByTeamIdAndDeleteFlagFalse(teamId);
-
         if (employees.isEmpty()) {
             log.warn("No employees found for team: {}", teamId);
         }
 
-        // Delete old snapshots
         List<PrioritySnapshot> oldSnapshots = snapshotRepository.findByPolicyIdAndTeamId(policyId, teamId);
         for (PrioritySnapshot snapshot : oldSnapshots) {
             snapshotDetailRepository.deleteBySnapshotId(snapshot.getId());
             snapshotRepository.delete(snapshot);
         }
 
-        // Generate new snapshot
         return generateSnapshot(policyId, teamId, employees);
     }
 
-    /**
-     * Get latest snapshot
-     */
     @Override
     @Transactional(readOnly = true)
     public PrioritySnapshot getLatestSnapshot(Long policyId, Long teamId) {
         return snapshotRepository.findLatestByPolicyIdAndTeamId(policyId, teamId);
     }
 
-    /**
-     * Delete snapshot
-     */
     @Override
     public void deleteSnapshot(Long snapshotId) {
         PrioritySnapshot snapshot = snapshotRepository.findById(snapshotId)
                 .orElseThrow(() -> new AppException(ErrorCode.SNAPSHOT_NOT_FOUND,
                         "Snapshot not found: " + snapshotId));
-
-        // Delete details first
         snapshotDetailRepository.deleteBySnapshotId(snapshotId);
-
-        // Delete snapshot
         snapshotRepository.delete(snapshot);
-
         log.info("Snapshot deleted: {}", snapshotId);
     }
 
-    /**
-     * Helper: Collect all metric names từ policy
-     */
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
     private Set<String> collectMetricsFromPolicy(PriorityPolicy policy) {
         Set<String> metrics = new java.util.HashSet<>();
-
         for (PriorityTier tier : policy.getTiers()) {
-            // Ranking metric
             metrics.add(tier.getRankingMetric());
-
-            // Secondary metric
             if (tier.getSecondaryMetric() != null && !tier.getSecondaryMetric().isBlank()) {
                 metrics.add(tier.getSecondaryMetric());
             }
-
-            // Filter metrics
             for (var filter : tier.getFilters()) {
                 metrics.add(filter.getMetricName());
             }
         }
-
         return metrics;
     }
 
-    /**
-     * Helper: Serialize policy to JSON
-     */
     private String serializePolicy(PriorityPolicy policy) {
         try {
             return objectMapper.writeValueAsString(policy);
@@ -224,9 +218,6 @@ public class PriorityScoringServiceImpl implements PriorityScoringService {
         }
     }
 
-    /**
-     * Helper: Serialize metrics to JSON
-     */
     private String serializeMetrics(Map<String, Object> metrics) {
         try {
             return objectMapper.writeValueAsString(metrics);
@@ -236,9 +227,6 @@ public class PriorityScoringServiceImpl implements PriorityScoringService {
         }
     }
 
-    /**
-     * Helper: Get current username
-     */
     private String getCurrentUsername() {
         try {
             return SecurityContextHolder.getContext().getAuthentication().getName();

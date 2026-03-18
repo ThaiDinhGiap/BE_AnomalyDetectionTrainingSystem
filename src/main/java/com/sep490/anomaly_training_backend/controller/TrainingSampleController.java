@@ -144,7 +144,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training sample detail information")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('defect.detail')")
+    @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<TrainingSampleResponse>> getTrainingSampleDetail(@PathVariable("id") Long id) {
         TrainingSampleResponse response = trainingSampleService.getTrainingSampleById(id);
         return ResponseEntity.ok(ApiResponse.success(response));

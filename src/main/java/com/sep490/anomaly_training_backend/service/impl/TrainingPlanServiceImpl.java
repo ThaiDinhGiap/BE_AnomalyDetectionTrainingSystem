@@ -340,7 +340,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser, TrainingPlanGenerationRequest request) {
         TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
-        TrainingPlanResponse trainingPlanResponse = toTrainingPlanResponse(generatedTrainingPlan);
 
         List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
         PriorityPolicy priorityPolicy = policyRepository.findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
