@@ -5,12 +5,38 @@ import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.*;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductProcess;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -278,15 +304,24 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public List<TrainingResultListResponse> getAllTrainingResults(Long lineId) {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<TrainingResult> entities;
-        if (lineId != null) {
-            entities = trainingResultRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUsername, lineId);
-        } else {
-            entities = trainingResultRepository.findByCreatedByAndDeleteFlagFalse(currentUsername);
+    public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
+        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return mapToListResponse(
+                        trainingResultRepository.findByLineIdAndDeleteFlagFalseForSupervisorAndManager(lineId));
+            } else {
+                return mapToListResponse(
+                        trainingResultRepository.findByDeleteFlagFalseForSupervisorAndManager());
+            }
         }
-        return mapToListResponse(entities);
+
+        if (lineId != null) {
+            return mapToListResponse(
+                    trainingResultRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId));
+        } else {
+            return mapToListResponse(
+                    trainingResultRepository.findByCreatedByAndDeleteFlagFalse(currentUser.getUsername()));
+        }
     }
 
     @Override
@@ -632,7 +667,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
     }
-
 
 
     @Override

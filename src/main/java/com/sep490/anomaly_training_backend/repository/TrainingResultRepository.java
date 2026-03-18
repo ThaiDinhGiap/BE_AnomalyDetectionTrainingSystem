@@ -40,4 +40,22 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     List<TrainingResult> findByStatusAndUpdatedAtBefore(
             @Param("status") ReportStatus status,
             @Param("threshold") LocalDateTime threshold);
+
+    @Query("""
+            SELECT pl
+            FROM TrainingResult pl
+            WHERE pl.line.id = :lineId
+              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.deleteFlag = false
+            """)
+    List<TrainingResult> findByLineIdAndDeleteFlagFalseForSupervisorAndManager(
+            @Param("lineId") Long lineId);
+
+    @Query("""
+            SELECT pl
+            FROM TrainingResult pl
+            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.deleteFlag = false
+            """)
+    List<TrainingResult> findByDeleteFlagFalseForSupervisorAndManager();
 }

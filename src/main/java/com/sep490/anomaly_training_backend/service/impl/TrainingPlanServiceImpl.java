@@ -123,10 +123,28 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public List<TrainingPlanGenerationResponse> getAllPlans() {
-        return trainingPlanRepository.findAll().stream()
-                .map(this::toGenerationResponse)
-                .collect(Collectors.toList());
+    public List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId) {
+        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return trainingPlanRepository.findByLineIdAndDeleteFlagFalseForSupervisorAndManager(lineId).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            } else {
+                return trainingPlanRepository.findByDeleteFlagFalseForSupervisorAndManager().stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        if (lineId != null) {
+            return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId).stream()
+                    .map(this::toGenerationResponse)
+                    .collect(Collectors.toList());
+        } else {
+            return trainingPlanRepository.findByCreatedByAndDeleteFlagFalse(currentUser.getUsername()).stream()
+                    .map(this::toGenerationResponse)
+                    .collect(Collectors.toList());
+        }
     }
 
     @Override

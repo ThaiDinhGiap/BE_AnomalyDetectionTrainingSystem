@@ -17,7 +17,28 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     @Query("SELECT tp FROM TrainingPlan tp WHERE tp.team.group.id = :groupId AND tp.deleteFlag = false")
     List<TrainingPlan> findByGroupId(@Param("groupId") Long groupId);
 
+    @Query("""
+            SELECT pl
+            FROM TrainingPlan pl
+            WHERE pl.line.id = :lineId
+              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.deleteFlag = false
+            """)
+    List<TrainingPlan> findByLineIdAndDeleteFlagFalseForSupervisorAndManager(Long lineId);
+
+    @Query("""
+            SELECT pl
+            FROM TrainingPlan pl
+            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.deleteFlag = false
+            """)
+    List<TrainingPlan> findByDeleteFlagFalseForSupervisorAndManager();
+
     List<TrainingPlan> findByLineIdAndDeleteFlagFalse(Long lineId);
+
+    List<TrainingPlan> findByCreatedByAndLineIdAndDeleteFlagFalse(String createdBy, Long lineId);
+
+    List<TrainingPlan> findByCreatedByAndDeleteFlagFalse(String createdBy);
 
     List<TrainingPlan> findByStatus(ReportStatus status);
 

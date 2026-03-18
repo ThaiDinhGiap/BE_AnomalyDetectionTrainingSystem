@@ -22,7 +22,7 @@ public interface TrainingPlanService {
 
     TrainingPlanGenerationResponse getPlanDetail(Long id);
 
-    List<TrainingPlanGenerationResponse> getAllPlans();
+    List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId);
 
     List<TrainingPlanGenerationResponse> getRejectedPlans();
 

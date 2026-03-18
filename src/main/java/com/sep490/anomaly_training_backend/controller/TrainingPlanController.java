@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -56,8 +57,11 @@ public class TrainingPlanController {
     @Operation(summary = "Get all training plans")
     @GetMapping
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<TrainingPlanGenerationResponse>> getAllPlans() {
-        return ResponseEntity.ok(trainingPlanService.getAllPlans());
+    public ResponseEntity<List<TrainingPlanGenerationResponse>> getAllPlans(
+            @Parameter(description = "Filter by Product Line ID") @RequestParam(required = false) Long lineId,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(trainingPlanService.getAllPlans(currentUser, lineId));
     }
 
     @Operation(
