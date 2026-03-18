@@ -96,7 +96,7 @@ public class DefectController {
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 
-        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByTeamLeadAndProductLine(productLineId, currentUser.getUsername());
+        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 

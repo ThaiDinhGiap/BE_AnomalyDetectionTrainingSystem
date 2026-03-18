@@ -69,7 +69,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest request) {
+    public TrainingSampleProposalUpdateResponse updateTrainingSampleProposal(Long id, TrainingSampleProposalRequest request, User currentUser) {
         List<TrainingSampleProposalDetailRequest> items = request.getListDetail();
         if (items == null || items.isEmpty()) {
             throw new AppException(ErrorCode.PROPOSAL_HAS_NO_DETAILS);
@@ -101,7 +101,10 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
-                trainingSampleProposalDetailRepository.save(newEntity);
+                newEntity = trainingSampleProposalDetailRepository.save(newEntity);
+                if (item.getImages() != null && !item.getImages().isEmpty()) {
+                    attachmentService.uploadAttachments(item.getImages(), "TRAINING_SAMPLE_PROPOSAL", newEntity.getId(), currentUser.getUsername());
+                }
                 continue;
             }
             requestDetailIds.add(item.getTrainingSampleProposalDetailId());

@@ -102,8 +102,9 @@ public class TrainingSampleController {
     @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingProposal(
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,
-            @Valid @ModelAttribute TrainingSampleProposalRequest request) throws BadRequestException {
-        TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request);
+            @Valid @ModelAttribute TrainingSampleProposalRequest request,
+            @AuthenticationPrincipal User user) throws BadRequestException {
+        TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request, user);
         return ResponseEntity.ok(response);
     }
 
