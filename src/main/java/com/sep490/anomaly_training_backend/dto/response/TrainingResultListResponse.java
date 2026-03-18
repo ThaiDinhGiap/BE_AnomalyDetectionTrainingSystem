@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,4 +15,11 @@ public class TrainingResultListResponse {
     private LocalDateTime approvedAt;
     private String status;
     private String createdBy;
+
+    // Progress statistics
+    private long totalItems;
+    private long totalPass;
+    private long totalFail;
+    private long totalNotYetTrained;
+    private BigDecimal passRate;
 }
