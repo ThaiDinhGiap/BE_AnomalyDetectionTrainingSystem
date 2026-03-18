@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -248,5 +249,13 @@ public class TrainingResultController {
             @Parameter(description = "Detail ID") @PathVariable Long detailId) {
         trainingResultService.retrainDetail(detailId);
         return ResponseEntity.ok("Đã đánh dấu huấn luyện lại!");
+    }
+
+    @Operation(summary = "Get skill certificates for training result")
+    @GetMapping("/{resultId}/skill-certificates")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<EmployeeSkillCertificateResponse>> getSkillCertificates(
+            @PathVariable Long resultId) {
+        return ResponseEntity.ok(trainingResultService.getSkillCertificates(resultId));
     }
 }

@@ -79,4 +79,70 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Query("SELECT DISTINCT trd.employee.id FROM TrainingResultDetail trd " +
             "WHERE trd.trainingResult.id = :resultId AND trd.deleteFlag = false")
     List<Long> findEmployeeIdsByTrainingResultId(@Param("resultId") Long resultId);
+
+    /**
+     * Lấy tối đa N lần training gần nhất của 1 nhân viên cho 1 công đoạn.
+     * Dùng để build recentHistory (6 dot lịch sử).
+     * Chỉ lấy những record đã có actualDate (đã thực hiện).
+     */
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.employee.id = :employeeId
+                  AND t.process.id = :processId
+                  AND t.actualDate IS NOT NULL
+                  AND t.deleteFlag = false
+                ORDER BY t.actualDate DESC
+                LIMIT :limit
+            """)
+    List<TrainingResultDetail> findRecentByEmployeeAndProcess(
+            @Param("employeeId") Long employeeId,
+            @Param("processId") Long processId,
+            @Param("limit") int limit);
+
+    /**
+     * Batch version: Lấy toàn bộ history của nhiều employee + process cùng lúc.
+     * Dùng để tránh N+1 query khi render bảng chứng chỉ.
+     */
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.employee.id IN :employeeIds
+                  AND t.process IS NOT NULL
+                  AND t.actualDate IS NOT NULL
+                  AND t.deleteFlag = false
+                ORDER BY t.employee.id, t.process.id, t.actualDate DESC
+            """)
+    List<TrainingResultDetail> findAllHistoryByEmployeeIds(
+            @Param("employeeIds") List<Long> employeeIds);
+
+    /**
+     * Lấy các buổi huấn luyện của 1 employee trong 1 training result cụ thể.
+     * Dùng cho section "Các buổi huấn luyện trong kế hoạch này".
+     */
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.trainingResult.id = :resultId
+                  AND t.employee.id = :employeeId
+                  AND t.deleteFlag = false
+                ORDER BY t.plannedDate ASC
+            """)
+    List<TrainingResultDetail> findByResultIdAndEmployeeId(
+            @Param("resultId") Long resultId,
+            @Param("employeeId") Long employeeId);
+
+    /**
+     * Batch: Lấy toàn bộ sessions của nhiều employee trong 1 result.
+     * Tránh N+1 khi render tất cả nhân viên.
+     */
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                LEFT JOIN FETCH t.process
+                LEFT JOIN FETCH t.trainingSample
+                LEFT JOIN FETCH t.signatureProOut
+                LEFT JOIN FETCH t.signatureFiOut
+                WHERE t.trainingResult.id = :resultId
+                  AND t.deleteFlag = false
+                ORDER BY t.employee.id, t.plannedDate ASC
+            """)
+    List<TrainingResultDetail> findAllSessionsByResultId(
+            @Param("resultId") Long resultId);
 }
