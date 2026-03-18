@@ -45,15 +45,15 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
     Optional<Long> findMaxDefectCodeSequence();
 
     @Query("""
-        SELECT d 
+        SELECT d
         FROM Defect d
         JOIN d.process p
-        WHERE p.productLine.id = :productLineId 
+        WHERE p.productLine.id = :productLineId
           AND d.deleteFlag = false
           AND NOT EXISTS (
-              SELECT 1 
-              FROM TrainingSample ts 
-              WHERE ts.defect.id = d.id 
+              SELECT 1
+              FROM TrainingSample ts
+              WHERE ts.defect.id = d.id
                 AND ts.deleteFlag = false
           )
     """)

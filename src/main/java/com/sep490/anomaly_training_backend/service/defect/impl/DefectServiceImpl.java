@@ -50,6 +50,7 @@ public class DefectServiceImpl implements DefectService {
     private final AttachmentService attachmentService;
     private final DefectCodeGenerator defectCodeGenerator;
     private final ProductService productService;
+    private final TrainingSampleRepository trainingSampleRepository;
 
     @Override
     public List<DefectResponse> getDefectBySupervisor(Long supervisorId) {
@@ -147,11 +148,15 @@ public class DefectServiceImpl implements DefectService {
     @Override
     public DefectCoverageResponse getCoverageInProductLine(Long productLineId) {
         List<Defect> defects = defectRepository.findDefectsWithoutTrainingSample(productLineId);
+        int totalDefect = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId).size();
+        int totalTrainingSample = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId).size();
         List<Defect> totalDefectInProductLIne = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId);
         Double coverage = totalDefectInProductLIne.isEmpty() ? 0.0 : (double) (totalDefectInProductLIne.size() - defects.size()) / totalDefectInProductLIne.size() * 100;
         return DefectCoverageResponse.builder()
                 .defects(defects.stream().map(defectMapper::toDto).toList())
                 .coverageRate(coverage)
+                .totalDefect((long) totalDefect)
+                .totalTrainingSample((long) totalTrainingSample)
                 .build();
     }
 
