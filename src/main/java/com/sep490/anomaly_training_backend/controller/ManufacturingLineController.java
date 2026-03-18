@@ -62,6 +62,12 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
     }
 
+    @GetMapping("/product/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<ProductResponse>> findByProductId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productService.getProductById(id)));
+    }
+
     @GetMapping("/product-by-process/{id}")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProcess(@PathVariable("id") Long id) {

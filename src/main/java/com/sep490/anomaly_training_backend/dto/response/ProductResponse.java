@@ -18,5 +18,6 @@ public class ProductResponse {
     private String code;
     private String name;
     private List<String> attachmentUrl;
+    private List<ProcessResponse>  processes;
 }
 
