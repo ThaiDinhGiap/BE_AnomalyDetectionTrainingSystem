@@ -8,7 +8,7 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeePlanResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -29,6 +29,7 @@ import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.PriorityPolicy;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.Team;
@@ -43,6 +44,7 @@ import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
@@ -96,6 +98,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final PriorityScoringServiceImpl priorityScoringService;
     private final PriorityPolicyRepository policyRepository;
     private final PrioritySnapshotRepository prioritySnapshotRepository;
+    private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
 
     @Override
@@ -255,71 +258,51 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public List<EmployeeResponse> getEmployeesNotInPlan(Long planId) {
-        // 1. Load plan để lấy thông tin team/group
+    public List<EmployeePlanResponse> getEmployeesNotInPlan(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // 2. Lấy tất cả employee thuộc cùng group/team
         Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
                 ? plan.getLine().getGroup().getId()
                 : (plan.getTeam() != null && plan.getTeam().getGroup() != null
                 ? plan.getTeam().getGroup().getId() : null);
 
-        if (groupId == null) {
-            return List.of();
-        }
+        if (groupId == null) return List.of();
 
         List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId);
+        Set<Long> inPlanIds = new java.util.HashSet<>(
+                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
 
-        // 3. Lấy employee IDs đã có trong plan
-        List<Long> existingEmployeeIds = trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId);
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
 
-        // 4. Lọc: chỉ lấy những người chưa có trong plan
         return allEmployees.stream()
-                .filter(emp -> !existingEmployeeIds.contains(emp.getId()))
-                .map(emp -> {
-                    EmployeeResponse res = new EmployeeResponse();
-                    res.setId(emp.getId());
-                    res.setEmployeeCode(emp.getEmployeeCode());
-                    res.setFullName(emp.getFullName());
-                    res.setStatus(emp.getStatus());
-                    res.setTeamId(emp.getTeam() != null ? emp.getTeam().getId() : null);
-                    res.setTeamName(emp.getTeam() != null ? emp.getTeam().getName() : null);
-                    res.setGroupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                            ? emp.getTeam().getGroup().getName() : null);
-                    return res;
-                })
+                .filter(emp -> !inPlanIds.contains(emp.getId()))
+                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<EmployeeResponse> getEmployeesInTeams(Long planId) {
+    public List<EmployeePlanResponse> getEmployeesInTeams(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // Lấy teamId từ plan
         Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
-
-        if (teamId == null) {
-            return List.of();
-        }
+        if (teamId == null) return List.of();
 
         List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
 
+        Set<Long> inPlanIds = new java.util.HashSet<>(
+                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
+
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
+
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
+
         return allEmployees.stream()
-                .map(emp -> {
-                    EmployeeResponse res = new EmployeeResponse();
-                    res.setId(emp.getId());
-                    res.setEmployeeCode(emp.getEmployeeCode());
-                    res.setFullName(emp.getFullName());
-                    res.setStatus(emp.getStatus());
-                    res.setTeamId(emp.getTeam() != null ? emp.getTeam().getId() : null);
-                    res.setTeamName(emp.getTeam() != null ? emp.getTeam().getName() : null);
-                    res.setGroupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                            ? emp.getTeam().getGroup().getName() : null);
-                    return res;
-                })
+                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
@@ -1056,5 +1039,64 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         response.setTrainingPlan(trainingPlanResponse);
         response.setPrioritySnapshot(prioritySnapshotResponse);
         return response;
+    }
+
+    private Map<Long, PrioritySnapshotDetail> loadSnapshotMap(Long planId) {
+        return prioritySnapshotRepository.findByTrainingPlanId(planId)
+                .map(snapshot -> prioritySnapshotDetailRepository
+                        .findBySnapshotId(snapshot.getId())
+                        .stream()
+                        .collect(Collectors.toMap(
+                                d -> d.getEmployee().getId(),
+                                d -> d,
+                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2
+                        )))
+                .orElse(Map.of());
+    }
+
+    private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
+        if (employeeIds.isEmpty()) return Map.of();
+        return trainingResultDetailRepository
+                .findLatestByEmployeeIds(employeeIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        d -> d.getEmployee().getId(),
+                        d -> d,
+                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2
+                ));
+    }
+
+    private EmployeePlanResponse buildEmployeePlanResponse(
+            Employee emp,
+            Map<Long, PrioritySnapshotDetail> snapshotMap,
+            Map<Long, TrainingResultDetail> lastTrainingMap,
+            Set<Long> inPlanIds) {
+
+        PrioritySnapshotDetail snapshot = snapshotMap.get(emp.getId());
+        TrainingResultDetail lastTraining = lastTrainingMap.get(emp.getId());
+
+        return EmployeePlanResponse.builder()
+                .id(emp.getId())
+                .employeeCode(emp.getEmployeeCode())
+                .fullName(emp.getFullName())
+                .status(emp.getStatus())
+                .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
+                .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
+                .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
+                        ? emp.getTeam().getGroup().getName() : null)
+                .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
+                .tierName(snapshot != null ? snapshot.getTierName() : null)
+                .sortRank(snapshot != null ? snapshot.getSortRank() : null)
+                .priorityReason(buildPriorityReason(snapshot))
+                .lastTrainedDate(lastTraining != null ? lastTraining.getActualDate() : null)
+                .lastTrainedPassed(lastTraining != null ? lastTraining.getIsPass() : null)
+                .inCurrentPlan(inPlanIds.contains(emp.getId()))
+                .build();
+    }
+
+    private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
+        if (snapshot == null) return null;
+        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
+        return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }

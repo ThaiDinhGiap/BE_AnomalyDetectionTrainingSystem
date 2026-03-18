@@ -11,5 +11,7 @@ public interface PrioritySnapshotDetailRepository extends JpaRepository<Priority
 
     void deleteBySnapshotId(Long snapshotId);
 
+    List<PrioritySnapshotDetail> findBySnapshotId(Long snapshotId);
+
     List<PrioritySnapshotDetail> findBySnapshotIdOrderByTierOrderAscSortRankAsc(Long snapshotId);
 }
