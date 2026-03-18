@@ -19,6 +19,38 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     List<TrainingResult> findByTrainingPlanIdIn(List<Long> planIds);
     List<TrainingResult> findByLineId(Long lineId);
 
+    @Query("SELECT tr FROM TrainingResult tr WHERE tr.line.id = :lineId AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByLineIdForFinalInspection(@Param("lineId") Long lineId);
+
+    @Query("SELECT tr FROM TrainingResult tr WHERE tr.deleteFlag = false")
+    List<TrainingResult> findAllForFinalInspection();
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.line.id = :lineId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByLineIdExcludingStatuses(
+            @Param("lineId") Long lineId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllExcludingStatuses(
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.createdBy = :createdBy " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByCreatedByAndLineId(
+            @Param("createdBy") String createdBy,
+            @Param("lineId") Long lineId);
+
+    @Query("SELECT tr FROM TrainingResult tr " +
+            "WHERE tr.createdBy = :createdBy " +
+            "AND tr.deleteFlag = false")
+    List<TrainingResult> findAllByCreatedBy(@Param("createdBy") String createdBy);
+
+
     List<TrainingResult> findByLineIdAndDeleteFlagFalse(Long lineId);
 
     List<TrainingResult> findByCreatedByAndLineIdAndDeleteFlagFalse(String createdBy, Long lineId);
