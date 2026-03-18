@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.approval;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.sep490.anomaly_training_backend.enums.StepState;
 import lombok.Builder;
 import lombok.Data;
 
@@ -68,9 +69,5 @@ public class ApprovalTimelineResponse {
          * Action thực tế: SUBMIT, APPROVE, REJECT, REVISE
          */
         private String action;
-
-        public enum StepState {
-            DONE, WAITING, REJECTED, PENDING
-        }
     }
 }

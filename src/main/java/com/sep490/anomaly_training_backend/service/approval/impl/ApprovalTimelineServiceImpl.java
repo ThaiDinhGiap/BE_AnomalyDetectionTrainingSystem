@@ -2,9 +2,9 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse;
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse.TimelineStep;
-import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse.TimelineStep.StepState;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.StepState;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.User;
