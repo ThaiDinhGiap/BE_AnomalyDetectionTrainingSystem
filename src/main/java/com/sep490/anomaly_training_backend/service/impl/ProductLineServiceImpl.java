@@ -181,14 +181,24 @@ public class ProductLineServiceImpl implements ProductLineService {
             for (ProductLine pl : productLine) {
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
+                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
+                workingPosition.setSupervisorId(group.getSupervisor().getId());
+                workingPosition.setSupervisorName(group.getSupervisor().getFullName());
+                workingPosition.setSupervisorCode(group.getSupervisor().getEmployeeCode());
             }
             workingPosition.setTeamId(team.getId());
             workingPosition.setTeamName(team.getName());
-            workingPosition.setTeamLead(team.getTeamLeader().getFullName());
+            workingPosition.setTeamLeadCode(team.getTeamLeader().getEmployeeCode());
+            workingPosition.setTeamLeadName(team.getTeamLeader().getFullName());
+            workingPosition.setFinalInspectionCode(team.getFinalInspection().getEmployeeCode());
+            workingPosition.setFinalInspectionName(team.getFinalInspection().getFullName());
             workingPosition.setSectionId(group.getSection().getId());
             workingPosition.setSectionName(group.getSection().getName());
+            workingPosition.setManagerId(group.getSection().getManager().getId());
+            workingPosition.setManagerName(group.getSection().getManager().getFullName());
+            workingPosition.setManagerCode(group.getSection().getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;
@@ -203,11 +213,18 @@ public class ProductLineServiceImpl implements ProductLineService {
             for (ProductLine pl : productLine) {
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
+                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
+                workingPosition.setSupervisorId(group.getSupervisor().getId());
+                workingPosition.setSupervisorName(group.getSupervisor().getFullName());
+                workingPosition.setSupervisorCode(group.getSupervisor().getEmployeeCode());
             }
             workingPosition.setSectionId(group.getSection().getId());
             workingPosition.setSectionName(group.getSection().getName());
+            workingPosition.setManagerId(group.getSection().getManager().getId());
+            workingPosition.setManagerName(group.getSection().getManager().getFullName());
+            workingPosition.setManagerCode(group.getSection().getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;
@@ -222,9 +239,13 @@ public class ProductLineServiceImpl implements ProductLineService {
             for (ProductLine pl : productLine) {
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
+                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
             }
             workingPosition.setSectionId(section.getId());
             workingPosition.setSectionName(section.getName());
+            workingPosition.setManagerId(section.getManager().getId());
+            workingPosition.setManagerName(section.getManager().getFullName());
+            workingPosition.setManagerCode(section.getManager().getEmployeeCode());
             resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;

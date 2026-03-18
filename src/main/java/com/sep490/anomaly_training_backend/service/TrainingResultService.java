@@ -23,7 +23,7 @@ public interface TrainingResultService {
 
     void signDetailsByFi(List<FiSignRequest> requests);
 
-    List<TrainingResultListResponse> getAllTrainingResults();
+    List<TrainingResultListResponse> getAllTrainingResults(Long lineId);
 
     List<TrainingResultListResponse> getResultsByLine(Long lineId);
 

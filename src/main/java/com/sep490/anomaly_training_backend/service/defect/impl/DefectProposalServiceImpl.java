@@ -94,7 +94,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         }
         // validate ids belong to proposal
         for (DefectProposalDetailRequest item : items) {
-            Long detailId = item.getId();
+            Long detailId = item.getDefectProposalDetailId();
             if (detailId != null && !existingMap.containsKey(detailId)) {
                 throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
             }
@@ -104,13 +104,13 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         //apply create/update/delete
         for (DefectProposalDetailRequest item : items) {
             // create
-            if (item.getId() == null) {
+            if (item.getDefectProposalDetailId() == null) {
                 DefectProposalDetail newEntity = mapToEntity(item, proposal, currentUser);
                 defectProposalDetailRepository.save(newEntity);
                 continue;
             }
-            requestDetailIds.add(item.getId());
-            DefectProposalDetail entity = existingMap.get(item.getId());
+            requestDetailIds.add(item.getDefectProposalDetailId());
+            DefectProposalDetail entity = existingMap.get(item.getDefectProposalDetailId());
             if (entity == null) {
                 throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
             }
@@ -152,7 +152,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setConclusion(item.getConclusion());
             if (item.getImages() != null && !item.getImages().isEmpty()) {
                 attachmentService.uploadAttachments(item.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
-                attachmentService.deleteAttachments("DEFECT_PROPOSAL", item.getId());
+                attachmentService.deleteAttachments("DEFECT_PROPOSAL", item.getDefectProposalDetailId());
             }
             defectProposalDetailRepository.save(entity);
         }
@@ -224,7 +224,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     public void revise(Long id, User currentUser, HttpServletRequest request) {
         DefectProposal proposal = defectProposalRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
-        if (!proposal.getCreatedBy().equals(proposal.getCreatedBy())) {
+        if (!currentUser.getUsername().equals(proposal.getCreatedBy())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
         approvalService.revise(proposal, currentUser, request);

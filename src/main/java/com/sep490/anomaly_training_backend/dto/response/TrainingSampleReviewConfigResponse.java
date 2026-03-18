@@ -7,11 +7,7 @@ import lombok.Data;
 @Builder
 public class TrainingSampleReviewConfigResponse {
     Long id;
-    String productLine;
-    Integer triggerMonth ;
+    Integer triggerMonth;
     Integer triggerDay;
     Integer dueDays;
-    String assignee;
-    Boolean isActive;
-
 }

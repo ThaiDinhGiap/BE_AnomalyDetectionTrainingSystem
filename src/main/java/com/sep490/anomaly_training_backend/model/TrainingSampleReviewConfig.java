@@ -43,12 +43,6 @@ public class TrainingSampleReviewConfig extends BaseEntity {
     @EqualsAndHashCode.Exclude
     TrainingSampleReviewPolicy reviewPolicy;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_line_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    ProductLine productLine;
-
     @Column(name = "trigger_month", nullable = false)
     @Builder.Default
     Integer triggerMonth = 3;

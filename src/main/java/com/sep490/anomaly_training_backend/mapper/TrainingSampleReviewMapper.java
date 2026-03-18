@@ -6,7 +6,7 @@ import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ProductLineMapper.class})
 public abstract class TrainingSampleReviewMapper {
 
     @Mapping(target = "productLine", source = "productLine.name")

@@ -8,4 +8,5 @@ import lombok.Data;
 public class TrainingSampleReviewRequest {
     Long id;
     String sampleSnapshot;
+    Long teamLeadId;
 }

@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
-import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.User;
@@ -13,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,14 +40,5 @@ public class AccountController {
 
 
         return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
-    }
-
-    @GetMapping("/working-position")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get summary information of current user to display shortly",
-            description = "Get basic information for the current user, including sections and permissions"
-    )
-    public ResponseEntity<ApiResponse<WorkingPosition>> getWorkingPosition() {
-        return null;
     }
 }

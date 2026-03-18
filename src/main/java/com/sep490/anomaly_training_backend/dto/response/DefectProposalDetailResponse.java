@@ -10,7 +10,8 @@ import java.util.List;
 @Data
 @Builder
 public class DefectProposalDetailResponse {
-    Long id;
+    Long  defectProposalDetailId;
+    Long defectProposalId;
     ProposalType proposalType;
     Long defectId;
     String defectDescription;
@@ -28,6 +29,7 @@ public class DefectProposalDetailResponse {
     String customer;
     Integer quantity;
     String conclusion;
-    List<Attachment> attachments;
+    ProductResponse product;
+    List<String> attachmentUrls;
     ProductResponse productResponse;
 }

@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/staff-organization")
 @RequiredArgsConstructor
-@Tag(name = "Staff Organization API", description = "Quản lý cơ cấu tổ chức nhân sự (Phòng ban, Nhóm, Tổ, Nhân viên, Người dùng)")
+@Tag(name = "Staff Organization API", description = "Manage staff organization structure (Departments, Groups, Teams, Employees, Users)")
 public class StaffOrganizationController {
 
     private final SectionService sectionService;
@@ -33,14 +33,14 @@ public class StaffOrganizationController {
 
     @GetMapping("/sections")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Phòng/Ban (Sections)", description = "Trả về danh sách tất cả các phòng ban trong hệ thống")
+    @Operation(summary = "Get list of Sections/Departments", description = "Returns a list of all departments in the system")
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
     }
 
     @GetMapping("/group/{sectionId}")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Nhóm (Groups) theo Section ID", description = "Truyền vào ID của phòng ban để lấy danh sách các nhóm thuộc phòng ban đó")
+    @Operation(summary = "Get list of Groups by Section ID", description = "Pass the Section ID to get a list of groups belonging to that section")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(
             @Parameter(description = "ID của Section (Phòng/Ban)") @PathVariable Long sectionId) {
         return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
@@ -48,7 +48,7 @@ public class StaffOrganizationController {
 
     @GetMapping("/team/{groupId}")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Tổ (Teams) theo Group ID", description = "Truyền vào ID của nhóm để lấy danh sách các tổ thuộc nhóm đó")
+    @Operation(summary = "Get list of Teams by Group ID", description = "Pass the Group ID to get a list of teams belonging to that group")
     public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(
             @Parameter(description = "ID của Group (Nhóm)") @PathVariable Long groupId) {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
@@ -56,7 +56,7 @@ public class StaffOrganizationController {
 
     @GetMapping("/member/{teamId}")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Nhân viên theo Team ID", description = "Truyền vào ID của tổ để lấy danh sách nhân viên thuộc tổ đó")
+    @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByTeam(
             @Parameter(description = "ID của Team (Tổ)") @PathVariable Long teamId) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByTeam(teamId)));
@@ -64,51 +64,60 @@ public class StaffOrganizationController {
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Tài khoản (Users)", description = "Trả về danh sách tất cả tài khoản người dùng trên hệ thống (dạng Dashboard)")
+    @Operation(summary = "Get list of Accounts (Users)", description = "Returns a list of all user accounts in the system (Dashboard format)")
     public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
         return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
     }
 
     @GetMapping("/employees")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Nhân viên (Employees)", description = "Trả về danh sách tất cả nhân viên")
+    @Operation(summary = "Get list of Employees", description = "Returns a list of all employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
 
     @GetMapping("/employees/no-account")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Lấy danh sách Nhân viên chưa có tài khoản", description = "Dùng để hiển thị dropdown list khi tạo mới User")
+    @Operation(summary = "Get list of Employees without accounts", description = "Used to display dropdown list when creating a new User")
     public ResponseEntity<ApiResponse<List<EmployeeNoAccountDTO>>> getEmployeesWithoutAccount() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
     }
+    @GetMapping("/product-line/team-lead/{productLineId}")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
+        List<UserResponse> result = userService.getTeamLeadInProductLine(productLineId);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+
 
     // ====================== CREATE ======================
 
     @PostMapping("/sections")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    @Operation(summary = "Tạo mới Phòng/Ban (Section)")
+    @Operation(summary = "Create new Section/Department")
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(sectionService.createSection(request)));
     }
 
     @PostMapping("/groups")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    @Operation(summary = "Tạo mới Nhóm (Group)")
+    @Operation(summary = "Create new Group")
     public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
     }
 
     @PostMapping("/teams")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    @Operation(summary = "Tạo mới Tổ (Team)")
+    @Operation(summary = "Create new Team")
     public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
         return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
     }
 
     @PostMapping("/employees")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    @Operation(summary = "Tạo mới Nhân viên (Employee)", description = "Bắt buộc điền đúng các trường validate")
+    @Operation(summary = "Create new Employee", description = "Must fill in all required fields correctly")
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody EmployeeRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
@@ -116,7 +125,7 @@ public class StaffOrganizationController {
 
     @PostMapping("/users")
     @PreAuthorize("hasAuthority('staff_organization.create')")
-    @Operation(summary = "Tạo mới Tài khoản (User)", description = "Sẽ tự động gửi email chứa password ngẫu nhiên về email của nhân viên")
+    @Operation(summary = "Create new Account (User)", description = "Will automatically send an email with a random password to the employee's email address")
     public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.createUser(request)));
     }
@@ -125,7 +134,7 @@ public class StaffOrganizationController {
 
     @PutMapping("/users/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
-    @Operation(summary = "Cập nhật Tài khoản", description = "Cho phép cập nhật Email, quyền (Role) và trạng thái hoạt động (isActive)")
+    @Operation(summary = "Update Account", description = "Allows updating Email, permissions (Roles) and active status (isActive)")
     public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
             @Parameter(description = "ID của User") @PathVariable Long id,
             @RequestBody UserUpdateRequest request) {
@@ -134,7 +143,7 @@ public class StaffOrganizationController {
 
     @PutMapping("/sections/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
-    @Operation(summary = "Cập nhật Phòng/Ban (Section)")
+    @Operation(summary = "Update Section/Department")
     public ResponseEntity<ApiResponse<SectionResponse>> updateSection(
             @Parameter(description = "ID của Section") @PathVariable Long id,
             @RequestBody SectionRequest request) {
@@ -143,7 +152,7 @@ public class StaffOrganizationController {
 
     @PutMapping("/groups/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
-    @Operation(summary = "Cập nhật Nhóm (Group)")
+    @Operation(summary = "Update Group")
     public ResponseEntity<ApiResponse<GroupResponse>> updateGroup(
             @Parameter(description = "ID của Group") @PathVariable Long id,
             @RequestBody GroupRequest request) {
@@ -152,7 +161,7 @@ public class StaffOrganizationController {
 
     @PutMapping("/teams/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
-    @Operation(summary = "Cập nhật Tổ (Team)")
+    @Operation(summary = "Update Team")
     public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(
             @Parameter(description = "ID của Team") @PathVariable Long id,
             @RequestBody TeamRequest request) {
@@ -161,7 +170,7 @@ public class StaffOrganizationController {
 
     @PutMapping("/employees/{id}")
     @PreAuthorize("hasAuthority('staff_organization.edit')")
-    @Operation(summary = "Cập nhật Nhân viên (Employee)")
+    @Operation(summary = "Update Employee")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @Parameter(description = "ID của Employee") @PathVariable Long id,
             @Valid @RequestBody EmployeeRequest request) {
@@ -172,7 +181,7 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/sections/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    @Operation(summary = "Xóa Phòng/Ban (Section)")
+    @Operation(summary = "Delete Section/Department")
     public ResponseEntity<Void> deleteSection(
             @Parameter(description = "ID của Section") @PathVariable Long id) {
         sectionService.deleteSection(id);
@@ -181,7 +190,7 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/groups/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    @Operation(summary = "Xóa Nhóm (Group)")
+    @Operation(summary = "delete(Group)")
     public ResponseEntity<Void> deleteGroup(
             @Parameter(description = "ID của Group") @PathVariable Long id) {
         groupService.deleteGroup(id);
@@ -190,7 +199,7 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/teams/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    @Operation(summary = "Xóa Tổ (Team)")
+    @Operation(summary = "delete (Team)")
     public ResponseEntity<Void> deleteTeam(
             @Parameter(description = "ID của Team") @PathVariable Long id) {
         teamService.deleteTeam(id);
@@ -199,7 +208,7 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/employees/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    @Operation(summary = "Xóa Nhân viên (Employee)", description = "Xóa mềm (Soft Delete) nhân viên và tự động khóa tài khoản User liên kết")
+    @Operation(summary = "Delete (Employee)", description = "Xóa mềm (Soft Delete) nhân viên và tự động khóa tài khoản User liên kết")
     public ResponseEntity<ApiResponse<String>> deleteEmployee(
             @Parameter(description = "ID của Employee") @PathVariable Long id) {
         employeeService.deleteEmployee(id);
@@ -208,7 +217,7 @@ public class StaffOrganizationController {
 
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('staff_organization.delete')")
-    @Operation(summary = "Xóa Tài khoản (User)")
+    @Operation(summary = "Delete (User)")
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID của User") @PathVariable Long id) {
         userService.deleteUser(id);
