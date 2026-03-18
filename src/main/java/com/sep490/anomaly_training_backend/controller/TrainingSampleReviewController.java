@@ -43,7 +43,8 @@ public class TrainingSampleReviewController {
 
     @PostMapping("/policies")
     @PreAuthorize("hasAuthority('training_sample_review.create')")
-    @Operation(summary = "Create new review policy", description = "Create a new review policy for the training sample list")    public ResponseEntity<ApiResponse<TrainingSampleReviewPolicyResponse>> createNewReviewPolicy(
+    @Operation(summary = "Create new review policy", description = "Create a new review policy for the training sample list")
+    public ResponseEntity<ApiResponse<TrainingSampleReviewPolicyResponse>> createNewReviewPolicy(
             @RequestBody TrainingSampleReviewPolicyRequest request) {
         TrainingSampleReviewPolicyResponse response = trainingSampleReviewPolicyService.createNewReviewPolicy(request);
         return ResponseEntity.status(HttpStatus.CREATED)
