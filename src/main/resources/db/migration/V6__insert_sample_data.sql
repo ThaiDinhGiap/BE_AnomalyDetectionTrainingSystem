@@ -102,10 +102,10 @@ VALUES (1, 'admin', 'admin@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UK
 
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
 VALUES (1, 'ROLE_ADMIN', 'Quản trị', 'Quyền truy cập toàn hệ thống', TRUE, TRUE, 'system'),
-       (2, 'ROLE_MANAGER', 'Quản lý', 'Phê duyệt cấp quản lý', TRUE, TRUE, 'system'),
-       (3, 'ROLE_SUPERVISOR', 'Giám sát', 'Phê duyệt cấp giám sát', TRUE, TRUE, 'system'),
-       (4, 'ROLE_TEAM_LEADER', 'Trưởng tổ', 'Khởi tạo và nhập liệu', TRUE, TRUE, 'system'),
-       (5, 'ROLE_FINAL_INSPECTION', 'KCS Cuối', 'Kiểm tra cuối dây chuyền', TRUE, TRUE, 'system');
+       (2, 'ROLE_MANAGER', 'Quản lý', 'Phê duyệt cấp quản lý', FALSE, TRUE, 'system'),
+       (3, 'ROLE_SUPERVISOR', 'Giám sát', 'Phê duyệt cấp giám sát', FALSE, TRUE, 'system'),
+       (4, 'ROLE_TEAM_LEADER', 'Tổ trưởng', 'Khởi tạo và nhập liệu', FALSE, TRUE, 'system'),
+       (5, 'ROLE_FINAL_INSPECTION', 'Kiểm soát chất lượng', 'Kiểm tra cuối dây chuyền', FALSE, TRUE, 'system');
 
 INSERT INTO user_roles (user_id, role_id)
 VALUES (1, 1),
@@ -123,12 +123,13 @@ VALUES (1, 1),
        (13, 5);
 
 -- ============================================================================
--- PART 2: MODULES & PERMISSIONS (từ V4)
+-- PART 2: MODULES & PERMISSIONS
+-- Bỏ: training_sample.detail (101), defect.detail (112)
 -- ============================================================================
 
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
 VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cáo lỗi', 1, 'system'),
-       (2, 'training_sample', 'Chủ đề đào tạo', 'Quản lý chủ đề đào tạo', 2, 'system'),
+       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý chủ đề đào tạo', 2, 'system'),
        (3, 'training_plan', 'Kế hoạch đào tạo', 'Quản lý kế hoạch đào tạo', 3, 'system'),
        (4, 'training_result', 'Kết quả đào tạo', 'Quản lý kết quả đào tạo', 4, 'system'),
        (5, 'employee', 'Nhân viên', 'Quản lý thông tin nhân viên', 5, 'system'),
@@ -139,188 +140,262 @@ VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cá
        (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard và báo cáo tổng hợp', 10, 'system'),
        (11, 'system', 'Cài đặt hệ thống', 'Cài đặt và cấu hình hệ thống', 11, 'system'),
        (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lí danh sách nhân sự công ty', 12, 'system'),
-       (13, 'manufacturing_line', 'Tổ chức sản xuất', 'Quản lí danh sách tổ chức dây chuyền', 13, 'system'),
+       (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lí danh sách tổ chức dây chuyền', 13, 'system'),
        (14, 'attachment', 'Quản lý File & Ảnh', 'Upload và xóa tệp MinIO', 14, 'system'),
        (15, 'action_item', 'Việc cần làm', 'Quản lý các mục cần xử lý', 15, 'system');
 
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
-VALUES (1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 'system'),
-       (2, 'defect_proposal.create', 'Tạo báo cáo lỗi', 1, 'create', 2, TRUE, 'system'),
-       (3, 'defect_proposal.edit', 'Sửa báo cáo lỗi', 1, 'edit', 3, TRUE, 'system'),
-       (4, 'defect_proposal.delete', 'Xoá báo cáo lỗi', 1, 'delete', 4, TRUE, 'system'),
-       (5, 'defect_proposal.approve', 'Phê duyệt báo cáo lỗi', 1, 'approve', 5, TRUE, 'system'),
-       (6, 'training_sample_proposal.view', 'Xem chủ đề đào tạo', 2, 'view', 1, TRUE, 'system'),
-       (7, 'training_sample_proposal.create', 'Tạo chủ đề đào tạo', 2, 'create', 2, TRUE, 'system'),
-       (8, 'training_sample_proposal.edit', 'Sửa chủ đề đào tạo', 2, 'edit', 3, TRUE, 'system'),
-       (9, 'training_sample_proposal.delete', 'Xoá chủ đề đào tạo', 2, 'delete', 4, TRUE, 'system'),
-       (10, 'training_plan.view', 'Xem kế hoạch đào tạo', 3, 'view', 1, TRUE, 'system'),
-       (11, 'training_plan.create', 'Tạo kế hoạch đào tạo', 3, 'create', 2, TRUE, 'system'),
-       (12, 'training_plan.edit', 'Sửa kế hoạch đào tạo', 3, 'edit', 3, TRUE, 'system'),
-       (13, 'training_plan.delete', 'Xoá kế hoạch đào tạo', 3, 'delete', 4, TRUE, 'system'),
-       (14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
-       (15, 'training_result.view', 'Xem kết quả đào tạo', 4, 'view', 1, TRUE, 'system'),
-       (16, 'training_result.edit', 'Cập nhật kết quả đào tạo', 4, 'edit', 2, TRUE, 'system'),
-       (17, 'training_result.approve', 'Phê duyệt kết quả đào tạo', 4, 'approve', 3, TRUE, 'system'),
-       (18, 'employee.view', 'Xem thông tin nhân viên', 5, 'view', 1, TRUE, 'system'),
-       (19, 'employee.create', 'Thêm nhân viên', 5, 'create', 2, TRUE, 'system'),
-       (20, 'employee.edit', 'Sửa thông tin nhân viên', 5, 'edit', 3, TRUE, 'system'),
-       (21, 'employee.delete', 'Xoá nhân viên', 5, 'delete', 4, TRUE, 'system'),
-       (22, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
-       (23, 'user.create', 'Tạo tài khoản người dùng', 6, 'create', 2, TRUE, 'system'),
-       (24, 'user.edit', 'Sửa tài khoản người dùng', 6, 'edit', 3, TRUE, 'system'),
-       (25, 'user.delete', 'Xoá tài khoản người dùng', 6, 'delete', 4, TRUE, 'system'),
-       (26, 'user.assign_role', 'Gán vai trò cho người dùng', 6, 'assign_role', 5, TRUE, 'system'),
-       (27, 'role.view', 'Xem vai trò', 7, 'view', 1, TRUE, 'system'),
-       (28, 'role.create', 'Tạo vai trò', 7, 'create', 2, TRUE, 'system'),
-       (29, 'role.edit', 'Sửa vai trò', 7, 'edit', 3, TRUE, 'system'),
-       (30, 'role.delete', 'Xoá vai trò', 7, 'delete', 4, TRUE, 'system'),
-       (31, 'role.assign_permission', 'Gán quyền cho vai trò', 7, 'assign_permission', 5, TRUE, 'system'),
-       (32, 'master_data.view', 'Xem dữ liệu danh mục', 8, 'view', 1, TRUE, 'system'),
-       (33, 'master_data.create', 'Thêm dữ liệu danh mục', 8, 'create', 2, TRUE, 'system'),
-       (34, 'master_data.edit', 'Sửa dữ liệu danh mục', 8, 'edit', 3, TRUE, 'system'),
-       (35, 'master_data.delete', 'Xoá dữ liệu danh mục', 8, 'delete', 4, TRUE, 'system'),
-       (36, 'scoring.view', 'Xem chính sách chấm điểm', 9, 'view', 1, TRUE, 'system'),
-       (37, 'scoring.create', 'Tạo chính sách chấm điểm', 9, 'create', 2, TRUE, 'system'),
-       (38, 'scoring.edit', 'Sửa chính sách chấm điểm', 9, 'edit', 3, TRUE, 'system'),
-       (39, 'scoring.delete', 'Xoá chính sách chấm điểm', 9, 'delete', 4, TRUE, 'system'),
-       (40, 'dashboard.view', 'Xem dashboard', 10, 'view', 1, TRUE, 'system'),
-       (41, 'dashboard.export', 'Xuất báo cáo', 10, 'export', 2, TRUE, 'system'),
-       (42, 'system.config', 'Cấu hình hệ thống', 11, 'config', 1, TRUE, 'system'),
-       (43, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
-       (44, 'staff_organization.create', 'Tạo cấu trúc nhân sự', 12, 'create', 2, TRUE, 'system'),
-       (45, 'staff_organization.edit', 'Sửa cấu trúc nhân sự', 12, 'edit', 3, TRUE, 'system'),
-       (46, 'staff_organization.delete', 'Xoá cấu trúc nhân sự', 12, 'delete', 4, TRUE, 'system'),
-       (47, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền', 13, 'view', 1, TRUE, 'system'),
-       (48, 'manufacturing_line.create', 'Tạo cấu trúc dây chuyền', 13, 'create', 2, TRUE, 'system'),
-       (49, 'manufacturing_line.edit', 'Sửa cấu trúc dây chuyền', 13, 'edit', 3, TRUE, 'system'),
-       (50, 'manufacturing_line.delete', 'Xoá cấu trúc dây chuyền', 13, 'delete', 4, TRUE, 'system'),
-       (56, 'attachment.view', 'Xem file/ảnh đính kèm', 14, 'view', 1, TRUE, 'system'),
-       (57, 'attachment.create', 'Upload file/ảnh mới', 14, 'create', 2, TRUE, 'system'),
-       (58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system'),
-       (59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system'),
-       (100, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 5, TRUE, 'system'),
-       (101, 'training_sample.detail', 'Xem chi tiết mẫu huấn luyện', 2, 'view', 6, TRUE, 'system'),
-       (102, 'training_sample.import', 'Nhập danh sách mẫu huấn luyện', 2, 'create', 7, TRUE, 'system'),
-       (111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
-       (112, 'defect.detail', 'Xem chi tiết lỗi quá khứ', 1, 'view', 7, TRUE, 'system'),
-       (113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 8, TRUE, 'system'),
-       (200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
-       (201, 'training_sample_review.view', 'Xem chính sách kểm tra mẫu huấn luyện hằng n', 2, 'view', 5, TRUE,
-        'system'),
-       (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 5, TRUE, 'system'),
-       (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 5, TRUE, 'system'),
-       (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 5, TRUE, 'system');
+VALUES
+-- defect_report (1)
+(1, 'defect_proposal.view', 'Xem báo cáo lỗi', 1, 'view', 1, TRUE, 'system'),
+(2, 'defect_proposal.create', 'Tạo báo cáo lỗi', 1, 'create', 2, TRUE, 'system'),
+(3, 'defect_proposal.edit', 'Sửa báo cáo lỗi', 1, 'edit', 3, TRUE, 'system'),
+(4, 'defect_proposal.delete', 'Xoá báo cáo lỗi', 1, 'delete', 4, TRUE, 'system'),
+(5, 'defect_proposal.approve', 'Phê duyệt báo cáo lỗi', 1, 'approve', 5, TRUE, 'system'),
+(111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
+(113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 7, TRUE, 'system'),
+-- training_sample (2)
+(6, 'training_sample_proposal.view', 'Xem chủ đề đào tạo', 2, 'view', 1, TRUE, 'system'),
+(7, 'training_sample_proposal.create', 'Tạo chủ đề đào tạo', 2, 'create', 2, TRUE, 'system'),
+(8, 'training_sample_proposal.edit', 'Sửa chủ đề đào tạo', 2, 'edit', 3, TRUE, 'system'),
+(9, 'training_sample_proposal.delete', 'Xoá chủ đề đào tạo', 2, 'delete', 4, TRUE, 'system'),
+(100, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 5, TRUE, 'system'),
+(102, 'training_sample.import', 'Nhập danh sách mẫu huấn luyện', 2, 'create', 6, TRUE, 'system'),
+(201, 'training_sample_review.view', 'Xem chính sách kiểm tra mẫu huấn luyện hằng năm', 2, 'view', 7, TRUE, 'system'),
+(202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 8, TRUE, 'system'),
+(203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 9, TRUE, 'system'),
+(204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
+-- training_plan (3)
+(10, 'training_plan.view', 'Xem kế hoạch đào tạo', 3, 'view', 1, TRUE, 'system'),
+(11, 'training_plan.create', 'Tạo kế hoạch đào tạo', 3, 'create', 2, TRUE, 'system'),
+(12, 'training_plan.edit', 'Sửa kế hoạch đào tạo', 3, 'edit', 3, TRUE, 'system'),
+(13, 'training_plan.delete', 'Xoá kế hoạch đào tạo', 3, 'delete', 4, TRUE, 'system'),
+(14, 'training_plan.approve', 'Phê duyệt kế hoạch đào tạo', 3, 'approve', 5, TRUE, 'system'),
+-- training_result (4)
+(15, 'training_result.view', 'Xem kết quả đào tạo', 4, 'view', 1, TRUE, 'system'),
+(16, 'training_result.edit', 'Cập nhật kết quả đào tạo', 4, 'edit', 2, TRUE, 'system'),
+(17, 'training_result.approve', 'Phê duyệt kết quả đào tạo', 4, 'approve', 3, TRUE, 'system'),
+-- employee (5)
+(18, 'employee.view', 'Xem thông tin nhân viên', 5, 'view', 1, TRUE, 'system'),
+(19, 'employee.create', 'Thêm nhân viên', 5, 'create', 2, TRUE, 'system'),
+(20, 'employee.edit', 'Sửa thông tin nhân viên', 5, 'edit', 3, TRUE, 'system'),
+(21, 'employee.delete', 'Xoá nhân viên', 5, 'delete', 4, TRUE, 'system'),
+-- user (6)
+(22, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
+(23, 'user.create', 'Tạo tài khoản người dùng', 6, 'create', 2, TRUE, 'system'),
+(24, 'user.edit', 'Sửa tài khoản người dùng', 6, 'edit', 3, TRUE, 'system'),
+(25, 'user.delete', 'Xoá tài khoản người dùng', 6, 'delete', 4, TRUE, 'system'),
+(26, 'user.assign_role', 'Gán vai trò cho người dùng', 6, 'assign_role', 5, TRUE, 'system'),
+-- role (7)
+(27, 'role.view', 'Xem vai trò', 7, 'view', 1, TRUE, 'system'),
+(28, 'role.create', 'Tạo vai trò', 7, 'create', 2, TRUE, 'system'),
+(29, 'role.edit', 'Sửa vai trò', 7, 'edit', 3, TRUE, 'system'),
+(30, 'role.delete', 'Xoá vai trò', 7, 'delete', 4, TRUE, 'system'),
+(31, 'role.assign_permission', 'Gán quyền cho vai trò', 7, 'assign_permission', 5, TRUE, 'system'),
+-- master_data (8)
+(32, 'master_data.view', 'Xem dữ liệu danh mục', 8, 'view', 1, TRUE, 'system'),
+(33, 'master_data.create', 'Thêm dữ liệu danh mục', 8, 'create', 2, TRUE, 'system'),
+(34, 'master_data.edit', 'Sửa dữ liệu danh mục', 8, 'edit', 3, TRUE, 'system'),
+(35, 'master_data.delete', 'Xoá dữ liệu danh mục', 8, 'delete', 4, TRUE, 'system'),
+-- scoring (9)
+(36, 'scoring.view', 'Xem chính sách chấm điểm', 9, 'view', 1, TRUE, 'system'),
+(37, 'scoring.create', 'Tạo chính sách chấm điểm', 9, 'create', 2, TRUE, 'system'),
+(38, 'scoring.edit', 'Sửa chính sách chấm điểm', 9, 'edit', 3, TRUE, 'system'),
+(39, 'scoring.delete', 'Xoá chính sách chấm điểm', 9, 'delete', 4, TRUE, 'system'),
+-- dashboard (10)
+(40, 'dashboard.view', 'Xem dashboard', 10, 'view', 1, TRUE, 'system'),
+(41, 'dashboard.export', 'Xuất báo cáo', 10, 'export', 2, TRUE, 'system'),
+-- system (11)
+(42, 'system.config', 'Cấu hình hệ thống', 11, 'config', 1, TRUE, 'system'),
+-- staff_organization (12)
+(43, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
+(44, 'staff_organization.create', 'Tạo cấu trúc nhân sự', 12, 'create', 2, TRUE, 'system'),
+(45, 'staff_organization.edit', 'Sửa cấu trúc nhân sự', 12, 'edit', 3, TRUE, 'system'),
+(46, 'staff_organization.delete', 'Xoá cấu trúc nhân sự', 12, 'delete', 4, TRUE, 'system'),
+-- manufacturing_line (13)
+(47, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền', 13, 'view', 1, TRUE, 'system'),
+(48, 'manufacturing_line.create', 'Tạo cấu trúc dây chuyền', 13, 'create', 2, TRUE, 'system'),
+(49, 'manufacturing_line.edit', 'Sửa cấu trúc dây chuyền', 13, 'edit', 3, TRUE, 'system'),
+(50, 'manufacturing_line.delete', 'Xoá cấu trúc dây chuyền', 13, 'delete', 4, TRUE, 'system'),
+(200, 'manufacturing_line.import', 'Import dây chuyền từ file', 13, 'import', 5, TRUE, 'system'),
+-- attachment (14)
+(56, 'attachment.view', 'Xem file/ảnh đính kèm', 14, 'view', 1, TRUE, 'system'),
+(57, 'attachment.create', 'Upload file/ảnh mới', 14, 'create', 2, TRUE, 'system'),
+(58, 'attachment.delete', 'Xóa file/ảnh đính kèm', 14, 'delete', 3, TRUE, 'system'),
+-- action_item (15)
+(59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system');
+
+-- ============================================================================
+-- ROLE_PERMISSIONS
+-- ============================================================================
 
 -- ADMIN: tất cả quyền
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 1, id
 FROM permissions;
 
--- MANAGER
+-- ── MANAGER ──────────────────────────────────────────────────────────────────
+-- Giữ nguyên cũ + bổ sung xem list defect, training_sample, review ngang TL
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (2, 1),
-       (2, 2),
-       (2, 3),
-       (2, 5),
-       (2, 6),
-       (2, 7),
-       (2, 8),
-       (2, 10),
-       (2, 11),
-       (2, 12),
-       (2, 14),
-       (2, 15),
-       (2, 16),
-       (2, 17),
-       (2, 18),
-       (2, 19),
-       (2, 20),
-       (2, 22),
-       (2, 27),
-       (2, 36),
-       (2, 37),
-       (2, 38),
-       (2, 40),
-       (2, 41),
-       (2, 43),
-       (2, 44),
-       (2, 45),
-       (2, 46),
-       (2, 47),
-       (2, 56),
-       (2, 57),
-       (2, 58),
-       (2, 59);
+VALUES
+-- defect proposal
+(2, 1),
+(2, 2),
+(2, 3),
+(2, 5),
+-- defect list (bổ sung)
+(2, 111),
+(2, 113),
+-- training sample proposal
+(2, 6),
+(2, 7),
+(2, 8),
+-- training sample list (bổ sung)
+(2, 100),
+(2, 102),
+-- training sample review (bổ sung)
+(2, 201),
+(2, 202),
+(2, 203),
+(2, 204),
+-- training plan
+(2, 10),
+(2, 11),
+(2, 12),
+(2, 14),
+-- training result
+(2, 15),
+(2, 16),
+(2, 17),
+-- employee
+(2, 18),
+(2, 19),
+(2, 20),
+-- user, role (readonly)
+(2, 22),
+(2, 27),
+-- scoring
+(2, 36),
+(2, 37),
+(2, 38),
+-- dashboard
+(2, 40),
+(2, 41),
+-- staff org
+(2, 43),
+(2, 44),
+(2, 45),
+(2, 46),
+-- manufacturing line
+(2, 47),
+(2, 200),
+-- attachment
+(2, 56),
+(2, 57),
+(2, 58),
+-- action item
+(2, 59);
 
--- SUPERVISOR
+-- ── SUPERVISOR ───────────────────────────────────────────────────────────────
+-- Giữ nguyên cũ + bổ sung xem list defect, training_sample, review ngang TL
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (3, 1),
-       (3, 2),
-       (3, 3),
-       (3, 5),
-       (3, 6),
-       (3, 7),
-       (3, 8),
-       (3, 10),
-       (3, 11),
-       (3, 12),
-       (3, 14),
-       (3, 15),
-       (3, 16),
-       (3, 18),
-       (3, 19),
-       (3, 20),
-       (3, 36),
-       (3, 40),
-       (3, 43),
-       (3, 47),
-       (3, 56),
-       (3, 57),
-       (3, 58),
-       (3, 201),
-       (3, 202),
-       (3, 203),
-       (3, 204),
-       (3, 59);
+VALUES
+-- defect proposal
+(3, 1),
+(3, 2),
+(3, 3),
+(3, 5),
+-- defect list (bổ sung)
+(3, 111),
+(3, 113),
+-- training sample proposal
+(3, 6),
+(3, 7),
+(3, 8),
+-- training sample list (bổ sung)
+(3, 100),
+(3, 102),
+-- training sample review
+(3, 201),
+(3, 202),
+(3, 203),
+(3, 204),
+-- training plan
+(3, 10),
+(3, 11),
+(3, 12),
+(3, 14),
+-- training result
+(3, 15),
+(3, 16),
+-- employee
+(3, 18),
+(3, 19),
+(3, 20),
+-- scoring (view only)
+(3, 36),
+-- dashboard
+(3, 40),
+-- staff org
+(3, 43),
+-- manufacturing line (bổ sung)
+(3, 47),
+(3, 200),
+-- attachment
+(3, 56),
+(3, 57),
+(3, 58),
+-- action item
+(3, 59);
 
--- TEAM LEADER
+-- ── TEAM LEADER ──────────────────────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (4, 1),
-       (4, 2),
-       (4, 3),
-       (4, 4),
-       (4, 5),
-       (4, 6),
-       (4, 7),
-       (4, 8),
-       (4, 9),
-       (4, 10),
-       (4, 11),
-       (4, 12),
-       (4, 13),
-       (4, 14),
-       (4, 15),
-       (4, 16),
-       (4, 17),
-       (4, 40),
-       (4, 47),
-       (4, 56),
-       (4, 57),
-       (4, 58),
-       (4, 59),
-       (4, 100),
-       (4, 101),
-       (4, 102),
-       (4, 111),
-       (4, 112),
-       (4, 113),
-       (4, 200),
-       (4, 201),
-       (4, 202),
-       (4, 203),
-       (4, 204);
+VALUES
+-- defect proposal
+(4, 1),
+(4, 2),
+(4, 3),
+(4, 4),
+(4, 5),
+-- defect list
+(4, 111),
+(4, 113),
+-- training sample proposal
+(4, 6),
+(4, 7),
+(4, 8),
+(4, 9),
+-- training sample list
+(4, 100),
+(4, 102),
+-- training sample review
+(4, 201),
+(4, 202),
+(4, 203),
+(4, 204),
+-- training plan
+(4, 10),
+(4, 11),
+(4, 12),
+(4, 13),
+(4, 14),
+-- training result
+(4, 15),
+(4, 16),
+(4, 17),
+-- dashboard
+(4, 40),
+-- manufacturing line
+(4, 47),
+(4, 200),
+-- attachment
+(4, 56),
+(4, 57),
+(4, 58),
+-- action item
+(4, 59);
 
--- FINAL INSPECTION
+-- ── FINAL INSPECTION ─────────────────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES (5, 1),
        (5, 2),
