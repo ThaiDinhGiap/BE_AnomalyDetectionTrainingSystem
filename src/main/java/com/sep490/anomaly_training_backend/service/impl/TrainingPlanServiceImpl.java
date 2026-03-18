@@ -113,42 +113,28 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public TrainingPlanResponse getPlanDetail(Long id) {
+    public TrainingPlanGenerationResponse getPlanDetail(Long id) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        TrainingPlanResponse response = planMapper.toResponse(plan);
-        populateEmployeeProcesses(response, plan);
-        return response;
+        return toGenerationResponse(plan);
     }
 
     @Override
-    public List<TrainingPlanResponse> getAllPlans() {
-        List<TrainingPlan> plans = trainingPlanRepository.findAll();
-
-        return plans.stream()
-                .map(plan -> {
-                    TrainingPlanResponse response = planMapper.toResponse(plan);
-                    populateEmployeeProcesses(response, plan);
-                    return response;
-                })
+    public List<TrainingPlanGenerationResponse> getAllPlans() {
+        return trainingPlanRepository.findAll().stream()
+                .map(this::toGenerationResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<TrainingPlanResponse> getRejectedPlans() {
+    public List<TrainingPlanGenerationResponse> getRejectedPlans() {
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REVISE,
                 ReportStatus.REJECTED_BY_SV,
                 ReportStatus.REJECTED_BY_MANAGER
         );
-        List<TrainingPlan> plans = trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses);
-        return plans.stream()
-                .map(plan -> {
-                    TrainingPlanResponse response = planMapper.toResponse(plan);
-                    populateEmployeeProcesses(response, plan);
-                    return response;
-                })
+        return trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses).stream()
+                .map(this::toGenerationResponse)
                 .collect(Collectors.toList());
     }
 
@@ -366,39 +352,24 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     @Override
     @Transactional
-    public TrainingPlanResponse updatePlan(Long planId, TrainingPlanUpdateRequest request) {
+    public TrainingPlanGenerationResponse updatePlan(Long planId, TrainingPlanUpdateRequest request) {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // Chặn sửa khi đang chờ duyệt
         if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
         boolean isApproved = ReportStatus.APPROVED.equals(plan.getStatus());
 
-        // 1. UPDATE HEADER (chỉ field != null)
         updateHeaderIfPresent(plan, request);
 
-        // 2. UPDATE DETAILS (chỉ khi list != null)
         if (request.getDetails() != null && !request.getDetails().isEmpty()) {
-//            if (isApproved) {
-//                createHistorySnapshot(plan);
-//            }
             processDetailActions(plan, request.getDetails(), isApproved);
         }
 
-        // 3. Lưu plan
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
-
-        // 4. Nếu APPROVED → tạo lại training_result_details cho detail mới
-//        if (isApproved) {
-//            regenerateResultDetails(savedPlan);
-//        }
-
-        TrainingPlanResponse response = planMapper.toResponse(savedPlan);
-        populateEmployeeProcesses(response, savedPlan);
-        return response;
+        return toGenerationResponse(savedPlan);
     }
 
     // ==================== HEADER UPDATE ====================
@@ -1071,5 +1042,19 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         response.setGroupedDetails(new ArrayList<>(groupMap.values()));
+    }
+
+    private TrainingPlanGenerationResponse toGenerationResponse(TrainingPlan plan) {
+        TrainingPlanResponse trainingPlanResponse = planMapper.toResponse(plan);
+        populateEmployeeProcesses(trainingPlanResponse, plan);
+
+        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(
+                prioritySnapshotRepository.findByTrainingPlanId(plan.getId()).orElse(null)
+        );
+
+        TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
+        response.setTrainingPlan(trainingPlanResponse);
+        response.setPrioritySnapshot(prioritySnapshotResponse);
+        return response;
     }
 }

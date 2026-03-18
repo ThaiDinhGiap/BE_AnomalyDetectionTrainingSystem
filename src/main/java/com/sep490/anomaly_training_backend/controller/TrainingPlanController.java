@@ -10,7 +10,6 @@ import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,10 +43,12 @@ public class TrainingPlanController {
 
     private final TrainingPlanService trainingPlanService;
 
+    // ==================== QUERY ====================
+
     @Operation(summary = "Get training plan details by ID")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<TrainingPlanResponse> getPlanDetail(
+    public ResponseEntity<TrainingPlanGenerationResponse> getPlanDetail(
             @Parameter(description = "Plan ID") @PathVariable Long id) {
         return ResponseEntity.ok(trainingPlanService.getPlanDetail(id));
     }
@@ -55,24 +56,21 @@ public class TrainingPlanController {
     @Operation(summary = "Get all training plans")
     @GetMapping
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<TrainingPlanResponse>> getAllPlans() {
+    public ResponseEntity<List<TrainingPlanGenerationResponse>> getAllPlans() {
         return ResponseEntity.ok(trainingPlanService.getAllPlans());
     }
 
-    @Operation(summary = "Get rejected/revise training plans",
-            description = "Returns plans with status: REVISE, REJECTED_BY_SV, REJECTED_BY_MANAGER")
+    @Operation(
+            summary = "Get rejected/revise training plans",
+            description = "Returns plans with status: REVISE, REJECTED_BY_SV, REJECTED_BY_MANAGER"
+    )
     @GetMapping("/rejected")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<TrainingPlanResponse>> getRejectedPlans() {
+    public ResponseEntity<List<TrainingPlanGenerationResponse>> getRejectedPlans() {
         return ResponseEntity.ok(trainingPlanService.getRejectedPlans());
     }
 
-//    @Operation(summary = "Get groups (Lines) managed by current user")
-//    @GetMapping("/my-managed-groups")
-//    @PreAuthorize("isAuthenticated()")
-//    public ResponseEntity<List<GroupResponse>> getMyGroups() {
-//        return ResponseEntity.ok(trainingPlanService.getMyManagedGroups());
-//    }
+    // ==================== MUTATION ====================
 
     @Operation(
             summary = "Update training plan content",
@@ -86,15 +84,14 @@ public class TrainingPlanController {
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('training_plan.edit')")
-    public ResponseEntity<TrainingPlanResponse> updateTrainingPlan(
+    public ResponseEntity<TrainingPlanGenerationResponse> updateTrainingPlan(
             @Parameter(description = "Plan ID to update") @PathVariable Long id,
             @Valid @RequestBody TrainingPlanUpdateRequest request) {
-
-        TrainingPlanResponse response = trainingPlanService.updatePlan(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(trainingPlanService.updatePlan(id, request));
     }
 
-    @Operation(summary = "Delete training plan", description = "Delete a training plan. Only DRAFT or REJECTED plans can be deleted.")
+    @Operation(summary = "Delete training plan",
+            description = "Delete a training plan. Only DRAFT or REJECTED plans can be deleted.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Plan not found"),
@@ -108,7 +105,8 @@ public class TrainingPlanController {
         return ResponseEntity.ok("Training plan deleted successfully!");
     }
 
-    @Operation(summary = "Delete training plan detail", description = "Delete a specific detail row from the training plan")
+    @Operation(summary = "Delete training plan detail",
+            description = "Delete a specific detail row from the training plan")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Detail deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Detail not found"),
@@ -125,7 +123,8 @@ public class TrainingPlanController {
 
     // ==================== DETAIL MANAGEMENT ====================
 
-    @Operation(summary = "Add detail to training plan", description = "Add a new detail row (employee + process + schedule) to an existing training plan.")
+    @Operation(summary = "Add detail to training plan",
+            description = "Add a new detail row (employee + process + schedule) to an existing training plan.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Detail added successfully"),
             @ApiResponse(responseCode = "404", description = "Plan not found"),
@@ -136,11 +135,12 @@ public class TrainingPlanController {
     public ResponseEntity<TrainingPlanDetailResponse> addDetail(
             @Parameter(description = "Plan ID") @PathVariable Long planId,
             @Valid @RequestBody TrainingPlanDetailRequest request) {
-        TrainingPlanDetailResponse response = trainingPlanService.addDetail(planId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(trainingPlanService.addDetail(planId, request));
     }
 
-    @Operation(summary = "Update a specific detail in training plan", description = "Update employee, process, schedule or note of a detail row.")
+    @Operation(summary = "Update a specific detail in training plan",
+            description = "Update employee, process, schedule or note of a detail row.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Detail updated successfully"),
             @ApiResponse(responseCode = "404", description = "Plan or detail not found"),
@@ -152,11 +152,13 @@ public class TrainingPlanController {
             @Parameter(description = "Plan ID") @PathVariable Long planId,
             @Parameter(description = "Detail ID to update") @PathVariable Long detailId,
             @Valid @RequestBody TrainingPlanDetailRequest request) {
-        TrainingPlanDetailResponse response = trainingPlanService.updateDetail(planId, detailId, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(trainingPlanService.updateDetail(planId, detailId, request));
     }
 
-    @Operation(summary = "Get employees not yet in the plan", description = "Returns list of employees in the same group who have not been added to this plan.")
+    // ==================== LOOKUP ====================
+
+    @Operation(summary = "Get employees not yet in the plan",
+            description = "Returns list of employees in the same group who have not been added to this plan.")
     @GetMapping("/{planId}/employees-not-in-plan")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<EmployeeResponse>> getEmployeesNotInPlan(
@@ -164,7 +166,8 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.getEmployeesNotInPlan(planId));
     }
 
-    @Operation(summary = "Get all employees in plan's team", description = "Returns list of all active employees in the same team as the plan. Used for the training plan screen to select employees.")
+    @Operation(summary = "Get all employees in plan's team",
+            description = "Returns list of all active employees in the same team as the plan.")
     @GetMapping("/{planId}/employees")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<EmployeeResponse>> getEmployeesInTeam(
@@ -172,8 +175,8 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.getEmployeesInTeams(planId));
     }
 
-
-    @Operation(summary = "Get product lines by group", description = "Returns list of product lines belonging to a specific group (dây chuyền).")
+    @Operation(summary = "Get product lines by group",
+            description = "Returns list of product lines belonging to a specific group.")
     @GetMapping("/product-lines-by-group/{groupId}")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<ProductLineResponse>> getProductLinesByGroup(
@@ -181,7 +184,8 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.getProductLinesByGroupId(groupId));
     }
 
-    @Operation(summary = "Get processes by product line", description = "Returns list of processes belonging to a specific product line.")
+    @Operation(summary = "Get processes by product line",
+            description = "Returns list of processes belonging to a specific product line.")
     @GetMapping("/processes-by-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<ProcessResponse>> getProcessesByProductLine(
@@ -191,7 +195,8 @@ public class TrainingPlanController {
 
     // ==================== APPROVAL WORKFLOW ====================
 
-    @Operation(summary = "Submit plan for approval", description = "Change plan status from DRAFT to SUBMITTED.")
+    @Operation(summary = "Submit plan for approval",
+            description = "Change plan status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<String> submit(
@@ -202,14 +207,14 @@ public class TrainingPlanController {
         return ResponseEntity.ok("Plan submitted for approval successfully!");
     }
 
-    @Operation(summary = "Revise plan (Return to Draft)", description = "Move plan from pending approval back to Draft status for editing.")
+    @Operation(summary = "Revise plan (Return to Draft)",
+            description = "Move plan from pending approval back to Draft status for editing.")
     @PutMapping("/{id}/revise")
     @PreAuthorize("hasAuthority('training_plan.edit')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
         trainingPlanService.revise(id, currentUser, request);
         return ResponseEntity.ok("Plan has been moved back to draft status successfully!");
     }
@@ -223,7 +228,8 @@ public class TrainingPlanController {
         return ResponseEntity.ok(trainingPlanService.canApprove(id, currentUser));
     }
 
-    @Operation(summary = "Approve training plan", description = "Approve the training plan. Only authorized personnel can perform this action.")
+    @Operation(summary = "Approve training plan",
+            description = "Approve the training plan. Only authorized personnel can perform this action.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Approved successfully"),
             @ApiResponse(responseCode = "403", description = "No approval permission"),
@@ -236,12 +242,12 @@ public class TrainingPlanController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody ApproveRequest approveRequest,
             HttpServletRequest request) {
-
         trainingPlanService.approve(id, currentUser, approveRequest, request);
         return ResponseEntity.ok("Plan has been approved successfully!");
     }
 
-    @Operation(summary = "Reject training plan", description = "Reject and request revision of the plan.")
+    @Operation(summary = "Reject training plan",
+            description = "Reject and request revision of the plan.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Plan rejected"),
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
@@ -253,21 +259,23 @@ public class TrainingPlanController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody RejectRequest rejectRequest,
             HttpServletRequest request) {
-
         trainingPlanService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Plan has been rejected!");
     }
 
-    @Operation(summary = "Generate Training Plan", description = "Automative generate training plan")
+    // ==================== GENERATE ====================
+
+    @Operation(summary = "Generate Training Plan",
+            description = "Automatically generate training plan with priority scoring")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Plan generated successfully"),
             @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
     })
     @PostMapping("/generate")
     @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
-    public TrainingPlanGenerationResponse generatePlan(
+    public ResponseEntity<TrainingPlanGenerationResponse> generatePlan(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody TrainingPlanGenerationRequest request) {
-        return trainingPlanService.generateTrainingPlans(currentUser, request);
+        return ResponseEntity.ok(trainingPlanService.generateTrainingPlans(currentUser, request));
     }
 }
