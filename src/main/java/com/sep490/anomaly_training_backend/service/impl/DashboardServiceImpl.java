@@ -240,49 +240,48 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingTaskFailed> failedList = new ArrayList<>();
         List<TrainingTaskMissed> missedList = new ArrayList<>();
 
-        List<TrainingPlanDetail> allDetails = new ArrayList<>();
+        List<TrainingPlanDetail> allPlanDetails = new ArrayList<>();
         for (Long planId : activePlanIds) {
-            allDetails.addAll(trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId));
+            allPlanDetails.addAll(trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId));
         }
 
-        // --- Optimized Skill Fetching for Today and Missed Tasks ---
-        List<Long> employeeIdsForPlanDetails = allDetails.stream()
-                .filter(d -> d.getStatus() == TrainingPlanDetailStatus.PENDING &&
-                        (today.equals(d.getPlannedDate()) || d.getPlannedDate().isBefore(today)))
-                .map(d -> d.getEmployee().getId())
-                .distinct()
-                .toList();
+        List<TrainingResultDetail> allFailedResultDetails = trainingResultDetailRepository.findFailedTrainings(lineId);
 
-        Map<Long, List<TrainingTaskToday.ProcessInfo>> skillsByEmployeeId = new HashMap<>();
-        if (!employeeIdsForPlanDetails.isEmpty()) {
-            List<EmployeeSkill> allSkills = employeeSkillRepository.findByEmployeeIdIn(employeeIdsForPlanDetails);
+        // --- Consolidated Employee ID Collection ---
+        Set<Long> allEmployeeIds = new HashSet<>();
+        allPlanDetails.stream()
+                .filter(d -> d.getEmployee() != null)
+                .map(d -> d.getEmployee().getId())
+                .forEach(allEmployeeIds::add);
+        allFailedResultDetails.stream()
+                .filter(rd -> rd.getEmployee() != null)
+                .map(rd -> rd.getEmployee().getId())
+                .forEach(allEmployeeIds::add);
+
+        Map<Long, List<String>> skillsByEmployeeId = new HashMap<>();
+        if (!allEmployeeIds.isEmpty()) {
+            List<EmployeeSkill> allSkills = employeeSkillRepository.findByEmployeeIdIn(new ArrayList<>(allEmployeeIds));
             skillsByEmployeeId = allSkills.stream()
                     .collect(Collectors.groupingBy(
                             skill -> skill.getEmployee().getId(),
-                            Collectors.mapping(skill -> {
-                                TrainingTaskToday.ProcessInfo processInfo = new TrainingTaskToday.ProcessInfo();
-                                processInfo.setId(skill.getProcess().getId());
-                                processInfo.setName(skill.getProcess().getName());
-                                return processInfo;
-                            }, Collectors.toList())
+                            Collectors.mapping(skill -> skill.getProcess().getName(), Collectors.toList())
                     ));
         }
-        // --- End Optimization ---
+        // --- End Consolidated Employee ID Collection ---
 
-        for (TrainingPlanDetail d : allDetails) {
+        for (TrainingPlanDetail d : allPlanDetails) {
             Employee emp = d.getEmployee();
             String empName = emp != null ? emp.getFullName() : "N/A";
             String empCode = emp != null ? emp.getEmployeeCode() : "N/A";
+            String employeeProcessesString = String.join(", ", skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList()));
 
             // Today's tasks
             if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
-                List<TrainingTaskToday.ProcessInfo> processInfos = skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList());
-
                 todayList.add(TrainingTaskToday.builder()
                         .id(d.getId())
                         .employeeName(empName)
                         .employeeCode(empCode)
-                        .employeeProcesses(processInfos)
+                        .employeeProcesses(employeeProcessesString)
                         .timeSlot(String.valueOf(d.getPlannedDate()))
                         .build());
             }
@@ -290,13 +289,11 @@ public class DashboardServiceImpl implements DashboardService {
             // Missed (past & still PENDING)
             if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
                     && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
-                List<TrainingTaskToday.ProcessInfo> processInfos = skillsByEmployeeId.getOrDefault(emp.getId(), Collections.emptyList());
-
                 missedList.add(TrainingTaskMissed.builder()
                         .id(d.getId())
                         .employeeName(empName)
                         .employeeCode(empCode)
-                        .employeeProcesses(processInfos)
+                        .employeeProcesses(employeeProcessesString)
                         .date(d.getPlannedDate().format(DateTimeFormatter.ofPattern("dd/MM")))
                         .reason("Chưa thực hiện")
                         .action("Xếp lịch lại")
