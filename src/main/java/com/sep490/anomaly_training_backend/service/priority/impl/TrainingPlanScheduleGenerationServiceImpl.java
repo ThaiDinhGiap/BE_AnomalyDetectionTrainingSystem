@@ -109,11 +109,22 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
         );
 
         // 7. Save details
-        trainingPlan.setDetails(details);
-        TrainingPlan saved = trainingPlanRepository.save(trainingPlan);
+        // Xóa details cũ
+        trainingPlanDetailRepository.deleteByTrainingPlanId(trainingPlanId);
+        trainingPlanDetailRepository.flush();
 
-        log.info("Generated {} training plan details", details.size());
-        return saved;
+        details.forEach(detail -> detail.setTrainingPlan(trainingPlan));
+
+        details.forEach(d -> {
+            if (d.getEmployee() == null) {
+                log.error("Detail có employee null — plannedDate: {}", d.getPlannedDate());
+            }
+        });
+
+        trainingPlanDetailRepository.saveAll(details);
+
+        return trainingPlanRepository.findById(trainingPlanId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
     }
 
     /**

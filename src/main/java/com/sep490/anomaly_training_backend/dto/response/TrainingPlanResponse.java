@@ -29,7 +29,7 @@ public class TrainingPlanResponse {
 
     private String createdBy;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedBy;
+    private String updatedBy;
 
     private List<TrainingPlanDetailResponse> details = new ArrayList<>();
 
