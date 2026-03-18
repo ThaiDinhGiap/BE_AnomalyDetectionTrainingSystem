@@ -11,6 +11,7 @@ import com.sep490.anomaly_training_backend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -42,15 +43,19 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 1. KPI ========================
 
     @Override
-    public KpiData getKpi(Long lineId, int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1);
-        LocalDate monthEnd = YearMonth.of(year, month).atEndOfMonth();
+    public KpiData getKpi(Long lineId, Integer year, Integer month) {
         LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // Get all approved training plans for this line
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> approvedPlanIds = plans.stream()
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING || p.getStatus() == ReportStatus.DONE))
+                .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
 
@@ -142,6 +147,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<RejectedReportItem> getRejectedReports(Long lineId, String type) {
         List<RejectedReportItem> items = new ArrayList<>();
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REJECTED_BY_SV,
@@ -153,6 +159,7 @@ public class DashboardServiceImpl implements DashboardService {
             List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
             plans.stream()
                     .filter(p -> rejectedStatuses.contains(p.getStatus()))
+                    .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
                             .type("Kế hoạch huấn luyện")
@@ -167,6 +174,7 @@ public class DashboardServiceImpl implements DashboardService {
             List<DefectProposal> defectProposals = defectProposalRepository.findByProductLineId(lineId);
             defectProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
+                    .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
                             .type("Lỗi quá khứ")
@@ -181,6 +189,7 @@ public class DashboardServiceImpl implements DashboardService {
             List<TrainingSampleProposal> sampleProposals = trainingSampleProposalRepository.findByProductLineId(lineId);
             sampleProposals.stream()
                     .filter(p -> !p.isDeleteFlag() && rejectedStatuses.contains(p.getStatus()))
+                    .filter(p -> currentUser.equals(p.getCreatedBy()))
                     .forEach(p -> items.add(RejectedReportItem.builder()
                             .id(p.getId())
                             .type("Mẫu huấn luyện")
@@ -199,10 +208,12 @@ public class DashboardServiceImpl implements DashboardService {
     public TrainingTaskData getTrainingTasks(Long lineId) {
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> activePlanIds = plans.stream()
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING)
+                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING))
+                .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
 
@@ -276,13 +287,17 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 4. Training Heatmap ========================
 
     @Override
-    public Map<String, Integer> getTrainingHeatmap(Long lineId, int year) {
+    public Map<String, Integer> getTrainingHeatmap(Long lineId, Integer year) {
         Map<String, Integer> heatmap = new LinkedHashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        int targetYear = year != null ? year : LocalDate.now().getYear();
 
         List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
         List<Long> planIds = plans.stream()
                 .filter(p -> p.getStatus() != ReportStatus.DRAFT)
+                .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
 
@@ -292,15 +307,15 @@ public class DashboardServiceImpl implements DashboardService {
         for (Long planId : planIds) {
             List<TrainingPlanDetail> details = trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
-                if (d.getPlannedDate() != null && d.getPlannedDate().getYear() == year) {
+                if (d.getPlannedDate() != null && d.getPlannedDate().getYear() == targetYear) {
                     countByDate.merge(d.getPlannedDate(), 1, Integer::sum);
                 }
             }
         }
 
         // Fill all days of the year
-        LocalDate start = LocalDate.of(year, 1, 1);
-        LocalDate end = LocalDate.of(year, 12, 31);
+        LocalDate start = LocalDate.of(targetYear, 1, 1);
+        LocalDate end = LocalDate.of(targetYear, 12, 31);
         LocalDate current = start;
         while (!current.isAfter(end)) {
             heatmap.put(current.format(formatter), countByDate.getOrDefault(current, 0));
@@ -313,13 +328,20 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== 5. Training Execution Chart ========================
 
     @Override
-    public List<TrainingExecutionPoint> getTrainingExecution(Long lineId, int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1);
-        LocalDate monthEnd = YearMonth.of(year, month).atEndOfMonth();
+    public List<TrainingExecutionPoint> getTrainingExecution(Long lineId, Integer year, Integer month) {
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM");
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         // Get all plan details for this line in this month
-        List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId);
+        List<TrainingPlan> plans = trainingPlanRepository.findByLineIdAndDeleteFlagFalse(lineId)
+                .stream()
+                .filter(p -> currentUser.equals(p.getCreatedBy()))
+                .toList();
         List<TrainingPlanDetail> allDetails = new ArrayList<>();
 
         for (TrainingPlan plan : plans) {
@@ -361,8 +383,6 @@ public class DashboardServiceImpl implements DashboardService {
         int cumulativePlan = 0;
         int cumulativeActual = 0;
         int cumulativeMissed = 0;
-
-        LocalDate today = LocalDate.now();
 
         for (LocalDate date : allDates) {
             // Planned for this date

@@ -25,9 +25,9 @@ public class DashboardController {
     @GetMapping("/kpi")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<KpiData>> getKpi(
-            @RequestParam Long lineId,
-            @RequestParam int year,
-            @RequestParam int month) {
+            @RequestParam("lineId") Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
         KpiData data = dashboardService.getKpi(lineId, year, month);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -36,8 +36,8 @@ public class DashboardController {
     @GetMapping("/rejected-reports")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<RejectedReportItem>>> getRejectedReports(
-            @RequestParam Long lineId,
-            @RequestParam(required = false) String type) {
+            @RequestParam("lineId") Long lineId,
+            @RequestParam(value = "type", required = false) String type) {
         List<RejectedReportItem> data = dashboardService.getRejectedReports(lineId, type);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -46,7 +46,7 @@ public class DashboardController {
     @GetMapping("/training-tasks")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<TrainingTaskData>> getTrainingTasks(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         TrainingTaskData data = dashboardService.getTrainingTasks(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -55,8 +55,8 @@ public class DashboardController {
     @GetMapping("/training-heatmap")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> getTrainingHeatmap(
-            @RequestParam Long lineId,
-            @RequestParam int year) {
+            @RequestParam("lineId") Long lineId,
+            @RequestParam(value = "year", required = false) Integer year) {
         Map<String, Integer> data = dashboardService.getTrainingHeatmap(lineId, year);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -65,9 +65,9 @@ public class DashboardController {
     @GetMapping("/training-execution")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<TrainingExecutionPoint>>> getTrainingExecution(
-            @RequestParam Long lineId,
-            @RequestParam int year,
-            @RequestParam int month) {
+            @RequestParam("lineId") Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
         List<TrainingExecutionPoint> data = dashboardService.getTrainingExecution(lineId, year, month);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -76,7 +76,7 @@ public class DashboardController {
     @GetMapping("/process-flow")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<ProcessFlowItem>>> getProcessFlow(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         List<ProcessFlowItem> data = dashboardService.getProcessFlow(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -85,7 +85,7 @@ public class DashboardController {
     @GetMapping("/skill-certificates")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<SkillCertificateItem>>> getSkillCertificates(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         List<SkillCertificateItem> data = dashboardService.getSkillCertificates(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -94,7 +94,7 @@ public class DashboardController {
     @GetMapping("/defect-trend")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<DefectTrendPoint>>> getDefectTrend(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         List<DefectTrendPoint> data = dashboardService.getDefectTrend(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -103,7 +103,7 @@ public class DashboardController {
     @GetMapping("/defect-by-process")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<StageDistribution>>> getDefectByProcess(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         List<StageDistribution> data = dashboardService.getDefectByProcess(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
@@ -112,7 +112,7 @@ public class DashboardController {
     @GetMapping("/sample-by-process")
     @PreAuthorize("hasAuthority('dashboard.view')")
     public ResponseEntity<ApiResponse<List<StageDistribution>>> getSampleByProcess(
-            @RequestParam Long lineId) {
+            @RequestParam("lineId") Long lineId) {
         List<StageDistribution> data = dashboardService.getSampleByProcess(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }

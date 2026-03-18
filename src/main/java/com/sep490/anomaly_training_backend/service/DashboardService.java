@@ -7,15 +7,15 @@ import java.util.Map;
 
 public interface DashboardService {
 
-    KpiData getKpi(Long lineId, int year, int month);
+    KpiData getKpi(Long lineId, Integer year, Integer month);
 
     List<RejectedReportItem> getRejectedReports(Long lineId, String type);
 
     TrainingTaskData getTrainingTasks(Long lineId);
 
-    Map<String, Integer> getTrainingHeatmap(Long lineId, int year);
+    Map<String, Integer> getTrainingHeatmap(Long lineId, Integer year);
 
-    List<TrainingExecutionPoint> getTrainingExecution(Long lineId, int year, int month);
+    List<TrainingExecutionPoint> getTrainingExecution(Long lineId, Integer year, Integer month);
 
     List<ProcessFlowItem> getProcessFlow(Long lineId);
 
