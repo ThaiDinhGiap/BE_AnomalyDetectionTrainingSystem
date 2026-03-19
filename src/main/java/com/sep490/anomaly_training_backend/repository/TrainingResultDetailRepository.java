@@ -35,7 +35,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
 
 
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
-            "WHERE (d.status = 'NEED_SIGN' OR (d.actualDate IS NOT NULL AND d.signatureProOut IS NULL)) " +
+            "WHERE (d.status = 'NEED_SIGN') " +
             "AND (:lineId IS NULL OR r.line.id = :lineId)")
     List<TrainingResultDetail> findPendingSignatures(@Param("lineId") Long lineId);
 
