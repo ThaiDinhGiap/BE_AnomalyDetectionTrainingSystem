@@ -45,5 +45,5 @@ public interface ApprovalService {
     /**
      * Kiểm tra user có thể approve/reject entity này không
      */
-    boolean canApprove(Approvable entity, User user);
+    Boolean canApprove(Approvable entity, User user);
 }

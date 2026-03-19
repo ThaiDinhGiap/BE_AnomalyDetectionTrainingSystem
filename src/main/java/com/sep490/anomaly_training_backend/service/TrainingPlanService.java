@@ -14,6 +14,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -67,7 +68,7 @@ public interface TrainingPlanService {
 
     void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request);
 
-    boolean canApprove(Long reportId, User currentUser);
+    ResponseEntity<Boolean> canApprove(Long reportId, User currentUser);
 
     void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser);
 

@@ -69,6 +69,7 @@ import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -877,9 +878,15 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public boolean canApprove(Long reportId, User currentUser) {
-        TrainingPlan report = getReportById(reportId);
-        return approvalService.canApprove(report, currentUser);
+    public ResponseEntity<Boolean> canApprove(Long reportId, User currentUser) {
+        try {
+            TrainingPlan report = getReportById(reportId);
+            Boolean hasPermission = approvalService.canApprove(report, currentUser);
+            return ResponseEntity.ok(hasPermission);
+        } catch (AppException e) {
+
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
     }
 
     // ── Save feedback ─────────────────────────────────────────────────────────

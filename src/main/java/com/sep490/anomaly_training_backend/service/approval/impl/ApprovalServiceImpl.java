@@ -135,13 +135,13 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     @Override
-    public boolean canApprove(Approvable entity, User user) {
+    public Boolean canApprove(Approvable entity, User user) {
         try {
             ApprovalFlowStep currentStep = getCurrentStep(entity);
             validateApprover(entity, user, currentStep);
-            return true;
+            return Boolean.TRUE;
         } catch (AppException e) {
-            return false;
+            return Boolean.FALSE;
         }
     }
 

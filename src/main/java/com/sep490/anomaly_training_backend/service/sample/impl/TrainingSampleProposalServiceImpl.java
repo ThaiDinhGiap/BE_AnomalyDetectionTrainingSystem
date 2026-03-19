@@ -33,6 +33,7 @@ import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -201,10 +202,16 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public boolean canApprove(Long proposalId, User currentUser) {
-        TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
-        return approvalService.canApprove(proposal, currentUser);
+    public ResponseEntity<Boolean> canApprove(Long proposalId, User currentUser) {
+        try {
+            TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(proposalId)
+                    .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
+            Boolean hasPermission = approvalService.canApprove(proposal, currentUser);
+            return ResponseEntity.ok(hasPermission);
+        } catch (AppException e) {
+
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
     }
 
     @Override
