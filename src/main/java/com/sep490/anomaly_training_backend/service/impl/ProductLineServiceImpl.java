@@ -231,12 +231,12 @@ public class ProductLineServiceImpl implements ProductLineService {
     }
 
     private List<WorkingPosition> positionManager(User user) {
-        List<WorkingPosition> resultTeamLead = new ArrayList<>();
+        List<WorkingPosition> resulManager = new ArrayList<>();
         List<Section> sections = sectionRepository.findByManagerId(user.getId());
         for (Section section : sections) {
-            WorkingPosition workingPosition = new WorkingPosition();
             List<ProductLine> productLine = productLineRepository.findBySection(section.getId());
             for (ProductLine pl : productLine) {
+                WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
@@ -245,10 +245,10 @@ public class ProductLineServiceImpl implements ProductLineService {
                 workingPosition.setManagerId(section.getManager().getId());
                 workingPosition.setManagerName(section.getManager().getFullName());
                 workingPosition.setManagerCode(section.getManager().getEmployeeCode());
-                resultTeamLead.add(workingPosition);
+                resulManager.add(workingPosition);
             }
         }
-        return resultTeamLead;
+        return resulManager;
     }
     /**
      * Process all rows - group by ProductLine, then create/update

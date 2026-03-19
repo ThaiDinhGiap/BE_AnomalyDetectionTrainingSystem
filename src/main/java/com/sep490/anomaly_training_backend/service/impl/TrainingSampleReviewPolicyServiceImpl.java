@@ -68,9 +68,9 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
         List<TrainingSampleReviewConfigRequest> reviewConfigRequests = request.getReviewConfigs();
         for (TrainingSampleReviewConfigRequest configRequest : reviewConfigRequests) {
             TrainingSampleReviewConfig config = new TrainingSampleReviewConfig();
-            config.setTriggerDay(config.getTriggerDay());
-            config.setTriggerMonth(config.getTriggerMonth());
-            config.setDueDays(config.getDueDays());
+            config.setTriggerDay(configRequest.getTriggerDay());
+            config.setTriggerMonth(configRequest.getTriggerMonth());
+            config.setDueDays(configRequest.getDueDays());
             config.setReviewPolicy(entity);
             configList.add(config);
         }
