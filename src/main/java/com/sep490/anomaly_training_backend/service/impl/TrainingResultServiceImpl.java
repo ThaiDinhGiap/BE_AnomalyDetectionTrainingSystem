@@ -465,6 +465,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
+        User user = userRepository.findByUsername(result.getCreatedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
         TrainingResultDetailResponse response = new TrainingResultDetailResponse();
 
         response.setId(result.getId());
@@ -474,7 +477,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         response.setNote(result.getNote());
         response.setYear(result.getYear());
         response.setCreatedAt(result.getCreatedAt());
-        response.setCreatedByName(result.getCreatedBy());
+        response.setCreatedByName(user.getFullName());
 
         if (result.getLine() != null) {
             response.setLineId(result.getLine().getId());

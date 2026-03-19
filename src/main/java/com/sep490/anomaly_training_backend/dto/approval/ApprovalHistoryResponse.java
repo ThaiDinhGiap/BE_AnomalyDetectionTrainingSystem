@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Data
 @Builder
@@ -20,7 +21,23 @@ public class ApprovalHistoryResponse {
     private String performedByFullName;
     private UserRole performedByRole;
     private String comment;
-    private String rejectReason;
+    private Set<RejectReasonResponse> rejectReasons;
+    private Set<RequiredActionResponse> requiredActions;
     private Instant performedAt;
     private String ipAddress;
+
+    @Data
+    @Builder
+    public static class RejectReasonResponse {
+        private Long id;
+        private String categoryName;
+        private String reasonName;
+    }
+
+    @Data
+    @Builder
+    public static class RequiredActionResponse {
+        private Long id;
+        private String actionName;
+    }
 }

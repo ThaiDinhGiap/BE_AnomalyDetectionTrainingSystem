@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/approvals")
@@ -146,6 +148,25 @@ public class ApprovalController {
     // ==================== HELPER ====================
 
     private ApprovalHistoryResponse toHistoryResponse(ApprovalActionLog log) {
+        Set<ApprovalHistoryResponse.RejectReasonResponse> rejectReasons =
+                log.getRejectReasons() == null ? Set.of() :
+                        log.getRejectReasons().stream()
+                                .map(r -> ApprovalHistoryResponse.RejectReasonResponse.builder()
+                                        .id(r.getId())
+                                        .categoryName(r.getCategoryName())
+                                        .reasonName(r.getReasonName())
+                                        .build())
+                                .collect(Collectors.toSet());
+
+        Set<ApprovalHistoryResponse.RequiredActionResponse> requiredActions =
+                log.getRequiredActions() == null ? Set.of() :
+                        log.getRequiredActions().stream()
+                                .map(a -> ApprovalHistoryResponse.RequiredActionResponse.builder()
+                                        .id(a.getId())
+                                        .actionName(a.getActionName())
+                                        .build())
+                                .collect(Collectors.toSet());
+
         return ApprovalHistoryResponse.builder()
                 .id(log.getId())
                 .entityVersion(log.getEntityVersion())
@@ -157,7 +178,8 @@ public class ApprovalController {
                 .performedByFullName(log.getPerformedByFullName())
                 .performedByRole(log.getPerformedByRole())
                 .comment(log.getComment())
-//              .rejectReason(log.getRejectReason())
+                .rejectReasons(rejectReasons)
+                .requiredActions(requiredActions)
                 .performedAt(log.getPerformedAt())
                 .ipAddress(log.getIpAddress())
                 .build();
