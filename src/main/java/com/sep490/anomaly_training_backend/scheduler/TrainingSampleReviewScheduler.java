@@ -1,18 +1,13 @@
 package com.sep490.anomaly_training_backend.scheduler;
 
-
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewConfigRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.scheduler.job.TrainingSampleReviewJob;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
