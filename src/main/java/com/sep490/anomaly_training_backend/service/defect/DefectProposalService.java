@@ -32,4 +32,6 @@ public interface DefectProposalService {
     boolean canApprove(Long proposalId, User currentUser);
 
     void revise(Long id, User currentUser, HttpServletRequest request);
+
+    void sendSubmission(DefectProposalRequest reportRequest, User currentUser, HttpServletRequest request);
 }

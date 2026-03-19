@@ -240,13 +240,13 @@ public class ProductLineServiceImpl implements ProductLineService {
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
+                workingPosition.setSectionId(section.getId());
+                workingPosition.setSectionName(section.getName());
+                workingPosition.setManagerId(section.getManager().getId());
+                workingPosition.setManagerName(section.getManager().getFullName());
+                workingPosition.setManagerCode(section.getManager().getEmployeeCode());
+                resultTeamLead.add(workingPosition);
             }
-            workingPosition.setSectionId(section.getId());
-            workingPosition.setSectionName(section.getName());
-            workingPosition.setManagerId(section.getManager().getId());
-            workingPosition.setManagerName(section.getManager().getFullName());
-            workingPosition.setManagerCode(section.getManager().getEmployeeCode());
-            resultTeamLead.add(workingPosition);
         }
         return resultTeamLead;
     }
