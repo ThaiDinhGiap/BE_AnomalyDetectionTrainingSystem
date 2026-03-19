@@ -49,7 +49,7 @@ public class ApprovalController {
 
     @GetMapping("/pending")
     @Operation(summary = "Get pending approvals for current user")
-    @PreAuthorize("hasAuthority('approval.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<PendingApprovalResponse>>> getPendingApprovals(
             @AuthenticationPrincipal User currentUser,
             @RequestParam(required = false) ApprovalEntityType entityType) {
@@ -61,7 +61,7 @@ public class ApprovalController {
 
     @GetMapping("/pending/count")
     @Operation(summary = "Count pending approvals")
-    @PreAuthorize("hasAuthority('approval.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Long>> getPendingCount(
             @AuthenticationPrincipal User currentUser) {
 
@@ -74,7 +74,7 @@ public class ApprovalController {
 
     @GetMapping("/history/{entityType}/{entityId}")
     @Operation(summary = "Get approval history for a report")
-    @PreAuthorize("hasAuthority('approval.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ApprovalHistoryResponse>>> getApprovalHistory(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId,
@@ -125,6 +125,7 @@ public class ApprovalController {
 
     @Operation(summary = "Get approval timeline for a report")
     @GetMapping("/{entityType}/{entityId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApprovalTimelineResponse> getTimeline(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId) {
@@ -134,7 +135,7 @@ public class ApprovalController {
 
     @Operation(summary = "Save feedback reject for 1 detail")
     @PutMapping("/details/{detailId}/{entityType}/feedback")
-    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> saveDetailFeedback(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long detailId,
