@@ -56,7 +56,7 @@ public class TrainingResultDetailResponse {
         private String processName;
 
         // Phân loại (MS.1.2 format)
-        private String classification;
+        private Integer classification;
 
         // Thời gian vòng thao tác TB (s)
         private BigDecimal standardTime;

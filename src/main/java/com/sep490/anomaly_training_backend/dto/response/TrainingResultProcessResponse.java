@@ -10,14 +10,14 @@ import lombok.NoArgsConstructor;
 public class TrainingResultProcessResponse {
     private Long id;
     private String name;
-    private ProcessClassification classification;
+    private Integer classification;
 
     public TrainingResultProcessResponse(Long id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public TrainingResultProcessResponse(Long id, String name, ProcessClassification classification) {
+    public TrainingResultProcessResponse(Long id, String name, Integer classification) {
         this.id = id;
         this.name = name;
         this.classification = classification;
