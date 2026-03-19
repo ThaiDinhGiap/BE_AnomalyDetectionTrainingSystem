@@ -1,6 +1,10 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewConfigRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
+import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
@@ -9,7 +13,11 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewPolicyMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
@@ -70,7 +78,7 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
         entity.setPolicyCode(generateReviewPolicyCode());
         List<TrainingSampleReviewPolicy> listPolicy = trainingSampleReviewPolicyRepository.findByProductLineIdAndStatusAndDeleteFlagFalse(request.getProductLineId(), PolicyStatus.ACTIVE);
         for (TrainingSampleReviewPolicy policy : listPolicy) {
-            if(policy.getStatus().equals(PolicyStatus.ACTIVE)) {
+            if (policy.getStatus().equals(PolicyStatus.ACTIVE)) {
                 policy.setExpirationDate(LocalDate.now());
             }
             policy.setStatus(PolicyStatus.ARCHIVED);
@@ -83,9 +91,9 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
     @Override
     public List<TrainingSampleReviewResponse> findByConfigId(Long configId) {
         return trainingSampleReviewRepository.findByConfigId(configId)
-                                             .stream()
-                                             .map(trainingSampleReviewMapper::toDto)
-                                             .toList();
+                .stream()
+                .map(trainingSampleReviewMapper::toDto)
+                .toList();
     }
 
     @Override
@@ -128,14 +136,14 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
 
     @Override
     public void approve(Long id, User currentUser, ApproveRequest approveRequest, HttpServletRequest request) {
-            TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
-                    .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
-            approvalService.canApprove(review, currentUser);
+        TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+        approvalService.canApprove(review, currentUser);
     }
 
     @Override
     public void revise(Long id, User currentUser, HttpServletRequest request) {
-            TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
+        TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
         if (!currentUser.getUsername().equals(review.getCreatedBy())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
@@ -159,5 +167,5 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
         }
         return String.format("RV%d%s", currentYear, suffix.toString());
     }
-    
+
 }

@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.dto.request;
+package com.sep490.anomaly_training_backend.dto.approval;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;

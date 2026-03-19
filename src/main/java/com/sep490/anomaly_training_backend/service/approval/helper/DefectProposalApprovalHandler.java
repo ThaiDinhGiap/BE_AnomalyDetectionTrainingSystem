@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.approval.impl;
+package com.sep490.anomaly_training_backend.service.approval.helper;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.DefectType;

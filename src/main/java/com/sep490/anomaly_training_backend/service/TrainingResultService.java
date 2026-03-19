@@ -1,10 +1,12 @@
 package com.sep490.anomaly_training_backend.service;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
@@ -52,6 +54,10 @@ public interface TrainingResultService {
     void rejectDetail(Long detailId, String reason);
 
     void retrainDetail(Long detailId);
+
+    List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long resultId);
+
+    List<EmployeeSkillCertificateResponse> getSkillCertificates(Long resultId);
 
     // Relate approval methods
     void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request);

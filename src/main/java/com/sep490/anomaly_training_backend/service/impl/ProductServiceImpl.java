@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.request.ProductImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
@@ -249,7 +250,23 @@ public class ProductServiceImpl implements ProductService {
             urls.add(attachment.getUrl());
         }
         ProductResponse response = productMapper.toDto(product);
-        response.setAttachmentUrl(urls);
+        response.setAttachmentUrls(urls);
+        List<ProcessResponse>  processResponses = product.getProductProcesses()
+                .stream()
+                .filter(pp -> !pp.isDeleteFlag())
+                .map(pp -> {
+                    Process process = pp.getProcess();
+                    ProcessResponse processResponse = new ProcessResponse();
+                    processResponse.setId(process.getId());
+                    processResponse.setCode(process.getCode());
+                    processResponse.setName(process.getName());
+                    processResponse.setProductLineName(process.getProductLine().getName());
+                    processResponse.setProductLineName(process.getProductLine().getCode());
+                    processResponse.setProductLineId(process.getProductLine().getId());
+                    return processResponse;
+                })
+                .toList();
+        response.setProcesses(processResponses);
         return response;
     }
 
@@ -274,11 +291,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponse> getProductsByProcessId(Long processId) {
-        log.info("Fetching products for process ID: {}", processId);
         List<Product> products = productRepository.findByProcessId(processId);
-        return products.stream()
+        List<ProductResponse> responses = new ArrayList<>();
+        responses = productRepository.findByProcessId(processId)
+                .stream()
                 .map(productMapper::toDto)
                 .toList();
+        for (ProductResponse productItem : responses) {
+            List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", productItem.getId());
+            List<String> urls = new ArrayList<>();
+            for (Attachment attachment : attachments) {
+                urls.add(attachment.getUrl());
+            }
+            productItem.setAttachmentUrls(urls);
+        }
+        return responses;
     }
 
     @Override

@@ -30,4 +30,20 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
     List<EmployeeSkill> findSkillsByEmployeeAndLine(Long employeeId, Long lineId);
 
     List<EmployeeSkill> findByEmployeeIdIn(List<Long> employeeIds);
+
+    /**
+     * Batch load skills của nhiều employee, filter theo productLine.
+     * Fetch process luôn để tránh lazy load N+1.
+     */
+    @Query("""
+                SELECT es FROM EmployeeSkill es
+                LEFT JOIN FETCH es.process p
+                WHERE es.employee.id IN :employeeIds
+                  AND p.productLine.id = :lineId
+                  AND es.deleteFlag = false
+                ORDER BY es.employee.id, p.id
+            """)
+    List<EmployeeSkill> findByEmployeeIdsAndLineId(
+            @Param("employeeIds") List<Long> employeeIds,
+            @Param("lineId") Long lineId);
 }

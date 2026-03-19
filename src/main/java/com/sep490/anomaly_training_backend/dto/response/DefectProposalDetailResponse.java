@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
-import com.sep490.anomaly_training_backend.model.Attachment;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
@@ -29,7 +29,7 @@ public class DefectProposalDetailResponse {
     String customer;
     Integer quantity;
     String conclusion;
-    ProductResponse product;
     List<String> attachmentUrls;
-    ProductResponse productResponse;
+    ProductResponse product;
+    RejectFeedbackJson rejectFeedback;
 }

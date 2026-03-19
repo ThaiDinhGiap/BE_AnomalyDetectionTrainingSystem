@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
@@ -19,7 +19,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

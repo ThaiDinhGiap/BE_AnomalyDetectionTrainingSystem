@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 
@@ -74,4 +77,8 @@ public class TrainingPlanDetail extends BaseEntity {
 
     @Column(columnDefinition = "text")
     String note;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "reject_feedback", columnDefinition = "JSON")
+    private RejectFeedbackJson rejectFeedback;
 }

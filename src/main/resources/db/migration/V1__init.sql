@@ -523,6 +523,8 @@ CREATE TABLE defect_proposal_details
     conclusion         LONGTEXT COMMENT 'Kết luận',
     product_id         BIGINT COMMENT 'Sản phẩm tham chiếu',
 
+    reject_feedback    JSON,
+
     delete_flag        BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
     created_by         VARCHAR(255),
@@ -690,6 +692,7 @@ CREATE TABLE training_sample_proposal_details
     training_sample_code        VARCHAR(20),
     training_description        TEXT                                NOT NULL,
     note                        TEXT,
+    reject_feedback             JSON,
 
     delete_flag                 BOOLEAN                             NOT NULL DEFAULT FALSE,
     created_at                  TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
@@ -825,6 +828,8 @@ CREATE TABLE training_plan_details
     actual_date      DATE COMMENT 'Ngày thực hiện',
     status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
     note             TEXT,
+
+    reject_feedback  JSON,
 
     delete_flag      BOOLEAN     NOT NULL               DEFAULT FALSE,
     created_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP,
@@ -1280,43 +1285,6 @@ CREATE TABLE approval_required_actions
   COLLATE = utf8mb4_unicode_ci;
 
 
--- 7.5 APPROVAL_DETAIL_COMMENTS (Góp ý chi tiết theo từng dòng khi reject)
-CREATE TABLE approval_detail_comments
-(
-    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
-    approval_action_id   BIGINT    NOT NULL,
-    entity_id            BIGINT    NOT NULL COMMENT 'ID dòng detail bị góp ý',
-    performed_by_user_id BIGINT    NOT NULL,
-    entity_version       INT       NOT NULL,
-    comment_description  TEXT,
-    performed_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    -- Audit environment
-    ip_address           VARCHAR(45),
-    user_agent           TEXT,
-    device_info          VARCHAR(255),
-    content_hash         VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot',
-
-    delete_flag          BOOLEAN   NOT NULL DEFAULT FALSE,
-    created_at           TIMESTAMP          DEFAULT CURRENT_TIMESTAMP,
-    created_by           VARCHAR(255),
-    updated_at           TIMESTAMP          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by           VARCHAR(255),
-
-    CONSTRAINT fk_adc_approval_action
-        FOREIGN KEY (approval_action_id) REFERENCES approval_actions (id) ON DELETE CASCADE,
-    CONSTRAINT fk_adc_performed_by
-        FOREIGN KEY (performed_by_user_id) REFERENCES users (id) ON DELETE RESTRICT,
-    INDEX idx_adc_approval_action (approval_action_id),
-    INDEX idx_adc_entity (entity_id),
-    INDEX idx_adc_performed_by (performed_by_user_id),
-    INDEX idx_adc_performed_at (performed_at),
-    INDEX idx_adc_delete_flag (delete_flag)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
-
 -- ============================================================================
 -- PART 8: ANNUAL REVIEW (Kiểm tra lại mẫu huấn luyện định kỳ)
 -- ============================================================================
@@ -1324,7 +1292,7 @@ CREATE TABLE approval_detail_comments
 -- 8.1 TRAINING_SAMPLE_REVIEW_CONFIGS (Cấu hình review định kỳ)
 CREATE TABLE training_sample_review_configs
 (
-    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    id               BIGINT PRIMARY KEY AUTO_INCREMENT,
     review_policy_id BIGINT  NOT NULL,
     trigger_month    INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
     trigger_day      INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
@@ -1349,7 +1317,7 @@ CREATE TABLE training_sample_reviews
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     config_id       BIGINT  NOT NULL,
     product_line_id BIGINT  NOT NULL,
-    review_date     DATE    COMMENT 'Năm review (2026)',
+    review_date     DATE COMMENT 'Năm review (2026)',
     due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
     completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT  NOT NULL COMMENT 'TL thực hiện review',
@@ -1379,28 +1347,31 @@ CREATE TABLE training_sample_reviews
 
 -- Training Sample Review Policies table
 
-CREATE TABLE training_sample_review_policies (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    policy_code VARCHAR(50) UNIQUE NOT NULL,
-    policy_name VARCHAR(255),
-    product_line_id BIGINT NOT NULL,
-    effective_date DATE NOT NULL,
+CREATE TABLE training_sample_review_policies
+(
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    policy_code     VARCHAR(50) UNIQUE                  NOT NULL,
+    policy_name     VARCHAR(255),
+    product_line_id BIGINT                              NOT NULL,
+    effective_date  DATE                                NOT NULL,
     expiration_date DATE,
-    status ENUM('ACTIVE', 'ARCHIVED','DRAFT') NOT NULL DEFAULT 'ACTIVE',
-    description TEXT,
+    status          ENUM ('ACTIVE', 'ARCHIVED','DRAFT') NOT NULL DEFAULT 'ACTIVE',
+    description     TEXT,
 
-    delete_flag BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(255),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by VARCHAR(255),
+    delete_flag     BOOLEAN                             NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP,
+    created_by      VARCHAR(255),
+    updated_at      TIMESTAMP                                    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by      VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
 
     INDEX idx_training_review_policies_effective (effective_date, expiration_date),
     INDEX idx_training_review_policies_status (status),
     INDEX idx_training_review_policies_delete_flag (delete_flag)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 
 CREATE TABLE approval_flow_steps

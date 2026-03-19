@@ -1,15 +1,16 @@
-// src/main/java/com/sep490/anomaly_training_backend/service/impl/TrainingPlanServiceImpl.java
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
-import com.sep490.anomaly_training_backend.dto.response.EmployeePlanResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
@@ -27,6 +28,7 @@ import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.PriorityPolicy;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
@@ -43,11 +45,14 @@ import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
@@ -63,14 +68,18 @@ import com.sep490.anomaly_training_backend.service.priority.impl.PriorityScoring
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +87,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     private final TrainingPlanRepository trainingPlanRepository;
@@ -100,6 +110,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
+    private final GroupRepository groupRepository;
+    private final RejectReasonRepository rejectReasonRepository;
+    private final RequiredActionRepository requiredActionRepository;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -124,18 +137,62 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     @Override
     public List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId) {
-        if (currentUser.hasRole("ROLE_SUPERVISOR") || currentUser.hasRole("ROLE_MANAGER")) {
+
+        // 1. Role: FINAL_INSPECTION
+        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
+            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
+            if (teams.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
+
             if (lineId != null) {
-                return trainingPlanRepository.findByLineIdAndDeleteFlagFalseForSupervisorAndManager(lineId).stream()
+                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             } else {
-                return trainingPlanRepository.findByDeleteFlagFalseForSupervisorAndManager().stream()
+                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             }
         }
 
+        // Trạng thái loại trừ cho Manager
+        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+
+        // 2. Role: MANAGER
+        if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (lineId != null) {
+                return trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(currentUser.getId(), lineId, excludedStatuses).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            } else {
+                return trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(currentUser.getId(), excludedStatuses).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // 3. Role: SUPERVISOR
+        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            List<Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+            if (groups.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+
+            if (lineId != null) {
+                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            } else {
+                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
+                        .map(this::toGenerationResponse)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // 4. Role mặc định (Người tạo)
         if (lineId != null) {
             return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId).stream()
                     .map(this::toGenerationResponse)
@@ -276,7 +333,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public List<EmployeePlanResponse> getEmployeesNotInPlan(Long planId) {
+    public List<PrioritizedEmployeeResponse> getEmployeesNotInPlan(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
@@ -297,12 +354,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         return allEmployees.stream()
                 .filter(emp -> !inPlanIds.contains(emp.getId()))
-                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<EmployeePlanResponse> getEmployeesInTeams(Long planId) {
+    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long planId) {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
@@ -320,7 +377,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
 
         return allEmployees.stream()
-                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
                 .collect(Collectors.toList());
     }
 
@@ -825,6 +882,78 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         return approvalService.canApprove(report, currentUser);
     }
 
+    // ── Save feedback ─────────────────────────────────────────────────────────
+    @Override
+    @Transactional
+    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
+
+        TrainingPlanDetail detail = trainingPlanDetailRepository.findByIdAndDeleteFlagFalse(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
+
+        // Tất cả null/empty → xoá feedback
+        if (isEmptyFeedback(request)) {
+            detail.setRejectFeedback(null);
+            trainingPlanDetailRepository.save(detail);
+            return;
+        }
+
+        // Batch load reasons + action
+        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
+        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
+            reasonSnapshots = rejectReasonRepository
+                    .findAllById(request.getRejectReasonIds())
+                    .stream()
+                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
+                            .id(r.getId())
+                            .category(r.getCategoryName())
+                            .label(r.getReasonName())
+                            .build())
+                    .toList();
+        }
+
+        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
+        if (request.getRequiredActionId() != null) {
+            actionSnapshot = requiredActionRepository
+                    .findById(request.getRequiredActionId())
+                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
+                            .id(a.getId())
+                            .label(a.getActionName())
+                            .build())
+                    .orElse(null);
+        }
+
+        detail.setRejectFeedback(RejectFeedbackJson.builder()
+                .savedAt(Instant.now())
+                .savedBy(currentUser.getFullName())
+                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
+                .requiredAction(actionSnapshot)
+                .comment(request.getComment())
+                .build());
+
+        trainingPlanDetailRepository.save(detail);
+        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
+    }
+
+    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
+                && r.getRequiredActionId() == null
+                && (r.getComment() == null || r.getComment().isBlank());
+    }
+
+    // ── Clear feedback (khi TL revise lại) ───────────────────────────────────
+
+    @Override
+    @Transactional
+    public void clearFeedback(Long proposalId) {
+        List<TrainingPlanDetail> details =
+                trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+
+        details.forEach(d -> d.setRejectFeedback(null));
+        trainingPlanDetailRepository.saveAll(details);
+
+        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
+    }
+
     private TrainingPlan getReportById(Long id) {
         return trainingPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
@@ -1084,7 +1213,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 ));
     }
 
-    private EmployeePlanResponse buildEmployeePlanResponse(
+    private PrioritizedEmployeeResponse buildPrioritizedEmployeeResponsee(
             Employee emp,
             Map<Long, PrioritySnapshotDetail> snapshotMap,
             Map<Long, TrainingResultDetail> lastTrainingMap,
@@ -1093,7 +1222,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         PrioritySnapshotDetail snapshot = snapshotMap.get(emp.getId());
         TrainingResultDetail lastTraining = lastTrainingMap.get(emp.getId());
 
-        return EmployeePlanResponse.builder()
+        return PrioritizedEmployeeResponse.builder()
                 .id(emp.getId())
                 .employeeCode(emp.getEmployeeCode())
                 .fullName(emp.getFullName())

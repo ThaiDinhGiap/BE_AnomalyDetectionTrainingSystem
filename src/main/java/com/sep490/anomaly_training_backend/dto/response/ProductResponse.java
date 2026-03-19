@@ -17,6 +17,7 @@ public class ProductResponse {
     private Long id;
     private String code;
     private String name;
-    private List<String> attachmentUrl;
+    private List<String> attachmentUrls;
+    private List<ProcessResponse>  processes;
 }
 

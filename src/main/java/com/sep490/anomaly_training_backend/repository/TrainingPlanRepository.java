@@ -82,4 +82,37 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     List<TrainingPlan> findPendingForApprove(
             @Param("status") ReportStatus status,
             @Param("userId") Long userId);
+
+    @Query("SELECT tr FROM TrainingPlan tr " +
+            "WHERE tr.line.group.id IN :groupIds " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.deleteFlag = false")
+    List<TrainingPlan> findAllByGroupIdsAndLineIdAndDeleteFlagFalse(
+            @Param("groupIds") List<Long> groupIds,
+            @Param("lineId") Long lineId);
+
+    @Query("SELECT tr FROM TrainingPlan tr " +
+            "WHERE tr.line.group.id IN :groupIds " +
+            "AND tr.deleteFlag = false")
+    List<TrainingPlan> findAllByGroupIdsAndDeleteFlagFalse(@Param("groupIds") List<Long> groupIds);
+
+    @Query("SELECT tr FROM TrainingPlan tr " +
+            "JOIN tr.line.group.section s " +
+            "WHERE s.manager.id = :managerId " +
+            "AND tr.line.id = :lineId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingPlan> findAllByManagerAndLineIdAndDeleteFlagFalse(
+            @Param("managerId") Long managerId,
+            @Param("lineId") Long lineId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("SELECT tr FROM TrainingPlan tr " +
+            "JOIN tr.line.group.section s " +
+            "WHERE s.manager.id = :managerId " +
+            "AND tr.status NOT IN :excludedStatuses " +
+            "AND tr.deleteFlag = false")
+    List<TrainingPlan> findAllByManagerAndDeleteFlagFalse(
+            @Param("managerId") Long managerId,
+            @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
 }

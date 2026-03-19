@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlanDetail, Long> {
@@ -51,4 +52,6 @@ public interface TrainingPlanDetailRepository extends JpaRepository<TrainingPlan
     int countByTrainingPlanIdAndPlannedDate(Long trainingPlanId, LocalDate plannedDate);
 
     List<TrainingPlanDetail> findByTrainingPlanIdOrderByPlannedDateAsc(Long trainingPlanId);
+
+    Optional<TrainingPlanDetail> findByIdAndDeleteFlagFalse(Long id);
 }

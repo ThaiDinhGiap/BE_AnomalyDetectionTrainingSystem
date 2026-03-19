@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.approval;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.UserRole;

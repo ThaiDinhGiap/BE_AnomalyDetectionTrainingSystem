@@ -1,9 +1,9 @@
 package com.sep490.anomaly_training_backend.service.sample.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
@@ -11,18 +11,37 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +67,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         if (("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
             entityList = trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(id, username);
-        }else {
+        } else {
             entityList = trainingSampleProposalRepository.findByProductLineForSupervisorAndManager(id);
         }
         List<TrainingSampleProposalResponse> trainingSampleProposalResponses = new ArrayList<>();
@@ -202,27 +221,27 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
-            
+
             // Handle trainingSample - can be null
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
             }
-            
+
             // Handle defect - validate if not null
             if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId())
                         .orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
                 entity.setDefect(defect);
             }
-            
+
             // Handle product - validate if not null
             if (detailRequest.getProductId() != null) {
                 Product product = productRepository.findById(detailRequest.getProductId())
                         .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
                 entity.setProduct(product);
             }
-            
+
             entity.setTrainingSampleProposal(proposal);
             entity.setProposalType(detailRequest.getProposalType());
             entity.setCategoryName(detailRequest.getCategoryName());
@@ -230,10 +249,10 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
             entity.setTrainingSampleCode(detailRequest.getTrainingSampleCode());
             entity.setNote(detailRequest.getNote());
-            
+
             // Save detail first to get ID for attachment
             entity = trainingSampleProposalDetailRepository.save(entity);
-            
+
             // Upload images for this detail if provided
             if (detailRequest.getImages() != null && !detailRequest.getImages().isEmpty()) {
                 attachmentService.uploadAttachments(detailRequest.getImages(), "TRAINING_SAMPLE_PROPOSAL", entity.getId(), currentUser.getUsername());

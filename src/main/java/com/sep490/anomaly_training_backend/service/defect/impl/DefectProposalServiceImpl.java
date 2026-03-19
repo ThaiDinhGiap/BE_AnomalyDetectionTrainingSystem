@@ -1,9 +1,9 @@
 package com.sep490.anomaly_training_backend.service.defect.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
@@ -13,11 +13,23 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
-import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +67,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
                 .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         if (("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
             listEntity = defectProposalRepository.findByProductLineIdAndCreatedBy(id, username);
-        } else{
+        } else {
             listEntity = defectProposalRepository.findByProductLineForSupervisorAndManager(id);
         }
         for (DefectProposal entity : listEntity) {
@@ -131,7 +143,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             } else {
                 entity.setDefect(null);
             }
-            
+
             // Validate and set product - can be null
             if (item.getProductId() != null) {
                 Product product = productRepository.findById(item.getProductId())
@@ -140,7 +152,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             } else {
                 entity.setProduct(null);
             }
-            
+
             if (item.getProcessId() == null) {
                 throw new AppException(ErrorCode.MISSING_PROCESS_ID);
             }
@@ -156,7 +168,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setOriginMeasures(item.getOriginMeasures());
             entity.setOutflowMeasures(item.getOutflowMeasures());
             entity.setDefectType(DefectType.valueOf(item.getDefectType()));
-            
+
             // Set new fields
             entity.setCustomer(item.getCustomer());
             entity.setQuantity(item.getQuantity());
@@ -247,20 +259,20 @@ public class DefectProposalServiceImpl implements DefectProposalService {
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
             DefectProposalDetail entity = new DefectProposalDetail();
             entity.setDefectProposal(proposal);
-            
+
             // Handle defect - can be null
             if (detailRequest.getDefectId() != null) {
                 Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
                 entity.setDefect(defect);
             }
-            
+
             // Handle product - can be null
             if (detailRequest.getProductId() != null) {
                 Product product = productRepository.findById(detailRequest.getProductId())
                         .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
                 entity.setProduct(product);
             }
-            
+
             entity.setProposalType(detailRequest.getProposalType());
             entity.setDefectDescription(detailRequest.getDefectDescription());
             entity.setProcess(process);
@@ -272,15 +284,15 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setOriginMeasures(detailRequest.getOriginMeasures());
             entity.setOutflowMeasures(detailRequest.getOutflowMeasures());
             entity.setDefectType(DefectType.valueOf(detailRequest.getDefectType()));
-            
+
             // Set new fields
             entity.setCustomer(detailRequest.getCustomer());
             entity.setQuantity(detailRequest.getQuantity());
             entity.setConclusion(detailRequest.getConclusion());
-            
+
             // Save detail first to get ID for attachment
             entity = defectProposalDetailRepository.save(entity);
-            
+
             // Upload images for this detail if provided
             if (detailRequest.getImages() != null && !detailRequest.getImages().isEmpty()) {
                 attachmentService.uploadAttachments(detailRequest.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
@@ -329,7 +341,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         entity.setOriginMeasures(request.getOriginMeasures());
         entity.setOutflowMeasures(request.getOutflowMeasures());
         entity.setDefectType(DefectType.valueOf(request.getDefectType()));
-        
+
         // Set new fields
         entity.setCustomer(request.getCustomer());
         entity.setQuantity(request.getQuantity());

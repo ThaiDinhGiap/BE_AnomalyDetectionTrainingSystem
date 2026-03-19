@@ -1,11 +1,13 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
@@ -13,10 +15,14 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultListRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.ProductProcess;
 import com.sep490.anomaly_training_backend.model.Team;
@@ -26,7 +32,11 @@ import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
@@ -37,7 +47,6 @@ import com.sep490.anomaly_training_backend.repository.TrainingResultDetailReposi
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository; // Import GroupRepository
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,11 +57,14 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -72,7 +84,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingSampleRepository trainingSampleRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final ProductProcessRepository productProcessRepository;
-    private final GroupRepository groupRepository; // Inject GroupRepository
+    private final EmployeeRepository employeeRepository;
+    private final TrainingResultDetailRepository trainingResultDetailRepository;
+    private final PrioritySnapshotRepository prioritySnapshotRepository;
+    private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
+    private final GroupRepository groupRepository;
+
+    private static final int HISTORY_SIZE = 6;
 
     @Override
     @Transactional
@@ -700,6 +718,216 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long resultId) {
+        TrainingResult result = trainingResultRepository.findById(resultId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        Long teamId = result.getTeam() != null ? result.getTeam().getId() : null;
+        if (teamId == null) return List.of();
+
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+
+        Set<Long> inResultIds = new java.util.HashSet<>(
+                trainingResultDetailRepository.findEmployeeIdsByTrainingResultId(resultId));
+
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(result.getTrainingPlan().getId());
+
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
+
+        return allEmployees.stream()
+                .map(emp -> buildEmployeePlanResponse(emp, snapshotMap, lastTrainingMap, inResultIds))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EmployeeSkillCertificateResponse> getSkillCertificates(Long resultId) {
+        // 1. Load training result
+        TrainingResult result = trainingResultRepository.findById(resultId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        Long teamId = result.getTeam() != null ? result.getTeam().getId() : null;
+        Long lineId = result.getLine() != null ? result.getLine().getId() : null;
+        if (teamId == null || lineId == null) return List.of();
+
+        // 2. Lấy tất cả nhân viên active trong team
+        List<Employee> employees = employeeRepository.findAllActiveByTeamId(teamId);
+        if (employees.isEmpty()) return List.of();
+
+        List<Long> employeeIds = employees.stream().map(Employee::getId).collect(Collectors.toList());
+
+        // 3. Batch load toàn bộ dữ liệu — tránh N+1 query
+        // 3a. Skills của tất cả nhân viên trong line này
+        Map<Long, List<EmployeeSkill>> skillsByEmployee = employeeSkillRepository
+                .findByEmployeeIdsAndLineId(employeeIds, lineId)
+                .stream()
+                .collect(Collectors.groupingBy(es -> es.getEmployee().getId()));
+
+        // 3b. Toàn bộ history training của nhân viên (để tính stats + 6 dot)
+        List<TrainingResultDetail> allHistory = trainingResultDetailRepository
+                .findAllHistoryByEmployeeIds(employeeIds);
+
+        // Group: employeeId → processId → list history (đã sort DESC actualDate)
+        Map<Long, Map<Long, List<TrainingResultDetail>>> historyMap = allHistory.stream()
+                .filter(d -> d.getProcess() != null)
+                .collect(Collectors.groupingBy(
+                        d -> d.getEmployee().getId(),
+                        Collectors.groupingBy(d -> d.getProcess().getId())
+                ));
+
+        // 3c. Toàn bộ sessions trong kế hoạch này, group theo employeeId
+        Map<Long, List<TrainingResultDetail>> sessionsInResult = trainingResultDetailRepository
+                .findAllSessionsByResultId(resultId)
+                .stream()
+                .collect(Collectors.groupingBy(d -> d.getEmployee().getId()));
+
+        // 4. Build response cho từng nhân viên
+        return employees.stream()
+                .map(emp -> buildCertificateResponse(
+                        emp,
+                        skillsByEmployee.getOrDefault(emp.getId(), List.of()),
+                        historyMap.getOrDefault(emp.getId(), Map.of()),
+                        sessionsInResult.getOrDefault(emp.getId(), List.of())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private EmployeeSkillCertificateResponse buildCertificateResponse(
+            Employee emp,
+            List<EmployeeSkill> skills,
+            Map<Long, List<TrainingResultDetail>> historyByProcess,
+            List<TrainingResultDetail> sessionsInResult) {
+
+        // Build ProcessCertDetail cho từng chứng chỉ công đoạn
+        List<EmployeeSkillCertificateResponse.ProcessCertDetail> processDetails = skills.stream()
+                .map(skill -> buildProcessCertDetail(skill, historyByProcess))
+                .collect(Collectors.toList());
+
+        // Tính active cert count và rate
+        long activeCertCount = skills.stream()
+                .filter(es -> es.getStatus() == EmployeeSkillStatus.VALID)
+                .filter(es -> es.getExpiryDate() == null || !es.getExpiryDate().isBefore(LocalDate.now()))
+                .count();
+        double activeRate = skills.isEmpty() ? 0.0
+                : Math.round((double) activeCertCount / skills.size() * 1000) / 10.0; // 1 decimal
+
+        // Build sessions trong kế hoạch này
+        List<EmployeeSkillCertificateResponse.PlannedSessionDto> plannedSessions = sessionsInResult.stream()
+                .map(this::buildPlannedSessionDto)
+                .collect(Collectors.toList());
+
+        return EmployeeSkillCertificateResponse.builder()
+                .employeeId(emp.getId())
+                .employeeCode(emp.getEmployeeCode())
+                .fullName(emp.getFullName())
+                .activeCertCount((int) activeCertCount)
+                .activeRate(activeRate)
+                .processDetails(processDetails)
+                .plannedSessions(plannedSessions)
+                .build();
+    }
+
+    private EmployeeSkillCertificateResponse.ProcessCertDetail buildProcessCertDetail(
+            EmployeeSkill skill,
+            Map<Long, List<TrainingResultDetail>> historyByProcess) {
+
+        Process process = skill.getProcess();
+        List<TrainingResultDetail> history = historyByProcess.getOrDefault(
+                process.getId(), List.of());
+
+        // Lấy HISTORY_SIZE lần gần nhất (đã sort DESC bởi query)
+        List<Boolean> recentHistory = new java.util.ArrayList<>();
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            if (i < history.size()) {
+                recentHistory.add(history.get(i).getIsPass());
+            } else {
+                recentHistory.add(null); // không có data → dot xám
+            }
+        }
+
+        // Stats
+        long passCount = history.stream().filter(d -> Boolean.TRUE.equals(d.getIsPass())).count();
+        long failCount = history.stream().filter(d -> Boolean.FALSE.equals(d.getIsPass())).count();
+        long totalCount = history.stream().filter(d -> d.getIsPass() != null).count();
+
+        // Latest result = phần tử đầu tiên (sort DESC)
+        Boolean latestResult = history.isEmpty() ? null : history.get(0).getIsPass();
+
+        // Classification
+        Integer classVal = process.getClassification() != null
+                ? process.getClassification().getValue() : null;
+
+        return EmployeeSkillCertificateResponse.ProcessCertDetail.builder()
+                .processId(process.getId())
+                .processCode(process.getCode())
+                .processName(process.getName())
+                .jtCode(process.getStandardTimeJt() != null
+                        ? process.getStandardTimeJt().toPlainString() : null)
+                .classification(classVal)
+                .classificationLabel(classVal != null ? "Loại " + classVal : null)
+                .classificationDesc(buildClassificationDesc(classVal))
+                .certStatus(skill.getStatus() != null ? skill.getStatus().name() : null)
+                .certifiedDate(skill.getCertifiedDate())
+                .expiryDate(skill.getExpiryDate())
+                .recentHistory(recentHistory)
+                .passCount((int) passCount)
+                .failCount((int) failCount)
+                .totalCount((int) totalCount)
+                .latestResult(latestResult)
+                .build();
+    }
+
+    private EmployeeSkillCertificateResponse.PlannedSessionDto buildPlannedSessionDto(
+            TrainingResultDetail detail) {
+
+        // Người xác nhận: ưu tiên FI out → PRO out
+        String confirmerName = null;
+        if (detail.getSignatureFiOut() != null) {
+            confirmerName = detail.getSignatureFiOut().getFullName();
+        } else if (detail.getSignatureProOut() != null) {
+            confirmerName = detail.getSignatureProOut().getFullName();
+        }
+
+        // Đánh giá
+        String evaluation;
+        if (detail.getIsPass() == null) {
+            evaluation = "Dự kiến";
+        } else {
+            evaluation = Boolean.TRUE.equals(detail.getIsPass()) ? "Đạt" : "Không đạt";
+        }
+
+        return EmployeeSkillCertificateResponse.PlannedSessionDto.builder()
+                .detailId(detail.getId())
+                .plannedDate(detail.getPlannedDate())
+                .actualDate(detail.getActualDate())
+                .processId(detail.getProcess() != null ? detail.getProcess().getId() : null)
+                .processCode(detail.getProcess() != null ? detail.getProcess().getCode() : null)
+                .processName(detail.getProcess() != null ? detail.getProcess().getName() : null)
+                .sampleCode(detail.getSampleCode())
+                .trainingTopic(detail.getTrainingTopic())
+                .note(detail.getNote())
+                .confirmerName(confirmerName)
+                .evaluation(evaluation)
+                .isPass(detail.getIsPass())
+                .build();
+    }
+
+    /**
+     * Mô tả phân loại hiển thị trong legend (xem ảnh góc trên phải).
+     */
+    private String buildClassificationDesc(Integer classVal) {
+        if (classVal == null) return null;
+        return switch (classVal) {
+            case 1 -> "CĐ có quá khứ phát sinh phế phẩm";
+            case 2 -> "CĐ rank D đảm bảo bởi người thao tác";
+            case 3 -> "CĐ có thao tác chỉ định";
+            default -> "CĐ khác";
+        };
+    }
+
+    @Override
     public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
         TrainingResultDetail detail = getDetailtById(resultId);
     }
@@ -729,5 +957,64 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private TrainingResultDetail getDetailtById(Long id) {
         return detailRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
+    }
+
+    private Map<Long, PrioritySnapshotDetail> loadSnapshotMap(Long planId) {
+        return prioritySnapshotRepository.findByTrainingPlanId(planId)
+                .map(snapshot -> prioritySnapshotDetailRepository
+                        .findBySnapshotId(snapshot.getId())
+                        .stream()
+                        .collect(Collectors.toMap(
+                                d -> d.getEmployee().getId(),
+                                d -> d,
+                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2
+                        )))
+                .orElse(Map.of());
+    }
+
+    private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
+        if (employeeIds.isEmpty()) return Map.of();
+        return trainingResultDetailRepository
+                .findLatestByEmployeeIds(employeeIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        d -> d.getEmployee().getId(),
+                        d -> d,
+                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2
+                ));
+    }
+
+    private PrioritizedEmployeeResponse buildEmployeePlanResponse(
+            Employee emp,
+            Map<Long, PrioritySnapshotDetail> snapshotMap,
+            Map<Long, TrainingResultDetail> lastTrainingMap,
+            Set<Long> inPlanIds) {
+
+        PrioritySnapshotDetail snapshot = snapshotMap.get(emp.getId());
+        TrainingResultDetail lastTraining = lastTrainingMap.get(emp.getId());
+
+        return PrioritizedEmployeeResponse.builder()
+                .id(emp.getId())
+                .employeeCode(emp.getEmployeeCode())
+                .fullName(emp.getFullName())
+                .status(emp.getStatus())
+                .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
+                .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
+                .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
+                        ? emp.getTeam().getGroup().getName() : null)
+                .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
+                .tierName(snapshot != null ? snapshot.getTierName() : null)
+                .sortRank(snapshot != null ? snapshot.getSortRank() : null)
+                .priorityReason(buildPriorityReason(snapshot))
+                .lastTrainedDate(lastTraining != null ? lastTraining.getActualDate() : null)
+                .lastTrainedPassed(lastTraining != null ? lastTraining.getIsPass() : null)
+                .inCurrentPlan(inPlanIds.contains(emp.getId()))
+                .build();
+    }
+
+    private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
+        if (snapshot == null) return null;
+        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
+        return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }

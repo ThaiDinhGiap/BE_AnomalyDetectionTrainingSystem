@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-public class EmployeePlanResponse {
+public class PrioritizedEmployeeResponse {
 
     private Long id;
     private String employeeCode;

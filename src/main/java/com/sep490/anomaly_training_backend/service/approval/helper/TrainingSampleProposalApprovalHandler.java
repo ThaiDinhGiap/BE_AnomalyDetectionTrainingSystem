@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.approval.impl;
+package com.sep490.anomaly_training_backend.service.approval.helper;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.Approvable;
@@ -11,6 +11,7 @@ import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -27,7 +28,7 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
 
     @Override
     public void applyApproval(Approvable entity) {
-        TrainingSampleProposal  trainingSampleProposal = (TrainingSampleProposal) entity;
+        TrainingSampleProposal trainingSampleProposal = (TrainingSampleProposal) entity;
         List<TrainingSampleProposalDetail> details = trainingSampleProposal.getDetails();
         if (details == null || details.isEmpty()) {
             throw new IllegalStateException("TrainingSampleProposal has no details to apply.");
@@ -45,6 +46,7 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
             }
         }
     }
+
     /* ===================== APPLY CREATE ===================== */
     private void applyCreate(TrainingSampleProposalDetail d) {
         // CREATE: TrainingSample không được có sẵn

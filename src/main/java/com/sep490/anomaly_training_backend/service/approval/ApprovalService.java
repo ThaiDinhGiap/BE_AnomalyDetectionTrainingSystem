@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.service.approval;
 
-import com.sep490.anomaly_training_backend.dto.request.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.request.RejectRequest;
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
