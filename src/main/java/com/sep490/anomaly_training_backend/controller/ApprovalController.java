@@ -74,7 +74,7 @@ public class ApprovalController {
 
     @GetMapping("/history/{entityType}/{entityId}")
     @Operation(summary = "Get approval history for a report")
-    @PreAuthorize("hasAuthority('approval.view_history')")
+    @PreAuthorize("hasAuthority('approval.view')")
     public ResponseEntity<ApiResponse<List<ApprovalHistoryResponse>>> getApprovalHistory(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId,
