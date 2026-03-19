@@ -149,4 +149,19 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             """)
     List<TrainingResultDetail> findAllSessionsByResultId(
             @Param("resultId") Long resultId);
+
+    /**
+     * Lấy các detail đang PENDING và đã có kết quả isPass (isPass IS NOT NULL)
+     * theo training result id.
+     */
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.trainingResult.id = :resultId
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING
+                  AND t.isPass IS NOT NULL
+                  AND t.deleteFlag = false
+                ORDER BY t.plannedDate ASC
+            """)
+    List<TrainingResultDetail> findPendingWithIsPassByResultId(
+            @Param("resultId") Long resultId);
 }
