@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class TrainingResultDetailResponse {
@@ -32,7 +33,7 @@ public class TrainingResultDetailResponse {
     private LocalDateTime createdAt;
     private Integer year;
 
-    private Page<DetailRowDto> details;
+    private List<DetailRowDto> details;
 
     @Data
     public static class DetailRowDto {

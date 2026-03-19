@@ -180,10 +180,8 @@ public class TrainingResultController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetail(
-            @Parameter(description = "Training Result Header ID") @PathVariable Long id,
-            @PageableDefault(size = 10) Pageable pageable
-    ) {
-        return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id, pageable));
+            @Parameter(description = "Training Result Header ID") @PathVariable Long id) {
+        return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
 
     @Operation(summary = "Get processes by product line",

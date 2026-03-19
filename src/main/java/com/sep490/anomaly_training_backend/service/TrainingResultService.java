@@ -39,7 +39,7 @@ public interface TrainingResultService {
 
     List<ProductLineResponse> getMyProductLines();
 
-    TrainingResultDetailResponse getTrainingResultDetail(Long id, Pageable pageable);
+    TrainingResultDetailResponse getTrainingResultDetail(Long id);
 
     void submitResult(Long resultId);
 
