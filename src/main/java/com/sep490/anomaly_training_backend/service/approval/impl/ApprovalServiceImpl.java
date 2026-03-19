@@ -97,6 +97,10 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), null, null, request);
 
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            return;
+        }
+
         ApprovalFlowStep nextStep = getNextStep(entity.getEntityType(), currentStep.getStepOrder());
 
         if (nextStep != null) {
@@ -139,6 +143,10 @@ public class ApprovalServiceImpl implements ApprovalService {
         validateApprover(entity, currentUser, currentStep);
 
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
+
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            return;
+        }
 
         entity.setStatus(mapRoleToRejectedStatus(currentStep.getApproverRole()));
         log.info("Rejected {} id={} version={} by {} reasons={} requiredAction={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), req.getRejectReasonIds(), req.getRequiredActionId());

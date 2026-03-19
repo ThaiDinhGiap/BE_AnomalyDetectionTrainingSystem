@@ -954,15 +954,20 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public void submit(Long reportId, User currentUser, HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
+
         validateResultForSubmission(report);
         report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
 
         approvalService.submit(report, currentUser, request);
+        updateResultDetailAfterSubmission(report);
 
         trainingResultRepository.save(report);
     }
 
     private void validateResultForSubmission(TrainingResult result) {
+    }
+
+    private void updateResultDetailAfterSubmission(TrainingResult result) {
     }
 
     @Override

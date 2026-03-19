@@ -862,7 +862,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
         if (report.getStatus() == ReportStatus.APPROVED) {
-//            createHistorySnapshot(report); // Lưu snapshot trước khi tạo Training Result
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);
