@@ -13,7 +13,9 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResp
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,8 +24,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,7 +36,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/training-result")
@@ -46,6 +48,32 @@ public class TrainingResultController {
 
     private final TrainingResultService trainingResultService;
     private final EmployeeSkillService employeeSkillService;
+    private final TrainingResultDetailRepository trainingResultDetailRepository;
+
+    @Operation(summary = "[TEST] Query pending details with isPass not null")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    @GetMapping("/test/pending-with-pass/{resultId}")
+    public ResponseEntity<List<Map<String, Object>>> testPendingWithIsPass(
+            @PathVariable Long resultId) {
+        List<TrainingResultDetail> details = trainingResultDetailRepository
+                .findPendingWithIsPassByResultId(resultId);
+
+        List<Map<String, Object>> result = details.stream().map(d -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", d.getId());
+            map.put("trainingResultId", d.getTrainingResult().getId());
+            map.put("employeeId", d.getEmployee().getId());
+            map.put("status", d.getStatus());
+            map.put("isPass", d.getIsPass());
+            map.put("plannedDate", d.getPlannedDate());
+            map.put("actualDate", d.getActualDate());
+            map.put("note", d.getNote());
+            map.put("processId", d.getProcess() != null ? d.getProcess().getId() : null);
+            return map;
+        }).toList();
+
+        return ResponseEntity.ok(result);
+    }
 
     @Operation(summary = "Get skill matrix data")
     @GetMapping("/skills/matrix")
@@ -54,8 +82,7 @@ public class TrainingResultController {
             @Parameter(description = "Filter by Team ID", required = true) @RequestParam Long teamId,
             @Parameter(description = "Filter by Product Line ID", required = true) @RequestParam Long lineId,
             @Parameter(description = "Optional list of Employee IDs to display") @RequestParam(required = false) List<Long> employeeIds,
-            @Parameter(description = "Optional list of Process IDs to display") @RequestParam(required = false) List<Long> processIds
-    ) {
+            @Parameter(description = "Optional list of Process IDs to display") @RequestParam(required = false) List<Long> processIds) {
         return ResponseEntity.ok(employeeSkillService.getSkillMatrix(teamId, lineId, employeeIds, processIds));
     }
 
@@ -65,8 +92,7 @@ public class TrainingResultController {
     public ResponseEntity<KpiSummaryResponse> getKpiSummary(
             @Parameter(description = "Filter by Team ID") @RequestParam(required = false) Long teamId,
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId,
-            @Parameter(description = "Filter by Year") @RequestParam(required = false) Integer year
-    ) {
+            @Parameter(description = "Filter by Year") @RequestParam(required = false) Integer year) {
         return ResponseEntity.ok(trainingResultService.getKpiSummary(teamId, lineId, year));
     }
 
@@ -74,17 +100,14 @@ public class TrainingResultController {
     @GetMapping("/product-groups")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProductGroups(
-            @Parameter(description = "Training group (Line) ID") @RequestParam("groupId") Long groupId
-    ) {
+            @Parameter(description = "Training group (Line) ID") @RequestParam("groupId") Long groupId) {
         return ResponseEntity.ok(trainingResultService.getProductGroupsByLine(groupId));
     }
 
-    @Operation(summary = "Get training samples by product",
-            description = "Lấy danh sách mẫu luyện tập dựa trên sản phẩm đã chọn.")
+    @Operation(summary = "Get training samples by product", description = "Lấy danh sách mẫu luyện tập dựa trên sản phẩm đã chọn.")
     @GetMapping("/samples-by-product")
     public ResponseEntity<List<SampleResultResponse>> getSamplesByProduct(
-            @Parameter(description = "ID của sản phẩm")
-            @RequestParam("productId") Long productId) {
+            @Parameter(description = "ID của sản phẩm") @RequestParam("productId") Long productId) {
 
         return ResponseEntity.ok(trainingResultService.getSamplesByProduct(productId));
     }
@@ -93,15 +116,11 @@ public class TrainingResultController {
     @GetMapping("/topics")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getTrainingTopics(
-            @Parameter(description = "Process ID") @RequestParam("processId") Long processId
-    ) {
+            @Parameter(description = "Process ID") @RequestParam("processId") Long processId) {
         return ResponseEntity.ok(trainingResultService.getTrainingTopicsByProcess(processId));
     }
 
-    @Operation(
-            summary = "Update training result (PRO/TL)",
-            description = "Update In/Out times, Notes. System will automatically calculate Pass/Fail based on Standard Time and auto-fill Actual Date when all 4 signatures are complete."
-    )
+    @Operation(summary = "Update training result (PRO/TL)", description = "Update In/Out times, Notes. System will automatically calculate Pass/Fail based on Standard Time and auto-fill Actual Date when all 4 signatures are complete.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid data or calculation logic error")
@@ -109,8 +128,7 @@ public class TrainingResultController {
     @PutMapping("/update")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<?> updateTrainingResult(
-            @RequestBody UpdateTrainingResultRequest request
-    ) {
+            @RequestBody UpdateTrainingResultRequest request) {
         try {
             trainingResultService.updateResult(request);
             return ResponseEntity.ok("Training Result updated successfully.");
@@ -119,10 +137,7 @@ public class TrainingResultController {
         }
     }
 
-    @Operation(
-            summary = "FI batch signature confirmation",
-            description = "For FINAL_INSPECTION role only. When all 4 signatures are complete, Actual Date of Plan and Result will be automatically updated."
-    )
+    @Operation(summary = "FI batch signature confirmation", description = "For FINAL_INSPECTION role only. When all 4 signatures are complete, Actual Date of Plan and Result will be automatically updated.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "FI signed successfully"),
             @ApiResponse(responseCode = "403", description = "No signing permission (Must be FINAL_INSPECTION role)"),
@@ -150,16 +165,14 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getAllTrainingResults(currentUser, lineId));
     }
 
-    @Operation(summary = "Get product lines managed by current user",
-            description = "Returns list of product lines that belong to the group of the current Team Leader's team. Used for the line dropdown filter.")
+    @Operation(summary = "Get product lines managed by current user", description = "Returns list of product lines that belong to the group of the current Team Leader's team. Used for the line dropdown filter.")
     @GetMapping("/my-lines")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<ProductLineResponse>> getMyProductLines() {
         return ResponseEntity.ok(trainingResultService.getMyProductLines());
     }
 
-    @Operation(summary = "Get all employees in result's team",
-            description = "Returns list of all active employees in the same team as the result.")
+    @Operation(summary = "Get all employees in result's team", description = "Returns list of all active employees in the same team as the result.")
     @GetMapping("/{resultId}/employees")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<PrioritizedEmployeeResponse>> getEmployeesInTeam(
@@ -167,8 +180,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getEmployeesInTeams(resultId));
     }
 
-    @Operation(summary = "Get training results by product line (dây chuyền)",
-            description = "Returns list of training results filtered by the selected product line.")
+    @Operation(summary = "Get training results by product line (dây chuyền)", description = "Returns list of training results filtered by the selected product line.")
     @GetMapping("/by-line/{lineId}")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultListResponse>> getResultsByLine(
@@ -184,8 +196,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
 
-    @Operation(summary = "Get processes by product line",
-            description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")
+    @Operation(summary = "Get processes by product line", description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")
     @GetMapping("/processes-by-line/{lineId}")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProcessesByLine(
@@ -193,8 +204,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getProcessesByLine(lineId));
     }
 
-    @Operation(summary = "Get processes by employee skill",
-            description = "Returns list of processes that the employee has skills for, filtered by product line. Used for the Công đoạn dropdown when selecting per employee.")
+    @Operation(summary = "Get processes by employee skill", description = "Returns list of processes that the employee has skills for, filtered by product line. Used for the Công đoạn dropdown when selecting per employee.")
     @GetMapping("/processes-by-employee")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultProcessResponse>> getProcessesByEmployeeSkill(
@@ -203,8 +213,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getProcessesByEmployeeSkill(employeeId, lineId));
     }
 
-    @Operation(summary = "Get products by process",
-            description = "Returns list of products (mã sản phẩm) linked to a specific process via product_process table.")
+    @Operation(summary = "Get products by process", description = "Returns list of products (mã sản phẩm) linked to a specific process via product_process table.")
     @GetMapping("/products-by-process/{processId}")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultProductOptionResponse>> getProductsByProcess(
@@ -212,16 +221,14 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getProductsByProcess(processId));
     }
 
-    @Operation(summary = "Get products for dropdown",
-            description = "Returns list of all products (mã sản phẩm) for the product dropdown on the result detail screen.")
+    @Operation(summary = "Get products for dropdown", description = "Returns list of all products (mã sản phẩm) for the product dropdown on the result detail screen.")
     @GetMapping("/products")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultOptionResponse>> getProducts() {
         return ResponseEntity.ok(trainingResultService.getProductGroupsByLine(null));
     }
 
-    @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)",
-            description = "Submit the training result. All details must have been filled and signed before submission.")
+    @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)", description = "Submit the training result. All details must have been filled and signed before submission.")
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<String> submitResult(
@@ -230,8 +237,7 @@ public class TrainingResultController {
         return ResponseEntity.ok("Kết quả huấn luyện đã được gửi thành công!");
     }
 
-    @Operation(summary = "Reject a training result detail (Từ chối kết quả)",
-            description = "Reject a specific result detail row with a reason. The employee may need retraining.")
+    @Operation(summary = "Reject a training result detail (Từ chối kết quả)", description = "Reject a specific result detail row with a reason. The employee may need retraining.")
     @PutMapping("/details/{detailId}/reject")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<String> rejectDetail(
@@ -242,8 +248,7 @@ public class TrainingResultController {
         return ResponseEntity.ok("Đã từ chối kết quả!");
     }
 
-    @Operation(summary = "Mark detail for retraining (Huấn luyện lại)",
-            description = "Mark a specific result detail as needing retraining and create a new detail row.")
+    @Operation(summary = "Mark detail for retraining (Huấn luyện lại)", description = "Mark a specific result detail as needing retraining and create a new detail row.")
     @PutMapping("/details/{detailId}/retrain")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<String> retrainDetail(

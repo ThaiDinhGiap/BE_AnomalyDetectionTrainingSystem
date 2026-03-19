@@ -987,7 +987,7 @@ CREATE TABLE training_result_details
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
-    status                  ENUM ('PENDING', 'DONE', 'NEED_SIGN', 'WAITING_SV',
+    status                  ENUM ('PENDING', 'DONE', 'REVISE', 'WAITING_SV',
         'REJECTED_BY_SV', 'APPROVED')
                                              DEFAULT 'PENDING',
 
