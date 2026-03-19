@@ -175,10 +175,10 @@ public class ProductLineServiceImpl implements ProductLineService {
         List<WorkingPosition> resultTeamLead = new ArrayList<>();
         List<Team> teams = teamRepository.findAllByTeamLeaderId(user.getId());
         for (Team team : teams) {
-            WorkingPosition workingPosition = new WorkingPosition();
             Group group = team.getGroup();
             List<ProductLine> productLine = productLineRepository.findByGroupId(group.getId());
             for (ProductLine pl : productLine) {
+                WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
