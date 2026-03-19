@@ -226,7 +226,7 @@ public class TrainingPlanController {
     @Operation(summary = "Check user approval permission for plan")
     @GetMapping("/{id}/permission")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Boolean> getApprovePermission(
+    public ResponseEntity<ResponseEntity<Boolean>> getApprovePermission(
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Plan ID") @PathVariable Long id) {
         return ResponseEntity.ok(trainingPlanService.canApprove(id, currentUser));

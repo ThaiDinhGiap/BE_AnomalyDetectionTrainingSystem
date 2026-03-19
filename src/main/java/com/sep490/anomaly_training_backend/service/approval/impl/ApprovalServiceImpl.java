@@ -90,8 +90,13 @@ public class ApprovalServiceImpl implements ApprovalService {
             log.info("Approved {} id={} version={} by {} -> next status: {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), nextPendingStatus);
         } else {
             entity.setStatus(ReportStatus.APPROVED);
-            ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
-            handler.applyApproval(entity);
+            try {
+                ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
+                handler.applyApproval(entity);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+
             log.info("Final approval for {} id={} version={} by {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
         }
     }
@@ -135,13 +140,13 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     @Override
-    public boolean canApprove(Approvable entity, User user) {
+    public Boolean canApprove(Approvable entity, User user) {
         try {
             ApprovalFlowStep currentStep = getCurrentStep(entity);
             validateApprover(entity, user, currentStep);
-            return true;
+            return Boolean.TRUE;
         } catch (AppException e) {
-            return false;
+            return Boolean.FALSE;
         }
     }
 

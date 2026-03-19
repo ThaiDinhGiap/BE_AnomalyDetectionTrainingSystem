@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResp
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -29,7 +30,7 @@ public interface DefectProposalService {
 
     void reject(Long proposalId, User currentUser, RejectRequest req, HttpServletRequest request);
 
-    boolean canApprove(Long proposalId, User currentUser);
+    ResponseEntity<Boolean> canApprove(Long proposalId, User currentUser);
 
     void revise(Long id, User currentUser, HttpServletRequest request);
 

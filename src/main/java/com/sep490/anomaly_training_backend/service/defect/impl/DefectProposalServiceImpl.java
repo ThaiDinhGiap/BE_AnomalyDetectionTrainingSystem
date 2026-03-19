@@ -33,6 +33,7 @@ import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,7 +80,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     @Override
     @Transactional
     public void createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser) {
-        createProposal(reportRequest,  currentUser);
+        createProposal(reportRequest, currentUser);
     }
 
     @Override
@@ -231,10 +232,16 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     }
 
     @Override
-    public boolean canApprove(Long proposalId, User currentUser) {
-        DefectProposal proposal = defectProposalRepository.findById(proposalId)
-                .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
-        return approvalService.canApprove(proposal, currentUser);
+    public ResponseEntity<Boolean> canApprove(Long proposalId, User currentUser) {
+        try {
+            DefectProposal proposal = defectProposalRepository.findById(proposalId)
+                    .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
+            Boolean hasPermission = approvalService.canApprove(proposal, currentUser);
+            return ResponseEntity.ok(hasPermission);
+        } catch (AppException e) {
+
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
     }
 
     @Override
@@ -401,6 +408,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             }
         }
     }
+
     private DefectProposal createProposal(DefectProposalRequest reportRequest, User currentUser) {
         ProductLine productLine = productLineRepository.findById(reportRequest.getProductLineId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));

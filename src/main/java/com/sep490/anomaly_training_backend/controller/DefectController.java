@@ -193,7 +193,7 @@ public class DefectController {
     @Operation(summary = "Check user approval permission for proposal")
     @GetMapping("/{id}/permission")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Boolean> getApprovePermission(
+    public ResponseEntity<ResponseEntity<Boolean>> getApprovePermission(
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Proposal ID") @PathVariable Long id) {
         return ResponseEntity.ok(defectProposalService.canApprove(id, currentUser));

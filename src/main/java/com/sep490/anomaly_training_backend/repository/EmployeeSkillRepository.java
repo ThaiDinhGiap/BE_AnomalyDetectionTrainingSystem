@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -46,4 +47,11 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
     List<EmployeeSkill> findByEmployeeIdsAndLineId(
             @Param("employeeIds") List<Long> employeeIds,
             @Param("lineId") Long lineId);
+
+    @Query("SELECT es FROM EmployeeSkill es WHERE es.employee.id = :employeeId " +
+            "AND es.deleteFlag = false AND es.status != 'REVOKED' " +
+            "ORDER BY es.expiryDate ASC, es.id ASC")
+    List<EmployeeSkill> findAvailableSkillsForEmployee(Long employeeId);
+
+    long countByEmployeeIdAndStatusNotAndDeleteFlagFalse(Long employee_id, EmployeeSkillStatus status);
 }

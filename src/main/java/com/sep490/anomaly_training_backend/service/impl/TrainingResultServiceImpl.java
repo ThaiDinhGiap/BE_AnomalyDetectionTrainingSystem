@@ -67,7 +67,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
 @Service
 @RequiredArgsConstructor
 public class TrainingResultServiceImpl implements TrainingResultService {
@@ -172,7 +171,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void updateResult(UpdateTrainingResultRequest request) {
-        if (request == null || request.getId() == null) return;
+        if (request == null || request.getId() == null)
+            return;
 
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByUsername(currentUsername)
@@ -181,8 +181,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult header = trainingResultRepository.findById(request.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
-        if (request.getTitle() != null) header.setTitle(request.getTitle());
-        if (request.getNote() != null) header.setNote(request.getNote());
+        if (request.getTitle() != null)
+            header.setTitle(request.getTitle());
+        if (request.getNote() != null)
+            header.setNote(request.getNote());
 
         trainingResultRepository.save(header);
 
@@ -194,9 +196,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                         .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
                 if (reqDetail.getProcessId() != null) {
-                    com.sep490.anomaly_training_backend.model.Process process =
-                            processRepository.findById(reqDetail.getProcessId())
-                                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+                    com.sep490.anomaly_training_backend.model.Process process = processRepository
+                            .findById(reqDetail.getProcessId())
+                            .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
                     detail.setProcess(process);
 
                     if (reqDetail.getClassification() == null && process.getClassification() != null) {
@@ -234,14 +236,20 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 if (reqDetail.getTrainingTopic() != null) {
                     detail.setTrainingTopic(reqDetail.getTrainingTopic());
                 }
-                if (reqDetail.getTimeIn() != null) detail.setTimeIn(reqDetail.getTimeIn());
-                if (reqDetail.getTimeStartOp() != null) detail.setTimeStartOp(reqDetail.getTimeStartOp());
-                if (reqDetail.getTimeOut() != null) detail.setTimeOut(reqDetail.getTimeOut());
-                if (reqDetail.getDetectionTime() != null) detail.setDetectionTime(reqDetail.getDetectionTime());
+                if (reqDetail.getTimeIn() != null)
+                    detail.setTimeIn(reqDetail.getTimeIn());
+                if (reqDetail.getTimeStartOp() != null)
+                    detail.setTimeStartOp(reqDetail.getTimeStartOp());
+                if (reqDetail.getTimeOut() != null)
+                    detail.setTimeOut(reqDetail.getTimeOut());
+                if (reqDetail.getDetectionTime() != null)
+                    detail.setDetectionTime(reqDetail.getDetectionTime());
 
                 // Auto-calculate isPass if possible
-                if (detail.getTimeIn() != null && detail.getTimeOut() != null && detail.getCycleTimeStandard() != null) {
-                    long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut()).toSeconds();
+                if (detail.getTimeIn() != null && detail.getTimeOut() != null
+                        && detail.getCycleTimeStandard() != null) {
+                    long actualSeconds = java.time.Duration.between(detail.getTimeIn(), detail.getTimeOut())
+                            .toSeconds();
                     detail.setIsPass(actualSeconds <= detail.getCycleTimeStandard().longValue());
                 }
 
@@ -250,7 +258,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setIsPass(reqDetail.getIsPass());
                 }
 
-                if (reqDetail.getNote() != null) detail.setNote(reqDetail.getNote());
+                if (reqDetail.getNote() != null)
+                    detail.setNote(reqDetail.getNote());
 
                 if (Boolean.TRUE.equals(reqDetail.getIsSignProIn())) {
                     if (detail.getSignatureProIn() == null) {
@@ -301,7 +310,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             throw new AppException(ErrorCode.FI_PERMISSION_REQUIRED);
         }
 
-        if (requests == null || requests.isEmpty()) return;
+        if (requests == null || requests.isEmpty())
+            return;
 
         List<TrainingResultDetail> detailsToSave = new ArrayList<>();
         for (FiSignRequest req : requests) {
@@ -346,16 +356,19 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
             if (currentUser.hasRole("ROLE_MANAGER")) {
                 if (lineId != null) {
-                    results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId, excludedStatuses);
+                    results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId,
+                            excludedStatuses);
                 } else {
                     results = trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses);
                 }
             } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
-                List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+                List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository
+                        .findBySupervisorId(currentUser.getId());
                 if (groups.isEmpty()) {
                     return Collections.emptyList();
                 }
-                List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+                List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId)
+                        .distinct().toList();
 
                 if (lineId != null) {
                     results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
@@ -550,7 +563,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
             if (detail.getSampleCode() != null) {
                 row.setSampleCode(detail.getSampleCode());
-            } else if (detail.getTrainingSample() != null && detail.getTrainingSample().getTrainingSampleCode() != null) {
+            } else if (detail.getTrainingSample() != null
+                    && detail.getTrainingSample().getTrainingSampleCode() != null) {
                 row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
             }
 
@@ -628,8 +642,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultOptionResponse> getProcessesByLine(Long lineId) {
-        List<com.sep490.anomaly_training_backend.model.Process> processes =
-                processRepository.findByProductLineIdAndDeleteFlagFalse(lineId);
+        List<com.sep490.anomaly_training_backend.model.Process> processes = processRepository
+                .findByProductLineIdAndDeleteFlagFalse(lineId);
         return processes.stream()
                 .map(p -> new TrainingResultOptionResponse(p.getId(), p.getCode() + " - " + p.getName()))
                 .toList();
@@ -642,7 +656,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return skills.stream()
                 .map(skill -> {
                     com.sep490.anomaly_training_backend.model.Process p = skill.getProcess();
-                    return new TrainingResultProcessResponse(p.getId(), p.getCode() + " - " + p.getName(), p.getClassification().getValue());
+                    return new TrainingResultProcessResponse(p.getId(), p.getCode() + " - " + p.getName(),
+                            p.getClassification().getValue());
                 })
                 .toList();
     }
@@ -653,7 +668,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return productProcesses.stream()
                 .map(pp -> {
                     Product product = pp.getProduct();
-                    return new TrainingResultProductOptionResponse(product.getId(), product.getCode() + " - " + product.getName(), pp.getStandardTimeJt());
+                    return new TrainingResultProductOptionResponse(product.getId(),
+                            product.getCode() + " - " + product.getName(), pp.getStandardTimeJt());
                 })
                 .toList();
     }
@@ -668,8 +684,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .map(sample -> new SampleResultResponse(
                         sample.getId(),
                         sample.getTrainingSampleCode(),
-                        sample.getTrainingDescription()
-                ))
+                        sample.getTrainingDescription()))
                 .toList();
     }
 
@@ -726,7 +741,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
         Long teamId = result.getTeam() != null ? result.getTeam().getId() : null;
-        if (teamId == null) return List.of();
+        if (teamId == null)
+            return List.of();
 
         List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
 
@@ -751,11 +767,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         Long teamId = result.getTeam() != null ? result.getTeam().getId() : null;
         Long lineId = result.getLine() != null ? result.getLine().getId() : null;
-        if (teamId == null || lineId == null) return List.of();
+        if (teamId == null || lineId == null)
+            return List.of();
 
         // 2. Lấy tất cả nhân viên active trong team
         List<Employee> employees = employeeRepository.findAllActiveByTeamId(teamId);
-        if (employees.isEmpty()) return List.of();
+        if (employees.isEmpty())
+            return List.of();
 
         List<Long> employeeIds = employees.stream().map(Employee::getId).collect(Collectors.toList());
 
@@ -775,8 +793,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .filter(d -> d.getProcess() != null)
                 .collect(Collectors.groupingBy(
                         d -> d.getEmployee().getId(),
-                        Collectors.groupingBy(d -> d.getProcess().getId())
-                ));
+                        Collectors.groupingBy(d -> d.getProcess().getId())));
 
         // 3c. Toàn bộ sessions trong kế hoạch này, group theo employeeId
         Map<Long, List<TrainingResultDetail>> sessionsInResult = trainingResultDetailRepository
@@ -790,8 +807,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                         emp,
                         skillsByEmployee.getOrDefault(emp.getId(), List.of()),
                         historyMap.getOrDefault(emp.getId(), Map.of()),
-                        sessionsInResult.getOrDefault(emp.getId(), List.of())
-                ))
+                        sessionsInResult.getOrDefault(emp.getId(), List.of())))
                 .collect(Collectors.toList());
     }
 
@@ -860,14 +876,16 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         // Classification
         Integer classVal = process.getClassification() != null
-                ? process.getClassification().getValue() : null;
+                ? process.getClassification().getValue()
+                : null;
 
         return EmployeeSkillCertificateResponse.ProcessCertDetail.builder()
                 .processId(process.getId())
                 .processCode(process.getCode())
                 .processName(process.getName())
                 .jtCode(process.getStandardTimeJt() != null
-                        ? process.getStandardTimeJt().toPlainString() : null)
+                        ? process.getStandardTimeJt().toPlainString()
+                        : null)
                 .classification(classVal)
                 .classificationLabel(classVal != null ? "Loại " + classVal : null)
                 .classificationDesc(buildClassificationDesc(classVal))
@@ -921,7 +939,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * Mô tả phân loại hiển thị trong legend (xem ảnh góc trên phải).
      */
     private String buildClassificationDesc(Integer classVal) {
-        if (classVal == null) return null;
+        if (classVal == null)
+            return null;
         return switch (classVal) {
             case 1 -> "CĐ có quá khứ phát sinh phế phẩm";
             case 2 -> "CĐ rank D đảm bảo bởi người thao tác";
@@ -951,7 +970,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
     }
 
-
     @Override
     public boolean canApprove(Long reportId, User currentUser) {
         return false;
@@ -970,21 +988,20 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                         .collect(Collectors.toMap(
                                 d -> d.getEmployee().getId(),
                                 d -> d,
-                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2
-                        )))
+                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2)))
                 .orElse(Map.of());
     }
 
     private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
-        if (employeeIds.isEmpty()) return Map.of();
+        if (employeeIds.isEmpty())
+            return Map.of();
         return trainingResultDetailRepository
                 .findLatestByEmployeeIds(employeeIds)
                 .stream()
                 .collect(Collectors.toMap(
                         d -> d.getEmployee().getId(),
                         d -> d,
-                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2
-                ));
+                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2));
     }
 
     private PrioritizedEmployeeResponse buildEmployeePlanResponse(
@@ -1004,7 +1021,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
                 .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
                 .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                        ? emp.getTeam().getGroup().getName() : null)
+                        ? emp.getTeam().getGroup().getName()
+                        : null)
                 .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
                 .tierName(snapshot != null ? snapshot.getTierName() : null)
                 .sortRank(snapshot != null ? snapshot.getSortRank() : null)
@@ -1016,8 +1034,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
-        if (snapshot == null) return null;
-        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
+        if (snapshot == null)
+            return null;
+        if ("UNTIERED".equals(snapshot.getTierName()))
+            return "Không có tiêu chí ưu tiên";
         return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }

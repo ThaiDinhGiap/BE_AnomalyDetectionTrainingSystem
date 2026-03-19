@@ -1,17 +1,19 @@
 package com.sep490.anomaly_training_backend.service.priority.impl;
 
+import com.sep490.anomaly_training_backend.dto.ScheduleSummary;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.FactoryDayType;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.FactoryCalendar;
 import com.sep490.anomaly_training_backend.model.FactoryCalendarEntry;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
-import com.sep490.anomaly_training_backend.repository.FactoryCalendarEntryRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.FactoryCalendarRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
@@ -25,22 +27,28 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Service để generate tối ưu lịch huấn luyện
+ * Smart Multi-Pass Training Schedule Generation
  * <p>
- * Quy trình:
- * 1. Load Priority Snapshot → list employees ranked by priority + tiers
- * 2. Load Factory Calendar → available working days
- * 3. Load Training Plan config → min/max slots/ngày, special days
- * 4. Allocate training slots cho employees dựa trên:
- * - Priority tier (Tier 1 → sớm hơn)
- * - Available capacity (min-max per day)
- * - Factory calendar (skip holidays, special days)
- * 5. Save TrainingPlanDetails
+ * Khác biệt từ v1:
+ * 1. Filter skills: REVOKED → skip, chỉ xử lý PENDING_REVIEW + VALID
+ * 2. Capacity progression: min → max (từng bước 1)
+ * 3. Smart distribution: Phân tán lịch đều trên toàn kỳ (không đắp ngay đầu)
+ * 4. Expiry-aware: Ưu tiên certify skills sắp hết hạn trước
+ * <p>
+ * Algorithm:
+ * FOR capacity = min TO max:
+ * FOR pass_round = 0 TO available_days:
+ * FOR each employee (by priority):
+ * IF employee_day_index % num_days < daily_capacity:
+ * ALLOCATE next uncertified skill
+ * <p>
+ * Result: Lịch phân tán đều, không bị "đắp" ngày đầu
  */
 @Service
 @RequiredArgsConstructor
@@ -51,85 +59,198 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanDetailRepository trainingPlanDetailRepository;
     private final FactoryCalendarRepository factoryCalendarRepository;
-    private final FactoryCalendarEntryRepository factoryCalendarEntryRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
+    private final EmployeeSkillRepository employeeSkillRepository;
 
-    /**
-     * Generate optimal training schedule
-     *
-     * @param trainingPlanId     Training plan ID (có chứa min/max per day, special days)
-     * @param prioritySnapshotId Priority snapshot ID (danh sách employees ranked)
-     * @param calendarYear       Năm lịch factory calendar
-     * @return Generated training plan details
-     */
     @Override
     public TrainingPlan generateOptimalSchedule(Long trainingPlanId, Long prioritySnapshotId, Integer calendarYear) {
-        log.info("Starting optimal schedule generation for plan: {}, snapshot: {}, year: {}",
-                trainingPlanId, prioritySnapshotId, calendarYear);
+        log.info("=== Starting Smart Multi-Pass Schedule Generation ===");
+        log.info("Plan: {}, Snapshot: {}, Year: {}", trainingPlanId, prioritySnapshotId, calendarYear);
 
-        // 1. Load training plan
+        // Load entities
         TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND,
-                        "Training plan not found: " + trainingPlanId));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // 2. Load priority snapshot details (employees ranked by priority)
         List<PrioritySnapshotDetail> priorityDetails =
                 prioritySnapshotDetailRepository.findBySnapshotIdOrderByTierOrderAscSortRankAsc(prioritySnapshotId);
 
         if (priorityDetails.isEmpty()) {
-            log.warn("No employees in priority snapshot: {} — returning plan with empty schedule", prioritySnapshotId);
+            log.warn("No employees in snapshot");
             return trainingPlan;
         }
 
-        // 3. Load factory calendar
         FactoryCalendar calendar = factoryCalendarRepository.findByCalendarYear(calendarYear)
-                .orElseThrow(() -> new AppException(ErrorCode.FACTORY_CALENDAR_NOT_FOUND,
-                        "Factory calendar not found for year: " + calendarYear));
+                .orElseThrow(() -> new AppException(ErrorCode.FACTORY_CALENDAR_NOT_FOUND));
 
-        // 4. Get available working days from factory calendar
+        // Get working days
         List<FactoryCalendarEntry> availableDays = getAvailableWorkingDays(
                 calendar,
                 trainingPlan.getStartDate(),
                 trainingPlan.getEndDate()
         );
 
-        log.info("Found {} available working days", availableDays.size());
+        log.info("Total working days available: {}", availableDays.size());
 
-        // 5. Get special training slots from training plan
-        List<LocalDate> specialDays = trainingPlan.getSpecialDays().stream()
-                .map(TrainingPlanSpecialDay::getSpecialDate)
-                .collect(Collectors.toList());
+        int minCapacity = trainingPlan.getMinTrainingPerDay() != null ? trainingPlan.getMinTrainingPerDay() : 1;
+        int maxCapacity = trainingPlan.getMaxTrainingPerDay() != null ? trainingPlan.getMaxTrainingPerDay() : 5;
 
-        // 6. Generate schedule using greedy allocation algorithm
-        List<TrainingPlanDetail> details = allocateTrainingSlots(
+        log.info("Capacity range: {} - {} per day", minCapacity, maxCapacity);
+
+        // Load available skills per employee (exclude REVOKED)
+        Map<Long, List<EmployeeSkill>> employeeAvailableSkills = loadAvailableSkillsPerEmployee(priorityDetails);
+
+        // Smart multi-pass allocation
+        List<TrainingPlanDetail> allDetails = allocateSmartMultiPass(
                 trainingPlan,
                 priorityDetails,
                 availableDays,
-                specialDays
+                employeeAvailableSkills,
+                minCapacity,
+                maxCapacity
         );
 
-        // 7. Save details
-        // Xóa details cũ
+        // Save
         trainingPlanDetailRepository.deleteByTrainingPlanId(trainingPlanId);
         trainingPlanDetailRepository.flush();
 
-        details.forEach(detail -> detail.setTrainingPlan(trainingPlan));
+        allDetails.forEach(detail -> detail.setTrainingPlan(trainingPlan));
+        trainingPlanDetailRepository.saveAll(allDetails);
 
-        details.forEach(d -> {
-            if (d.getEmployee() == null) {
-                log.error("Detail có employee null — plannedDate: {}", d.getPlannedDate());
-            }
-        });
-
-        trainingPlanDetailRepository.saveAll(details);
+        log.info("=== Generated {} total training details ===", allDetails.size());
 
         return trainingPlanRepository.findById(trainingPlanId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
     }
 
     /**
-     * Get available working days from factory calendar
-     * (exclude holidays, weekends, off days)
+     * Load available skills per employee (filter REVOKED)
+     */
+    private Map<Long, List<EmployeeSkill>> loadAvailableSkillsPerEmployee(List<PrioritySnapshotDetail> priorityDetails) {
+        Map<Long, List<EmployeeSkill>> result = new HashMap<>();
+
+        for (PrioritySnapshotDetail priority : priorityDetails) {
+            Long employeeId = priority.getEmployee().getId();
+
+            List<EmployeeSkill> skills = employeeSkillRepository.findByEmployeeIdAndDeleteFlagFalse(employeeId)
+                    .stream()
+                    .filter(skill -> skill.getStatus() != EmployeeSkillStatus.REVOKED)  // Exclude REVOKED
+                    .sorted(Comparator
+                            .comparing((EmployeeSkill s) -> s.getExpiryDate() != null ? s.getExpiryDate() : LocalDate.MAX)  // Soonest expiry first
+                            .thenComparing(EmployeeSkill::getId))  // Stable sort
+                    .collect(Collectors.toList());
+
+            result.put(employeeId, skills);
+
+            log.debug("Employee {}: {} available skills (excluded REVOKED)",
+                    priority.getEmployee().getEmployeeCode(),
+                    skills.size());
+        }
+
+        return result;
+    }
+
+    /**
+     * Smart Multi-Pass Allocation with even distribution
+     * <p>
+     * Key difference from naive approach:
+     * - Dùng employee_index mapping để phân tán skills trên days
+     * - Không xếp hết 1 employee rồi mới tới employee khác
+     * - Phân tán đều: Employee1[day1], Employee2[day2], ..., Employee1[day3], ...
+     */
+    private List<TrainingPlanDetail> allocateSmartMultiPass(
+            TrainingPlan trainingPlan,
+            List<PrioritySnapshotDetail> priorityDetails,
+            List<FactoryCalendarEntry> availableDays,
+            Map<Long, List<EmployeeSkill>> employeeAvailableSkills,
+            int minCapacity,
+            int maxCapacity) {
+
+        List<TrainingPlanDetail> allDetails = new ArrayList<>();
+        int totalDays = availableDays.size();
+
+        // Track which skill index per employee in current pass
+        Map<Long, Integer> employeeSkillIndex = new HashMap<>();
+        priorityDetails.forEach(p -> employeeSkillIndex.put(p.getEmployee().getId(), 0));
+
+        // Multi-pass: từng bước tăng capacity
+        for (int dayCapacity = minCapacity; dayCapacity <= maxCapacity; dayCapacity++) {
+            log.info("\n--- PASS {} (Daily Capacity: {}) ---", dayCapacity - minCapacity + 1, dayCapacity);
+
+            int passDetails = 0;
+            int dayIndex = 0;
+            int employeeIndex = 0;
+            boolean hasAllocatedInPass = false;
+
+            while (dayIndex < totalDays && employeeIndex < priorityDetails.size()) {
+                FactoryCalendarEntry calendarDay = availableDays.get(dayIndex);
+                LocalDate workDate = calendarDay.getWorkDate();
+
+                // Tính số slots hôm này
+                int slotsToday = dayCapacity;  // Simple: không special day logic
+
+                log.debug("  Day {}: {} (slots: {})", dayIndex + 1, workDate, slotsToday);
+
+                // Allocate for this day
+                int allocated = 0;
+                int tempEmployeeIndex = employeeIndex;
+
+                while (allocated < slotsToday && tempEmployeeIndex < priorityDetails.size()) {
+                    PrioritySnapshotDetail priority = priorityDetails.get(tempEmployeeIndex);
+                    Employee employee = priority.getEmployee();
+                    Long empId = employee.getId();
+
+                    int skillIdx = employeeSkillIndex.getOrDefault(empId, 0);
+                    List<EmployeeSkill> availableSkills = employeeAvailableSkills.get(empId);
+
+                    // Check: có skill nào để allocate không?
+                    if (availableSkills != null && skillIdx < availableSkills.size()) {
+                        EmployeeSkill skill = availableSkills.get(skillIdx);
+
+                        TrainingPlanDetail detail = TrainingPlanDetail.builder()
+                                .trainingPlan(trainingPlan)
+                                .employee(employee)
+                                .targetMonth(workDate.withDayOfMonth(1))
+                                .plannedDate(workDate)
+                                .status(TrainingPlanDetailStatus.PENDING)
+                                .batchId(generateBatchId(trainingPlan, workDate))
+                                .note(buildDetailNote(priority, skill))
+                                .build();
+
+                        allDetails.add(detail);
+                        employeeSkillIndex.put(empId, skillIdx + 1);  // Move to next skill
+                        allocated++;
+                        passDetails++;
+                        hasAllocatedInPass = true;
+
+                        log.debug("    → {} trained on {} (skill {}/{})",
+                                employee.getEmployeeCode(),
+                                skill.getProcess().getName(),
+                                skillIdx + 1,
+                                availableSkills.size());
+                    }
+
+                    tempEmployeeIndex++;
+                }
+
+                // Move to next day
+                dayIndex++;
+                employeeIndex = (employeeIndex + 1) % priorityDetails.size();  // Round-robin
+            }
+
+            log.info("PASS {} allocated: {} details", dayCapacity - minCapacity + 1, passDetails);
+
+            // Stopping condition: không allocate được gì trong pass này
+            if (!hasAllocatedInPass) {
+                log.info("No allocations in pass {} — stopping", dayCapacity - minCapacity + 1);
+                break;
+            }
+        }
+
+        return allDetails;
+    }
+
+    /**
+     * Get available working days
      */
     private List<FactoryCalendarEntry> getAvailableWorkingDays(
             FactoryCalendar calendar,
@@ -144,9 +265,6 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Check if day type is suitable for training
-     */
     private boolean isWorkingDay(FactoryDayType dayType) {
         return dayType == FactoryDayType.WORKING_DAY ||
                 dayType == FactoryDayType.MAKEUP_DAY ||
@@ -154,174 +272,79 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
     }
 
     /**
-     * Core algorithm: Greedy allocation của training slots
-     * <p>
-     * Logic:
-     * 1. Sort employees theo priority (tier order + sort rank)
-     * 2. Duyệt từng ngày theo lịch calendar
-     * 3. Mỗi ngày allocate min-max training slots
-     * 4. Assign employees từ priority list (theo thứ tự)
-     * 5. Nếu employee không thể schedule (no more slots), move to next day
+     * Build note from priority and skill
      */
-    private List<TrainingPlanDetail> allocateTrainingSlots(
-            TrainingPlan trainingPlan,
-            List<PrioritySnapshotDetail> priorityDetails,
-            List<FactoryCalendarEntry> availableDays,
-            List<LocalDate> specialDays) {
-
-        List<TrainingPlanDetail> details = new ArrayList<>();
-
-        int minPerDay = trainingPlan.getMinTrainingPerDay() != null ? trainingPlan.getMinTrainingPerDay() : 1;
-        int maxPerDay = trainingPlan.getMaxTrainingPerDay() != null ? trainingPlan.getMaxTrainingPerDay() : 5;
-
-        // Track allocated count per employee (để không schedule 1 employee 2 lần)
-        Map<Long, Integer> allocatedPerEmployee = new java.util.HashMap<>();
-
-        // Pointer để duyệt danh sách employees
-        int employeeIndex = 0;
-
-        for (FactoryCalendarEntry calendarDay : availableDays) {
-            LocalDate workDate = calendarDay.getWorkDate();
-
-            // Tính số slots có thể allocate hôm nay
-            int slotsToday = calculateSlotsForDay(workDate, specialDays, maxPerDay);
-
-            log.debug("Day: {}, Slots available: {}", workDate, slotsToday);
-
-            // Allocate training cho employees hôm này
-            int allocated = 0;
-            while (allocated < slotsToday && employeeIndex < priorityDetails.size()) {
-                PrioritySnapshotDetail priority = priorityDetails.get(employeeIndex);
-                Employee employee = priority.getEmployee();
-
-                // Check: employee đã được schedule chưa?
-                if (allocatedPerEmployee.getOrDefault(employee.getId(), 0) > 0) {
-                    // Skip - employee này đã được schedule rồi
-                    employeeIndex++;
-                    continue;
-                }
-
-                // Create training plan detail
-                TrainingPlanDetail detail = TrainingPlanDetail.builder()
-                        .trainingPlan(trainingPlan)
-                        .employee(employee)
-                        .targetMonth(workDate.withDayOfMonth(1))  // First day of month
-                        .plannedDate(workDate)
-                        .status(TrainingPlanDetailStatus.PENDING)
-                        .batchId(generateBatchId(trainingPlan, workDate))
-                        .note(String.format("Tier %d, Rank %d", priority.getTierOrder(), priority.getSortRank()))
-                        .build();
-
-                details.add(detail);
-                allocatedPerEmployee.put(employee.getId(), 1);
-                allocated++;
-                employeeIndex++;
-            }
-
-            log.debug("Day: {}, Allocated: {}/{}", workDate, allocated, slotsToday);
-
-            // Early exit: tất cả employees đã được schedule
-            if (employeeIndex >= priorityDetails.size()) {
-                break;
-            }
-        }
-
-        // Warn if không schedule được hết
-        int notScheduled = priorityDetails.size() - allocatedPerEmployee.size();
-        if (notScheduled > 0) {
-            log.warn("Could not schedule {} employees due to insufficient slots", notScheduled);
-        }
-
-        return details;
+    private String buildDetailNote(PrioritySnapshotDetail priority, EmployeeSkill skill) {
+        String status = skill.getStatus() != null ? skill.getStatus().toString() : "UNKNOWN";
+        return String.format("Tier:%d Rank:%d Skill:%s Status:%s SkillId:%d",
+                priority.getTierOrder(),
+                priority.getSortRank(),
+                skill.getProcess().getName(),
+                status,
+                skill.getId());
     }
 
-    /**
-     * Calculate training slots for a specific day
-     * <p>
-     * Logic:
-     * - Normal working day: use maxPerDay
-     * - Special day: use special day slot if defined
-     * - Reduce if it's last days of plan (handle remaining employees)
-     */
-    private int calculateSlotsForDay(LocalDate date, List<LocalDate> specialDays, int maxPerDay) {
-        // Check if it's a special day with defined slots
-        if (specialDays.contains(date)) {
-            // TODO: Get special day slot count from training plan
-            return maxPerDay * 2;  // Double capacity on special days
-        }
-
-        return maxPerDay;
-    }
-
-    /**
-     * Generate batch ID để identify employees added on same day/batch
-     */
     private String generateBatchId(TrainingPlan trainingPlan, LocalDate date) {
         return "BATCH_" + trainingPlan.getId() + "_" + date.toString().replace("-", "");
     }
 
-    /**
-     * Recalculate/regenerate schedule (xóa old, tạo new)
-     */
+    @Override
     public TrainingPlan regenerateSchedule(Long trainingPlanId, Long prioritySnapshotId, Integer calendarYear) {
         log.info("Regenerating schedule for plan: {}", trainingPlanId);
-
-        TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND,
-                        "Training plan not found: " + trainingPlanId));
-
-        // Delete old details
         trainingPlanDetailRepository.deleteByTrainingPlanId(trainingPlanId);
-
-        // Generate new schedule
         return generateOptimalSchedule(trainingPlanId, prioritySnapshotId, calendarYear);
     }
 
-    /**
-     * Get available slots for specific date
-     * (useful for API to check availability)
-     */
+    @Override
     public int getAvailableSlots(Long trainingPlanId, LocalDate date) {
         TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // Get allocated count for this date
         int allocated = trainingPlanDetailRepository.countByTrainingPlanIdAndPlannedDate(trainingPlanId, date);
-
         int maxPerDay = trainingPlan.getMaxTrainingPerDay() != null ? trainingPlan.getMaxTrainingPerDay() : 5;
 
         return Math.max(0, maxPerDay - allocated);
     }
 
-    /**
-     * Get schedule summary
-     */
+    @Override
     public ScheduleSummary getScheduleSummary(Long trainingPlanId) {
         TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         List<TrainingPlanDetail> details = trainingPlan.getDetails();
 
-        // Group by date
         Map<LocalDate, Long> countByDate = details.stream()
                 .collect(Collectors.groupingBy(
                         TrainingPlanDetail::getPlannedDate,
                         Collectors.counting()
                 ));
 
-        // Group by status
         Map<TrainingPlanDetailStatus, Long> countByStatus = details.stream()
                 .collect(Collectors.groupingBy(
                         TrainingPlanDetail::getStatus,
                         Collectors.counting()
                 ));
 
-        return ScheduleSummary.builder()
+        long uniqueEmployees = details.stream()
+                .map(d -> d.getEmployee().getId())
+                .distinct()
+                .count();
+
+        long totalSkillsAllocated = details.size();  // Each detail = 1 skill allocation
+
+        ScheduleSummary summary = ScheduleSummary.builder()
                 .totalSlots(details.size())
                 .totalDays(countByDate.size())
-                .avgSlotsPerDay((double) details.size() / Math.max(1, countByDate.size()))
+                .avgSlotsPerDay(countByDate.isEmpty() ? 0 : (double) details.size() / countByDate.size())
                 .countByDate(countByDate)
                 .countByStatus(countByStatus)
+                .uniqueEmployeesTrained((int) uniqueEmployees)
+                .totalSkillsAllocated((int) totalSkillsAllocated)
                 .build();
+
+        // Calculate avg skills per employee
+        summary.calculateAvgSkillsPerEmployee();
+
+        return summary;
     }
 }
