@@ -6,6 +6,7 @@ import com.sep490.anomaly_training_backend.enums.NotificationType;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewConfigRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;

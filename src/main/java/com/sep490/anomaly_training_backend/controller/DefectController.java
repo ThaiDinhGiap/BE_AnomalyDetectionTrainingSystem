@@ -217,4 +217,15 @@ public class DefectController {
         defectProposalService.submitDefectProposalForApproval(id, currentUser, request);
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
+
+    @Operation(summary = "Submit defect proposal without save to draft", description = "Change defect proposal status from DRAFT to SUBMITTED.")
+    @PostMapping("/direct-submit")
+    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    public ResponseEntity<String> directSubmission(
+            @AuthenticationPrincipal User currentUser,
+            @RequestBody DefectProposalRequest reportRequest,
+            HttpServletRequest request) {
+        defectProposalService.sendSubmission(reportRequest, currentUser, request);
+        return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
+    }
 }

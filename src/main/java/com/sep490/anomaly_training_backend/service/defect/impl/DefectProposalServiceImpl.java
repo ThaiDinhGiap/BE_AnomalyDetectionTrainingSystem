@@ -79,13 +79,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     @Override
     @Transactional
     public void createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser) {
-        ProductLine productLine = productLineRepository.findById(reportRequest.getProductLineId())
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
-        DefectProposal proposalHeader = new DefectProposal();
-        proposalHeader.setProductLine(productLine);
-        proposalHeader.setStatus(ReportStatus.DRAFT);
-        proposalHeader = defectProposalRepository.save(proposalHeader);
-        createDetail(reportRequest.getListDetail(), proposalHeader, currentUser);
+        createProposal(reportRequest,  currentUser);
     }
 
     @Override
@@ -253,6 +247,12 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         approvalService.revise(proposal, currentUser, request);
     }
 
+    @Override
+    public void sendSubmission(DefectProposalRequest reportRequest, User currentUser, HttpServletRequest request) {
+        DefectProposal proposal = createProposal(reportRequest, currentUser);
+        this.submit(proposal.getId(), currentUser, request);
+    }
+
     private void createDetail(List<DefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal, User currentUser) {
         for (DefectProposalDetailRequest detailRequest : DefectProposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId())
@@ -400,5 +400,15 @@ public class DefectProposalServiceImpl implements DefectProposalService {
                 throw new AppException(ErrorCode.MISSING_DETECTED_DATE);
             }
         }
+    }
+    private DefectProposal createProposal(DefectProposalRequest reportRequest, User currentUser) {
+        ProductLine productLine = productLineRepository.findById(reportRequest.getProductLineId())
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+        DefectProposal proposalHeader = new DefectProposal();
+        proposalHeader.setProductLine(productLine);
+        proposalHeader.setStatus(ReportStatus.DRAFT);
+        proposalHeader = defectProposalRepository.save(proposalHeader);
+        createDetail(reportRequest.getListDetail(), proposalHeader, currentUser);
+        return proposalHeader;
     }
 }

@@ -231,24 +231,24 @@ public class ProductLineServiceImpl implements ProductLineService {
     }
 
     private List<WorkingPosition> positionManager(User user) {
-        List<WorkingPosition> resultTeamLead = new ArrayList<>();
+        List<WorkingPosition> resulManager = new ArrayList<>();
         List<Section> sections = sectionRepository.findByManagerId(user.getId());
         for (Section section : sections) {
-            WorkingPosition workingPosition = new WorkingPosition();
             List<ProductLine> productLine = productLineRepository.findBySection(section.getId());
             for (ProductLine pl : productLine) {
+                WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
                 workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
+                workingPosition.setSectionId(section.getId());
+                workingPosition.setSectionName(section.getName());
+                workingPosition.setManagerId(section.getManager().getId());
+                workingPosition.setManagerName(section.getManager().getFullName());
+                workingPosition.setManagerCode(section.getManager().getEmployeeCode());
+                resulManager.add(workingPosition);
             }
-            workingPosition.setSectionId(section.getId());
-            workingPosition.setSectionName(section.getName());
-            workingPosition.setManagerId(section.getManager().getId());
-            workingPosition.setManagerName(section.getManager().getFullName());
-            workingPosition.setManagerCode(section.getManager().getEmployeeCode());
-            resultTeamLead.add(workingPosition);
         }
-        return resultTeamLead;
+        return resulManager;
     }
     /**
      * Process all rows - group by ProductLine, then create/update
