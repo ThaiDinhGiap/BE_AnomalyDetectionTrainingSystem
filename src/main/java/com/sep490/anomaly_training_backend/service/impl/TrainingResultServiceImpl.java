@@ -465,6 +465,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
+        User user = userRepository.findByUsername(result.getCreatedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
         TrainingResultDetailResponse response = new TrainingResultDetailResponse();
 
         response.setId(result.getId());
@@ -474,7 +477,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         response.setNote(result.getNote());
         response.setYear(result.getYear());
         response.setCreatedAt(result.getCreatedAt());
-        response.setCreatedByName(result.getCreatedBy());
+        response.setCreatedByName(user.getFullName());
 
         if (result.getLine() != null) {
             response.setLineId(result.getLine().getId());
@@ -523,9 +526,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 row.setProcessCode(detail.getProcess().getCode());
                 row.setProcessName(detail.getProcess().getName());
                 if (detail.getClassification() != null) {
-                    row.setClassification(String.valueOf(detail.getClassification()));
+                    row.setClassification(detail.getClassification());
                 } else if (detail.getProcess().getClassification() != null) {
-                    row.setClassification("C" + detail.getProcess().getClassification().getValue());
+                    row.setClassification(detail.getProcess().getClassification().getValue());
                 }
                 if (detail.getCycleTimeStandard() != null) {
                     row.setStandardTime(detail.getCycleTimeStandard());
@@ -554,7 +557,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             row.setTrainingTopic(detail.getTrainingTopic());
 
             if (row.getClassification() == null && detail.getClassification() != null) {
-                row.setClassification(String.valueOf(detail.getClassification()));
+                row.setClassification(detail.getClassification());
             }
             if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
                 row.setStandardTime(detail.getCycleTimeStandard());
@@ -639,7 +642,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return skills.stream()
                 .map(skill -> {
                     com.sep490.anomaly_training_backend.model.Process p = skill.getProcess();
-                    return new TrainingResultProcessResponse(p.getId(), p.getCode() + " - " + p.getName(), p.getClassification());
+                    return new TrainingResultProcessResponse(p.getId(), p.getCode() + " - " + p.getName(), p.getClassification().getValue());
                 })
                 .toList();
     }

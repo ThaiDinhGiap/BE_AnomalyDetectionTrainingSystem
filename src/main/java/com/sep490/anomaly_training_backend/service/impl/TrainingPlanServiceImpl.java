@@ -1183,7 +1183,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         );
 
         TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
+
+        User planCreator = userRepository.findByUsername(plan.getCreatedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        trainingPlanResponse.setCreatedBy(planCreator.getFullName());
+
         response.setTrainingPlan(trainingPlanResponse);
+
         response.setPrioritySnapshot(prioritySnapshotResponse);
         return response;
     }

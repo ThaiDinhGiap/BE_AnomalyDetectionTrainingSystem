@@ -153,6 +153,15 @@ public class TrainingSampleController {
         return ResponseEntity.ok("Training Sample Proposal has been rejected!");
     }
 
+    @Operation(summary = "Check user approval permission for proposal")
+    @GetMapping("/{id}/permission")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Boolean> getApprovePermission(
+            @AuthenticationPrincipal User currentUser,
+            @Parameter(description = "Proposal ID") @PathVariable Long id) {
+        return ResponseEntity.ok(trainingSampleProposalService.canApprove(id, currentUser));
+    }
+
     @Operation(summary = "Get training sample detail information")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('defect.view')")
