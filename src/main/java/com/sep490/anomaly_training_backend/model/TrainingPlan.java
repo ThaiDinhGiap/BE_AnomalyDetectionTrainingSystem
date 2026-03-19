@@ -27,7 +27,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -117,20 +116,10 @@ public class TrainingPlan extends BaseEntity implements Approvable {
 
     @Override
     public String computeContentHash() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(id).append("|");
-        sb.append(currentVersion).append("|");
-        sb.append(team.getId()).append("|");
+        String sb = id + "|" +
+                currentVersion + "|" +
+                team.getId() + "|";
 
-        details.stream()
-                .sorted(Comparator.comparing(TrainingPlanDetail::getId))
-                .forEach(tld -> {
-                    sb.append(tld.getId()).append(":");
-                    sb.append(tld.getEmployee().getEmployeeCode()).append(":");
-//                    sb.append(tld.getProcess().getName()).append(":");
-                    sb.append(tld.getPlannedDate()).append(";");
-                });
-
-        return DigestUtils.sha256Hex(sb.toString());
+        return DigestUtils.sha256Hex(sb);
     }
 }

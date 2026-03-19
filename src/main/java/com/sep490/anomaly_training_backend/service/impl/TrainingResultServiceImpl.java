@@ -15,6 +15,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultListRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -49,6 +50,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -950,12 +952,17 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
-        TrainingResultDetail detail = getDetailtById(resultId);
+    public void submit(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+        validateResultForSubmission(report);
+        report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
+
+        approvalService.submit(report, currentUser, request);
+
+        trainingResultRepository.save(report);
     }
 
-    @Override
-    public void submit(Long reportId, User currentUser, HttpServletRequest request) {
+    private void validateResultForSubmission(TrainingResult result) {
     }
 
     @Override
@@ -973,11 +980,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public boolean canApprove(Long reportId, User currentUser) {
         return false;
-    }
-
-    private TrainingResultDetail getDetailtById(Long id) {
-        return detailRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
     }
 
     private Map<Long, PrioritySnapshotDetail> loadSnapshotMap(Long planId) {
@@ -1039,5 +1041,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         if ("UNTIERED".equals(snapshot.getTierName()))
             return "Không có tiêu chí ưu tiên";
         return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
+    }
+
+    private TrainingResult getReportById(Long id) {
+        return trainingResultRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
     }
 }

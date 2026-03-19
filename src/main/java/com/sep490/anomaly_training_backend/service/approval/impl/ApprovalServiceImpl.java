@@ -48,6 +48,21 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
+        if (entity == null) {
+            return;
+        }
+
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            if (entity.getStatus() != ReportStatus.ON_GOING) {
+                throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Result can only be submitted when in ONGOING status");
+            }
+
+            logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.ROLE_TEAM_LEADER, currentUser, null, null, null, request);
+            log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+            return;
+        }
+
         if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }

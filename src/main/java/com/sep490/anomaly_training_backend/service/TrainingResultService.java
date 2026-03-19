@@ -16,7 +16,6 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessRes
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -60,8 +59,6 @@ public interface TrainingResultService {
     List<EmployeeSkillCertificateResponse> getSkillCertificates(Long resultId);
 
     // Relate approval methods
-    void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request);
-
     void submit(Long reportId, User currentUser, HttpServletRequest request);
 
     void revise(Long reportId, User currentUser, HttpServletRequest request);
