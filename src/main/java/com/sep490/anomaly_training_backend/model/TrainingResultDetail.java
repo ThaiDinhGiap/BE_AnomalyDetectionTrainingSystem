@@ -29,7 +29,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
- * Entity for training_result_details table - Detail rows in training results (each test)
+ * Entity for training_result_details table - Detail rows in training results
+ * (each test)
  */
 @Entity
 @Table(name = "training_result_details")
@@ -50,7 +51,7 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     TrainingResult trainingResult;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "training_plan_detail_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

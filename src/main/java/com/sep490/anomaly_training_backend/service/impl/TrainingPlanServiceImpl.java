@@ -26,23 +26,8 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.Group;
-import com.sep490.anomaly_training_backend.model.PriorityPolicy;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
@@ -121,7 +106,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public List<GroupResponse> getMyManagedGroups() {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
 
@@ -167,11 +153,14 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         // 2. Role: MANAGER
         if (currentUser.hasRole("ROLE_MANAGER")) {
             if (lineId != null) {
-                return trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(currentUser.getId(), lineId, excludedStatuses).stream()
+                return trainingPlanRepository
+                        .findAllByManagerAndLineIdAndDeleteFlagFalse(currentUser.getId(), lineId, excludedStatuses)
+                        .stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             } else {
-                return trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(currentUser.getId(), excludedStatuses).stream()
+                return trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(currentUser.getId(), excludedStatuses)
+                        .stream()
                         .map(this::toGenerationResponse)
                         .collect(Collectors.toList());
             }
@@ -183,7 +172,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             if (groups.isEmpty()) {
                 return Collections.emptyList();
             }
-            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct().toList();
+            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct()
+                    .toList();
 
             if (lineId != null) {
                 return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
@@ -198,7 +188,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         // 4. Role mặc định (Người tạo)
         if (lineId != null) {
-            return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId).stream()
+            return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId)
+                    .stream()
                     .map(this::toGenerationResponse)
                     .collect(Collectors.toList());
         } else {
@@ -213,8 +204,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REVISE,
                 ReportStatus.REJECTED_BY_SV,
-                ReportStatus.REJECTED_BY_MANAGER
-        );
+                ReportStatus.REJECTED_BY_MANAGER);
         return trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses).stream()
                 .map(this::toGenerationResponse)
                 .collect(Collectors.toList());
@@ -237,8 +227,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .id(pl.getId())
                 .groupId(pl.getGroup().getId())
                 .name(pl.getName())
-                .build()
-        ).collect(Collectors.toList());
+                .build()).collect(Collectors.toList());
     }
 
     @Override
@@ -311,7 +300,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         // 5. Validate & update Process nếu thay đổi
         Long currentProductLineId = (plan.getLine() != null) ? plan.getLine().getId() : null;
 
-
         // 6. Update note
         if (request.getNote() != null) {
             detail.setNote(request.getNote());
@@ -344,9 +332,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
                 ? plan.getLine().getGroup().getId()
                 : (plan.getTeam() != null && plan.getTeam().getGroup() != null
-                ? plan.getTeam().getGroup().getId() : null);
+                        ? plan.getTeam().getGroup().getId()
+                        : null);
 
-        if (groupId == null) return List.of();
+        if (groupId == null)
+            return List.of();
 
         List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId);
         Set<Long> inPlanIds = new java.util.HashSet<>(
@@ -368,7 +358,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
-        if (teamId == null) return List.of();
+        if (teamId == null)
+            return List.of();
 
         List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
 
@@ -386,14 +377,18 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     @Override
-    public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser, TrainingPlanGenerationRequest request) {
+    public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser,
+            TrainingPlanGenerationRequest request) {
         TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
 
         List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
-        PriorityPolicy priorityPolicy = policyRepository.findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
-                .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND, "No active priority policy found for employees"));
+        PriorityPolicy priorityPolicy = policyRepository
+                .findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND,
+                        "No active priority policy found for employees"));
 
-        PrioritySnapshot prioritySnapshot = priorityScoringService.generateSnapshot(priorityPolicy.getId(), request.getTeamId(), teamMembers);
+        PrioritySnapshot prioritySnapshot = priorityScoringService.generateSnapshot(priorityPolicy.getId(),
+                request.getTeamId(), teamMembers);
         prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
         prioritySnapshotRepository.save(prioritySnapshot);
 
@@ -431,6 +426,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
+
+        // Nếu plan đã APPROVED, tạo result detail cho batch mới thêm
+        if (isApproved) {
+            regenerateResultDetails(savedPlan);
+        }
+
         return toGenerationResponse(savedPlan);
     }
 
@@ -467,8 +468,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ==================== DETAIL ACTIONS (1 FLOW CHUNG) ====================
 
     private void processDetailActions(TrainingPlan plan,
-                                      List<TrainingPlanUpdateRequest.DetailAction> actions,
-                                      boolean isApproved) {
+            List<TrainingPlanUpdateRequest.DetailAction> actions,
+            boolean isApproved) {
         Long productLineId = (plan.getLine() != null) ? plan.getLine().getId() : null;
 
         // Index details hiện tại theo ID → O(1) lookup
@@ -494,8 +495,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * ADD: Thêm employee vào plan, process tự lấy từ employee_skill
      */
     private void handleAddAction(TrainingPlan plan,
-                                 TrainingPlanUpdateRequest.DetailAction action,
-                                 Long productLineId) {
+            TrainingPlanUpdateRequest.DetailAction action,
+            Long productLineId) {
         if (action.getEmployeeId() == null) {
             throw new AppException(ErrorCode.MISSING_EMPLOYEE_ID);
         }
@@ -506,7 +507,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
-        // Tạo batchId chung cho lần ADD này → phân biệt các lần thêm khác nhau của cùng 1 employee
+        // Tạo batchId chung cho lần ADD này → phân biệt các lần thêm khác nhau của cùng
+        // 1 employee
         String batchId = java.util.UUID.randomUUID().toString();
 
         for (ScheduleRequest schedule : action.getSchedules()) {
@@ -524,7 +526,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * FE gửi batchId → tìm employee từ batch đó → tạo detail mới cùng batchId
      */
     private void handleAddScheduleAction(TrainingPlan plan,
-                                         TrainingPlanUpdateRequest.DetailAction action) {
+            TrainingPlanUpdateRequest.DetailAction action) {
         if (action.getBatchId() == null || action.getBatchId().isBlank()) {
             throw new AppException(ErrorCode.MISSING_BATCH_ID);
         }
@@ -550,8 +552,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         if (note == null) {
             note = plan.getDetails().stream()
                     .filter(d -> action.getBatchId().equals(d.getBatchId()))
-                    .map(TrainingPlanDetail::getNote)
                     .findFirst()
+                    .map(TrainingPlanDetail::getNote)
                     .orElse(null);
         }
 
@@ -566,12 +568,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     /**
-     * UPDATE: Sửa 1 detail cụ thể theo detailId — chỉ update field được gửi lên (non-null)
+     * UPDATE: Sửa 1 detail cụ thể theo detailId — chỉ update field được gửi lên
+     * (non-null)
      */
     private void handleUpdateAction(TrainingPlanUpdateRequest.DetailAction action,
-                                    Map<Long, TrainingPlanDetail> detailMap,
-                                    Long productLineId,
-                                    boolean isApproved) {
+            Map<Long, TrainingPlanDetail> detailMap,
+            Long productLineId,
+            boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -622,9 +625,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * DELETE: Xóa hoặc đánh dấu MISSED tùy trạng thái plan
      */
     private void handleDeleteAction(TrainingPlan plan,
-                                    TrainingPlanUpdateRequest.DetailAction action,
-                                    Map<Long, TrainingPlanDetail> detailMap,
-                                    boolean isApproved) {
+            TrainingPlanUpdateRequest.DetailAction action,
+            Map<Long, TrainingPlanDetail> detailMap,
+            boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -655,7 +658,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         // Only allow deletion of DRAFT or REJECTED plans
-        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
+                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -731,7 +735,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-
         // 4. Xóa training_result_details con trước (FK constraint)
         trainingResultDetailRepository.deleteByTrainingPlanDetailId(detailToRemove.getId());
 
@@ -745,14 +748,16 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ==================== HELPER METHODS ====================
 
     /**
-     * Populate employeeProcesses cho 1 detail response đơn lẻ
+     * Populate employeeProcesses cho 1 detail response đơn lẻ.
+     * Hiển thị các công đoạn mà employee CÓ chứng chỉ VALID.
      */
     private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {
         Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
-        if (productLineId == null || detailResponse.getEmployeeId() == null) return;
+        if (productLineId == null || detailResponse.getEmployeeId() == null)
+            return;
 
         List<EmployeeSkill> skills = employeeSkillRepository
-                .findSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
+                .findValidSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
 
         List<TrainingPlanDetailResponse.ProcessInfo> processes = skills.stream()
                 .map(skill -> {
@@ -772,33 +777,107 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      */
     private void regenerateResultDetails(TrainingPlan plan) {
         List<TrainingResult> results = trainingResultRepository.findByTrainingPlanId(plan.getId());
-        if (results.isEmpty()) return;
+        if (results.isEmpty())
+            return;
 
         TrainingResult result = results.get(0);
 
-        // Lấy set plan detail IDs đã có result detail
-        Set<Long> existingPlanDetailIds = result.getDetails().stream()
-                .filter(rd -> rd.getTrainingPlanDetail() != null && rd.getTrainingPlanDetail().getId() != null)
-                .map(rd -> rd.getTrainingPlanDetail().getId())
-                .collect(Collectors.toSet());
+        // Group plan details by batchId
+        Map<String, List<TrainingPlanDetail>> batchGroups = plan.getDetails().stream()
+                .filter(d -> d.getBatchId() != null)
+                .collect(Collectors.groupingBy(TrainingPlanDetail::getBatchId));
 
-        // Tạo result detail cho những plan detail chưa có
-        for (TrainingPlanDetail planDetail : plan.getDetails()) {
-            if (planDetail.getId() != null && !existingPlanDetailIds.contains(planDetail.getId())) {
+        // Đếm số result details đã có cho mỗi employee
+        Map<Long, Long> existingCountByEmployee = result.getDetails().stream()
+                .filter(rd -> rd.getEmployee() != null)
+                .collect(Collectors.groupingBy(
+                        rd -> rd.getEmployee().getId(),
+                        Collectors.counting()));
+
+        // Group các batchId theo employeeId
+        // Key: employeeId, Value: danh sách batchId của employee đó
+        Map<Long, List<String>> batchIdsByEmployee = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, List<TrainingPlanDetail>> entry : batchGroups.entrySet()) {
+            TrainingPlanDetail firstDetail = entry.getValue().get(0);
+            if (firstDetail.getEmployee() != null) {
+                batchIdsByEmployee
+                        .computeIfAbsent(firstDetail.getEmployee().getId(), k -> new java.util.ArrayList<>())
+                        .add(entry.getKey());
+            }
+        }
+
+        // Cập nhật plannedDate cho các result detail đã tồn tại
+        // (trường hợp ADD_SCHEDULE thêm ngày mới lớn hơn vào batch cũ)
+        for (TrainingResultDetail rd : result.getDetails()) {
+            if (rd.getEmployee() == null)
+                continue;
+            Long empId = rd.getEmployee().getId();
+            List<String> empBatchIds = batchIdsByEmployee.get(empId);
+            if (empBatchIds == null || empBatchIds.isEmpty())
+                continue;
+
+            // Tính plannedDate lớn nhất từ TẤT CẢ plan details của employee này
+            java.time.LocalDate maxPlannedDate = empBatchIds.stream()
+                    .flatMap(bid -> batchGroups.get(bid).stream())
+                    .map(TrainingPlanDetail::getPlannedDate)
+                    .filter(d -> d != null)
+                    .max(java.time.LocalDate::compareTo)
+                    .orElse(null);
+
+            // Cập nhật nếu plannedDate mới lớn hơn
+            if (maxPlannedDate != null
+                    && (rd.getPlannedDate() == null || maxPlannedDate.isAfter(rd.getPlannedDate()))) {
+                rd.setPlannedDate(maxPlannedDate);
+            }
+        }
+
+        // So sánh: nếu employee có N batch nhưng chỉ có M result details (M < N)
+        // → tạo thêm (N - M) result details cho các batch mới
+        for (Map.Entry<Long, List<String>> entry : batchIdsByEmployee.entrySet()) {
+            Long employeeId = entry.getKey();
+            List<String> allBatchIds = entry.getValue();
+            long existingCount = existingCountByEmployee.getOrDefault(employeeId, 0L);
+
+            // Số batch cần tạo thêm
+            long newBatchCount = allBatchIds.size() - existingCount;
+            if (newBatchCount <= 0)
+                continue;
+
+            // Lấy các batch cuối cùng (mới nhất) để tạo result detail
+            List<String> newBatchIds = allBatchIds.subList(
+                    (int) existingCount, allBatchIds.size());
+
+            for (String batchId : newBatchIds) {
+                List<TrainingPlanDetail> batchDetails = batchGroups.get(batchId);
+
+                // Lấy plannedDate lớn nhất trong batch
+                java.time.LocalDate latestPlannedDate = batchDetails.stream()
+                        .map(TrainingPlanDetail::getPlannedDate)
+                        .filter(d -> d != null)
+                        .max(java.time.LocalDate::compareTo)
+                        .orElse(null);
+
+                TrainingPlanDetail firstDetail = batchDetails.get(0);
+
                 TrainingResultDetail newResultDetail = new TrainingResultDetail();
                 newResultDetail.setTrainingResult(result);
-                newResultDetail.setTrainingPlanDetail(planDetail);
-                newResultDetail.setEmployee(planDetail.getEmployee());
-                newResultDetail.setPlannedDate(planDetail.getPlannedDate());
+                newResultDetail.setEmployee(firstDetail.getEmployee());
+                newResultDetail.setPlannedDate(latestPlannedDate);
+                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
                 result.getDetails().add(newResultDetail);
             }
         }
 
         trainingResultRepository.save(result);
+
+        // Override createdBy cho new details = người tạo plan
+        String planCreator = plan.getCreatedBy();
+        trainingResultDetailRepository.updateCreatedByForResult(result.getId(), planCreator);
     }
 
     private Employee getValidatedEmployee(Long employeeId) {
-        // Nên dùng getReferenceById nếu chỉ cần gán quan hệ (lazy), nhưng findById an toàn hơn để check tồn tại
+        // Nên dùng getReferenceById nếu chỉ cần gán quan hệ (lazy), nhưng findById an
+        // toàn hơn để check tồn tại
         return employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
     }
@@ -817,7 +896,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         return process;
     }
 
-    private TrainingPlanDetail createBaseDetail(TrainingPlan plan, Employee employee, String note, ScheduleRequest schedule) {
+    private TrainingPlanDetail createBaseDetail(TrainingPlan plan, Employee employee, String note,
+            ScheduleRequest schedule) {
         TrainingPlanDetail detailEntity = new TrainingPlanDetail();
 
         // Gán các quan hệ
@@ -851,7 +931,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         validatePlanForSubmission(report);
 
-        report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, report.getLine().getCode(), reportId));
+        report.setFormCode(
+                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, report.getLine().getCode(), reportId));
 
         approvalService.submit(report, currentUser, request);
 
@@ -973,8 +1054,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     @Transactional
     public void clearFeedback(Long proposalId) {
-        List<TrainingPlanDetail> details =
-                trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+        List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
 
         details.forEach(d -> d.setRejectFeedback(null));
         trainingPlanDetailRepository.saveAll(details);
@@ -1008,9 +1089,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             if (detail.getEmployee() == null) {
                 throw new AppException(ErrorCode.MISSING_EMPLOYEE_IN_DETAIL);
             }
-//            if (detail.getProcess() == null) {
-//                throw new IllegalArgumentException("Detail lack of Process Information.");
-//            }
+            // if (detail.getProcess() == null) {
+            // throw new IllegalArgumentException("Detail lack of Process Information.");
+            // }
             if (detail.getPlannedDate() == null) {
                 throw new AppException(ErrorCode.MISSING_PLANNED_DATE_IN_DETAIL);
             }
@@ -1063,7 +1144,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 TrainingPlanDetailHistory detailHistory = TrainingPlanDetailHistory.builder()
                         .trainingPlanHistory(history)
                         .employeeId(detail.getEmployee().getId())
-//                        .processId(detail.getProcess().getId())
+                        // .processId(detail.getProcess().getId())
                         .targetMonth(detail.getTargetMonth())
                         .plannedDate(detail.getPlannedDate())
                         .actualDate(detail.getActualDate())
@@ -1145,11 +1226,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     /**
-     * Populate employeeProcesses cho từng detail + build groupedDetails (group theo batchId)
+     * Populate employeeProcesses cho từng detail + build groupedDetails (group theo
+     * batchId)
      */
     private void populateEmployeeProcesses(TrainingPlanResponse response, TrainingPlan plan) {
         Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
-        if (response.getDetails() == null || productLineId == null) return;
+        if (response.getDetails() == null || productLineId == null)
+            return;
 
         // Cache skill lookup để không query trùng employee
         Map<Long, List<TrainingPlanDetailResponse.ProcessInfo>> skillCache = new java.util.HashMap<>();
@@ -1160,7 +1243,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         detail.getEmployeeId(),
                         empId -> {
                             List<EmployeeSkill> skills = employeeSkillRepository
-                                    .findSkillsByEmployeeAndLine(empId, productLineId);
+                                    .findValidSkillsByEmployeeAndLine(empId, productLineId);
                             return skills.stream()
                                     .map(skill -> {
                                         TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
@@ -1169,19 +1252,21 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                         return info;
                                     })
                                     .toList();
-                        }
-                );
+                        });
                 detail.setEmployeeProcesses(processes);
             }
         }
 
-        // Build groupedDetails: group theo batchId (phân biệt các lần thêm khác nhau của cùng 1 employee)
+        // Build groupedDetails: group theo batchId (phân biệt các lần thêm khác nhau
+        // của cùng 1 employee)
         Map<String, EmployeePlanGroup> groupMap = new java.util.LinkedHashMap<>();
 
         for (TrainingPlanDetailResponse detail : response.getDetails()) {
-            if (detail.getEmployeeId() == null) continue;
+            if (detail.getEmployeeId() == null)
+                continue;
 
-            // Dùng batchId làm key. Nếu batchId null (data cũ chưa có) → fallback dùng "employee_{id}"
+            // Dùng batchId làm key. Nếu batchId null (data cũ chưa có) → fallback dùng
+            // "employee_{id}"
             String key = detail.getBatchId() != null
                     ? detail.getBatchId()
                     : "employee_" + detail.getEmployeeId();
@@ -1207,8 +1292,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         populateEmployeeProcesses(trainingPlanResponse, plan);
 
         PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(
-                prioritySnapshotRepository.findByTrainingPlanId(plan.getId()).orElse(null)
-        );
+                prioritySnapshotRepository.findByTrainingPlanId(plan.getId()).orElse(null));
 
         TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
 
@@ -1230,21 +1314,20 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         .collect(Collectors.toMap(
                                 d -> d.getEmployee().getId(),
                                 d -> d,
-                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2
-                        )))
+                                (d1, d2) -> d1.getTierOrder() <= d2.getTierOrder() ? d1 : d2)))
                 .orElse(Map.of());
     }
 
     private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
-        if (employeeIds.isEmpty()) return Map.of();
+        if (employeeIds.isEmpty())
+            return Map.of();
         return trainingResultDetailRepository
                 .findLatestByEmployeeIds(employeeIds)
                 .stream()
                 .collect(Collectors.toMap(
                         d -> d.getEmployee().getId(),
                         d -> d,
-                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2
-                ));
+                        (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2));
     }
 
     private PrioritizedEmployeeResponse buildPrioritizedEmployeeResponsee(
@@ -1264,7 +1347,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
                 .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
                 .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                        ? emp.getTeam().getGroup().getName() : null)
+                        ? emp.getTeam().getGroup().getName()
+                        : null)
                 .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
                 .tierName(snapshot != null ? snapshot.getTierName() : null)
                 .sortRank(snapshot != null ? snapshot.getSortRank() : null)
@@ -1276,8 +1360,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
-        if (snapshot == null) return null;
-        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
+        if (snapshot == null)
+            return null;
+        if ("UNTIERED".equals(snapshot.getTierName()))
+            return "Không có tiêu chí ưu tiên";
         return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }

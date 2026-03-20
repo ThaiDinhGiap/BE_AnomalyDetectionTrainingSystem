@@ -969,10 +969,10 @@ CREATE TABLE training_result_details
 (
     id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
     training_result_id      BIGINT  NOT NULL,
-    training_plan_detail_id BIGINT  NOT NULL COMMENT 'Link về kế hoạch',
+    training_plan_detail_id BIGINT  NULL COMMENT 'Link về kế hoạch',
 
     -- Định danh ai làm gì
-    employee_id             BIGINT  NOT NULL,
+    employee_id             BIGINT  NULL,
     process_id              BIGINT  NULL,
     training_sample_id      BIGINT COMMENT 'Mẫu huấn luyện sử dụng (từ danh sách)',
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
@@ -982,7 +982,7 @@ CREATE TABLE training_result_details
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
 
     -- Thời gian thực tế
-    planned_date            DATE    NOT NULL,
+    planned_date            DATE,
     actual_date             DATE,
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',

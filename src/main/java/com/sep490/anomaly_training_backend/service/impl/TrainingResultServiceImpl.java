@@ -129,13 +129,28 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
 
         if (plan.getDetails() != null) {
-            for (TrainingPlanDetail planDetail : plan.getDetails()) {
+            // Group plan details by batchId → 1 result detail per batch
+            Map<String, List<TrainingPlanDetail>> batchGroups = plan.getDetails().stream()
+                    .filter(d -> d.getBatchId() != null)
+                    .collect(Collectors.groupingBy(TrainingPlanDetail::getBatchId));
+
+            for (Map.Entry<String, List<TrainingPlanDetail>> entry : batchGroups.entrySet()) {
+                List<TrainingPlanDetail> batchDetails = entry.getValue();
+
+                // Lấy plannedDate lớn nhất (ngày cuối cùng) trong batch
+                LocalDate latestPlannedDate = batchDetails.stream()
+                        .map(TrainingPlanDetail::getPlannedDate)
+                        .filter(d -> d != null)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
+
+                // Lấy employee từ detail đầu tiên (cùng batch = cùng employee)
+                TrainingPlanDetail firstDetail = batchDetails.get(0);
 
                 TrainingResultDetail resultDetail = new TrainingResultDetail();
                 resultDetail.setTrainingResult(result);
-                resultDetail.setTrainingPlanDetail(planDetail);
-                resultDetail.setEmployee(planDetail.getEmployee());
-                resultDetail.setPlannedDate(planDetail.getPlannedDate());
+                resultDetail.setEmployee(firstDetail.getEmployee());
+                resultDetail.setPlannedDate(latestPlannedDate);
                 resultDetail.setStatus(ReportStatus.PENDING);
 
                 resultDetails.add(resultDetail);
@@ -143,14 +158,33 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         }
 
         result.setDetails(resultDetails);
-        trainingResultRepository.save(result);
+        // Lưu trước (JPA auditing sẽ set createdBy = người approve)
+        TrainingResult savedResult = trainingResultRepository.save(result);
+
+        // Generate formCode
+        String lineCode = plan.getLine() != null ? plan.getLine().getCode() : "";
+        savedResult.setFormCode(
+                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, lineCode, savedResult.getId()));
+        trainingResultRepository.save(savedResult);
+
+        // Override createdBy = người tạo plan (native query vì @CreatedBy +
+        // updatable=false)
+        String planCreator = plan.getCreatedBy();
+        trainingResultRepository.updateCreatedBy(savedResult.getId(), planCreator);
+        trainingResultDetailRepository.updateCreatedByForResult(savedResult.getId(), planCreator);
     }
 
     @Override
     public KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year) {
-        long totalExecuted = detailRepository.countByFilters(teamId, lineId, year);
-        long totalPass = detailRepository.countByFiltersAndIsPass(teamId, lineId, year, true);
-        long totalFail = detailRepository.countByFiltersAndIsPass(teamId, lineId, year, false);
+        // Nếu không truyền filter nào → chỉ tính KPI cho báo cáo của current user
+        String createdBy = null;
+        if (teamId == null && lineId == null && year == null) {
+            createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        }
+
+        long totalExecuted = detailRepository.countByFilters(createdBy, teamId, lineId, year);
+        long totalPass = detailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, true);
+        long totalFail = detailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, false);
 
         BigDecimal passRate = BigDecimal.ZERO;
         if (totalExecuted > 0) {
@@ -1040,7 +1074,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult report = getReportById(reportId);
 
         validateResultForSubmission(report);
-        report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
+        report.setFormCode(
+                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
 
         approvalService.submit(report, currentUser, request);
         updateResultDetailAfterSubmission(report);
@@ -1086,7 +1121,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser, HttpServletRequest request) {
+    public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
+            HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.APPROVED);
@@ -1101,7 +1137,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser, HttpServletRequest request) {
+    public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
+            HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
