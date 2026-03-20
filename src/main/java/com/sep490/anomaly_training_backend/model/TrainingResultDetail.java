@@ -154,4 +154,11 @@ public class TrainingResultDetail extends BaseEntity {
     @Column(name = "reject_feedback", columnDefinition = "JSON")
     private RejectFeedbackJson rejectFeedback;
 
+    /**
+     * Mã nhóm batch từ TrainingPlanDetail, dùng để group các result details
+     * của cùng 1 employee trên FE.
+     */
+    @Column(name = "batch_id", length = 36)
+    String batchId;
+
 }
