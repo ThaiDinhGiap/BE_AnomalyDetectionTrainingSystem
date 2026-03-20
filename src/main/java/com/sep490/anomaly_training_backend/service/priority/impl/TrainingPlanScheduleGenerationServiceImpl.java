@@ -13,6 +13,7 @@ import com.sep490.anomaly_training_backend.model.FactoryCalendarEntry;
 import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.FactoryCalendarRepository;
 import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
@@ -30,6 +31,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -133,10 +135,10 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
 
             List<EmployeeSkill> skills = employeeSkillRepository.findByEmployeeIdAndDeleteFlagFalse(employeeId)
                     .stream()
-                    .filter(skill -> skill.getStatus() != EmployeeSkillStatus.REVOKED)  // Exclude REVOKED
+                    .filter(skill -> skill.getStatus() != EmployeeSkillStatus.REVOKED)
                     .sorted(Comparator
-                            .comparing((EmployeeSkill s) -> s.getExpiryDate() != null ? s.getExpiryDate() : LocalDate.MAX)  // Soonest expiry first
-                            .thenComparing(EmployeeSkill::getId))  // Stable sort
+                            .comparing((EmployeeSkill s) -> s.getExpiryDate() != null ? s.getExpiryDate() : LocalDate.MAX)
+                            .thenComparing(EmployeeSkill::getId))
                     .collect(Collectors.toList());
 
             result.put(employeeId, skills);
@@ -172,6 +174,16 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
         Map<Long, Integer> employeeSkillIndex = new HashMap<>();
         priorityDetails.forEach(p -> employeeSkillIndex.put(p.getEmployee().getId(), 0));
 
+        HashMap<LocalDate, Integer> specialDays = new HashMap<>();
+        for (TrainingPlanSpecialDay specialDay : trainingPlan.getSpecialDays()) {
+            specialDays.put(specialDay.getSpecialDate(), specialDay.getTrainingSlot());
+        }
+
+        AtomicLong totalSkills = new AtomicLong();
+        employeeAvailableSkills.forEach((k, v) -> {
+            totalSkills.addAndGet(v.size());
+        });
+
         // Multi-pass: từng bước tăng capacity
         for (int dayCapacity = minCapacity; dayCapacity <= maxCapacity; dayCapacity++) {
             log.info("\n--- PASS {} (Daily Capacity: {}) ---", dayCapacity - minCapacity + 1, dayCapacity);
@@ -186,7 +198,10 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                 LocalDate workDate = calendarDay.getWorkDate();
 
                 // Tính số slots hôm này
-                int slotsToday = dayCapacity;  // Simple: không special day logic
+                int slotsToday = 1;
+                if (specialDays.containsKey(workDate)) {
+                    slotsToday = specialDays.get(workDate);
+                }
 
                 log.debug("  Day {}: {} (slots: {})", dayIndex + 1, workDate, slotsToday);
 
@@ -194,7 +209,10 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                 int allocated = 0;
                 int tempEmployeeIndex = employeeIndex;
 
-                while (allocated < slotsToday && tempEmployeeIndex < priorityDetails.size()) {
+                while (allocated < slotsToday && totalSkills.get() > 0) {
+                    if (tempEmployeeIndex == priorityDetails.size()) {
+                        tempEmployeeIndex = 0;
+                    }
                     PrioritySnapshotDetail priority = priorityDetails.get(tempEmployeeIndex);
                     Employee employee = priority.getEmployee();
                     Long empId = employee.getId();
@@ -220,6 +238,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                         employeeSkillIndex.put(empId, skillIdx + 1);  // Move to next skill
                         allocated++;
                         passDetails++;
+                        totalSkills.decrementAndGet();
                         hasAllocatedInPass = true;
 
                         log.debug("    → {} trained on {} (skill {}/{})",
@@ -239,7 +258,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
 
             log.info("PASS {} allocated: {} details", dayCapacity - minCapacity + 1, passDetails);
 
-            // Stopping condition: không allocate được gì trong pass này
+            // Stopping condition: không allocate được gì trong pass này hoặc allocate hết skill
             if (!hasAllocatedInPass) {
                 log.info("No allocations in pass {} — stopping", dayCapacity - minCapacity + 1);
                 break;

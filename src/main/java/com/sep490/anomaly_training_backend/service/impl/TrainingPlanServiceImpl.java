@@ -57,6 +57,7 @@ import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanSpecialDayRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
@@ -83,6 +84,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -114,6 +116,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final GroupRepository groupRepository;
     private final RejectReasonRepository rejectReasonRepository;
     private final RequiredActionRepository requiredActionRepository;
+    private final TrainingPlanSpecialDayRepository trainingPlanSpecialDayRepository;
 
     @Override
     public List<GroupResponse> getMyManagedGroups() {
@@ -674,11 +677,31 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         // Xóa training_result_details con trước (FK constraint)
         List<Long> detailIds = plan.getDetails().stream()
-                .filter(d -> d.getId() != null)
                 .map(TrainingPlanDetail::getId)
+                .filter(Objects::nonNull)
                 .toList();
         if (!detailIds.isEmpty()) {
             trainingResultDetailRepository.deleteByTrainingPlanDetailIdIn(detailIds);
+        }
+
+        List<Long> specialDayIds = plan.getSpecialDays().stream()
+                .map(TrainingPlanSpecialDay::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        if (!specialDayIds.isEmpty()) {
+            trainingPlanSpecialDayRepository.deleteByIdIn(specialDayIds);
+        }
+
+        PrioritySnapshot prioritySnapshot = prioritySnapshotRepository.findByTrainingPlanId(planId).orElse(null);
+        if (prioritySnapshot != null) {
+            List<Long> prioritySnapshotDetailIds = prioritySnapshot.getDetails().stream()
+                    .map(PrioritySnapshotDetail::getId)
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (!prioritySnapshotDetailIds.isEmpty()) {
+                prioritySnapshotDetailRepository.deleteByIdIn(prioritySnapshotDetailIds);
+            }
+            prioritySnapshotRepository.delete(prioritySnapshot);
         }
 
         trainingPlanRepository.delete(plan);
