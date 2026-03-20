@@ -33,10 +33,11 @@ public class DefectImportHelper {
     private static final int COL_PRODUCT = 10;
     private static final int COL_CUSTOMER = 11;
     private static final int COL_QUANTITY = 12;
-    private static final int COL_CONCLUSION = 13;
-    private static final int COL_ESCAPED = 14;
-    private static final int COL_CUSTOMER_CLAIM = 15;
-    private static final int COL_STARTLED_CLAIM = 16;
+    private static final int COL_CAUSE_POINT = 13;
+    private static final int COL_CONCLUSION = 14;
+    private static final int COL_ESCAPED = 15;
+    private static final int COL_CUSTOMER_CLAIM = 16;
+    private static final int COL_STARTLED_CLAIM = 17;
 
     /**
      * Parse toàn bộ data row từ row 3 trở đi.
@@ -68,6 +69,7 @@ public class DefectImportHelper {
         LocalDate detectedDate = getLocalDateCellValue(row.getCell(COL_DETECTED_DATE), "Ngày phát sinh", excelRowNumber);
         String originCause = getOptionalStringCellValue(row.getCell(COL_ORIGIN_CAUSE));
         String outflowCause = getOptionalStringCellValue(row.getCell(COL_OUTFLOW_CAUSE));
+        String causePoint = getOptionalStringCellValue(row.getCell(COL_CAUSE_POINT));
         String outflowMeasures = getOptionalStringCellValue(row.getCell(COL_OUTFLOW_MEASURE));
         String originMeasures = getOptionalStringCellValue(row.getCell(COL_ORIGIN_MEASURE));
         String productCode = getOptionalStringCellValue(row.getCell(COL_PRODUCT));
@@ -93,6 +95,7 @@ public class DefectImportHelper {
                 .outflowMeasures(outflowMeasures)
                 .originMeasures(originMeasures)
                 .isEscape(isEscaped)
+                .causePoint(causePoint)
                 .customerClaim(customerClaim)
                 .startledClaim(startledClaim)
                 .productCode(productCode)
