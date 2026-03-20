@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
@@ -14,5 +14,5 @@ public class EmployeeSkillResponse {
     Long processId;
     LocalDate certifiedDate;
     LocalDate expiryDate;
-    EmployeeStatus status;
+    EmployeeSkillStatus status;
 }

@@ -9,8 +9,11 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeMapper employeeMapper;
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
+    private final TrainingResultDetailRepository trainingResultDetailRepository;
 
     @Override
     @Transactional
@@ -125,9 +129,23 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<EmployeeResponse> getEmployeesByTeam(Long teamId) {
-        return employeeRepository.findByTeamId(teamId).stream()
+        List<EmployeeResponse> results =  employeeRepository.findByTeamId(teamId).stream()
                 .filter(e -> !e.isDeleteFlag())
                 .map(employeeMapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
+        for (EmployeeResponse employee: results){
+            Integer totalTraining = 0;
+            Integer totalFail = 0;
+            List<TrainingResultDetail> resultEmployee = trainingResultDetailRepository.findAllByEmployeeIdAndDeleteFlagFalse(employee.getId());
+            for (TrainingResultDetail employeeDetail: resultEmployee ){
+                if (Boolean.FALSE.equals(employeeDetail.getIsPass())){
+                    totalFail++;
+                }
+                totalTraining++;
+            }
+            employee.setTotalTraining(totalTraining);
+            employee.setTotalFail(totalFail);
+        }
+        return results;
     }
 }

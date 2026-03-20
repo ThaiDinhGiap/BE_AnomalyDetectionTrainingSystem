@@ -21,6 +21,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     void updateCreatedByForResult(@Param("resultId") Long resultId, @Param("createdBy") String createdBy);
 
     Page<TrainingResultDetail> findByTrainingResultId(Long trainingResultId, Pageable pageable);
+
     List<TrainingResultDetail> findByTrainingResultId(Long trainingResultId);
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +
@@ -170,4 +171,6 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             """)
     List<TrainingResultDetail> findPendingWithIsPassByResultId(
             @Param("resultId") Long resultId);
+
+    List<TrainingResultDetail> findAllByEmployeeIdAndDeleteFlagFalse(Long employeeId);
 }
