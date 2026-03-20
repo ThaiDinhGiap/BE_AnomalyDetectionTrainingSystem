@@ -257,7 +257,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.approve')")
     public ResponseEntity<String> rejectPlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

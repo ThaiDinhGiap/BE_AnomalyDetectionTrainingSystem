@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
@@ -23,6 +25,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -263,5 +267,42 @@ public class TrainingResultController {
     public ResponseEntity<List<EmployeeSkillCertificateResponse>> getSkillCertificates(
             @PathVariable Long resultId) {
         return ResponseEntity.ok(trainingResultService.getSkillCertificates(resultId));
+    }
+
+    @Operation(summary = "Approve training result",
+            description = "Approve the training result. Only authorized personnel can perform this action.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Approved successfully"),
+            @ApiResponse(responseCode = "403", description = "No approval permission"),
+            @ApiResponse(responseCode = "404", description = "Result not found")
+    })
+    @PutMapping("/{id}/approve/{detailId}")
+    @PreAuthorize("hasAuthority('training_result.approve')")
+    public ResponseEntity<String> approveResultDetail(
+            @PathVariable Long id,
+            @PathVariable Long detailId,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ApproveRequest approveRequest,
+            HttpServletRequest request) {
+        trainingResultService.approveDetail(id, detailId, approveRequest, currentUser, request);
+        return ResponseEntity.ok("Plan has been approved successfully!");
+    }
+
+    @Operation(summary = "Reject training result",
+            description = "Reject and request revision of the result.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Result rejected"),
+            @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
+    })
+    @PutMapping("/{id}/reject/{detailId}")
+    @PreAuthorize("hasAuthority('training_result.approve')")
+    public ResponseEntity<String> rejectResultDetail(
+            @PathVariable Long id,
+            @PathVariable Long detailId,
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody RejectRequest rejectRequest,
+            HttpServletRequest request) {
+        trainingResultService.rejectDetail(id, detailId, rejectRequest, currentUser, request);
+        return ResponseEntity.ok("Plan has been rejected!");
     }
 }

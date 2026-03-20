@@ -1005,6 +1005,8 @@ CREATE TABLE training_result_details
     signature_pro_out       BIGINT COMMENT 'TL Sản xuất ký lúc ra',
     signature_fi_out        BIGINT COMMENT 'TL Kiểm tra ký lúc ra (nullable nếu classification=4)',
 
+    reject_feedback         JSON,
+
     delete_flag             BOOLEAN NOT NULL DEFAULT FALSE,
     created_at              TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by              VARCHAR(255),

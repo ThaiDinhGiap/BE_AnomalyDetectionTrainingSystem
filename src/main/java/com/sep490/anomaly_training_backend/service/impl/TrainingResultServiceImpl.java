@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
@@ -42,6 +44,8 @@ import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
@@ -50,15 +54,18 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.approval.RejectDetailService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -71,6 +78,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrainingResultServiceImpl implements TrainingResultService {
 
     private final TrainingResultRepository trainingResultRepository;
@@ -90,6 +98,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final GroupRepository groupRepository;
+    private final RejectDetailService rejectDetailService;
+    private final RejectReasonRepository rejectReasonRepository;
+    private final RequiredActionRepository requiredActionRepository;
 
     private static final int HISTORY_SIZE = 6;
 
@@ -605,6 +616,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
             }
 
+            row.setRejectFeedback(detail.getRejectFeedback());
+
             detailDtos.add(row);
         }
 
@@ -968,6 +981,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     private void updateResultDetailAfterSubmission(TrainingResult result) {
+        trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
+                .forEach(detail -> detail.setStatus(ReportStatus.WAITING_SV));
     }
 
     @Override
@@ -975,11 +990,94 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser, HttpServletRequest request) {
+        approve(reportId, currentUser, req, request);
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
+        detail.setStatus(ReportStatus.APPROVED);
+        trainingResultDetailRepository.save(detail);
+    }
+
+    @Override
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+        approvalService.approve(report, currentUser, req, request);
+        trainingResultRepository.save(report);
+    }
+
+    @Override
+    public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser, HttpServletRequest request) {
+        reject(reportId, currentUser, req, request);
+
+        DetailFeedbackRequest detailFeedbackRequest = new DetailFeedbackRequest();
+        detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());
+        detailFeedbackRequest.setRequiredActionId(req.getRequiredActionId());
+        detailFeedbackRequest.setComment(req.getComment());
+
+        rejectDetailService.saveFeedback(ApprovalEntityType.TRAINING_RESULT, detailId, detailFeedbackRequest, currentUser);
     }
 
     @Override
     public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+        approvalService.reject(report, currentUser, req, request);
+        trainingResultRepository.save(report);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
+
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
+
+        // Tất cả null/empty → xoá feedback
+        if (isEmptyFeedback(request)) {
+            detail.setRejectFeedback(null);
+            trainingResultDetailRepository.save(detail);
+            return;
+        }
+
+        // Batch load reasons + action
+        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
+        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
+            reasonSnapshots = rejectReasonRepository
+                    .findAllById(request.getRejectReasonIds())
+                    .stream()
+                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
+                            .id(r.getId())
+                            .category(r.getCategoryName())
+                            .label(r.getReasonName())
+                            .build())
+                    .toList();
+        }
+
+        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
+        if (request.getRequiredActionId() != null) {
+            actionSnapshot = requiredActionRepository
+                    .findById(request.getRequiredActionId())
+                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
+                            .id(a.getId())
+                            .label(a.getActionName())
+                            .build())
+                    .orElse(null);
+        }
+
+        detail.setRejectFeedback(RejectFeedbackJson.builder()
+                .savedAt(Instant.now())
+                .savedBy(currentUser.getFullName())
+                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
+                .requiredAction(actionSnapshot)
+                .comment(request.getComment())
+                .build());
+
+        trainingResultDetailRepository.save(detail);
+        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
+    }
+
+    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
+                && r.getRequiredActionId() == null
+                && (r.getComment() == null || r.getComment().isBlank());
     }
 
     @Override

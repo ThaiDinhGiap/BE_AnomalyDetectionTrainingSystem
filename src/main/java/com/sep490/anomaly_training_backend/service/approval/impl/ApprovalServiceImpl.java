@@ -98,6 +98,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), null, null, request);
 
         if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            entity.setCurrentVersion(entity.getCurrentVersion() + 1);
             return;
         }
 
