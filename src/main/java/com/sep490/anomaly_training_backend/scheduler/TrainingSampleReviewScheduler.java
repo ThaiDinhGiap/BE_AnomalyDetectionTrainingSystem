@@ -8,7 +8,15 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicy
 import com.sep490.anomaly_training_backend.scheduler.job.TrainingSampleReviewJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.quartz.*;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -50,7 +58,7 @@ public class TrainingSampleReviewScheduler {
             log.info("✓ Successfully registered job for configId={}", configId);
 
         } catch (SchedulerException e) {
-            log.error("❌ Failed to register job for config", e);
+            log.error("Failed to register job for config", e);
             throw new RuntimeException("Failed to register scheduled job", e);
         }
     }
@@ -73,7 +81,7 @@ public class TrainingSampleReviewScheduler {
             log.info("✓ Successfully updated job for configId={}", configId);
 
         } catch (Exception e) {
-            log.error("❌ Failed to update job for config", e);
+            log.error("Failed to update job for config", e);
             throw new RuntimeException("Failed to update scheduled job", e);
         }
     }
@@ -95,11 +103,10 @@ public class TrainingSampleReviewScheduler {
             }
 
         } catch (SchedulerException e) {
-            log.error("❌ Failed to remove job for configId={}", configId, e);
+            log.error("Failed to remove job for configId={}", configId, e);
             throw new RuntimeException("Failed to remove scheduled job", e);
         }
     }
-
 
 
     // ============ Private Helper Methods ============
