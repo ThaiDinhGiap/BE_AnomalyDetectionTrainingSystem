@@ -3,30 +3,31 @@ package com.sep490.anomaly_training_backend.service.approval.helper;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.Defect;
-import com.sep490.anomaly_training_backend.model.DefectProposal;
-import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
-import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class DefectProposalApprovalHandler implements ApprovalHandler {
     private final DefectProposalRepository defectProposalRepository;
+    private final DefectProposalDetailRepository defectProposalDetailRepository;
     private final DefectRepository defectRepository;
     private final DefectCodeGenerator defectCodeGenerator;
     private final ProcessRepository processRepository;
+    private final AttachmentService attachmentService;
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     public ApprovalEntityType getType() {
@@ -70,7 +71,8 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
                     // đảm bảo không null các field bắt buộc
                     requireNonNullForCreate(created, d);
 
-                    defectRepository.save(created);
+                    created = defectRepository.save(created);
+                    uploadAttachmentToDefect(created, d);
                     // Nếu muốn lưu lại defect vừa tạo vào detail để audit:
                     d.setDefect(created);
                 }
@@ -88,7 +90,8 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
                     // Giữ nguyên defect code khi UPDATE, không tạo code mới
                     requireNonNullForUpdate(defect, d);
 
-                    defectRepository.save(defect);
+                    Defect updated = defectRepository.save(defect);
+                    uploadAttachmentToDefect(updated, d);
                 }
 
                 case DELETE -> {
@@ -149,5 +152,32 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
     private void requireNonNullForUpdate(Defect defect, DefectProposalDetail d) {
         // Nếu bạn chọn UPDATE theo full snapshot, thì check giống CREATE
         requireNonNullForCreate(defect, d);
+    }
+
+    private void uploadAttachmentToDefect(Defect defect, DefectProposalDetail proposalDefect) {
+        //Create and update image to defect
+        List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("DEFECT", defect.getId());
+        List<Attachment>  proposalAttachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", proposalDefect.getId());
+        if (originAttachments != null) {
+            for (Attachment origin : originAttachments) {
+                attachmentService.deleteAttachment(origin.getId());
+            }
+        }
+        for (Attachment proposal : proposalAttachments) {
+            Attachment attachment = new Attachment();
+            attachment.setEntityId(defect.getId());
+            attachment.setEntityType("DEFECT");
+            attachment.setBucket(proposal.getBucket());
+            attachment.setObjectKey(proposal.getObjectKey());
+            attachment.setOriginalFilename(proposal.getOriginalFilename());
+            attachment.setContentType(proposal.getContentType());
+            attachment.setSizeBytes(proposal.getSizeBytes());
+            attachment.setStatus(proposal.getStatus());
+            attachment.setCreatedBy(proposal.getCreatedBy());
+            attachment.setPrimary(proposal.isPrimary());
+            attachment.setNote(proposal.getNote());
+            attachment.setSortOrder(proposal.getSortOrder());
+            attachmentRepository.save(attachment);
+        }
     }
 }

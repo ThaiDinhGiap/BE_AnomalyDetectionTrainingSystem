@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.defect;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

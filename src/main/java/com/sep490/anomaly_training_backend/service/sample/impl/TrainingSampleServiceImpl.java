@@ -3,7 +3,8 @@ package com.sep490.anomaly_training_backend.service.sample.impl;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -125,6 +126,14 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             log.error("Unexpected error during import", e);
             throw new AppException(ErrorCode.UNEXPECTED_IMPORT_ERROR);
         }
+    }
+
+    @Override
+    public CategorySample getCategory(Long productLineId) {
+        return CategorySample.builder()
+                .categoryNames(trainingSampleRepository.getCategoryNames(productLineId))
+                .trainingDescriptions(trainingSampleRepository.getTrainingDescriptions(productLineId))
+                .build();
     }
 
     /**

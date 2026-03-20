@@ -1,7 +1,6 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.defect;
 
-import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
-import com.sep490.anomaly_training_backend.enums.ProposalType;
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDate;
@@ -9,11 +8,9 @@ import java.util.List;
 
 @Data
 @Builder
-public class DefectProposalDetailResponse {
-    Long  defectProposalDetailId;
-    Long defectProposalId;
-    ProposalType proposalType;
+public class DefectResponse {
     Long defectId;
+    String defectCode;
     String defectDescription;
     Long processId;
     String processName;
@@ -29,7 +26,6 @@ public class DefectProposalDetailResponse {
     String customer;
     Integer quantity;
     String conclusion;
-    List<String> attachmentUrls;
     ProductResponse product;
-    RejectFeedbackJson rejectFeedback;
+    List<String> attachmentUrls;
 }

@@ -124,6 +124,7 @@ public enum ErrorCode {
     MISSING_DETECTED_DATE(7307, "Detected date is required.", HttpStatus.BAD_REQUEST),
     MISSING_CATEGORY_NAME(7308, "Category name is required.", HttpStatus.BAD_REQUEST),
     MISSING_TRAINING_DESCRIPTION(7309, "Training description is required.", HttpStatus.BAD_REQUEST),
+    MISSING_PRODUCT_ID(7310, "Product is required.", HttpStatus.BAD_REQUEST),
 
     // Approval Errors (range 74xx)
     INVALID_ENTITY_STATUS(7400, "Invalid entity status for this operation.", HttpStatus.BAD_REQUEST),

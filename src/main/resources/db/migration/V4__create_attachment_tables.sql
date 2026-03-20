@@ -34,7 +34,6 @@ CREATE TABLE attachments (
 
 
     -- Các Ràng buộc (Constraints) & Chỉ mục (Indexes) để tăng tốc độ truy vấn
-                             CONSTRAINT uk_attachments_object UNIQUE (bucket, object_key),
                              INDEX idx_attachments_entity (entity_type, entity_id),
                              INDEX idx_attachments_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

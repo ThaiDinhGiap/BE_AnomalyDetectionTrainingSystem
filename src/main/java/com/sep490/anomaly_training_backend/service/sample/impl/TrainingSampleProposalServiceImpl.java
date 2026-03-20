@@ -4,22 +4,15 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
@@ -37,12 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -121,7 +109,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         }
 
         Set<Long> requestDetailIds = new HashSet<>();
-
+        //Validate detail belong to proposal
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getTrainingSampleProposalDetailId() != null && !existingMap.containsKey(item.getTrainingSampleProposalDetailId())) {
                 throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
@@ -140,6 +128,10 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
             TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
             entity.setId(item.getTrainingSampleProposalDetailId());
             trainingSampleProposalDetailRepository.save(entity);
+            if (item.getImages() != null && !item.getImages().isEmpty()) {
+                attachmentService.deleteAttachments("TRAINING_SAMPLE_PROPOSAL", entity.getId());
+                attachmentService.uploadAttachments(item.getImages(), "TRAINING_SAMPLE_PROPOSAL", entity.getId(), currentUser.getUsername());
+            }
         }
         for (TrainingSampleProposalDetail existing : existingDetails) {
             if (!requestDetailIds.contains(existing.getId())) {

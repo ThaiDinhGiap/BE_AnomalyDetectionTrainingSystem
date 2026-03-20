@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import java.util.Objects;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {DefectMapper.class, ProductMapper.class})
 @RequiredArgsConstructor
 public abstract class TrainingSampleProposalMapper {
 

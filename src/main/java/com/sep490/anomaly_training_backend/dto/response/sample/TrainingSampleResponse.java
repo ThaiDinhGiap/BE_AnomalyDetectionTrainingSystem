@@ -1,5 +1,6 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.sample;
 
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import lombok.Builder;
 import lombok.Data;
 

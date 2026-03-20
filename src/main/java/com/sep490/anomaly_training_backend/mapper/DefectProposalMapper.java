@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

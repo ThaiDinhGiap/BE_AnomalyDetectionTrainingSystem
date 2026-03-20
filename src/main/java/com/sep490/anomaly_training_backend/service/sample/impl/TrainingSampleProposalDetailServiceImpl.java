@@ -2,17 +2,19 @@ package com.sep490.anomaly_training_backend.service.sample.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalDetailMapper;
 import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
 import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.defect.DefectService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
     private final ProductService productService;
     private final RejectReasonRepository rejectReasonRepository;
     private final RequiredActionRepository requiredActionRepository;
+    private final DefectService defectService;
 
     @Override
     public List<TrainingSampleProposalDetailResponse> getTrainingSampleProposalDetails(Long trainingTopicReportId) {
@@ -106,7 +109,7 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
         if (Objects.isNull(response)) {
             return null;
         }
-        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", response.getTrainingSampleId());
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", response.getTrainingSampleProposalDetailId());
         List<String> imageUrls = attachments.stream()
                 .map(Attachment::getUrl)
                 .toList();
@@ -121,6 +124,9 @@ public class TrainingSampleProposalDetailServiceImpl implements TrainingSamplePr
         }
         if (entity.getProduct() != null) {
             response.setProduct(productService.getProductById(entity.getProduct().getId()));
+        }
+        if (entity.getDefect() != null) {
+            response.setDefect(defectService.getDefectById(entity.getDefect().getId()));
         }
         return addAttachment(response);
     }

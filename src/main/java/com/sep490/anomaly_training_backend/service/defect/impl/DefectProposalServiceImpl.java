@@ -4,9 +4,9 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -169,8 +169,8 @@ public class DefectProposalServiceImpl implements DefectProposalService {
             entity.setQuantity(item.getQuantity());
             entity.setConclusion(item.getConclusion());
             if (item.getImages() != null && !item.getImages().isEmpty()) {
-                attachmentService.uploadAttachments(item.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
                 attachmentService.deleteAttachments("DEFECT_PROPOSAL", item.getDefectProposalDetailId());
+                attachmentService.uploadAttachments(item.getImages(), "DEFECT_PROPOSAL", entity.getId(), currentUser.getUsername());
             }
             defectProposalDetailRepository.save(entity);
         }
@@ -314,6 +314,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         if (request.getDefectDescription() == null || request.getDefectDescription().isBlank()) {
             throw new AppException(ErrorCode.MISSING_DEFECT_DESCRIPTION);
         }
+        if(request.getProductId()  == null) throw new AppException(ErrorCode.MISSING_PRODUCT_ID);
         if (request.getDetectedDate() == null) throw new AppException(ErrorCode.MISSING_DETECTED_DATE);
 
         DefectProposalDetail entity = new DefectProposalDetail();
@@ -335,7 +336,6 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
         Process process = processRepository.getReferenceById(request.getProcessId());
         entity.setProcess(process);
-
         entity.setProposalType(request.getProposalType());
         entity.setDefectDescription(request.getDefectDescription());
         entity.setDetectedDate(request.getDetectedDate());

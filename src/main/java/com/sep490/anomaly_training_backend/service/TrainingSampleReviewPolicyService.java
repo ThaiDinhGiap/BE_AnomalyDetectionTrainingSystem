@@ -4,8 +4,8 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewPolicyResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewPolicyResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 

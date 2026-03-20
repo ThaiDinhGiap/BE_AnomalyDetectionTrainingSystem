@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.mapper;
 
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import org.mapstruct.*;
 
