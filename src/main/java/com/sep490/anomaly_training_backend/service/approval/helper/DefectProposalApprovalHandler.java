@@ -128,6 +128,7 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
         defect.setOriginMeasures(d.getOriginMeasures());
         defect.setOutflowMeasures(d.getOutflowMeasures());
         defect.setDefectType(d.getDefectType());
+        defect.setProduct(d.getProduct());
     }
 
     private void requireNonNullForCreate(Defect defect, DefectProposalDetail d) {

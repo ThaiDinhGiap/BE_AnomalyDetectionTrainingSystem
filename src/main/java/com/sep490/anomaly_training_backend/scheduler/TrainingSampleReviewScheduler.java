@@ -1,5 +1,7 @@
 package com.sep490.anomaly_training_backend.scheduler;
 
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewConfigRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
@@ -115,5 +117,21 @@ public class TrainingSampleReviewScheduler {
 
     private TriggerKey buildTriggerKey(Long configId) {
         return new TriggerKey("trainingReviewTrigger_" + configId, "TRAINING_SAMPLE_REVIEW");
+    }
+
+    public static String buildCronExpression(Integer triggerDay, Integer triggerMonth) {
+        validateInputs(triggerDay, triggerMonth);
+        return String.format("0 0 0 %d %d ? *", triggerDay, triggerMonth);
+    }
+
+    private static void validateInputs(Integer triggerDay, Integer triggerMonth) {
+        if (triggerDay == null || triggerDay < 1 || triggerDay > 31) {
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "Invalid trigger day");
+        }
+
+        if (triggerMonth == null || triggerMonth < 1 || triggerMonth > 12) {
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT,  "Invalid trigger month");
+        }
+
     }
 }
