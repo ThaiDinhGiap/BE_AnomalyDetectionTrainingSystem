@@ -17,6 +17,7 @@ public class TrainingPlanDetailResponse {
 
     private LocalDate targetMonth;
     private LocalDate plannedDate;
+    private LocalDate actualDate;
 
     private TrainingPlanDetailStatus status;
     private String note;

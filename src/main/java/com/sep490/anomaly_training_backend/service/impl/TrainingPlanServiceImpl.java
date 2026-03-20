@@ -266,6 +266,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         trainingPlanRepository.save(plan);
 
+        // Nếu plan đã APPROVED, tạo result detail cho plan details mới thêm
+        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
+            regenerateResultDetails(plan);
+        }
+
         // Trả về detail đầu tiên kèm employeeProcesses
         TrainingPlanDetail firstAdded = addedDetails.get(0);
         TrainingPlanDetailResponse response = planMapper.toDetailResponse(firstAdded);
@@ -642,7 +647,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
                 throw new AppException(ErrorCode.CANNOT_DELETE_COMPLETED_DETAIL);
             }
-            detail.setStatus(TrainingPlanDetailStatus.MISSED);
+            detail.setStatus(TrainingPlanDetailStatus.MISS);
             detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
         } else {
             // DRAFT/REJECTED: xóa training_result_details con trước rồi xóa thật
@@ -782,87 +787,21 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         TrainingResult result = results.get(0);
 
-        // Group plan details by batchId
-        Map<String, List<TrainingPlanDetail>> batchGroups = plan.getDetails().stream()
-                .filter(d -> d.getBatchId() != null)
-                .collect(Collectors.groupingBy(TrainingPlanDetail::getBatchId));
+        // Collect existing plan detail IDs that already have result details
+        Set<Long> existingPlanDetailIds = result.getDetails().stream()
+                .filter(rd -> rd.getTrainingPlanDetail() != null)
+                .map(rd -> rd.getTrainingPlanDetail().getId())
+                .collect(Collectors.toSet());
 
-        // Đếm số result details đã có cho mỗi employee
-        Map<Long, Long> existingCountByEmployee = result.getDetails().stream()
-                .filter(rd -> rd.getEmployee() != null)
-                .collect(Collectors.groupingBy(
-                        rd -> rd.getEmployee().getId(),
-                        Collectors.counting()));
-
-        // Group các batchId theo employeeId
-        // Key: employeeId, Value: danh sách batchId của employee đó
-        Map<Long, List<String>> batchIdsByEmployee = new java.util.LinkedHashMap<>();
-        for (Map.Entry<String, List<TrainingPlanDetail>> entry : batchGroups.entrySet()) {
-            TrainingPlanDetail firstDetail = entry.getValue().get(0);
-            if (firstDetail.getEmployee() != null) {
-                batchIdsByEmployee
-                        .computeIfAbsent(firstDetail.getEmployee().getId(), k -> new java.util.ArrayList<>())
-                        .add(entry.getKey());
-            }
-        }
-
-        // Cập nhật plannedDate cho các result detail đã tồn tại
-        // (trường hợp ADD_SCHEDULE thêm ngày mới lớn hơn vào batch cũ)
-        for (TrainingResultDetail rd : result.getDetails()) {
-            if (rd.getEmployee() == null)
-                continue;
-            Long empId = rd.getEmployee().getId();
-            List<String> empBatchIds = batchIdsByEmployee.get(empId);
-            if (empBatchIds == null || empBatchIds.isEmpty())
-                continue;
-
-            // Tính plannedDate lớn nhất từ TẤT CẢ plan details của employee này
-            java.time.LocalDate maxPlannedDate = empBatchIds.stream()
-                    .flatMap(bid -> batchGroups.get(bid).stream())
-                    .map(TrainingPlanDetail::getPlannedDate)
-                    .filter(d -> d != null)
-                    .max(java.time.LocalDate::compareTo)
-                    .orElse(null);
-
-            // Cập nhật nếu plannedDate mới lớn hơn
-            if (maxPlannedDate != null
-                    && (rd.getPlannedDate() == null || maxPlannedDate.isAfter(rd.getPlannedDate()))) {
-                rd.setPlannedDate(maxPlannedDate);
-            }
-        }
-
-        // So sánh: nếu employee có N batch nhưng chỉ có M result details (M < N)
-        // → tạo thêm (N - M) result details cho các batch mới
-        for (Map.Entry<Long, List<String>> entry : batchIdsByEmployee.entrySet()) {
-            Long employeeId = entry.getKey();
-            List<String> allBatchIds = entry.getValue();
-            long existingCount = existingCountByEmployee.getOrDefault(employeeId, 0L);
-
-            // Số batch cần tạo thêm
-            long newBatchCount = allBatchIds.size() - existingCount;
-            if (newBatchCount <= 0)
-                continue;
-
-            // Lấy các batch cuối cùng (mới nhất) để tạo result detail
-            List<String> newBatchIds = allBatchIds.subList(
-                    (int) existingCount, allBatchIds.size());
-
-            for (String batchId : newBatchIds) {
-                List<TrainingPlanDetail> batchDetails = batchGroups.get(batchId);
-
-                // Lấy plannedDate lớn nhất trong batch
-                java.time.LocalDate latestPlannedDate = batchDetails.stream()
-                        .map(TrainingPlanDetail::getPlannedDate)
-                        .filter(d -> d != null)
-                        .max(java.time.LocalDate::compareTo)
-                        .orElse(null);
-
-                TrainingPlanDetail firstDetail = batchDetails.get(0);
-
+        // Create result detail for each plan detail that doesn't have one yet
+        for (TrainingPlanDetail planDetail : plan.getDetails()) {
+            if (planDetail.getId() != null && !existingPlanDetailIds.contains(planDetail.getId())) {
                 TrainingResultDetail newResultDetail = new TrainingResultDetail();
                 newResultDetail.setTrainingResult(result);
-                newResultDetail.setEmployee(firstDetail.getEmployee());
-                newResultDetail.setPlannedDate(latestPlannedDate);
+                newResultDetail.setTrainingPlanDetail(planDetail);
+                newResultDetail.setEmployee(planDetail.getEmployee());
+                newResultDetail.setPlannedDate(planDetail.getPlannedDate());
+                newResultDetail.setBatchId(planDetail.getBatchId());
                 newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
                 result.getDetails().add(newResultDetail);
             }

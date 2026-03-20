@@ -116,4 +116,120 @@ public class DashboardController {
         List<StageDistribution> data = dashboardService.getSampleByProcess(lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    // ==================== SV Dashboard Endpoints ====================
+
+    @Operation(summary = "[SV] Get product lines for group dropdown")
+    @GetMapping("/sv/lines")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvDashboardLineResponse>>> getSvLines(
+            @RequestParam("groupId") Long groupId) {
+        List<SvDashboardLineResponse> data = dashboardService.getSvLines(groupId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get todo list with KPIs and pending approvals")
+    @GetMapping("/sv/todo")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<SvTodoData>> getSvTodo(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        SvTodoData data = dashboardService.getSvTodo(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get team benchmark comparison")
+    @GetMapping("/sv/team-benchmark")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvTeamBenchmark>>> getSvTeamBenchmark(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "year", required = false) Integer year) {
+        List<SvTeamBenchmark> data = dashboardService.getSvTeamBenchmark(groupId, lineId, month, year);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get defect count by operation/process")
+    @GetMapping("/sv/defect-by-operation")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvDefectByOperation>>> getSvDefectByOperation(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvDefectByOperation> data = dashboardService.getSvDefectByOperation(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get top defect hotspot processes")
+    @GetMapping("/sv/defect-hotspot")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvDefectHotspot>>> getSvDefectHotspot(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvDefectHotspot> data = dashboardService.getSvDefectHotspot(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get KPI cards data")
+    @GetMapping("/sv/kpi")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<SvKpiData>> getSvKpi(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        SvKpiData data = dashboardService.getSvKpi(groupId, lineId, year, month);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get employee watchlist (skill issues)")
+    @GetMapping("/sv/watchlist")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvWatchlistItem>>> getSvWatchlist(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvWatchlistItem> data = dashboardService.getSvWatchlist(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get recent evaluation activity")
+    @GetMapping("/sv/recent-activity")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvRecentActivityItem>>> getSvRecentActivity(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvRecentActivityItem> data = dashboardService.getSvRecentActivity(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get training status donut chart data")
+    @GetMapping("/sv/training-status")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvTrainingStatusItem>>> getSvTrainingStatus(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvTrainingStatusItem> data = dashboardService.getSvTrainingStatus(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get training effectiveness chart data")
+    @GetMapping("/sv/training-effectiveness")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvTrainingEffectivenessPoint>>> getSvTrainingEffectiveness(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "months", required = false) Integer months) {
+        List<SvTrainingEffectivenessPoint> data = dashboardService.getSvTrainingEffectiveness(groupId, lineId, months);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get top training samples with fail rate")
+    @GetMapping("/sv/top-training-samples")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvTopTrainingSampleItem>>> getSvTopTrainingSamples(
+            @RequestParam("groupId") Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SvTopTrainingSampleItem> data = dashboardService.getSvTopTrainingSamples(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 }

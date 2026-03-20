@@ -296,7 +296,7 @@ VALUES (901, 1, 'REJECTED_BY_SV', 1, 'SAM-REJ-TIEN-01', FALSE, 'tl_tien01');
 -- ============================================================================
 -- 6. THÊM DỮ LIỆU TRAINING PLAN + RESULT LIÊN KẾT ĐẦY ĐỦ (T4/2026)
 --    Quy tắc: 1 employee có 1 batch_id duy nhất trong 1 kế hoạch.
---    Nếu ngày kế hoạch MISSED → thêm dòng mới cùng batch_id, planned_date mới.
+--    Nếu ngày kế hoạch MISS → thêm dòng mới cùng batch_id, planned_date mới.
 --    1 batch_id tương ứng 1 result_detail (liên kết tới dòng PENDING/DONE mới nhất).
 -- ============================================================================
 
@@ -312,7 +312,7 @@ VALUES
 
 -- ── 6B. TRAINING PLAN DETAILS ───────────────────────────────────────────────
 -- Quy tắc: 1 employee = 1 batch_id. Nhiều dòng cùng batch_id = lên lịch lại.
--- Dòng cũ: MISSED (ngày KH cũ không thực hiện). Dòng mới: PENDING (ngày KH mới).
+-- Dòng cũ: MISS (ngày KH cũ không thực hiện). Dòng mới: PENDING (ngày KH mới).
 -- Nếu đã hoàn thành: 1 dòng DONE.
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -324,13 +324,13 @@ VALUES
 (100, 7,  'pend-mock-ph4-nv007', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV007 đã huấn luyện đạt', 'tl_phay01', 0, NOW(), NOW()),
 -- NV008: đã hoàn thành → 1 dòng DONE
 (100, 8,  'pend-mock-ph4-nv008', '2026-04-01', '2026-04-04', '2026-04-04', 'DONE',    'NV008 đã huấn luyện đạt', 'tl_phay01', 0, NOW(), NOW()),
--- NV009: ngày 04-07 MISSED → lên lịch lại 04-14 PENDING → 2 dòng cùng batch_id
-(100, 9,  'pend-mock-ph4-nv009', '2026-04-01', '2026-04-07', NULL,         'MISSED',  'NV009 vắng ngày 07/04', 'tl_phay01', 0, NOW(), NOW()),
+-- NV009: ngày 04-07 MISS → lên lịch lại 04-14 PENDING → 2 dòng cùng batch_id
+(100, 9,  'pend-mock-ph4-nv009', '2026-04-01', '2026-04-07', NULL,         'MISS',  'NV009 vắng ngày 07/04', 'tl_phay01', 0, NOW(), NOW()),
 (100, 9,  'pend-mock-ph4-nv009', '2026-04-01', '2026-04-14', NULL,         'PENDING', 'NV009 lên lịch lại 14/04', 'tl_phay01', 0, NOW(), NOW()),
 -- NV010: chưa đến ngày → 1 dòng PENDING
 (100, 10, 'pend-mock-ph4-nv010', '2026-04-01', '2026-04-08', NULL,         'PENDING', 'NV010 chờ huấn luyện', 'tl_phay01', 0, NOW(), NOW()),
--- NV012: ngày 04-03 MISSED → lên lịch lại 04-09 PENDING → 2 dòng cùng batch_id
-(100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-03', NULL,         'MISSED',  'NV012 vắng ngày 03/04', 'tl_phay01', 0, NOW(), NOW()),
+-- NV012: ngày 04-03 MISS → lên lịch lại 04-09 PENDING → 2 dòng cùng batch_id
+(100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-03', NULL,         'MISS',  'NV012 vắng ngày 03/04', 'tl_phay01', 0, NOW(), NOW()),
 (100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-09', NULL,         'PENDING', 'NV012 lên lịch lại 09/04', 'tl_phay01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -340,8 +340,8 @@ INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, targ
 VALUES
 (101, 13, 'pend-mock-ha2-nv013', '2026-02-01', '2026-02-04', '2026-02-04', 'DONE',    'NV013 đã huấn luyện đạt', 'tl_hanlap01', 0, NOW(), NOW()),
 (101, 14, 'pend-mock-ha2-nv014', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE',    'NV014 đã huấn luyện đạt', 'tl_hanlap01', 0, NOW(), NOW()),
--- NV015: ngày 02-10 MISSED → lên lịch lại 02-17 PENDING
-(101, 15, 'pend-mock-ha2-nv015', '2026-02-01', '2026-02-10', NULL,         'MISSED',  'NV015 vắng ngày 10/02', 'tl_hanlap01', 0, NOW(), NOW()),
+-- NV015: ngày 02-10 MISS → lên lịch lại 02-17 PENDING
+(101, 15, 'pend-mock-ha2-nv015', '2026-02-01', '2026-02-10', NULL,         'MISS',  'NV015 vắng ngày 10/02', 'tl_hanlap01', 0, NOW(), NOW()),
 (101, 15, 'pend-mock-ha2-nv015', '2026-02-01', '2026-02-17', NULL,         'PENDING', 'NV015 lên lịch lại 17/02', 'tl_hanlap01', 0, NOW(), NOW()),
 (101, 16, 'pend-mock-ha2-nv016', '2026-02-01', '2026-02-11', NULL,         'PENDING', 'NV016 chờ huấn luyện', 'tl_hanlap01', 0, NOW(), NOW());
 
@@ -350,12 +350,12 @@ VALUES
 -- ╚═══════════════════════════════════════════════════════════════════════╝
 INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by, delete_flag, created_at, updated_at)
 VALUES
--- NV013: ngày 04-03 MISSED → lên lịch lại 04-10 PENDING
-(102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-03', NULL, 'MISSED',  'NV013 vắng ngày 03/04', 'tl_hanlap01', 0, NOW(), NOW()),
+-- NV013: ngày 04-03 MISS → lên lịch lại 04-10 PENDING
+(102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-03', NULL, 'MISS',  'NV013 vắng ngày 03/04', 'tl_hanlap01', 0, NOW(), NOW()),
 (102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-10', NULL, 'PENDING', 'NV013 lên lịch lại 10/04', 'tl_hanlap01', 0, NOW(), NOW()),
 (102, 14, 'pend-mock-ha4-nv014', '2026-04-01', '2026-04-04', NULL, 'PENDING', 'NV014 chờ huấn luyện', 'tl_hanlap01', 0, NOW(), NOW()),
--- NV015: ngày 04-07 MISSED → lên lịch lại 04-14 PENDING
-(102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-07', NULL, 'MISSED',  'NV015 vắng ngày 07/04', 'tl_hanlap01', 0, NOW(), NOW()),
+-- NV015: ngày 04-07 MISS → lên lịch lại 04-14 PENDING
+(102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-07', NULL, 'MISS',  'NV015 vắng ngày 07/04', 'tl_hanlap01', 0, NOW(), NOW()),
 (102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-14', NULL, 'PENDING', 'NV015 lên lịch lại 14/04', 'tl_hanlap01', 0, NOW(), NOW()),
 (102, 16, 'pend-mock-ha4-nv016', '2026-04-01', '2026-04-08', NULL, 'PENDING', 'NV016 chờ huấn luyện', 'tl_hanlap01', 0, NOW(), NOW());
 
@@ -365,13 +365,13 @@ VALUES
 INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by, delete_flag, created_at, updated_at)
 VALUES
 (103, 17, 'pend-mock-lb4-nv017', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV017 đã huấn luyện đạt', 'tl_laprap01', 0, NOW(), NOW()),
--- NV018: ngày 04-04 MISSED → lên lịch lại 04-11 PENDING
-(103, 18, 'pend-mock-lb4-nv018', '2026-04-01', '2026-04-04', NULL,         'MISSED',  'NV018 vắng ngày 04/04', 'tl_laprap01', 0, NOW(), NOW()),
+-- NV018: ngày 04-04 MISS → lên lịch lại 04-11 PENDING
+(103, 18, 'pend-mock-lb4-nv018', '2026-04-01', '2026-04-04', NULL,         'MISS',  'NV018 vắng ngày 04/04', 'tl_laprap01', 0, NOW(), NOW()),
 (103, 18, 'pend-mock-lb4-nv018', '2026-04-01', '2026-04-11', NULL,         'PENDING', 'NV018 lên lịch lại 11/04', 'tl_laprap01', 0, NOW(), NOW()),
 (103, 19, 'pend-mock-lb4-nv019', '2026-04-01', '2026-04-07', NULL,         'PENDING', 'NV019 chờ huấn luyện', 'tl_laprap01', 0, NOW(), NOW()),
--- NV020: ngày 04-08 MISSED → 04-15 MISSED → lên lịch lại 04-22 PENDING (3 dòng cùng batch)
-(103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-08', NULL,         'MISSED',  'NV020 vắng lần 1 ngày 08/04', 'tl_laprap01', 0, NOW(), NOW()),
-(103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-15', NULL,         'MISSED',  'NV020 vắng lần 2 ngày 15/04', 'tl_laprap01', 0, NOW(), NOW()),
+-- NV020: ngày 04-08 MISS → 04-15 MISS → lên lịch lại 04-22 PENDING (3 dòng cùng batch)
+(103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-08', NULL,         'MISS',  'NV020 vắng lần 1 ngày 08/04', 'tl_laprap01', 0, NOW(), NOW()),
+(103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-15', NULL,         'MISS',  'NV020 vắng lần 2 ngày 15/04', 'tl_laprap01', 0, NOW(), NOW()),
 (103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-22', NULL,         'PENDING', 'NV020 lên lịch lần 3 ngày 22/04', 'tl_laprap01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -381,13 +381,13 @@ INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, targ
 VALUES
 (104, 22, 'pend-mock-dc4-nv022', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV022 đã huấn luyện đạt', 'tl_dongco01', 0, NOW(), NOW()),
 (104, 23, 'pend-mock-dc4-nv023', '2026-04-01', '2026-04-04', '2026-04-04', 'DONE',    'NV023 đã huấn luyện đạt', 'tl_dongco01', 0, NOW(), NOW()),
--- NV024: ngày 04-07 MISSED → lên lịch lại 04-14 PENDING
-(104, 24, 'pend-mock-dc4-nv024', '2026-04-01', '2026-04-07', NULL,         'MISSED',  'NV024 vắng ngày 07/04', 'tl_dongco01', 0, NOW(), NOW()),
+-- NV024: ngày 04-07 MISS → lên lịch lại 04-14 PENDING
+(104, 24, 'pend-mock-dc4-nv024', '2026-04-01', '2026-04-07', NULL,         'MISS',  'NV024 vắng ngày 07/04', 'tl_dongco01', 0, NOW(), NOW()),
 (104, 24, 'pend-mock-dc4-nv024', '2026-04-01', '2026-04-14', NULL,         'PENDING', 'NV024 lên lịch lại 14/04', 'tl_dongco01', 0, NOW(), NOW()),
 (104, 25, 'pend-mock-dc4-nv025', '2026-04-01', '2026-04-08', NULL,         'PENDING', 'NV025 chờ huấn luyện', 'tl_dongco01', 0, NOW(), NOW()),
--- NV026: ngày 04-03 MISSED → 04-09 MISSED → lên lịch lại 04-16 PENDING
-(104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-03', NULL,         'MISSED',  'NV026 vắng lần 1 ngày 03/04', 'tl_dongco01', 0, NOW(), NOW()),
-(104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-09', NULL,         'MISSED',  'NV026 vắng lần 2 ngày 09/04', 'tl_dongco01', 0, NOW(), NOW()),
+-- NV026: ngày 04-03 MISS → 04-09 MISS → lên lịch lại 04-16 PENDING
+(104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-03', NULL,         'MISS',  'NV026 vắng lần 1 ngày 03/04', 'tl_dongco01', 0, NOW(), NOW()),
+(104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-09', NULL,         'MISS',  'NV026 vắng lần 2 ngày 09/04', 'tl_dongco01', 0, NOW(), NOW()),
 (104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-16', NULL,         'PENDING', 'NV026 lên lịch lần 3 ngày 16/04', 'tl_dongco01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -396,8 +396,8 @@ VALUES
 INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by, delete_flag, created_at, updated_at)
 VALUES
 (105, 27, 'pend-mock-kcs4-nv027', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV027 đã huấn luyện đạt', 'tl_kcs01', 0, NOW(), NOW()),
--- NV028: ngày 04-04 MISSED → lên lịch lại 04-11 PENDING
-(105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-04', NULL,         'MISSED',  'NV028 vắng ngày 04/04', 'tl_kcs01', 0, NOW(), NOW()),
+-- NV028: ngày 04-04 MISS → lên lịch lại 04-11 PENDING
+(105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-04', NULL,         'MISS',  'NV028 vắng ngày 04/04', 'tl_kcs01', 0, NOW(), NOW()),
 (105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-11', NULL,         'PENDING', 'NV028 lên lịch lại 11/04', 'tl_kcs01', 0, NOW(), NOW()),
 (105, 29, 'pend-mock-kcs4-nv029', '2026-04-01', '2026-04-07', NULL,         'PENDING', 'NV029 chờ huấn luyện', 'tl_kcs01', 0, NOW(), NOW()),
 (105, 30, 'pend-mock-kcs4-nv030', '2026-04-01', '2026-04-08', NULL,         'PENDING', 'NV030 chờ huấn luyện', 'tl_kcs01', 0, NOW(), NOW());
@@ -452,7 +452,7 @@ VALUES
 (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv017' AND status = 'DONE'), 17, 23, '2026-04-03', '2026-04-03', 'APPROVED', TRUE, 'NV017 đạt T4', 'tl_laprap01', 0, NOW(), NOW()),
 (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv018' AND status = 'PENDING'), 18, 24, '2026-04-11', NULL, 'PENDING', NULL, 'NV018 chờ HLV ngày mới', 'tl_laprap01', 0, NOW(), NOW()),
 (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv019' AND status = 'PENDING'), 19, 25, '2026-04-07', NULL, 'PENDING', NULL, 'NV019 chờ HLV', 'tl_laprap01', 0, NOW(), NOW()),
--- NV020 batch: đã MISSED 2 lần → liên kết dòng PENDING lần 3
+-- NV020 batch: đã MISS 2 lần → liên kết dòng PENDING lần 3
 (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv020' AND status = 'PENDING'), 20, 23, '2026-04-22', NULL, 'PENDING', NULL, 'NV020 chờ HLV lần 3', 'tl_laprap01', 0, NOW(), NOW());
 
 -- Result 104 (Động Cơ T4): 5 batch_ids → 5 result details (2 APPROVED + 3 PENDING)
@@ -462,7 +462,7 @@ VALUES
 (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv023' AND status = 'DONE'), 23, 19, '2026-04-04', '2026-04-04', 'APPROVED', TRUE, 'NV023 đạt T4', 'tl_dongco01', 0, NOW(), NOW()),
 (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv024' AND status = 'PENDING'), 24, 20, '2026-04-14', NULL, 'PENDING', NULL, 'NV024 chờ HLV ngày mới', 'tl_dongco01', 0, NOW(), NOW()),
 (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv025' AND status = 'PENDING'), 25, 21, '2026-04-08', NULL, 'PENDING', NULL, 'NV025 chờ HLV', 'tl_dongco01', 0, NOW(), NOW()),
--- NV026 batch: đã MISSED 2 lần → liên kết dòng PENDING lần 3
+-- NV026 batch: đã MISS 2 lần → liên kết dòng PENDING lần 3
 (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv026' AND status = 'PENDING'), 26, 22, '2026-04-16', NULL, 'PENDING', NULL, 'NV026 chờ HLV lần 3', 'tl_dongco01', 0, NOW(), NOW());
 
 -- Result 105 (KCS T4): 4 batch_ids → 4 result details (1 APPROVED + 3 PENDING)
@@ -487,8 +487,8 @@ VALUES
 (106, 1,  'pend-mock-ti4-nv001', '2026-04-01', '2026-04-02', '2026-04-02', 'DONE',    'NV001 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
 -- NV002: đã hoàn thành → 1 dòng DONE
 (106, 2,  'pend-mock-ti4-nv002', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV002 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
--- NV003: ngày 04-07 MISSED → lên lịch lại 04-14 PENDING
-(106, 3,  'pend-mock-ti4-nv003', '2026-04-01', '2026-04-07', NULL,         'MISSED',  'NV003 vắng ngày 07/04', 'tl_tien01', 0, NOW(), NOW()),
+-- NV003: ngày 04-07 MISS → lên lịch lại 04-14 PENDING
+(106, 3,  'pend-mock-ti4-nv003', '2026-04-01', '2026-04-07', NULL,         'MISS',  'NV003 vắng ngày 07/04', 'tl_tien01', 0, NOW(), NOW()),
 (106, 3,  'pend-mock-ti4-nv003', '2026-04-01', '2026-04-14', NULL,         'PENDING', 'NV003 lên lịch lại 14/04', 'tl_tien01', 0, NOW(), NOW()),
 -- NV004: chưa đến ngày → 1 dòng PENDING
 (106, 4,  'pend-mock-ti4-nv004', '2026-04-01', '2026-04-09', NULL,         'PENDING', 'NV004 chờ huấn luyện', 'tl_tien01', 0, NOW(), NOW()),
@@ -690,14 +690,14 @@ INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, targ
 VALUES
 -- NV001: DONE
 (107, 1, 'pend-mock-s3-nv001', '2026-03-01', '2026-03-05', '2026-03-05', 'DONE',    'NV001 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
--- NV002: MISSED → PENDING
-(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-06', NULL,         'MISSED',  'NV002 vắng ngày 06/03', 'tl_tien01', 0, NOW(), NOW()),
+-- NV002: MISS → PENDING
+(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-06', NULL,         'MISS',  'NV002 vắng ngày 06/03', 'tl_tien01', 0, NOW(), NOW()),
 (107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-13', NULL,         'PENDING', 'NV002 lên lịch lại 13/03', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: DONE
 (107, 3, 'pend-mock-s3-nv003', '2026-03-01', '2026-03-07', '2026-03-07', 'DONE',    'NV003 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
--- NV004: MISSED → MISSED → PENDING (3 dòng)
-(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-10', NULL,         'MISSED',  'NV004 vắng lần 1', 'tl_tien01', 0, NOW(), NOW()),
-(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-17', NULL,         'MISSED',  'NV004 vắng lần 2', 'tl_tien01', 0, NOW(), NOW()),
+-- NV004: MISS → MISS → PENDING (3 dòng)
+(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-10', NULL,         'MISS',  'NV004 vắng lần 1', 'tl_tien01', 0, NOW(), NOW()),
+(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-17', NULL,         'MISS',  'NV004 vắng lần 2', 'tl_tien01', 0, NOW(), NOW()),
 (107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-24', NULL,         'PENDING', 'NV004 lên lịch lần 3', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: PENDING
 (107, 6, 'pend-mock-s3-nv006', '2026-03-01', '2026-03-12', NULL,         'PENDING', 'NV006 chờ huấn luyện', 'tl_tien01', 0, NOW(), NOW());
@@ -736,8 +736,8 @@ VALUES
 (108, 2, 'pend-mock-v4-nv002', '2026-04-01', '2026-04-03', '2026-04-03', 'DONE',    'NV002 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: DONE
 (108, 3, 'pend-mock-v4-nv003', '2026-04-01', '2026-04-04', '2026-04-04', 'DONE',    'NV003 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
--- NV004: MISSED → PENDING
-(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-07', NULL,         'MISSED',  'NV004 vắng ngày 07/04', 'tl_tien01', 0, NOW(), NOW()),
+-- NV004: MISS → PENDING
+(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-07', NULL,         'MISS',  'NV004 vắng ngày 07/04', 'tl_tien01', 0, NOW(), NOW()),
 (108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-14', NULL,         'PENDING', 'NV004 lên lịch lại 14/04', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: DONE
 (108, 6, 'pend-mock-v4-nv006', '2026-04-01', '2026-04-06', '2026-04-06', 'DONE',    'NV006 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW());
@@ -776,8 +776,8 @@ VALUES
 (109, 2, 'pend-mock-c2-nv002', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV002 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: DONE
 (109, 3, 'pend-mock-c2-nv003', '2026-02-01', '2026-02-06', '2026-02-06', 'DONE', 'NV003 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW()),
--- NV004: MISSED → PENDING
-(109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-10', NULL, 'MISSED',  'NV004 vắng ngày 10/02', 'tl_tien01', 0, NOW(), NOW()),
+-- NV004: MISS → PENDING
+(109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-10', NULL, 'MISS',  'NV004 vắng ngày 10/02', 'tl_tien01', 0, NOW(), NOW()),
 (109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-17', '2026-02-17', 'DONE', 'NV004 đã hoàn thành lần 2', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: DONE
 (109, 6, 'pend-mock-c2-nv006', '2026-02-01', '2026-02-07', '2026-02-07', 'DONE', 'NV006 đã huấn luyện đạt', 'tl_tien01', 0, NOW(), NOW());

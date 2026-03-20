@@ -649,4 +649,660 @@ public class DashboardServiceImpl implements DashboardService {
 
         return result;
     }
+
+    // ======================== SV Dashboard ========================
+
+    private final ProductLineRepository productLineRepository;
+    private final TeamRepository teamRepository;
+    private final GroupRepository groupRepository;
+
+    /**
+     * Resolve danh sách lineIds theo groupId + optional lineId.
+     */
+    private List<Long> resolveLineIds(Long groupId, Long lineId) {
+        if (lineId != null) {
+            return List.of(lineId);
+        }
+        return productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId)
+                .stream().map(ProductLine::getId).toList();
+    }
+
+    // ======================== SV-1. Lines for dropdown ========================
+
+    @Override
+    public List<SvDashboardLineResponse> getSvLines(Long groupId) {
+        return productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId)
+                .stream()
+                .map(pl -> SvDashboardLineResponse.builder()
+                        .id(pl.getId())
+                        .code(pl.getCode())
+                        .name(pl.getName())
+                        .build())
+                .toList();
+    }
+
+    // ======================== SV-2. Todo List ========================
+
+    @Override
+    public SvTodoData getSvTodo(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<SvTodoItem> pendingItems = new ArrayList<>();
+
+        // --- Pass Rate: calculated from TrainingResultDetail with actualDate ---
+        long totalEvaluated = 0;
+        long totalPassed = 0;
+
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId);
+        List<TrainingResult> filteredResults = allResults.stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
+                .filter(r -> !r.isDeleteFlag())
+                .toList();
+
+        for (TrainingResult result : filteredResults) {
+            List<TrainingResultDetail> details = trainingResultDetailRepository
+                    .findByTrainingResultId(result.getId());
+            for (TrainingResultDetail d : details) {
+                if (d.getActualDate() != null && d.getIsPass() != null) {
+                    totalEvaluated++;
+                    if (Boolean.TRUE.equals(d.getIsPass())) {
+                        totalPassed++;
+                    }
+                }
+            }
+        }
+        String passRate = totalEvaluated > 0
+                ? Math.round((double) totalPassed / totalEvaluated * 1000.0) / 10.0 + "%"
+                : "0%";
+
+        // --- Participation Rate: planned details with actual training ---
+        long totalPlanned = 0;
+        long totalParticipated = 0;
+
+        List<TrainingPlan> approvedPlans = trainingPlanRepository.findByGroupId(groupId).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()))
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> p.getStatus() == ReportStatus.APPROVED
+                        || p.getStatus() == ReportStatus.ON_GOING
+                        || p.getStatus() == ReportStatus.DONE)
+                .toList();
+
+        for (TrainingPlan plan : approvedPlans) {
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            totalPlanned += details.size();
+            for (TrainingPlanDetail d : details) {
+                if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                    totalParticipated++;
+                }
+            }
+        }
+        String participationRate = totalPlanned > 0
+                ? Math.round((double) totalParticipated / totalPlanned * 1000.0) / 10.0 + "%"
+                : "0%";
+
+        // --- Pending Approval: plans/results with status WAITING_SV ---
+        List<TrainingPlan> waitingPlans = trainingPlanRepository.findByGroupId(groupId).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()))
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
+                .toList();
+
+        for (TrainingPlan plan : waitingPlans) {
+            pendingItems.add(SvTodoItem.builder()
+                    .id(plan.getId())
+                    .entityType("TRAINING_PLAN")
+                    .title("Kế hoạch đào tạo: " + (plan.getTitle() != null ? plan.getTitle() : "#" + plan.getId()))
+                    .senderName(plan.getCreatedBy() != null ? plan.getCreatedBy() : "N/A")
+                    .waitTime(formatWaitTime(plan.getUpdatedAt()))
+                    .status("WAITING_SV")
+                    .build());
+        }
+
+        List<TrainingResult> waitingResults = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
+                .filter(r -> !r.isDeleteFlag())
+                .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
+                .toList();
+
+        for (TrainingResult result : waitingResults) {
+            pendingItems.add(SvTodoItem.builder()
+                    .id(result.getId())
+                    .entityType("TRAINING_RESULT")
+                    .title("Báo cáo kết quả: " + (result.getTitle() != null ? result.getTitle() : "#" + result.getId()))
+                    .senderName(result.getCreatedBy() != null ? result.getCreatedBy() : "N/A")
+                    .waitTime(formatWaitTime(result.getUpdatedAt()))
+                    .status("WAITING_SV")
+                    .build());
+        }
+
+        return SvTodoData.builder()
+                .passRate(passRate)
+                .participationRate(participationRate)
+                .pendingCount(pendingItems.size())
+                .pendingItems(pendingItems)
+                .build();
+    }
+
+    private String formatWaitTime(java.time.LocalDateTime updatedAt) {
+        if (updatedAt == null) return "N/A";
+        java.time.Duration duration = java.time.Duration.between(updatedAt, java.time.LocalDateTime.now());
+        long hours = duration.toHours();
+        if (hours < 1) return duration.toMinutes() + " phút";
+        if (hours < 24) return hours + " giờ";
+        long days = duration.toDays();
+        return days + " ngày";
+    }
+
+    // ======================== SV-3. Team Benchmark ========================
+
+    @Override
+    public List<SvTeamBenchmark> getSvTeamBenchmark(Long groupId, Long lineId, Integer month, Integer year) {
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+
+        // Get all teams in this group
+        List<Team> teams = teamRepository.findByGroupId(groupId);
+
+        List<SvTeamBenchmark> benchmarks = new ArrayList<>();
+
+        for (Team team : teams) {
+            // Plans belonging to this team within the filtered lines
+            List<TrainingPlan> teamPlans = trainingPlanRepository.findByTeamIdAndDeleteFlagFalse(team.getId())
+                    .stream()
+                    .filter(p -> lineIds.contains(p.getLine().getId()))
+                    .filter(p -> p.getStatus() == ReportStatus.APPROVED
+                            || p.getStatus() == ReportStatus.ON_GOING
+                            || p.getStatus() == ReportStatus.DONE)
+                    .toList();
+
+            int planTotal = 0;
+            int planDone = 0;
+
+            for (TrainingPlan plan : teamPlans) {
+                List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                        .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+                for (TrainingPlanDetail d : details) {
+                    if (d.getPlannedDate() != null
+                            && !d.getPlannedDate().isBefore(monthStart)
+                            && !d.getPlannedDate().isAfter(monthEnd)) {
+                        planTotal++;
+                        if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                            planDone++;
+                        }
+                    }
+                }
+            }
+
+            int completion = planTotal > 0 ? (int) Math.round((double) planDone / planTotal * 100) : 0;
+
+            // Count defects for this team's lines in this month
+            long defectCount = 0;
+            for (TrainingPlan plan : teamPlans) {
+                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalse(plan.getLine().getId());
+                defectCount += defects.stream()
+                        .filter(d -> d.getDetectedDate() != null
+                                && !d.getDetectedDate().isBefore(monthStart)
+                                && !d.getDetectedDate().isAfter(monthEnd))
+                        .count();
+            }
+
+            String defectsLevel;
+            if (defectCount > 10) {
+                defectsLevel = "Cao";
+            } else if (defectCount > 5) {
+                defectsLevel = "TB";
+            } else {
+                defectsLevel = "Thấp";
+            }
+
+            String grade;
+            if (completion >= 85) {
+                grade = "Tốt";
+            } else if (completion >= 70) {
+                grade = "Khá";
+            } else {
+                grade = "Cần nhắc";
+            }
+
+            benchmarks.add(SvTeamBenchmark.builder()
+                    .teamId(team.getId())
+                    .name(team.getName())
+                    .completion(completion)
+                    .defects(defectsLevel)
+                    .grade(grade)
+                    .build());
+        }
+
+        return benchmarks;
+    }
+
+    // ======================== SV-4. Defect by Operation ========================
+
+    @Override
+    public List<SvDefectByOperation> getSvDefectByOperation(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        Map<String, Integer> countByProcess = new LinkedHashMap<>();
+        for (Defect d : allDefects) {
+            String processCode = d.getProcess() != null ? d.getProcess().getCode() : "Khác";
+            countByProcess.merge(processCode, 1, Integer::sum);
+        }
+
+        return countByProcess.entrySet().stream()
+                .map(entry -> SvDefectByOperation.builder()
+                        .op(entry.getKey())
+                        .errors(entry.getValue())
+                        .build())
+                .sorted((a, b) -> b.getErrors() - a.getErrors())
+                .toList();
+    }
+
+    // ======================== SV-5. Defect Hotspot ========================
+
+    @Override
+    public List<SvDefectHotspot> getSvDefectHotspot(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        // Group by process → { processCode + processName + lineName : count }
+        record ProcessLineKey(String processCode, String processName, String lineName) {}
+        Map<ProcessLineKey, Integer> countMap = new LinkedHashMap<>();
+
+        for (Defect d : allDefects) {
+            if (d.getProcess() != null) {
+                String pCode = d.getProcess().getCode();
+                String pName = d.getProcess().getName();
+                String lName = d.getProcess().getProductLine() != null
+                        ? d.getProcess().getProductLine().getName()
+                        : "N/A";
+                countMap.merge(new ProcessLineKey(pCode, pName, lName), 1, Integer::sum);
+            }
+        }
+
+        // Sort desc by count, take top 5
+        List<Map.Entry<ProcessLineKey, Integer>> sorted = countMap.entrySet().stream()
+                .sorted((a, b) -> b.getValue() - a.getValue())
+                .limit(5)
+                .toList();
+
+        List<SvDefectHotspot> hotspots = new ArrayList<>();
+        int rank = 1;
+        for (Map.Entry<ProcessLineKey, Integer> entry : sorted) {
+            ProcessLineKey key = entry.getKey();
+            int count = entry.getValue();
+            hotspots.add(SvDefectHotspot.builder()
+                    .rank(rank++)
+                    .title(key.processCode() + " (" + key.processName() + ")")
+                    .line(key.lineName())
+                    .count(count)
+                    .danger(count > 10)
+                    .build());
+        }
+
+        return hotspots;
+    }
+
+    // ======================== SV-6. KPI Cards ========================
+
+    @Override
+    public SvKpiData getSvKpi(Long groupId, Long lineId, Integer year, Integer month) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+
+        // Previous month for comparison
+        LocalDate prevMonthStart = monthStart.minusMonths(1);
+        LocalDate prevMonthEnd = YearMonth.of(prevMonthStart.getYear(), prevMonthStart.getMonthValue()).atEndOfMonth();
+
+        // --- 1. Pass Rate ---
+        long currentPassed = 0, currentEvaluated = 0;
+        long prevPassed = 0, prevEvaluated = 0;
+
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+                .toList();
+
+        for (TrainingResult result : allResults) {
+            List<TrainingResultDetail> details = trainingResultDetailRepository
+                    .findByTrainingResultId(result.getId());
+            for (TrainingResultDetail d : details) {
+                if (d.getActualDate() != null && d.getIsPass() != null) {
+                    if (!d.getActualDate().isBefore(monthStart) && !d.getActualDate().isAfter(monthEnd)) {
+                        currentEvaluated++;
+                        if (Boolean.TRUE.equals(d.getIsPass())) currentPassed++;
+                    }
+                    if (!d.getActualDate().isBefore(prevMonthStart) && !d.getActualDate().isAfter(prevMonthEnd)) {
+                        prevEvaluated++;
+                        if (Boolean.TRUE.equals(d.getIsPass())) prevPassed++;
+                    }
+                }
+            }
+        }
+
+        double currentPassPct = currentEvaluated > 0 ? (double) currentPassed / currentEvaluated * 100 : 0;
+        double prevPassPct = prevEvaluated > 0 ? (double) prevPassed / prevEvaluated * 100 : 0;
+        double passRateDiff = Math.round((currentPassPct - prevPassPct) * 10.0) / 10.0;
+        String passRateStr = Math.round(currentPassPct * 10.0) / 10.0 + "%";
+        String passRateSub = (passRateDiff >= 0 ? "+" : "") + passRateDiff + "% so với tháng trước";
+
+        // --- 2. Defect Count ---
+        List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+        long currentDefects = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null
+                        && !d.getDetectedDate().isBefore(monthStart)
+                        && !d.getDetectedDate().isAfter(monthEnd))
+                .count();
+        long prevDefects = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null
+                        && !d.getDetectedDate().isBefore(prevMonthStart)
+                        && !d.getDetectedDate().isAfter(prevMonthEnd))
+                .count();
+        double defectDiff = prevDefects > 0
+                ? Math.round((double) (currentDefects - prevDefects) / prevDefects * 1000.0) / 10.0
+                : 0;
+        String defectSub = (defectDiff >= 0 ? "+" : "") + defectDiff + "% so với tháng trước";
+
+        // --- 3. Training Coverage ---
+        List<Team> teams = teamRepository.findByGroupId(groupId);
+        long totalEmployees = 0;
+        long employeesWithValidSkill = 0;
+
+        for (Team team : teams) {
+            if (team.getEmployees() != null) {
+                for (Employee emp : team.getEmployees()) {
+                    if (emp.isDeleteFlag()) continue;
+                    totalEmployees++;
+                    List<EmployeeSkill> skills = employeeSkillRepository
+                            .findByEmployeeIdAndDeleteFlagFalse(emp.getId());
+                    boolean hasValid = skills.stream()
+                            .anyMatch(s -> s.getStatus() == EmployeeSkillStatus.VALID);
+                    if (hasValid) employeesWithValidSkill++;
+                }
+            }
+        }
+        double coveragePct = totalEmployees > 0
+                ? Math.round((double) employeesWithValidSkill / totalEmployees * 1000.0) / 10.0
+                : 0;
+
+        // --- 4. Pending Approval Count ---
+        long pendingPlans = trainingPlanRepository.findByGroupId(groupId).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()) && !p.isDeleteFlag())
+                .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
+                .count();
+        long pendingResults = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+                .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
+                .count();
+        int totalPending = (int) (pendingPlans + pendingResults);
+
+        return SvKpiData.builder()
+                .passRate(passRateStr)
+                .passRateSub(passRateSub)
+                .defectCount((int) currentDefects)
+                .defectSub(defectSub)
+                .trainingCoverage(coveragePct + "%")
+                .coverageSub("Nhân viên có chứng chỉ hợp lệ")
+                .pendingApprovalCount(totalPending)
+                .pendingSub(totalPending > 0 ? "Hồ sơ đang chờ phê duyệt" : "Không có hồ sơ chờ duyệt")
+                .build();
+    }
+
+    // ======================== SV-7. Watchlist ========================
+
+    @Override
+    public List<SvWatchlistItem> getSvWatchlist(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Team> teams = teamRepository.findByGroupId(groupId);
+        List<SvWatchlistItem> items = new ArrayList<>();
+
+        for (Team team : teams) {
+            if (team.getEmployees() == null) continue;
+            for (Employee emp : team.getEmployees()) {
+                if (emp.isDeleteFlag()) continue;
+                List<EmployeeSkill> skills = employeeSkillRepository
+                        .findByEmployeeIdAndDeleteFlagFalse(emp.getId());
+
+                for (EmployeeSkill skill : skills) {
+                    if (skill.getProcess() == null) continue;
+                    // Only include skills related to selected lines
+                    if (!lineIds.contains(skill.getProcess().getProductLine().getId())) continue;
+
+                    if (skill.getStatus() == EmployeeSkillStatus.REVOKED
+                            || skill.getStatus() == EmployeeSkillStatus.PENDING_REVIEW) {
+
+                        String statusText = skill.getStatus() == EmployeeSkillStatus.REVOKED
+                                ? "Fail" : "Cần giám sát";
+
+                        String reason;
+                        if (skill.getStatus() == EmployeeSkillStatus.REVOKED) {
+                            reason = "Chứng chỉ đã bị thu hồi";
+                        } else {
+                            reason = "Chứng chỉ cần đánh giá lại";
+                        }
+
+                        items.add(SvWatchlistItem.builder()
+                                .id(skill.getId())
+                                .name(emp.getFullName())
+                                .empId(emp.getEmployeeCode())
+                                .role(skill.getProcess().getName() + " • " + skill.getProcess().getProductLine().getName()
+                                        + " (" + skill.getProcess().getCode() + ")")
+                                .status(statusText)
+                                .reason(reason)
+                                .build());
+                    }
+                }
+            }
+        }
+        return items;
+    }
+
+    // ======================== SV-8. Recent Activity ========================
+
+    @Override
+    public List<SvRecentActivityItem> getSvRecentActivity(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<SvRecentActivityItem> items = new ArrayList<>();
+
+        // Get recent training evaluations from all results in this group
+        List<TrainingResult> results = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+                .toList();
+
+        for (TrainingResult result : results) {
+            List<TrainingResultDetail> details = trainingResultDetailRepository
+                    .findByTrainingResultId(result.getId());
+            for (TrainingResultDetail d : details) {
+                if (d.getIsPass() != null && d.getActualDate() != null) {
+                    String empName = "N/A";
+                    if (d.getTrainingPlanDetail() != null && d.getTrainingPlanDetail().getEmployee() != null) {
+                        empName = d.getTrainingPlanDetail().getEmployee().getFullName();
+                    } else if (d.getEmployee() != null) {
+                        empName = d.getEmployee().getFullName();
+                    }
+
+                    String processName = d.getProcess() != null
+                            ? "HL " + d.getProcess().getName() + " " + d.getProcess().getCode()
+                            : "N/A";
+
+                    items.add(SvRecentActivityItem.builder()
+                            .id(d.getId())
+                            .name(empName)
+                            .action(Boolean.TRUE.equals(d.getIsPass())
+                                    ? "Đánh giá Đạt" : "Đánh giá Không đạt")
+                            .model(processName)
+                            .time(formatWaitTime(d.getUpdatedAt()))
+                            .status(Boolean.TRUE.equals(d.getIsPass()) ? "success" : "fail")
+                            .build());
+                }
+            }
+        }
+
+        // Sort by most recent and limit to 20
+        items.sort((a, b) -> 0); // already sorted by result order
+        if (items.size() > 20) {
+            items = items.subList(0, 20);
+        }
+
+        return items;
+    }
+
+    // ======================== SV-9. Training Status (Donut) ========================
+
+    @Override
+    public List<SvTrainingStatusItem> getSvTrainingStatus(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        LocalDate today = LocalDate.now();
+        // Current week: Monday to Sunday
+        LocalDate weekStart = today.with(java.time.DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(java.time.DayOfWeek.SUNDAY);
+
+        int scheduled = 0;
+        int completed = 0;
+        int overdue = 0;
+
+        List<TrainingPlan> plans = trainingPlanRepository.findByGroupId(groupId).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()) && !p.isDeleteFlag())
+                .filter(p -> p.getStatus() == ReportStatus.APPROVED
+                        || p.getStatus() == ReportStatus.ON_GOING
+                        || p.getStatus() == ReportStatus.DONE)
+                .toList();
+
+        for (TrainingPlan plan : plans) {
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            for (TrainingPlanDetail d : details) {
+                if (d.getPlannedDate() == null) continue;
+
+                // In current week range
+                if (!d.getPlannedDate().isBefore(weekStart) && !d.getPlannedDate().isAfter(weekEnd)) {
+                    if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                        completed++;
+                    } else {
+                        scheduled++;
+                    }
+                }
+                // Overdue: pending and planned date before today
+                if (d.getStatus() == TrainingPlanDetailStatus.PENDING
+                        && d.getPlannedDate().isBefore(today)) {
+                    overdue++;
+                }
+            }
+        }
+
+        List<SvTrainingStatusItem> items = new ArrayList<>();
+        items.add(SvTrainingStatusItem.builder()
+                .name("Đã lên lịch huấn luyện").value(scheduled).color("#3b82f6").build());
+        items.add(SvTrainingStatusItem.builder()
+                .name("Đã huấn luyện").value(completed).color("#22c55e").build());
+        items.add(SvTrainingStatusItem.builder()
+                .name("Trễ lịch huấn luyện").value(overdue).color("#f43f5e").build());
+
+        return items;
+    }
+
+    // ======================== SV-10. Training Effectiveness ========================
+
+    @Override
+    public List<SvTrainingEffectivenessPoint> getSvTrainingEffectiveness(Long groupId, Long lineId, Integer months) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        int numMonths = months != null ? months : 6;
+        LocalDate today = LocalDate.now();
+
+        // Collect all result details and defects once
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+                .toList();
+
+        List<TrainingResultDetail> allDetails = new ArrayList<>();
+        for (TrainingResult result : allResults) {
+            allDetails.addAll(trainingResultDetailRepository.findByTrainingResultId(result.getId()));
+        }
+
+        List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+        List<SvTrainingEffectivenessPoint> points = new ArrayList<>();
+
+        for (int i = numMonths - 1; i >= 0; i--) {
+            LocalDate monthDate = today.minusMonths(i);
+            LocalDate monthStart = LocalDate.of(monthDate.getYear(), monthDate.getMonthValue(), 1);
+            LocalDate monthEnd = YearMonth.of(monthDate.getYear(), monthDate.getMonthValue()).atEndOfMonth();
+
+            int trainingCount = (int) allDetails.stream()
+                    .filter(d -> d.getActualDate() != null
+                            && !d.getActualDate().isBefore(monthStart)
+                            && !d.getActualDate().isAfter(monthEnd))
+                    .count();
+
+            int defectCount = (int) allDefects.stream()
+                    .filter(d -> d.getDetectedDate() != null
+                            && !d.getDetectedDate().isBefore(monthStart)
+                            && !d.getDetectedDate().isAfter(monthEnd))
+                    .count();
+
+            points.add(SvTrainingEffectivenessPoint.builder()
+                    .month(monthNames[monthDate.getMonthValue() - 1])
+                    .trainingHours(trainingCount)
+                    .defects(defectCount)
+                    .build());
+        }
+
+        return points;
+    }
+
+    // ======================== SV-11. Top Training Samples ========================
+
+    @Override
+    public List<SvTopTrainingSampleItem> getSvTopTrainingSamples(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+                .toList();
+
+        List<TrainingResultDetail> allDetails = new ArrayList<>();
+        for (TrainingResult result : allResults) {
+            allDetails.addAll(trainingResultDetailRepository.findByTrainingResultId(result.getId()));
+        }
+
+        // Group by process name
+        record ProcessStats(int total, int failed) {}
+        Map<String, ProcessStats> statsMap = new LinkedHashMap<>();
+
+        for (TrainingResultDetail d : allDetails) {
+            if (d.getProcess() == null || d.getIsPass() == null) continue;
+            String processName = "HL " + d.getProcess().getName() + " " + d.getProcess().getCode();
+            ProcessStats existing = statsMap.getOrDefault(processName, new ProcessStats(0, 0));
+            int newTotal = existing.total() + 1;
+            int newFailed = existing.failed() + (Boolean.TRUE.equals(d.getIsPass()) ? 0 : 1);
+            statsMap.put(processName, new ProcessStats(newTotal, newFailed));
+        }
+
+        return statsMap.entrySet().stream()
+                .map(entry -> {
+                    ProcessStats stats = entry.getValue();
+                    double failRate = stats.total() > 0
+                            ? Math.round((double) stats.failed() / stats.total() * 1000.0) / 10.0
+                            : 0;
+                    return SvTopTrainingSampleItem.builder()
+                            .name(entry.getKey())
+                            .used(stats.total())
+                            .failRate(failRate)
+                            .build();
+                })
+                .sorted((a, b) -> b.getUsed() - a.getUsed())
+                .limit(5)
+                .toList();
+    }
 }
