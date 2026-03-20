@@ -57,7 +57,6 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.approval.RejectDetailService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -101,7 +100,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final GroupRepository groupRepository;
-    private final RejectDetailService rejectDetailService;
     private final RejectReasonRepository rejectReasonRepository;
     private final RequiredActionRepository requiredActionRepository;
     private final TrainingResultHistoryRepository trainingResultHistoryRepository;
@@ -1064,9 +1062,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(reportId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
-        if (result.getStatus() == ReportStatus.REJECTED_BY_SV)
-
-        {
+        if (result.getStatus() == ReportStatus.REJECTED_BY_SV) {
 
             throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
         }
@@ -1108,12 +1104,15 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser, HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
+        detail.setStatus(ReportStatus.REJECTED_BY_SV);
+
         DetailFeedbackRequest detailFeedbackRequest = new DetailFeedbackRequest();
         detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());
         detailFeedbackRequest.setRequiredActionId(req.getRequiredActionId());
         detailFeedbackRequest.setComment(req.getComment());
 
-        rejectDetailService.saveFeedback(ApprovalEntityType.TRAINING_RESULT, detailId, detailFeedbackRequest, currentUser);
+        saveFeedback(detailId, detailFeedbackRequest, currentUser);
     }
 
     @Override
@@ -1124,7 +1123,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
     public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
