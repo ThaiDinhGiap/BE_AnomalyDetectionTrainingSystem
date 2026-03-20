@@ -26,23 +26,8 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.Group;
-import com.sep490.anomaly_training_backend.model.PriorityPolicy;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
@@ -763,7 +748,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ==================== HELPER METHODS ====================
 
     /**
-     * Populate employeeProcesses cho 1 detail response đơn lẻ
+     * Populate employeeProcesses cho 1 detail response đơn lẻ.
+     * Hiển thị các công đoạn mà employee CÓ chứng chỉ VALID.
      */
     private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {
         Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
@@ -771,7 +757,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             return;
 
         List<EmployeeSkill> skills = employeeSkillRepository
-                .findSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
+                .findValidSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
 
         List<TrainingPlanDetailResponse.ProcessInfo> processes = skills.stream()
                 .map(skill -> {
@@ -823,10 +809,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         // Cập nhật plannedDate cho các result detail đã tồn tại
         // (trường hợp ADD_SCHEDULE thêm ngày mới lớn hơn vào batch cũ)
         for (TrainingResultDetail rd : result.getDetails()) {
-            if (rd.getEmployee() == null) continue;
+            if (rd.getEmployee() == null)
+                continue;
             Long empId = rd.getEmployee().getId();
             List<String> empBatchIds = batchIdsByEmployee.get(empId);
-            if (empBatchIds == null || empBatchIds.isEmpty()) continue;
+            if (empBatchIds == null || empBatchIds.isEmpty())
+                continue;
 
             // Tính plannedDate lớn nhất từ TẤT CẢ plan details của employee này
             java.time.LocalDate maxPlannedDate = empBatchIds.stream()
@@ -852,7 +840,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
             // Số batch cần tạo thêm
             long newBatchCount = allBatchIds.size() - existingCount;
-            if (newBatchCount <= 0) continue;
+            if (newBatchCount <= 0)
+                continue;
 
             // Lấy các batch cuối cùng (mới nhất) để tạo result detail
             List<String> newBatchIds = allBatchIds.subList(
@@ -1254,7 +1243,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         detail.getEmployeeId(),
                         empId -> {
                             List<EmployeeSkill> skills = employeeSkillRepository
-                                    .findSkillsByEmployeeAndLine(empId, productLineId);
+                                    .findValidSkillsByEmployeeAndLine(empId, productLineId);
                             return skills.stream()
                                     .map(skill -> {
                                         TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
