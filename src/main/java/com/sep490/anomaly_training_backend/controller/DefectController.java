@@ -151,7 +151,7 @@ public class DefectController {
 
     @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('defect.edit')")
+    @PreAuthorize("hasAuthority('defect_proposal.edit')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,

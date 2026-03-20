@@ -1,9 +1,11 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class EmployeeResponse {
@@ -20,4 +22,9 @@ public class EmployeeResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    //New fields for skill and training summary
+    List<EmployeeSkillResponse> skills;
+    Integer totalTraining;
+    Integer totalFail;
 }

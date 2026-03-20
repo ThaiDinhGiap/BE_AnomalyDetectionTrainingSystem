@@ -12,7 +12,6 @@ public interface EmployeeSkillMapper {
 
     @Mapping(source = "employee.fullName", target = "employeeName")
     @Mapping(source = "employee.employeeCode", target = "employeeCode")
-    @Mapping(source = "employee.status", target = "status")
     @Mapping(source = "process.id", target = "processId")
     EmployeeSkillResponse toDto(EmployeeSkill employeeSkill);
 
