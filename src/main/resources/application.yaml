@@ -127,7 +127,8 @@ app:
     # Approval Overdue
     approval-overdue: "0 0 8,14 * * ?"
     approval-overdue-hours: 24
-
+    # Training Sample Review
+    review-overdue: "0 0 7 * * ?"
 # SpringDoc OpenAPI Configuration
 springdoc:
   api-docs:

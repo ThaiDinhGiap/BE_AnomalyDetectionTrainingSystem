@@ -22,6 +22,7 @@ import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.scheduler.TrainingSampleReviewScheduler;
 import com.sep490.anomaly_training_backend.service.TrainingSampleReviewPolicyService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
     private final UserRepository userRepository;
     private final TrainingSampleReviewPolicyMapper trainingSampleReviewPolicyMapper;
     private final ApprovalService approvalService;
+    private final TrainingSampleReviewScheduler scheduler;
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int SUFFIX_LENGTH = 3; // Độ dài phần đuôi ngẫu nhiên
@@ -85,7 +87,12 @@ public class TrainingSampleReviewPolicyServiceImpl implements TrainingSampleRevi
             trainingSampleReviewPolicyRepository.save(policy);
         }
         entity.setEffectiveDate(LocalDate.now());
-        return trainingSampleReviewPolicyMapper.toDto(trainingSampleReviewPolicyRepository.save(entity));
+        entity.setStatus(PolicyStatus.ACTIVE);
+        TrainingSampleReviewPolicy savedPolicy = trainingSampleReviewPolicyRepository.save(entity);
+        for (TrainingSampleReviewConfig config : savedPolicy.getReviewConfigs()) {
+            scheduler.registerJob(config);
+        }
+        return trainingSampleReviewPolicyMapper.toDto(savedPolicy);
     }
 
     @Override

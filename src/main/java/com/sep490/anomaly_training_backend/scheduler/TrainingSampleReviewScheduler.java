@@ -98,65 +98,7 @@ public class TrainingSampleReviewScheduler {
         }
     }
 
-    /**
-     * Xóa tất cả job liên quan đến 1 policy
-     *
-     * @param policyId ID của policy
-     */
-//    public void removeAllJobsByPolicy(Long policyId) {
-//        try {
-//            // Lấy tất cả config của policy này
-//            List<TrainingSampleReviewConfig> configs = configRepository
-//                    .findByReviewPolicyId(policyId);
-//
-//            log.info("Removing {} jobs for policyId={}", configs.size(), policyId);
-//
-//            for (TrainingSampleReviewConfig config : configs) {
-//                removeJob(config.getId());
-//            }
-//
-//            log.info("✓ Successfully removed all jobs for policyId={}", policyId);
-//
-//        } catch (Exception e) {
-//            log.error("❌ Failed to remove jobs for policyId={}", policyId, e);
-//            throw new RuntimeException("Failed to remove scheduled jobs", e);
-//        }
-//    }
 
-    /**
-     * Khởi tạo lại tất cả job khi app start
-     *
-     * Quét DB để tìm tất cả active policy/config, sau đó đăng ký lại job
-     */
-//    @PostConstruct
-//    public void initAllJobsOnStartup() {
-//        try {
-//            log.info("=== Initializing all TrainingSampleReview jobs on startup ===");
-//
-//            // Lấy tất cả active policy (deleteFlag = false, status = ACTIVE)
-//            List<TrainingSampleReviewPolicy> activePolicies = policyRepository
-//                    .findByDeleteFlagFalseAndStatusActive();
-//
-//            int jobCount = 0;
-//
-//            for (TrainingSampleReviewPolicy policy : activePolicies) {
-//                for (TrainingSampleReviewConfig config : policy.getReviewConfigs()) {
-//                    try {
-//                        registerJob(config);
-//                        jobCount++;
-//                    } catch (Exception e) {
-//                        log.error("Failed to register job for config {}", config.getId(), e);
-//                    }
-//                }
-//            }
-//
-//            log.info("✓ Successfully initialized {} TrainingSampleReview jobs", jobCount);
-//            log.info("=== Completed job initialization ===");
-//
-//        } catch (Exception e) {
-//            log.error("❌ Error during job initialization", e);
-//        }
-//    }
 
     // ============ Private Helper Methods ============
 
