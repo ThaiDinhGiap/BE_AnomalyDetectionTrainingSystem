@@ -34,8 +34,7 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
      */
     @Query("SELECT tr FROM TrainingSampleReview tr " +
             "WHERE tr.dueDate < CURRENT_DATE " +
-            "AND tr.productLine.id = :productLineId "+
             "AND tr.result != com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult.APPROVED")
-    List<TrainingSampleReview> findOverdueReviews(@Param("productLineId") Long productLineId);
+    List<TrainingSampleReview> findOverdueReviews();
 
 }

@@ -53,6 +53,10 @@ public interface TrainingSampleReviewPolicyRepository extends JpaRepository<Trai
             @Param("currentDate") LocalDate currentDate
     );
 
+    @Query("SELECT p FROM TrainingSampleReviewPolicy p " +
+            "WHERE p.deleteFlag = false AND p.status = com.sep490.anomaly_training_backend.enums.PolicyStatus.ACTIVE")
+    List<TrainingSampleReviewPolicy> findByDeleteFlagFalseAndStatusActive();
+
     /**
      * Tìm policy có hiệu lực vào ngày nhất định (pagination)
      */

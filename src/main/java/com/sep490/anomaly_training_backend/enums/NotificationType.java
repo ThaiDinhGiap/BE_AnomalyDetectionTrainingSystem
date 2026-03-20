@@ -23,22 +23,23 @@ public enum NotificationType {
     RESULT_REJECTED_BY_MANAGER,   // Manager từ chối, thông báo TL(PRO)
 
     // ============================================
-    // ISSUE REPORT: TL → SV → Manager
+    // DEFECT REPORT: TL → SV → Manager
     // ============================================
-    ISSUE_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
-    ISSUE_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
-    ISSUE_APPROVED,               // Manager duyệt, thông báo TL
-    ISSUE_REJECTED_BY_SV,         // SV từ chối, thông báo TL
-    ISSUE_REJECTED_BY_MANAGER,    // Manager từ chối, thông báo TL
+    DEFECT_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
+    DEFECT_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
+    DEFECT_APPROVED,               // Manager duyệt, thông báo TL
+    DEFECT_REJECTED_BY_SV,         // SV từ chối, thông báo TL
+    DEFECT_REJECTED_BY_MANAGER,    // Manager từ chối, thông báo TL
 
     // ============================================
-    // TRAINING TOPIC: TL → SV → Manager
+    // TRAINING SAMPLE: TL → SV → Manager
     // ============================================
-    TOPIC_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
-    TOPIC_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
-    TOPIC_APPROVED,               // Manager duyệt, thông báo TL
-    TOPIC_REJECTED_BY_SV,         // SV từ chối, thông báo TL
-    TOPIC_REJECTED_BY_MANAGER,    // Manager từ chối, thông báo TL
+    SAMPLE_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
+    SAMPLE_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
+    SAMPLE_APPROVED,               // Manager duyệt, thông báo TL
+    SAMPLE_REJECTED_BY_SV,         // SV từ chối, thông báo TL
+    SAMPLE_REJECTED_BY_MANAGER,
+    SAMPLE_REVIEW_OVERDUE,// Manager từ chối, thông báo TL
 
     // ============================================
     // REMINDERS (Scheduler tự động gửi)
@@ -53,6 +54,5 @@ public enum NotificationType {
     APPROVAL_OVERDUE_SV,          // Nhắc SV: có phê duyệt tồn đọng
     APPROVAL_OVERDUE_MANAGER,     // Nhắc Manager: có phê duyệt tồn đọng
     APPROVAL_OVERDUE_FI,           // Nhắc TL(FI): có xác nhận kết quả tồn đọng
-
     APPROVAL_NUDGE
 }
