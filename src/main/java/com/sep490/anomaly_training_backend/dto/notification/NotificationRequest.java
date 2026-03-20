@@ -36,7 +36,7 @@ public class NotificationRequest implements Serializable {
 
     // Template variables
     private Map<String, Object> variables;
-
+    
     // Channel
     @Builder.Default
     private NotificationChannel channel = NotificationChannel.EMAIL;

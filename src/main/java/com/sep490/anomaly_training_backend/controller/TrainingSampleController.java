@@ -142,7 +142,7 @@ public class TrainingSampleController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.approve')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

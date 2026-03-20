@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
@@ -15,6 +17,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultListRespon
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -30,6 +33,8 @@ import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetailHistory;
+import com.sep490.anomaly_training_backend.model.TrainingResultHistory;
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
@@ -41,22 +46,28 @@ import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultHistoryRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.util.ReportUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -69,6 +80,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TrainingResultServiceImpl implements TrainingResultService {
 
     private final TrainingResultRepository trainingResultRepository;
@@ -88,6 +100,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final PrioritySnapshotRepository prioritySnapshotRepository;
     private final PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
     private final GroupRepository groupRepository;
+    private final RejectReasonRepository rejectReasonRepository;
+    private final RequiredActionRepository requiredActionRepository;
+    private final TrainingResultHistoryRepository trainingResultHistoryRepository;
 
     private static final int HISTORY_SIZE = 6;
 
@@ -276,13 +291,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setIsRetrained(reqDetail.getIsRetrained());
                 }
 
-                if (isFullSigned(detail)) {
-                    detail.setStatus(ReportStatus.DONE);
-                    if (detail.getTrainingPlanDetail() != null) {
-                        detail.getTrainingPlanDetail().setStatus(
-                                com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
-                    }
-                }
+                // if (isFullSigned(detail)) {
+                // detail.setStatus(ReportStatus.DONE);
+                // if (detail.getTrainingPlanDetail() != null) {
+                // detail.getTrainingPlanDetail().setStatus(
+                // com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
+                // }
+                // }
 
                 detailsToSave.add(detail);
             }
@@ -603,6 +618,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
             }
 
+            row.setRejectFeedback(detail.getRejectFeedback());
+
             detailDtos.add(row);
         }
 
@@ -703,6 +720,75 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         }
 
         detailRepository.save(detail);
+    }
+
+    @Override
+    @Transactional
+    public void reviseDetail(Long detailId) {
+        TrainingResultDetail detail = detailRepository.findById(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
+
+        // Chỉ cho revise khi detail đang bị reject
+        if (detail.getStatus() != ReportStatus.REJECTED_BY_SV
+                && detail.getStatus() != ReportStatus.REJECTED_BY_MANAGER) {
+            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
+        }
+
+        // Tạo snapshot detail trước khi thay đổi
+        createDetailHistorySnapshot(detail);
+
+        // Chuyển status về PENDING để TL có thể sửa lại
+        detail.setStatus(ReportStatus.PENDING);
+
+        detailRepository.save(detail);
+    }
+
+    /**
+     * Tạo snapshot cho 1 detail cụ thể (lưu vào training_result_detail_history).
+     */
+    private void createDetailHistorySnapshot(TrainingResultDetail detail) {
+        // Tạo 1 TrainingResultHistory header tạm cho snapshot
+        TrainingResult result = detail.getTrainingResult();
+        TrainingResultHistory history = TrainingResultHistory.builder()
+                .trainingResult(result)
+                .version(result.getCurrentVersion())
+                .title(result.getTitle())
+                .year(result.getYear())
+                .team_id(result.getTeam() != null ? result.getTeam().getId() : null)
+                .lineId(result.getLine() != null ? result.getLine().getId() : null)
+                .statusAtTime(result.getStatus() != null ? result.getStatus().name() : null)
+                .note("Snapshot khi revise detail #" + detail.getId())
+                .detailHistories(new ArrayList<>())
+                .build();
+
+        TrainingResultDetailHistory detailHistory = TrainingResultDetailHistory.builder()
+                .trainingResultHistory(history)
+                .trainingResultDetailId(detail.getId())
+                .employeeId(detail.getEmployee() != null ? detail.getEmployee().getId() : null)
+                .processId(detail.getProcess() != null ? detail.getProcess().getId() : null)
+                .trainingSampleId(detail.getTrainingSample() != null ? detail.getTrainingSample().getId() : null)
+                .productId(detail.getProduct() != null ? detail.getProduct().getId() : null)
+                .trainingTopic(detail.getTrainingTopic())
+                .sampleCode(detail.getSampleCode())
+                .classification(detail.getClassification())
+                .cycleTimeStandard(detail.getCycleTimeStandard())
+                .actualDate(detail.getActualDate())
+                .timeIn(detail.getTimeIn())
+                .timeStartOp(detail.getTimeStartOp())
+                .timeOut(detail.getTimeOut())
+                .detectionTime(detail.getDetectionTime())
+                .isPass(detail.getIsPass())
+                .signatureProInName(
+                        detail.getSignatureProIn() != null ? detail.getSignatureProIn().getFullName() : null)
+                .signatureFiInName(detail.getSignatureFiIn() != null ? detail.getSignatureFiIn().getFullName() : null)
+                .signatureProOutName(
+                        detail.getSignatureProOut() != null ? detail.getSignatureProOut().getFullName() : null)
+                .signatureFiOutName(
+                        detail.getSignatureFiOut() != null ? detail.getSignatureFiOut().getFullName() : null)
+                .build();
+
+        history.getDetailHistories().add(detailHistory);
+        trainingResultHistoryRepository.save(history);
     }
 
     @Override
@@ -950,24 +1036,146 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
-    public void submitDetailForApproval(Long resultId, User currentUser, HttpServletRequest request) {
-        TrainingResultDetail detail = getDetailtById(resultId);
-    }
-
-    @Override
     public void submit(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+
+        validateResultForSubmission(report);
+        report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
+
+        approvalService.submit(report, currentUser, request);
+        updateResultDetailAfterSubmission(report);
+
+        trainingResultRepository.save(report);
+    }
+
+    private void validateResultForSubmission(TrainingResult result) {
+    }
+
+    private void updateResultDetailAfterSubmission(TrainingResult result) {
+        trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
+                .forEach(detail -> detail.setStatus(ReportStatus.WAITING_SV));
     }
 
     @Override
+    @Transactional
     public void revise(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingResult result = trainingResultRepository.findByIdWithDetails(reportId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        if (result.getStatus() == ReportStatus.REJECTED_BY_SV) {
+
+            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
+        }
+
+        // 1. Tạo snapshot trước khi thay đổi
+        createResultHistorySnapshot(result);
+
+        // 2. Chuyển trạng thái result -> REVISE, tăng version
+        result.setStatus(ReportStatus.REVISE);
+        result.setCurrentVersion(result.getCurrentVersion() + 1);
+
+        // 3. Chuyển các detail bị reject -> PENDING
+        for (TrainingResultDetail detail : result.getDetails()) {
+            if (detail.getStatus() == ReportStatus.REJECTED_BY_SV
+                    || detail.getStatus() == ReportStatus.REJECTED_BY_MANAGER) {
+                detail.setStatus(ReportStatus.PENDING);
+            }
+        }
+
+        trainingResultRepository.save(result);
+    }
+
+    @Override
+    public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser, HttpServletRequest request) {
+        approve(reportId, currentUser, req, request);
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
+        detail.setStatus(ReportStatus.APPROVED);
+        trainingResultDetailRepository.save(detail);
     }
 
     @Override
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+        approvalService.approve(report, currentUser, req, request);
+        trainingResultRepository.save(report);
+    }
+
+    @Override
+    public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser, HttpServletRequest request) {
+        reject(reportId, currentUser, req, request);
+
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
+        detail.setStatus(ReportStatus.REJECTED_BY_SV);
+
+        DetailFeedbackRequest detailFeedbackRequest = new DetailFeedbackRequest();
+        detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());
+        detailFeedbackRequest.setRequiredActionId(req.getRequiredActionId());
+        detailFeedbackRequest.setComment(req.getComment());
+
+        saveFeedback(detailId, detailFeedbackRequest, currentUser);
     }
 
     @Override
     public void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request) {
+        TrainingResult report = getReportById(reportId);
+        approvalService.reject(report, currentUser, req, request);
+        trainingResultRepository.save(report);
+    }
+
+    @Override
+    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
+
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
+
+        // Tất cả null/empty → xoá feedback
+        if (isEmptyFeedback(request)) {
+            detail.setRejectFeedback(null);
+            trainingResultDetailRepository.save(detail);
+            return;
+        }
+
+        // Batch load reasons + action
+        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
+        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
+            reasonSnapshots = rejectReasonRepository
+                    .findAllById(request.getRejectReasonIds())
+                    .stream()
+                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
+                            .id(r.getId())
+                            .category(r.getCategoryName())
+                            .label(r.getReasonName())
+                            .build())
+                    .toList();
+        }
+
+        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
+        if (request.getRequiredActionId() != null) {
+            actionSnapshot = requiredActionRepository
+                    .findById(request.getRequiredActionId())
+                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
+                            .id(a.getId())
+                            .label(a.getActionName())
+                            .build())
+                    .orElse(null);
+        }
+
+        detail.setRejectFeedback(RejectFeedbackJson.builder()
+                .savedAt(Instant.now())
+                .savedBy(currentUser.getFullName())
+                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
+                .requiredAction(actionSnapshot)
+                .comment(request.getComment())
+                .build());
+
+        trainingResultDetailRepository.save(detail);
+        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
+    }
+
+    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
+                && r.getRequiredActionId() == null
+                && (r.getComment() == null || r.getComment().isBlank());
     }
 
     @Override
@@ -978,6 +1186,59 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private TrainingResultDetail getDetailtById(Long id) {
         return detailRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
+    }
+
+    /**
+     * Tạo snapshot (history) cho Training Result và tất cả details.
+     */
+    private void createResultHistorySnapshot(TrainingResult result) {
+        TrainingResultHistory history = TrainingResultHistory.builder()
+                .trainingResult(result)
+                .version(result.getCurrentVersion())
+                .title(result.getTitle())
+                .year(result.getYear())
+                .team_id(result.getTeam() != null ? result.getTeam().getId() : null)
+                .lineId(result.getLine() != null ? result.getLine().getId() : null)
+                .statusAtTime(result.getStatus() != null ? result.getStatus().name() : null)
+                .note(result.getNote())
+                .detailHistories(new ArrayList<>())
+                .build();
+
+        if (result.getDetails() != null) {
+            for (TrainingResultDetail detail : result.getDetails()) {
+                TrainingResultDetailHistory detailHistory = TrainingResultDetailHistory.builder()
+                        .trainingResultHistory(history)
+                        .trainingResultDetailId(detail.getId())
+                        .employeeId(detail.getEmployee() != null ? detail.getEmployee().getId() : null)
+                        .processId(detail.getProcess() != null ? detail.getProcess().getId() : null)
+                        .trainingSampleId(
+                                detail.getTrainingSample() != null ? detail.getTrainingSample().getId() : null)
+                        .productId(detail.getProduct() != null ? detail.getProduct().getId() : null)
+                        .trainingTopic(detail.getTrainingTopic())
+                        .sampleCode(detail.getSampleCode())
+                        .classification(detail.getClassification())
+                        .cycleTimeStandard(detail.getCycleTimeStandard())
+                        .actualDate(detail.getActualDate())
+                        .timeIn(detail.getTimeIn())
+                        .timeStartOp(detail.getTimeStartOp())
+                        .timeOut(detail.getTimeOut())
+                        .detectionTime(detail.getDetectionTime())
+                        .isPass(detail.getIsPass())
+                        .signatureProInName(
+                                detail.getSignatureProIn() != null ? detail.getSignatureProIn().getFullName() : null)
+                        .signatureFiInName(
+                                detail.getSignatureFiIn() != null ? detail.getSignatureFiIn().getFullName() : null)
+                        .signatureProOutName(
+                                detail.getSignatureProOut() != null ? detail.getSignatureProOut().getFullName() : null)
+                        .signatureFiOutName(
+                                detail.getSignatureFiOut() != null ? detail.getSignatureFiOut().getFullName() : null)
+                        .build();
+
+                history.getDetailHistories().add(detailHistory);
+            }
+        }
+
+        trainingResultHistoryRepository.save(history);
     }
 
     private Map<Long, PrioritySnapshotDetail> loadSnapshotMap(Long planId) {
@@ -1039,5 +1300,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         if ("UNTIERED".equals(snapshot.getTierName()))
             return "Không có tiêu chí ưu tiên";
         return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
+    }
+
+    private TrainingResult getReportById(Long id) {
+        return trainingResultRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
     }
 }

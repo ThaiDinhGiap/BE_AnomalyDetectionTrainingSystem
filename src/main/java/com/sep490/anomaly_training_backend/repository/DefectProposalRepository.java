@@ -14,12 +14,12 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
     List<DefectProposal> findByProductLineId(Long productLineId);
 
     @Query("""
-    SELECT d
-    FROM DefectProposal d
-    WHERE d.productLine.id = :productLineId
-      AND d.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
-      AND d.deleteFlag = false
-    """)
+            SELECT d
+            FROM DefectProposal d
+            WHERE d.productLine.id = :productLineId
+              AND d.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND d.deleteFlag = false
+            """)
     List<DefectProposal> findByProductLineForSupervisorAndManager(@Param("productLineId") Long productLineId);
 
     List<DefectProposal> findByStatus(ReportStatus status);
@@ -52,4 +52,6 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
     List<DefectProposal> findPendingForApprove(
             @Param("status") ReportStatus status,
             @Param("userId") Long userId);
+
+    List<DefectProposal> findByStatusAndDeleteFlagFalse(ReportStatus status);
 }

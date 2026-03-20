@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,6 +23,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +34,12 @@ import java.util.List;
 @Entity
 @Table(name = "training_results")
 @Data
-//@EqualsAndHashCode(callSuper = true, exclude = {"trainingPlan", "group", "line", "details"})
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class TrainingResult extends BaseEntity {
+public class TrainingResult extends BaseEntity implements Approvable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -83,4 +85,23 @@ public class TrainingResult extends BaseEntity {
     @ToString.Exclude
     @Builder.Default
     List<TrainingResultDetail> details = new ArrayList<>();
+
+    @Override
+    public ApprovalEntityType getEntityType() {
+        return ApprovalEntityType.TRAINING_RESULT;
+    }
+
+    @Override
+    public Long getGroupId() {
+        return team.getGroup().getId();
+    }
+
+    @Override
+    public String computeContentHash() {
+        String sb = id + "|" +
+                currentVersion + "|" +
+                team.getId() + "|";
+
+        return DigestUtils.sha256Hex(sb);
+    }
 }

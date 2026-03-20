@@ -823,17 +823,16 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     // Relate approval methods
     @Override
-    public void submitPlanForApproval(Long planId, User currentUser, HttpServletRequest request) {
-        TrainingPlan plan = getReportById(planId);
+    public void submitPlanForApproval(Long reportId, User currentUser, HttpServletRequest request) {
+        TrainingPlan report = getReportById(reportId);
 
-        validatePlanForSubmission(plan);
+        validatePlanForSubmission(report);
 
-        plan.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, plan.getLine().getName(), planId));
+        report.setFormCode(ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, report.getLine().getCode(), reportId));
 
+        approvalService.submit(report, currentUser, request);
 
-        approvalService.submit(plan, currentUser, request);
-
-        trainingPlanRepository.save(plan);
+        trainingPlanRepository.save(report);
     }
 
     @Override
@@ -863,7 +862,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
         if (report.getStatus() == ReportStatus.APPROVED) {
-//            createHistorySnapshot(report); // Lưu snapshot trước khi tạo Training Result
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);

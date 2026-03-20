@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -146,45 +149,8 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User signatureFiOut;
 
-}
-    // Approval implementation
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "reject_feedback", columnDefinition = "JSON")
+    private RejectFeedbackJson rejectFeedback;
 
-//    @Override
-//    public ApprovalEntityType getEntityType() {
-//        return ApprovalEntityType.TRAINING_RESULT;
-//    }
-//
-//    @Override
-//    public void setStatus(ReportStatus status) {
-//
-//    }
-//
-//    @Override
-//    public Integer getCurrentVersion() {
-//        return trainingResult.getCurrentVersion();
-//    }
-//
-//    @Override
-//    public void setCurrentVersion(Integer version) {
-//        trainingResult.setCurrentVersion(version);
-//    }
-//
-//    @Override
-//    public Long getGroupId() {
-////        return trainingResult.getGroup().getId();
-//    return  trainingResult.getTeam().getId();
-//    }
-//
-//    @Override
-//    public String computeContentHash() {
-//        String hash = id + "|" +
-//                trainingResult.getId() + "|" +
-//                trainingPlanDetail.getId() + "|" +
-//                plannedDate + "|" +
-//                actualDate + "|";
-//        return DigestUtils.sha256Hex(hash);
-//    }
-//
-//    @Override
-//    public void applyApproval() {
-//    }
+}

@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import lombok.Data;
-import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -97,5 +97,7 @@ public class TrainingResultDetailResponse {
         private String signatureProOutName;
         private Long signatureFiOutId;      // FI xác nhận lấy mẫu ra
         private String signatureFiOutName;
+
+        private RejectFeedbackJson rejectFeedback;
     }
 }

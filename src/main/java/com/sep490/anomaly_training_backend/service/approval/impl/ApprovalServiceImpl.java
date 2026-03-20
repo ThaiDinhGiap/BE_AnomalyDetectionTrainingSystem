@@ -48,6 +48,21 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     @Transactional
     public void submit(Approvable entity, User currentUser, HttpServletRequest request) {
+        if (entity == null) {
+            return;
+        }
+
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            if (entity.getStatus() != ReportStatus.ON_GOING) {
+                throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Result can only be submitted when in ONGOING status");
+            }
+
+            logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.ROLE_TEAM_LEADER, currentUser, null, null, null, request);
+            log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+            return;
+        }
+
         if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }
@@ -81,6 +96,11 @@ public class ApprovalServiceImpl implements ApprovalService {
         validateApprover(entity, currentUser, currentStep);
 
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), null, null, request);
+
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            entity.setCurrentVersion(entity.getCurrentVersion() + 1);
+            return;
+        }
 
         ApprovalFlowStep nextStep = getNextStep(entity.getEntityType(), currentStep.getStepOrder());
 
@@ -124,6 +144,10 @@ public class ApprovalServiceImpl implements ApprovalService {
         validateApprover(entity, currentUser, currentStep);
 
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
+
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            return;
+        }
 
         entity.setStatus(mapRoleToRejectedStatus(currentStep.getApproverRole()));
         log.info("Rejected {} id={} version={} by {} reasons={} requiredAction={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), req.getRejectReasonIds(), req.getRequiredActionId());
