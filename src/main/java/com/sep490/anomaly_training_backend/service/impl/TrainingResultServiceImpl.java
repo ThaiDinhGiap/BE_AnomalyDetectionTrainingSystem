@@ -129,30 +129,15 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
 
         if (plan.getDetails() != null) {
-            // Group plan details by batchId → 1 result detail per batch
-            Map<String, List<TrainingPlanDetail>> batchGroups = plan.getDetails().stream()
-                    .filter(d -> d.getBatchId() != null)
-                    .collect(Collectors.groupingBy(TrainingPlanDetail::getBatchId));
-
-            for (Map.Entry<String, List<TrainingPlanDetail>> entry : batchGroups.entrySet()) {
-                List<TrainingPlanDetail> batchDetails = entry.getValue();
-
-                // Lấy plannedDate lớn nhất (ngày cuối cùng) trong batch
-                LocalDate latestPlannedDate = batchDetails.stream()
-                        .map(TrainingPlanDetail::getPlannedDate)
-                        .filter(d -> d != null)
-                        .max(LocalDate::compareTo)
-                        .orElse(null);
-
-                // Lấy employee từ detail đầu tiên (cùng batch = cùng employee)
-                TrainingPlanDetail firstDetail = batchDetails.get(0);
-
+            // 1 result detail per plan detail (1:1 mapping)
+            for (TrainingPlanDetail planDetail : plan.getDetails()) {
                 TrainingResultDetail resultDetail = new TrainingResultDetail();
                 resultDetail.setTrainingResult(result);
-                resultDetail.setEmployee(firstDetail.getEmployee());
-                resultDetail.setPlannedDate(latestPlannedDate);
+                resultDetail.setTrainingPlanDetail(planDetail);
+                resultDetail.setEmployee(planDetail.getEmployee());
+                resultDetail.setPlannedDate(planDetail.getPlannedDate());
+                resultDetail.setBatchId(planDetail.getBatchId());
                 resultDetail.setStatus(ReportStatus.PENDING);
-
                 resultDetails.add(resultDetail);
             }
         }
@@ -325,13 +310,19 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setIsRetrained(reqDetail.getIsRetrained());
                 }
 
-                // if (isFullSigned(detail)) {
-                // detail.setStatus(ReportStatus.DONE);
-                // if (detail.getTrainingPlanDetail() != null) {
-                // detail.getTrainingPlanDetail().setStatus(
-                // com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
-                // }
-                // }
+                // Khi isPass được xác định → điền actualDate cho cả result detail và plan detail
+                if (detail.getIsPass() != null && detail.getActualDate() == null) {
+                    LocalDate today = LocalDate.now();
+                    detail.setActualDate(today);
+                    detail.setStatus(ReportStatus.DONE);
+
+                    if (detail.getTrainingPlanDetail() != null
+                            && detail.getTrainingPlanDetail().getActualDate() == null) {
+                        detail.getTrainingPlanDetail().setActualDate(today);
+                        detail.getTrainingPlanDetail().setStatus(
+                                com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
+                    }
+                }
 
                 detailsToSave.add(detail);
             }
@@ -345,6 +336,36 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 detail.getSignatureProOut() != null &&
                 detail.getSignatureFiIn() != null &&
                 detail.getSignatureFiOut() != null;
+    }
+
+    /**
+     * Auto-mark các detail quá hạn (plannedDate < today, chưa đánh giá) thành MISS.
+     * Cập nhật cả TrainingResultDetail và TrainingPlanDetail.
+     */
+    private void markOverdueDetailsAsMiss(TrainingResult result) {
+        LocalDate today = LocalDate.now();
+        boolean hasChanges = false;
+
+        for (TrainingResultDetail detail : result.getDetails()) {
+            if (detail.getPlannedDate() != null
+                    && detail.getPlannedDate().isBefore(today)
+                    && detail.getIsPass() == null
+                    && detail.getStatus() != ReportStatus.MISS) {
+
+                detail.setStatus(ReportStatus.MISS);
+                hasChanges = true;
+
+                if (detail.getTrainingPlanDetail() != null
+                        && detail.getTrainingPlanDetail().getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                    detail.getTrainingPlanDetail().setStatus(
+                            com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
+                }
+            }
+        }
+
+        if (hasChanges) {
+            trainingResultRepository.save(result);
+        }
     }
 
     @Override
@@ -523,9 +544,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    @Transactional
     public TrainingResultDetailResponse getTrainingResultDetail(Long id) {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        // Auto-mark các detail quá hạn thành MISS
+        markOverdueDetailsAsMiss(result);
 
         User user = userRepository.findByUsername(result.getCreatedBy())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -575,6 +600,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     row.setEmployeeName(planDetail.getEmployee().getFullName());
                     row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
                 }
+            } else if (detail.getBatchId() != null) {
+                row.setBatchId(detail.getBatchId());
             }
 
             if (detail.getEmployee() != null) {
@@ -807,6 +834,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .classification(detail.getClassification())
                 .cycleTimeStandard(detail.getCycleTimeStandard())
                 .actualDate(detail.getActualDate())
+                .batchId(detail.getBatchId())
                 .timeIn(detail.getTimeIn())
                 .timeStartOp(detail.getTimeStartOp())
                 .timeOut(detail.getTimeOut())
@@ -847,6 +875,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .sampleCode(originalDetail.getSampleCode())
                 .cycleTimeStandard(originalDetail.getCycleTimeStandard())
                 .plannedDate(java.time.LocalDate.now())
+                .batchId(originalDetail.getBatchId())
                 .status(ReportStatus.PENDING)
                 .isRetrained(true)
                 .note("[Huấn luyện lại] từ detail #" + detailId)
@@ -1256,6 +1285,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                         .classification(detail.getClassification())
                         .cycleTimeStandard(detail.getCycleTimeStandard())
                         .actualDate(detail.getActualDate())
+                        .batchId(detail.getBatchId())
                         .timeIn(detail.getTimeIn())
                         .timeStartOp(detail.getTimeStartOp())
                         .timeOut(detail.getTimeOut())

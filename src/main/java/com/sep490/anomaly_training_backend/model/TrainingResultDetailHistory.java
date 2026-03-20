@@ -102,4 +102,7 @@ public class TrainingResultDetailHistory extends BaseEntity {
 
     @Column(name = "signature_fi_out_name", length = 100)
     String signatureFiOutName;
+
+    @Column(name = "batch_id", length = 36)
+    String batchId;
 }

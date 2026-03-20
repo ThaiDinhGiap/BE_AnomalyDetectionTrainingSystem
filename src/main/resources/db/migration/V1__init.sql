@@ -826,7 +826,7 @@ CREATE TABLE training_plan_details
     target_month     DATE COMMENT 'Tháng thực hiện',
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
-    status           ENUM ('PENDING', 'DONE', 'MISSED') DEFAULT 'PENDING',
+    status           ENUM ('PENDING', 'DONE', 'MISS') DEFAULT 'PENDING',
     note             TEXT,
 
     reject_feedback  JSON,
@@ -980,6 +980,7 @@ CREATE TABLE training_result_details
     training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
     sample_code             VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
+    batch_id                 VARCHAR(36) NULL,
 
     -- Thời gian thực tế
     planned_date            DATE,
@@ -988,7 +989,7 @@ CREATE TABLE training_result_details
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
     status                  ENUM ('PENDING', 'DONE', 'REVISE', 'WAITING_SV',
-        'REJECTED_BY_SV', 'APPROVED')
+        'REJECTED_BY_SV', 'APPROVED', 'MISS')
                                              DEFAULT 'PENDING',
 
     -- Kết quả
@@ -1074,6 +1075,7 @@ CREATE TABLE training_result_detail_history
     process_id                 BIGINT,
     training_sample_id         BIGINT,
     product_id                 BIGINT,
+    batch_id                 VARCHAR(36) NULL,
 
     training_topic             VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
     sample_code                VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',

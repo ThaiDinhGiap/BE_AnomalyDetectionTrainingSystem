@@ -58,4 +58,7 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
           )
     """)
     List<Defect> findDefectsWithoutTrainingSample(@Param("productLineId") Long productLineId);
+
+    @Query("SELECT d FROM Defect d JOIN d.process p WHERE p.productLine.id IN :lineIds AND d.deleteFlag = false")
+    List<Defect> findAllByProductLineIdsAndDeleteFlagFalse(@Param("lineIds") List<Long> lineIds);
 }

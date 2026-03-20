@@ -26,4 +26,28 @@ public interface DashboardService {
     List<StageDistribution> getDefectByProcess(Long lineId);
 
     List<StageDistribution> getSampleByProcess(Long lineId);
+
+    // ==================== SV Dashboard ====================
+
+    List<SvDashboardLineResponse> getSvLines(Long groupId);
+
+    SvTodoData getSvTodo(Long groupId, Long lineId);
+
+    List<SvTeamBenchmark> getSvTeamBenchmark(Long groupId, Long lineId, Integer month, Integer year);
+
+    List<SvDefectByOperation> getSvDefectByOperation(Long groupId, Long lineId);
+
+    List<SvDefectHotspot> getSvDefectHotspot(Long groupId, Long lineId);
+
+    SvKpiData getSvKpi(Long groupId, Long lineId, Integer year, Integer month);
+
+    List<SvWatchlistItem> getSvWatchlist(Long groupId, Long lineId);
+
+    List<SvRecentActivityItem> getSvRecentActivity(Long groupId, Long lineId);
+
+    List<SvTrainingStatusItem> getSvTrainingStatus(Long groupId, Long lineId);
+
+    List<SvTrainingEffectivenessPoint> getSvTrainingEffectiveness(Long groupId, Long lineId, Integer months);
+
+    List<SvTopTrainingSampleItem> getSvTopTrainingSamples(Long groupId, Long lineId);
 }
