@@ -6,7 +6,6 @@ import com.sep490.anomaly_training_backend.enums.NotificationType;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewConfigRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -168,8 +167,6 @@ public class TrainingReminderScheduler {
                     Map<String, Object> item = new HashMap<>();
                     item.put("employeeCode", detail.getEmployee().getEmployeeCode());
                     item.put("employeeName", detail.getEmployee().getFullName());
-//                    item.put("processName", detail.getProcess().getName());
-//                    item.put("processCode", detail.getProcess().getCode());
                     return item;
                 })
                 .collect(Collectors.toList());
@@ -208,7 +205,6 @@ public class TrainingReminderScheduler {
                     Map<String, Object> item = new HashMap<>();
                     item.put("employeeCode", detail.getEmployee().getEmployeeCode());
                     item.put("employeeName", detail.getEmployee().getFullName());
-//                    item.put("processName", detail.getProcess().getName());
                     return item;
                 })
                 .collect(Collectors.toList());
@@ -247,7 +243,6 @@ public class TrainingReminderScheduler {
                     Map<String, Object> item = new HashMap<>();
                     item.put("employeeCode", detail.getEmployee().getEmployeeCode());
                     item.put("employeeName", detail.getEmployee().getFullName());
-//                    item.put("processName", detail.getProcess().getName());
                     item.put("plannedDate", detail.getPlannedDate());
                     item.put("daysOverdue", java.time.temporal.ChronoUnit.DAYS.between(
                             detail.getPlannedDate(), LocalDate.now()));

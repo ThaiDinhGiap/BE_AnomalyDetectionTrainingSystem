@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -45,11 +44,13 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
             @Param("userId") Long userId);
 
     @Query("""
-    SELECT t
-    FROM TrainingSampleProposal t
-    WHERE t.productLine.id = :productLineId
-      AND t.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
-      AND t.deleteFlag = false
-    """)
+            SELECT t
+            FROM TrainingSampleProposal t
+            WHERE t.productLine.id = :productLineId
+              AND t.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND t.deleteFlag = false
+            """)
     List<TrainingSampleProposal> findByProductLineForSupervisorAndManager(@Param("productLineId") Long productLineId);
+
+    List<TrainingSampleProposal> findByStatusAndDeleteFlagFalse(ReportStatus status);
 }
