@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service.sample;
 
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import org.apache.coyote.BadRequestException;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,4 +18,6 @@ public interface TrainingSampleService {
     List<TrainingSampleResponse> getTrainingSampleByCategory(Long id);
 
     List<TrainingSampleResponse> importTrainingSample(User currentUser, MultipartFile file) throws BadRequestException;
+
+    CategorySample getCategory(Long productLineId);
 }

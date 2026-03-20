@@ -1,6 +1,8 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.sample;
 
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +17,7 @@ public class TrainingSampleProposalDetailResponse {
     Long trainingSampleId;
     ProposalType proposalType;
     ProductResponse product;
+    DefectResponse defect;
     Long processId;
     String processName;
     Long defectId;

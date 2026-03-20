@@ -27,6 +27,12 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
 
     Boolean existsByProductLineIdAndTrainingSampleCodeAndIdNot(Long productLineId, String trainingSampleCode, Long id);
 
+    @Query("SELECT DISTINCT t.categoryName FROM TrainingSample t WHERE t.productLine.id = :productLineId")
+    List<String> getCategoryNames(@Param("productLineId") Long productLineId);
+
+    @Query("SELECT DISTINCT t.trainingDescription FROM TrainingSample t WHERE t.productLine.id = :productLineId")
+    List<String> getTrainingDescriptions(@Param("productLineId") Long productLineId);
+
     /**
      * Find TrainingSample by trainingCode (unique key for upsert in import)
      */

@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.service.sample.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;

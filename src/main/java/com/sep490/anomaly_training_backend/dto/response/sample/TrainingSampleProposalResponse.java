@@ -1,18 +1,16 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.sample;
 
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.Builder;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class DefectProposalResponse {
+public class TrainingSampleProposalResponse {
     Long id;
-    ReportStatus status;
-    Long productLineId;
     String productLineName;
+    ReportStatus status;
     Long teamLeadId;
     String teamLeadName;
     LocalDateTime createdAt;

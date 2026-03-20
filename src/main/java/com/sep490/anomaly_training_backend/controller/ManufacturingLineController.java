@@ -13,12 +13,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -143,5 +150,44 @@ public class ManufacturingLineController {
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> importProductLine(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<ProductLineResponse> data = productLineService.importProductLine(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success(data));
+    }
+    @Operation(summary = "Import Training Sample template")
+    @GetMapping("/product/download-template")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<Resource> downloadProductTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Product_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Product_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
+    }
+
+    @Operation(summary = "Import Training Sample template")
+    @GetMapping("/product-line/download-template")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<Resource> downloadProductLineTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/ProductLine_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ProductLine_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
     }
 }

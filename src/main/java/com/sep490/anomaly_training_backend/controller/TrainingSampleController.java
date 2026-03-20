@@ -4,10 +4,7 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
@@ -20,7 +17,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,6 +39,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -88,6 +92,14 @@ public class TrainingSampleController {
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingSampleProposalDetail(@PathVariable Long id) {
         List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
+        return ResponseEntity.ok(ApiResponse.success(list));
+    }
+
+    @Operation(summary = "Get training sample category")
+    @GetMapping("/category/{productLineId}")
+    @PreAuthorize("hasAuthority('training_sample_proposal.view')")
+    public ResponseEntity<ApiResponse<CategorySample>> getCategory(@PathVariable("productLineId") Long productLineId) {
+        CategorySample list = trainingSampleService.getCategory(productLineId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -188,4 +200,25 @@ public class TrainingSampleController {
         trainingSampleProposalService.submitTrainingSampleProposalForApproval(id, currentUser, request);
         return ResponseEntity.ok("Training sample proposal submitted for approval successfully!");
     }
+
+    @Operation(summary = "Import Training Sample template")
+    @GetMapping("/download-template")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<Resource> downloadTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Training_sample_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Training_sample_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
+    }
+
 }

@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.mapper;
 
 
-import com.sep490.anomaly_training_backend.dto.response.TrainingSampleReviewResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

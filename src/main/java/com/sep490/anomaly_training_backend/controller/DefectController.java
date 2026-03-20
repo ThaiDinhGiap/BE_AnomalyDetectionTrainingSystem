@@ -4,12 +4,12 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectInProcess;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
@@ -22,6 +22,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +44,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -227,5 +233,25 @@ public class DefectController {
             HttpServletRequest request) {
         defectProposalService.sendSubmission(reportRequest, currentUser, request);
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
+    }
+
+    @Operation(summary = "Import Defect template")
+    @GetMapping("/download-template")
+    @PreAuthorize("hasAuthority('defect.import')")
+    public ResponseEntity<Resource> downloadTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Defect_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Defect_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
     }
 }

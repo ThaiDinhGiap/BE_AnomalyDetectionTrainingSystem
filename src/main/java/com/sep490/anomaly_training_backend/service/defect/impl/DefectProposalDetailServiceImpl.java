@@ -2,7 +2,7 @@ package com.sep490.anomaly_training_backend.service.defect.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
-import com.sep490.anomaly_training_backend.dto.response.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;

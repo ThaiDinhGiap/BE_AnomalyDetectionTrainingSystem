@@ -1,5 +1,6 @@
-package com.sep490.anomaly_training_backend.dto.response;
+package com.sep490.anomaly_training_backend.dto.response.defect;
 
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

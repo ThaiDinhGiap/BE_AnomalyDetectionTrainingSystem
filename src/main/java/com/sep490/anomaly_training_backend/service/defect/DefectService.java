@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.service.defect;
 
-import com.sep490.anomaly_training_backend.dto.response.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.DefectInProcess;
-import com.sep490.anomaly_training_backend.dto.response.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import org.apache.coyote.BadRequestException;
 import org.springframework.web.multipart.MultipartFile;
