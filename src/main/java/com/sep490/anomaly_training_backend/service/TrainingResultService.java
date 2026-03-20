@@ -53,6 +53,8 @@ public interface TrainingResultService {
 
     void rejectDetail(Long detailId, String reason);
 
+    void reviseDetail(Long detailId);
+
     void retrainDetail(Long detailId);
 
     List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long resultId);

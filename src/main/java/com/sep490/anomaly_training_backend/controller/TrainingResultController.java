@@ -261,6 +261,16 @@ public class TrainingResultController {
         return ResponseEntity.ok("Đã đánh dấu huấn luyện lại!");
     }
 
+    @Operation(summary = "Revise a rejected detail (Chỉnh sửa lại detail bị từ chối)",
+            description = "Chuyển detail bị reject về PENDING và tạo snapshot lịch sử.")
+    @PutMapping("/details/{detailId}/revise")
+    @PreAuthorize("hasAuthority('training_result.edit')")
+    public ResponseEntity<String> reviseDetail(
+            @Parameter(description = "Detail ID") @PathVariable Long detailId) {
+        trainingResultService.reviseDetail(detailId);
+        return ResponseEntity.ok("Đã revise detail thành công!");
+    }
+
     @Operation(summary = "Get skill certificates for training result")
     @GetMapping("/{resultId}/skill-certificates")
     @PreAuthorize("hasAuthority('training_result.view')")
@@ -304,5 +314,17 @@ public class TrainingResultController {
             HttpServletRequest request) {
         trainingResultService.rejectDetail(id, detailId, rejectRequest, currentUser, request);
         return ResponseEntity.ok("Plan has been rejected!");
+    }
+
+    @Operation(summary = "Revise training result (chỉnh sửa lại sau khi bị từ chối)",
+            description = "Chuyển trạng thái result về REVISE, các detail bị reject về PENDING, tăng version và tạo snapshot lịch sử.")
+    @PutMapping("/{id}/revise")
+    @PreAuthorize("hasAuthority('training_result.edit')")
+    public ResponseEntity<String> reviseResult(
+            @Parameter(description = "Training Result ID") @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest request) {
+        trainingResultService.revise(id, currentUser, request);
+        return ResponseEntity.ok("Đã revise kết quả huấn luyện thành công!");
     }
 }
