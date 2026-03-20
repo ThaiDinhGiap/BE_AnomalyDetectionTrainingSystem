@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Modifying;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,6 +14,10 @@ import java.util.Optional;
 
 @Repository
 public interface TrainingResultRepository extends JpaRepository<TrainingResult, Long> {
+
+    @Modifying
+    @Query(value = "UPDATE training_results SET created_by = :createdBy WHERE id = :id", nativeQuery = true)
+    void updateCreatedBy(@Param("id") Long id, @Param("createdBy") String createdBy);
 
     @Query("SELECT tp FROM TrainingResult tp WHERE tp.team.group.id = :groupId AND tp.deleteFlag = false")
     List<TrainingResult> findByGroupId(Long groupId);
