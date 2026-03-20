@@ -16,22 +16,28 @@ import java.util.List;
 @Repository
 public interface TrainingResultDetailRepository extends JpaRepository<TrainingResultDetail, Long> {
 
+    @Modifying
+    @Query(value = "UPDATE training_result_details SET created_by = :createdBy WHERE training_result_id = :resultId", nativeQuery = true)
+    void updateCreatedByForResult(@Param("resultId") Long resultId, @Param("createdBy") String createdBy);
+
     Page<TrainingResultDetail> findByTrainingResultId(Long trainingResultId, Pageable pageable);
     List<TrainingResultDetail> findByTrainingResultId(Long trainingResultId);
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +
+            "AND (:createdBy IS NULL OR r.createdBy = :createdBy) " +
             "AND (:teamId IS NULL OR r.team.id = :teamId) " +
             "AND (:lineId IS NULL OR r.line.id = :lineId) " +
             "AND (:year IS NULL OR r.year = :year)")
-    long countByFilters(@Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year);
+    long countByFilters(@Param("createdBy") String createdBy, @Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year);
 
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +
             "AND d.isPass = :isPass " +
+            "AND (:createdBy IS NULL OR r.createdBy = :createdBy) " +
             "AND (:teamId IS NULL OR r.team.id = :teamId) " +
             "AND (:lineId IS NULL OR r.line.id = :lineId) " +
             "AND (:year IS NULL OR r.year = :year)")
-    long countByFiltersAndIsPass(@Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year, @Param("isPass") boolean isPass);
+    long countByFiltersAndIsPass(@Param("createdBy") String createdBy, @Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year, @Param("isPass") boolean isPass);
 
 
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
