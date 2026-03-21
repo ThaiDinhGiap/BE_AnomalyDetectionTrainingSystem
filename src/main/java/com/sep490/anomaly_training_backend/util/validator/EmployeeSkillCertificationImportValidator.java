@@ -10,10 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Validator for EmployeeSkillCertification import - validates ONLY file data format
- * Does NOT validate against database (no lookup)
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -21,11 +17,6 @@ public class EmployeeSkillCertificationImportValidator {
 
     /**
      * Validate all parsed rows - ONLY file-level validation
-     * Rules:
-     * - sectionCode, productLineCode, processName, employeeId, certifiedQuantity là required
-     * - certificationDate, lastActionDate là optional
-     * - certifiedQuantity phải là số dương
-     * - Không được trùng key: (sectionCode, productLineCode, processName, employeeId)
      */
     public void validateFileData(List<EmployeeSkillCertificationImportDto> parsedRows, List<ImportErrorItem> errors) {
         if (parsedRows == null || parsedRows.isEmpty()) {
@@ -95,7 +86,6 @@ public class EmployeeSkillCertificationImportValidator {
         Map<String, Integer> firstRowOfKey = new HashMap<>();
 
         for (EmployeeSkillCertificationImportDto row : parsedRows) {
-            // Skip rows with missing required fields
             if (isBlank(row.getSectionCode())
                     || isBlank(row.getProductLineCode())
                     || isBlank(row.getProcessName())
@@ -125,9 +115,6 @@ public class EmployeeSkillCertificationImportValidator {
         }
     }
 
-    /**
-     * Build unique key from 4 fields
-     */
     private String buildUniqueKey(String sectionCode, String productLineCode, String processName, String employeeId) {
         return normalize(sectionCode) + "|" +
                 normalize(productLineCode) + "|" +
@@ -135,9 +122,6 @@ public class EmployeeSkillCertificationImportValidator {
                 normalize(employeeId);
     }
 
-    /**
-     * Normalize value: trim, null/blank -> empty string
-     */
     private String normalize(String value) {
         if (value == null || value.trim().isEmpty()) {
             return "";
@@ -145,16 +129,10 @@ public class EmployeeSkillCertificationImportValidator {
         return value.trim();
     }
 
-    /**
-     * Check if blank (null or empty after trim)
-     */
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 
-    /**
-     * Build row error item
-     */
     private ImportErrorItem buildRowError(Integer rowNumber, String field, String value, String message) {
         return ImportErrorItem.builder()
                 .rowNumber(rowNumber)

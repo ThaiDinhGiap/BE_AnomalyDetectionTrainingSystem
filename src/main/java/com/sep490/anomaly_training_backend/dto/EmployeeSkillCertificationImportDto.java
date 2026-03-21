@@ -14,6 +14,9 @@ import java.time.LocalDate;
 public class EmployeeSkillCertificationImportDto {
     private Integer excelRowNumber;
 
+    private String teamCode;
+    private String groupCode;
+
     private String sectionCode;
     private String productLineCode;
     private String processName;

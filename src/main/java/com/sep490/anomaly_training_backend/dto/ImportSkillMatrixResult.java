@@ -10,6 +10,8 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 public class ImportSkillMatrixResult {
+    private String teamCode;
+    private String groupCode;
     private List<EmployeeSkillCertificationImportDto> parsedRows;
     private Map<String, Map<String, Set<String>>> hierarchyMap;
 }
