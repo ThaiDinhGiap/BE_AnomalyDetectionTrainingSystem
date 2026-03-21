@@ -19,7 +19,7 @@ public interface TrainingSampleReviewPolicyRepository extends JpaRepository<Trai
     /**
      * Tìm policy theo policy code
      */
-    List<TrainingSampleReviewPolicy> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
+    List<TrainingSampleReviewPolicy> findByProductLineIdAndDeleteFlagFalseOrderByCreatedByAsc(Long productLineId);
 
     /**
      * Kiểm tra tồn tại policy code
@@ -29,7 +29,7 @@ public interface TrainingSampleReviewPolicyRepository extends JpaRepository<Trai
     /**
      * Tìm tất cả policy theo status
      */
-    List<TrainingSampleReviewPolicy> findByProductLineIdAndStatusAndDeleteFlagFalse(Long productLineId, PolicyStatus status);
+    List<TrainingSampleReviewPolicy> findByProductLineIdAndStatusAndDeleteFlagFalseOrderByCreatedAtDesc(Long productLineId, PolicyStatus status);
 
     /**
      * Tìm tất cả policy không bị xoá (pagination)

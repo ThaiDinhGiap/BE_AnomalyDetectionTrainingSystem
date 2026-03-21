@@ -364,6 +364,7 @@ public class NotificationServiceImpl implements NotificationService {
             case TRAINING_RESULT -> "training-results";
             case DEFECT_PROPOSAL -> "defect-proposals";
             case TRAINING_SAMPLE_PROPOSAL -> "training-sample-proposals";
+            case TRAINING_SAMPLE_REVIEW -> "training-sample-reviews";
         };
         return "/" + path + "/" + entityId;
     }
@@ -374,6 +375,7 @@ public class NotificationServiceImpl implements NotificationService {
             case TRAINING_RESULT -> "Kết quả huấn luyện";
             case DEFECT_PROPOSAL -> "Báo cáo lỗi";
             case TRAINING_SAMPLE_PROPOSAL -> "Chủ đề đào tạo";
+            case TRAINING_SAMPLE_REVIEW -> "Kiểm tra hàng năm";
         };
     }
 
@@ -383,6 +385,7 @@ public class NotificationServiceImpl implements NotificationService {
             case TRAINING_RESULT -> "type-result";
             case DEFECT_PROPOSAL -> "type-defect";
             case TRAINING_SAMPLE_PROPOSAL -> "type-sample";
+            case TRAINING_SAMPLE_REVIEW -> "type-review";
         };
     }
 

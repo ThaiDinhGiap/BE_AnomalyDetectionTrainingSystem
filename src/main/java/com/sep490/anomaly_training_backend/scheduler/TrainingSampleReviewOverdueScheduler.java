@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.scheduler;
 import com.sep490.anomaly_training_backend.dto.notification.NotificationRequest;
 import com.sep490.anomaly_training_backend.enums.NotificationChannel;
 import com.sep490.anomaly_training_backend.enums.NotificationType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.User;
@@ -53,7 +54,7 @@ public class TrainingSampleReviewOverdueScheduler {
         }
         Map<Long, OverdueReviewSummary> reviewerPendings = new HashMap<>();
         for (TrainingSampleReview review : overdueReviews) {
-            review.setResult(TrainingSampleReviewResult.OVERDUE);
+            review.setStatus(ReportStatus.MISS);
             trainingReviewRepository.save(review);
             Long reviewerId = review.getReviewedBy().getId();
             reviewerPendings.computeIfAbsent(reviewerId, k -> new OverdueReviewSummary())

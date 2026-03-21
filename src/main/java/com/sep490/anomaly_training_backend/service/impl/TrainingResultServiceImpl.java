@@ -196,7 +196,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultOptionResponse> getTrainingTopicsByProcess(Long processId) {
-        List<TrainingSample> samples = trainingSampleRepository.findByProcessId(processId);
+        List<TrainingSample> samples = trainingSampleRepository.findByProcessIdOrderByCreatedAtDesc(processId);
         return samples.stream()
                 .map(s -> new TrainingResultOptionResponse(s.getId(), s.getCategoryName()))
                 .toList();
@@ -310,7 +310,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     detail.setIsRetrained(reqDetail.getIsRetrained());
                 }
 
-                // Khi isPass được xác định → điền actualDate cho cả result detail và plan detail
+                // Khi isPass được xác định → điền actualDate cho cả result detail và plan
+                // detail
                 if (detail.getIsPass() != null && detail.getActualDate() == null) {
                     LocalDate today = LocalDate.now();
                     detail.setActualDate(today);
@@ -356,7 +357,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 hasChanges = true;
 
                 if (detail.getTrainingPlanDetail() != null
-                        && detail.getTrainingPlanDetail().getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                        && detail.getTrainingPlanDetail()
+                                .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
                 }

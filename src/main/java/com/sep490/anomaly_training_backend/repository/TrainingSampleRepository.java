@@ -11,13 +11,16 @@ import java.util.Optional;
 
 @Repository
 public interface TrainingSampleRepository extends JpaRepository<TrainingSample, Long> {
-    List<TrainingSample> findByProcessId(Long processId);
+    List<TrainingSample> findByProcessIdOrderByCreatedAtDesc(Long processId);
 
-    List<TrainingSample> findByProcessIdAndDeleteFlagFalse(Long processId);
+    List<TrainingSample> findByProcessIdAndDeleteFlagFalseOrderByCreatedAtDesc(Long processId);
 
-    List<TrainingSample> findByCategoryNameAndDeleteFlagFalse(String categoryName);
+    List<TrainingSample> findByCategoryNameAndDeleteFlagFalseOrderByCreatedAtDesc(String categoryName);
 
-    List<TrainingSample> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
+    List<TrainingSample> findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(Long productLineId);
+
+    @Query("SELECT ts FROM TrainingSample ts WHERE ts.productLine.id IN :lineIds AND ts.deleteFlag = false")
+    List<TrainingSample> findByProductLineIdInAndDeleteFlagFalse(@Param("lineIds") List<Long> lineIds);
 
     Optional<TrainingSample> findByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 

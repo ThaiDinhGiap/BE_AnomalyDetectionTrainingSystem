@@ -10,6 +10,7 @@ public enum ReportStatus {
     ON_GOING,
     DONE,
     NEED_SIGN,
+    NEED_ASSIGNED,
     PENDING,
     MISS,
     REVISE

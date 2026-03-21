@@ -15,15 +15,11 @@ import java.util.Optional;
 public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSampleReview, Long> {
     Optional<TrainingSampleReview> findByProductLineIdAndReviewDate(Long productLineId, LocalDate reviewDate);
 
-    List<TrainingSampleReview> findByResult(TrainingSampleReviewResult result);
-
     List<TrainingSampleReview> findByReviewedById(Long reviewedById);
-
-    List<TrainingSampleReview> findByDueDateBeforeAndResultEquals(LocalDate dueDate, TrainingSampleReviewResult result);
 
     List<TrainingSampleReview> findByConfigId(Long configId);
 
-    List<TrainingSampleReview> findByProductLineId(Long productLineId);
+    List<TrainingSampleReview> findByProductLineIdOrderByCreatedAtDesc(Long productLineId);
 
     /**
      * Tìm tất cả review đã quá hạn chưa được phê duyệt
@@ -34,7 +30,7 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
      */
     @Query("SELECT tr FROM TrainingSampleReview tr " +
             "WHERE tr.dueDate < CURRENT_DATE " +
-            "AND tr.result != com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult.APPROVED")
+            "AND tr.status != com.sep490.anomaly_training_backend.enums.ReportStatus.APPROVED")
     List<TrainingSampleReview> findOverdueReviews();
 
 }

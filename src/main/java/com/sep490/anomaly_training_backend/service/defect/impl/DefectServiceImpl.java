@@ -54,14 +54,14 @@ public class DefectServiceImpl implements DefectService {
 
     @Override
     public List<DefectResponse> getDefectBySupervisor(Long supervisorId) {
-        return defectRepository.findAllBySupervisorAndDeleteFlagFalse(supervisorId)
+        return defectRepository.findAllBySupervisorAndDeleteFlagFalseOrderByCreatedAtDesc(supervisorId)
                 .stream()
                 .map(defectMapper::toDto).toList();
     }
 
     @Override
     public List<DefectResponse> getDefectByProductLine(Long productLineId) {
-        List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId);
+        List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId);
         return defects.stream().map(defect -> {
             DefectResponse response = defectMapper.toDto(defect);
             if (defect.getProduct() != null) {
@@ -147,10 +147,10 @@ public class DefectServiceImpl implements DefectService {
 
     @Override
     public DefectCoverageResponse getCoverageInProductLine(Long productLineId) {
-        List<Defect> defects = defectRepository.findDefectsWithoutTrainingSample(productLineId);
-        int totalDefect = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId).size();
-        int totalTrainingSample = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId).size();
-        List<Defect> totalDefectInProductLIne = defectRepository.findAllByProductLineAndDeleteFlagFalse(productLineId);
+        List<Defect> defects = defectRepository.findDefectsWithoutTrainingSampleOrderByCreatedAtDesc(productLineId);
+        int totalDefect = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId).size();
+        int totalTrainingSample = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId).size();
+        List<Defect> totalDefectInProductLIne = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId);
         Double coverage = totalDefectInProductLIne.isEmpty() ? 0.0 : (double) (totalDefectInProductLIne.size() - defects.size()) / totalDefectInProductLIne.size() * 100;
         return DefectCoverageResponse.builder()
                 .defects(defects.stream().map(defectMapper::toDto).toList())

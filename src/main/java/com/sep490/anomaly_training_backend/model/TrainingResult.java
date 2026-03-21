@@ -104,4 +104,11 @@ public class TrainingResult extends BaseEntity implements Approvable {
 
         return DigestUtils.sha256Hex(sb);
     }
+
+    @Override
+    public void clearRejectFeedback() {
+        if (!details.isEmpty()) {
+            details.forEach(detail -> {detail.setRejectFeedback(null);});
+        }
+    }
 }

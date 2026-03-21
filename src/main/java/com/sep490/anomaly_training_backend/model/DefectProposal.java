@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.model;
 
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.CascadeType;
@@ -82,5 +83,12 @@ public class DefectProposal extends BaseEntity implements Approvable {
         sb.append(id).append("|");
         sb.append(currentVersion).append("|");
         return DigestUtils.sha256Hex(sb.toString());
+    }
+
+    @Override
+    public void clearRejectFeedback() {
+        if (!details.isEmpty()) {
+            details.forEach(detail -> {detail.setRejectFeedback(null);});
+        }
     }
 }

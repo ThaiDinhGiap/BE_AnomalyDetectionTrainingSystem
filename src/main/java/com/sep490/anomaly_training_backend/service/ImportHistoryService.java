@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.model.User;
@@ -25,4 +26,6 @@ public interface ImportHistoryService {
     ) {
         saveHistory(user, filePath, importType, ImportStatus.PASS, List.of());
     }
+
+    List<ImportHistoryResponse> getHistory(User user, String importType);
 }

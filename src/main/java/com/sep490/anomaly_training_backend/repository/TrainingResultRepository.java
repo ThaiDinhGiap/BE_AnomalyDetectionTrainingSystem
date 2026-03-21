@@ -22,6 +22,9 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     @Query("SELECT tp FROM TrainingResult tp WHERE tp.team.group.id = :groupId AND tp.deleteFlag = false")
     List<TrainingResult> findByGroupId(Long groupId);
 
+    @Query("SELECT tp FROM TrainingResult tp WHERE tp.team.group.id IN :groupIds AND tp.deleteFlag = false")
+    List<TrainingResult> findByGroupIds(@Param("groupIds") List<Long> groupIds);
+
     List<TrainingResult> findByTrainingPlanIdIn(List<Long> planIds);
 
     List<TrainingResult> findByLineId(Long lineId);
