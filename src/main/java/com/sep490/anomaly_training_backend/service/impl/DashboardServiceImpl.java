@@ -139,7 +139,8 @@ public class DashboardServiceImpl implements DashboardService {
         // null
         int monthlyDefects;
         if (lineId != null) {
-            List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
+            List<Defect> allDefects = defectRepository
+                    .findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
             monthlyDefects = (int) allDefects.stream()
                     .filter(d -> d.getDetectedDate() != null &&
                             !d.getDetectedDate().isBefore(monthStart) &&
@@ -245,7 +246,8 @@ public class DashboardServiceImpl implements DashboardService {
         if (type == null || type == 3) {
             List<DefectProposal> defectProposals;
             if (lineId != null) {
-                defectProposals = defectProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId, currentUser);
+                defectProposals = defectProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId,
+                        currentUser);
             } else {
                 defectProposals = defectProposalRepository.findByDeleteFlagFalse().stream()
                         .filter(p -> currentUser.equals(p.getCreatedBy()))
@@ -266,7 +268,8 @@ public class DashboardServiceImpl implements DashboardService {
         if (type == null || type == 4) {
             List<TrainingSampleProposal> sampleProposals;
             if (lineId != null) {
-                sampleProposals = trainingSampleProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId, currentUser);
+                sampleProposals = trainingSampleProposalRepository
+                        .findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId, currentUser);
             } else {
                 sampleProposals = trainingSampleProposalRepository.findByDeleteFlagFalse().stream()
                         .filter(p -> currentUser.equals(p.getCreatedBy()))
@@ -773,10 +776,12 @@ public class DashboardServiceImpl implements DashboardService {
      * Khi groupId == null → lấy tất cả group mà SV quản lý.
      */
     private List<Long> resolveSvGroupIds(Long groupId) {
-        if (groupId != null) return List.of(groupId);
+        if (groupId != null)
+            return List.of(groupId);
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(currentUser).orElse(null);
-        if (user == null) return List.of();
+        if (user == null)
+            return List.of();
         return groupRepository.findBySupervisorId(user.getId()).stream()
                 .map(Group::getId).toList();
     }
@@ -789,7 +794,8 @@ public class DashboardServiceImpl implements DashboardService {
             return List.of(lineId);
         }
         List<Long> groupIds = resolveSvGroupIds(groupId);
-        if (groupIds.isEmpty()) return List.of();
+        if (groupIds.isEmpty())
+            return List.of();
         return groupIds.stream()
                 .flatMap(gId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(gId).stream())
                 .map(ProductLine::getId)
@@ -975,7 +981,8 @@ public class DashboardServiceImpl implements DashboardService {
             // Count defects for this team's lines in this month
             long defectCount = 0;
             for (TrainingPlan plan : teamPlans) {
-                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(plan.getLine().getId());
+                List<Defect> defects = defectRepository
+                        .findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(plan.getLine().getId());
                 defectCount += defects.stream()
                         .filter(d -> d.getDetectedDate() != null
                                 && !d.getDetectedDate().isBefore(monthStart)
@@ -1020,10 +1027,13 @@ public class DashboardServiceImpl implements DashboardService {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
         List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
 
+        // Group by process code only (not double-counting)
         Map<String, Integer> countByProcess = new LinkedHashMap<>();
         for (Defect d : allDefects) {
-            String processCode = d.getProcess() != null ? d.getProcess().getCode() : "Khác";
-            countByProcess.merge(processCode, 1, Integer::sum);
+            String label = d.getProcess() != null
+                    ? d.getProcess().getCode() + " (" + d.getProcess().getName() + ")"
+                    : "Khác";
+            countByProcess.merge(label, 1, Integer::sum);
         }
 
         return countByProcess.entrySet().stream()
@@ -1415,8 +1425,19 @@ public class DashboardServiceImpl implements DashboardService {
     public List<SvTopTrainingSampleItem> getSvTopTrainingSamples(Long groupId, Long lineId) {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
 
-        List<TrainingResult> allResults = trainingResultRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()))
+        // Get all training samples for the resolved lines
+        List<TrainingSample> allSamples = trainingSampleRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
+        if (allSamples.isEmpty())
+            return List.of();
+
+        // Get all result details from this group's results
+        List<Long> groupIds = resolveSvGroupIds(groupId);
+        List<TrainingResult> allResults = new ArrayList<>();
+        for (Long gId : groupIds) {
+            allResults.addAll(trainingResultRepository.findByGroupId(gId));
+        }
+        allResults = allResults.stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
                 .toList();
 
         List<TrainingResultDetail> allDetails = new ArrayList<>();
@@ -1424,24 +1445,60 @@ public class DashboardServiceImpl implements DashboardService {
             allDetails.addAll(trainingResultDetailRepository.findByTrainingResultId(result.getId()));
         }
 
-        // Group by process name
-        record ProcessStats(int total, int failed) {
+        // Group by sample categoryName (or trainingCode): count used + failed
+        record SampleStats(int total, int failed) {
         }
-        Map<String, ProcessStats> statsMap = new LinkedHashMap<>();
+        Map<String, SampleStats> statsMap = new LinkedHashMap<>();
 
+        // Approach 1: Group result details by trainingSample or process name
         for (TrainingResultDetail d : allDetails) {
-            if (d.getProcess() == null || d.getIsPass() == null)
+            if (d.getIsPass() == null)
                 continue;
-            String processName = "HL " + d.getProcess().getName() + " " + d.getProcess().getCode();
-            ProcessStats existing = statsMap.getOrDefault(processName, new ProcessStats(0, 0));
+
+            String sampleName;
+            if (d.getTrainingSample() != null) {
+                // Best case: direct link to TrainingSample
+                TrainingSample ts = d.getTrainingSample();
+                sampleName = ts.getCategoryName() + " (" + ts.getTrainingCode() + ")";
+            } else if (d.getProcess() != null) {
+                sampleName = d.getProcess().getName() + " (" + d.getProcess().getCode() + ")";
+            } else if (d.getTrainingPlanDetail() != null
+                    && d.getTrainingPlanDetail().getTrainingPlan() != null
+                    && d.getTrainingPlanDetail().getTrainingPlan().getLine() != null) {
+                // Fallback: use line name
+                sampleName = d.getTrainingPlanDetail().getTrainingPlan().getLine().getName();
+            } else {
+                continue;
+            }
+
+            SampleStats existing = statsMap.getOrDefault(sampleName, new SampleStats(0, 0));
             int newTotal = existing.total() + 1;
             int newFailed = existing.failed() + (Boolean.TRUE.equals(d.getIsPass()) ? 0 : 1);
-            statsMap.put(processName, new ProcessStats(newTotal, newFailed));
+            statsMap.put(sampleName, new SampleStats(newTotal, newFailed));
+        }
+
+        // If no result detail data, fall back to showing samples with 0 usage
+        if (statsMap.isEmpty()) {
+            return allSamples.stream()
+                    .collect(Collectors.groupingBy(
+                            s -> s.getProcess() != null
+                                    ? s.getProcess().getCode()
+                                    : s.getCategoryName(),
+                            Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> SvTopTrainingSampleItem.builder()
+                            .name(e.getKey())
+                            .used(e.getValue().intValue())
+                            .failRate(0)
+                            .build())
+                    .sorted((a, b) -> b.getUsed() - a.getUsed())
+                    .limit(5)
+                    .toList();
         }
 
         return statsMap.entrySet().stream()
                 .map(entry -> {
-                    ProcessStats stats = entry.getValue();
+                    SampleStats stats = entry.getValue();
                     double failRate = stats.total() > 0
                             ? Math.round((double) stats.failed() / stats.total() * 1000.0) / 10.0
                             : 0;
@@ -1454,5 +1511,255 @@ public class DashboardServiceImpl implements DashboardService {
                 .sorted((a, b) -> b.getUsed() - a.getUsed())
                 .limit(5)
                 .toList();
+    }
+
+    // ======================== SV-12. Training Execution Chart
+    // ========================
+
+    @Override
+    public List<TrainingExecutionPoint> getSvTrainingExecution(Long groupId, Long lineId, Integer year, Integer month) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        // Get all plans in resolved groups' lines (not DRAFT)
+        List<Long> groupIds = resolveSvGroupIds(groupId);
+        List<TrainingPlan> plans = new ArrayList<>();
+        for (Long gId : groupIds) {
+            plans.addAll(trainingPlanRepository.findByGroupId(gId));
+        }
+        plans = plans.stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()))
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> p.getStatus() != ReportStatus.DRAFT)
+                .toList();
+
+        // Collect plan details within target month
+        List<TrainingPlanDetail> allDetails = new ArrayList<>();
+        for (TrainingPlan plan : plans) {
+            List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            for (TrainingPlanDetail d : details) {
+                if (d.getPlannedDate() != null
+                        && !d.getPlannedDate().isBefore(monthStart)
+                        && !d.getPlannedDate().isAfter(monthEnd)) {
+                    allDetails.add(d);
+                }
+            }
+        }
+
+        // Collect result details
+        List<TrainingResultDetail> resultDetails = new ArrayList<>();
+        for (TrainingPlan plan : plans) {
+            List<TrainingPlanDetail> planDetails = trainingPlanDetailRepository
+                    .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
+            for (TrainingPlanDetail pd : planDetails) {
+                List<TrainingResultDetail> rds = trainingResultDetailRepository
+                        .findByTrainingPlanDetailId(pd.getId());
+                resultDetails.addAll(rds);
+            }
+        }
+
+        // Build cumulative data per unique date
+        Set<LocalDate> allDates = new TreeSet<>();
+        allDetails.forEach(d -> allDates.add(d.getPlannedDate()));
+        resultDetails.stream()
+                .filter(r -> r.getActualDate() != null
+                        && !r.getActualDate().isBefore(monthStart)
+                        && !r.getActualDate().isAfter(monthEnd))
+                .forEach(r -> allDates.add(r.getActualDate()));
+
+        if (allDates.isEmpty()) {
+            return List.of();
+        }
+
+        List<TrainingExecutionPoint> points = new ArrayList<>();
+        int cumulativePlan = 0;
+        int cumulativeActual = 0;
+        int cumulativeMissed = 0;
+
+        for (LocalDate date : allDates) {
+            // Planned for this date
+            long plannedOnDate = allDetails.stream()
+                    .filter(d -> d.getPlannedDate().equals(date))
+                    .count();
+            cumulativePlan += (int) plannedOnDate;
+
+            // Actual done on this date
+            long actualOnDate = resultDetails.stream()
+                    .filter(r -> r.getActualDate() != null && r.getActualDate().equals(date)
+                            && Boolean.TRUE.equals(r.getIsPass()))
+                    .count();
+            cumulativeActual += (int) actualOnDate;
+
+            // Missed: planned on this date but not done (only count if date has passed)
+            if (!date.isAfter(today)) {
+                long missedOnDate = allDetails.stream()
+                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .count();
+                cumulativeMissed += (int) missedOnDate;
+            }
+
+            points.add(TrainingExecutionPoint.builder()
+                    .date(date.format(dateFormatter))
+                    .keHoach(cumulativePlan)
+                    .thucTe(cumulativeActual)
+                    .biLo(cumulativeMissed)
+                    .build());
+        }
+
+        return points;
+    }
+
+    // ======================== SV-13. Skill Certificates ========================
+
+    @Override
+    public List<SkillCertificateItem> getSvSkillCertificates(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Process> processes = lineIds.isEmpty() ? List.of()
+                : processRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
+
+        return processes.stream()
+                .sorted(Comparator.comparing(Process::getCode))
+                .map(process -> {
+                    List<EmployeeSkill> skills = employeeSkillRepository
+                            .findByProcessIdAndDeleteFlagFalse(process.getId());
+
+                    List<String> validNames = new ArrayList<>();
+                    List<String> expiringNames = new ArrayList<>();
+                    List<String> revokedNames = new ArrayList<>();
+
+                    for (EmployeeSkill skill : skills) {
+                        String empName = skill.getEmployee() != null ? skill.getEmployee().getFullName() : "N/A";
+
+                        if (skill.getStatus() == EmployeeSkillStatus.VALID) {
+                            validNames.add(empName);
+                        } else if (skill.getStatus() == EmployeeSkillStatus.PENDING_REVIEW) {
+                            String suffix = skill.getExpiryDate() != null
+                                    ? " (" + skill.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM")) + ")"
+                                    : "";
+                            expiringNames.add(empName + suffix);
+                        } else if (skill.getStatus() == EmployeeSkillStatus.REVOKED) {
+                            revokedNames.add(empName + " (Đã thu hồi)");
+                        }
+                    }
+
+                    return SkillCertificateItem.builder()
+                            .process(process.getCode() + " (" + process.getName() + ")")
+                            .valid(validNames.size())
+                            .validNames(validNames)
+                            .expiring(expiringNames.size())
+                            .expiringNames(expiringNames)
+                            .revoked(revokedNames.size())
+                            .revokedNames(revokedNames)
+                            .build();
+                })
+                .toList();
+    }
+
+    // ======================== SV-14. Defect Trend ========================
+
+    @Override
+    public List<DefectTrendPoint> getSvDefectTrend(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        // Group by detected_date, last 30 days
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        Map<LocalDate, List<Defect>> byDate = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null && !d.getDetectedDate().isBefore(thirtyDaysAgo))
+                .collect(Collectors.groupingBy(Defect::getDetectedDate, TreeMap::new, Collectors.toList()));
+
+        return byDate.entrySet().stream()
+                .map(entry -> {
+                    LocalDate date = entry.getKey();
+                    List<Defect> defects = entry.getValue();
+
+                    Map<String, List<Defect>> byDescription = defects.stream()
+                            .collect(Collectors.groupingBy(
+                                    d -> d.getDefectDescription() + "|" +
+                                            (d.getProcess() != null ? d.getProcess().getName() : "N/A")));
+
+                    List<DefectErrorDetail> errors = byDescription.entrySet().stream()
+                            .map(e -> {
+                                String[] parts = e.getKey().split("\\|", 2);
+                                return DefectErrorDetail.builder()
+                                        .content(parts[0])
+                                        .process(parts.length > 1 ? parts[1] : "N/A")
+                                        .quantity(e.getValue().size())
+                                        .build();
+                            })
+                            .toList();
+
+                    return DefectTrendPoint.builder()
+                            .date(date.format(formatter))
+                            .totalErrors(defects.size())
+                            .errors(errors)
+                            .build();
+                })
+                .toList();
+    }
+
+    // ======================== SV-15. Defect by Process ========================
+
+    @Override
+    public List<StageDistribution> getSvDefectByProcess(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        Map<String, Integer> countByProcess = new LinkedHashMap<>();
+        for (Defect d : allDefects) {
+            String processName = d.getProcess() != null ? d.getProcess().getName() : "Khác";
+            countByProcess.merge(processName, 1, Integer::sum);
+        }
+
+        int colorIndex = 0;
+        List<StageDistribution> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : countByProcess.entrySet()) {
+            result.add(StageDistribution.builder()
+                    .stage(entry.getKey())
+                    .value(entry.getValue())
+                    .color(PIE_COLORS[colorIndex % PIE_COLORS.length])
+                    .build());
+            colorIndex++;
+        }
+
+        return result;
+    }
+
+    // ======================== SV-16. Training Samples by Process ========================
+
+    @Override
+    public List<StageDistribution> getSvSampleByProcess(Long groupId, Long lineId) {
+        List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<TrainingSample> allSamples = lineIds.isEmpty() ? List.of()
+                : trainingSampleRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
+
+        Map<String, Integer> countByProcess = new LinkedHashMap<>();
+        for (TrainingSample s : allSamples) {
+            String processName = s.getProcess() != null ? s.getProcess().getName() : "Khác";
+            countByProcess.merge(processName, 1, Integer::sum);
+        }
+
+        int colorIndex = 0;
+        List<StageDistribution> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : countByProcess.entrySet()) {
+            result.add(StageDistribution.builder()
+                    .stage(entry.getKey())
+                    .value(entry.getValue())
+                    .color(PIE_COLORS[colorIndex % PIE_COLORS.length])
+                    .build());
+            colorIndex++;
+        }
+
+        return result;
     }
 }

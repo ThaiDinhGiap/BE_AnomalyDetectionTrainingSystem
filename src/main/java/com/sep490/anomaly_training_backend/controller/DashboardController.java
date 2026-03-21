@@ -150,15 +150,15 @@ public class DashboardController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "[SV] Get defect count by operation/process")
-    @GetMapping("/sv/defect-by-operation")
-    @PreAuthorize("hasAuthority('dashboard.view')")
-    public ResponseEntity<ApiResponse<List<SvDefectByOperation>>> getSvDefectByOperation(
-            @RequestParam(value = "groupId", required = false) Long groupId,
-            @RequestParam(value = "lineId", required = false) Long lineId) {
-        List<SvDefectByOperation> data = dashboardService.getSvDefectByOperation(groupId, lineId);
-        return ResponseEntity.ok(ApiResponse.success(data));
-    }
+//    @Operation(summary = "[SV] Get defect count by process")
+//    @GetMapping("/sv/defect-by-process")
+//    @PreAuthorize("hasAuthority('dashboard.view')")
+//    public ResponseEntity<ApiResponse<List<SvDefectByOperation>>> getSvDefectByOperation(
+//            @RequestParam(value = "groupId", required = false) Long groupId,
+//            @RequestParam(value = "lineId", required = false) Long lineId) {
+//        List<SvDefectByOperation> data = dashboardService.getSvDefectByOperation(groupId, lineId);
+//        return ResponseEntity.ok(ApiResponse.success(data));
+//    }
 
     @Operation(summary = "[SV] Get top defect hotspot processes")
     @GetMapping("/sv/defect-hotspot")
@@ -230,6 +230,58 @@ public class DashboardController {
             @RequestParam(value = "groupId", required = false) Long groupId,
             @RequestParam(value = "lineId", required = false) Long lineId) {
         List<SvTopTrainingSampleItem> data = dashboardService.getSvTopTrainingSamples(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get training execution chart data for a month")
+    @GetMapping("/sv/training-execution")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<TrainingExecutionPoint>>> getSvTrainingExecution(
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        List<TrainingExecutionPoint> data = dashboardService.getSvTrainingExecution(groupId, lineId, year, month);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get skill certificate statistics by process")
+    @GetMapping("/sv/skill-certificates")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SkillCertificateItem>>> getSvSkillCertificates(
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SkillCertificateItem> data = dashboardService.getSvSkillCertificates(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get defect trend over time")
+    @GetMapping("/sv/defect-trend")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<DefectTrendPoint>>> getSvDefectTrend(
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<DefectTrendPoint> data = dashboardService.getSvDefectTrend(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get defect distribution by process")
+    @GetMapping("/sv/defect-by-process")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<StageDistribution>>> getSvDefectByProcess(
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<StageDistribution> data = dashboardService.getSvDefectByProcess(groupId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[SV] Get training sample distribution by process")
+    @GetMapping("/sv/sample-by-process")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<StageDistribution>>> getSvSampleByProcess(
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<StageDistribution> data = dashboardService.getSvSampleByProcess(groupId, lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
