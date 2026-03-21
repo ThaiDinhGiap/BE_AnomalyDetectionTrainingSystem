@@ -10,7 +10,7 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {TeamMapper.class})
 public abstract class GroupMapper {
 
     @Autowired
@@ -28,13 +28,13 @@ public abstract class GroupMapper {
 
     // 2. DTO -> Entity (Create)
     @Mapping(target = "section", source = "sectionId", qualifiedByName = "mapSectionById")
-    @Mapping(target = "supervisor", source = "supervisorId", qualifiedByName = "mapUserById")
+    @Mapping(target = "supervisor", source = "supervisorId", qualifiedByName = "mapUserById2")
     public abstract Group toEntity(GroupRequest dto);
 
     // 3. Update Entity
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "section", source = "sectionId", qualifiedByName = "mapSectionById")
-    @Mapping(target = "supervisor", source = "supervisorId", qualifiedByName = "mapUserById")
+    @Mapping(target = "supervisor", source = "supervisorId", qualifiedByName = "mapUserById2")
     public abstract void updateEntity(@MappingTarget Group group, GroupRequest dto);
 
     // --- Helper Methods ---
@@ -46,8 +46,8 @@ public abstract class GroupMapper {
                 .orElseThrow(() -> new RuntimeException("Section not found id: " + id));
     }
 
-    @Named("mapUserById")
-    User mapUserById(Long id) {
+    @Named("mapUserById2")
+    User mapUserById2(Long id) {
         if (id == null) return null;
         return userRepository.findById(id).orElse(null);
     }
