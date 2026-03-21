@@ -36,6 +36,9 @@ public class Team extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 20)
+    private String code;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     @ToString.Exclude
@@ -62,5 +65,9 @@ public class Team extends BaseEntity {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private List<Employee> employees = new ArrayList<>();
+
+    public Team(String code) {
+        this.code = code;
+    }
 }
 
