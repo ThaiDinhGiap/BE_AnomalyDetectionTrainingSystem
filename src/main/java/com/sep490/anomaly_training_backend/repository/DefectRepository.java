@@ -16,8 +16,9 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
     @Query("SELECT d FROM Defect d " +
             "join d.process p " +
             "join p.productLine l " +
-            "where l.id = :productLine and d.deleteFlag = false")
-    List<Defect> findAllByProductLineAndDeleteFlagFalse(@Param("productLine") Long productLine);
+            "where l.id = :productLine and d.deleteFlag = false " +
+            "ORDER BY d.createdAt DESC")
+    List<Defect> findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(@Param("productLine") Long productLine);
 
     @Query("SELECT d FROM Defect d " +
             "join d.process p " +
@@ -25,7 +26,7 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
             "join l.group g " +
             "join g.supervisor s " +
             "where s.id = :supervisorId and d.deleteFlag = false")
-    List<Defect> findAllBySupervisorAndDeleteFlagFalse(@Param("supervisorId") Long supervisorId);
+    List<Defect> findAllBySupervisorAndDeleteFlagFalseOrderByCreatedAtDesc(@Param("supervisorId") Long supervisorId);
 
     @Query("""
     SELECT COUNT(d) > 0
@@ -56,8 +57,9 @@ public interface DefectRepository extends JpaRepository<Defect, Long> {
               WHERE ts.defect.id = d.id
                 AND ts.deleteFlag = false
           )
+          ORDER BY d.createdAt DESC
     """)
-    List<Defect> findDefectsWithoutTrainingSample(@Param("productLineId") Long productLineId);
+    List<Defect> findDefectsWithoutTrainingSampleOrderByCreatedAtDesc(@Param("productLineId") Long productLineId);
 
     @Query("SELECT d FROM Defect d JOIN d.process p WHERE p.productLine.id IN :lineIds AND d.deleteFlag = false")
     List<Defect> findAllByProductLineIdsAndDeleteFlagFalse(@Param("lineIds") List<Long> lineIds);

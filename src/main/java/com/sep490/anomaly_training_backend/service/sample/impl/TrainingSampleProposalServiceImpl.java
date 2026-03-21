@@ -55,9 +55,9 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND))
                 .getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         if (("ROLE_TEAM_LEADER").equals(userRole.getRoleCode())) {
-            entityList = trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(id, username);
+            entityList = trainingSampleProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(id, username);
         } else {
-            entityList = trainingSampleProposalRepository.findByProductLineForSupervisorAndManager(id);
+            entityList = trainingSampleProposalRepository.findByProductLineForSupervisorAndManagerOrderByCreatedAtDesc(id);
         }
         List<TrainingSampleProposalResponse> trainingSampleProposalResponses = new ArrayList<>();
         for (TrainingSampleProposal entity : entityList) {

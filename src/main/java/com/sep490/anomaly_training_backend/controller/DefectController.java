@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
@@ -11,6 +12,7 @@ import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalRes
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.defect.DefectService;
@@ -56,6 +58,7 @@ public class DefectController {
     private final DefectService defectService;
     private final DefectProposalService defectProposalService;
     private final DefectProposalDetailService defectProposalDetailService;
+    private final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get defects by productLine (Defect Banking)")
     @GetMapping("/")
@@ -253,5 +256,13 @@ public class DefectController {
                 ))
                 .contentLength(file.contentLength())
                 .body(resource);
+    }
+
+    @Operation(summary = "Get history import Defect")
+    @GetMapping("/import-history")
+    @PreAuthorize("hasAuthority('defect.import')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyDefectImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "DEFECT_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 }

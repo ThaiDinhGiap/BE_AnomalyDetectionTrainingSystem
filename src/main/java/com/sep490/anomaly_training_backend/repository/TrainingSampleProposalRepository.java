@@ -25,8 +25,9 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
             WHERE t.productLine.id = :productLineId
               AND t.createdBy = :username
               AND t.deleteFlag = false
+              ORDER BY t.createdAt DESC
             """)
-    List<TrainingSampleProposal> findByProductLineIdAndCreatedBy(
+    List<TrainingSampleProposal> findByProductLineIdAndCreatedByOrderByCreatedAtDesc(
             @Param("productLineId") Long productLineId,
             @Param("username") String username);
 
@@ -48,9 +49,9 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
             FROM TrainingSampleProposal t
             WHERE t.productLine.id = :productLineId
               AND t.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
-              AND t.deleteFlag = false
+              AND t.deleteFlag = false ORDER BY t.createdAt DESC
             """)
-    List<TrainingSampleProposal> findByProductLineForSupervisorAndManager(@Param("productLineId") Long productLineId);
+    List<TrainingSampleProposal> findByProductLineForSupervisorAndManagerOrderByCreatedAtDesc(@Param("productLineId") Long productLineId);
 
     List<TrainingSampleProposal> findByStatusAndDeleteFlagFalse(ReportStatus status);
 }

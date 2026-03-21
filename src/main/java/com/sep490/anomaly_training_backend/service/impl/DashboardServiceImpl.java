@@ -139,7 +139,7 @@ public class DashboardServiceImpl implements DashboardService {
         // null
         int monthlyDefects;
         if (lineId != null) {
-            List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+            List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
             monthlyDefects = (int) allDefects.stream()
                     .filter(d -> d.getDetectedDate() != null &&
                             !d.getDetectedDate().isBefore(monthStart) &&
@@ -245,7 +245,7 @@ public class DashboardServiceImpl implements DashboardService {
         if (type == null || type == 3) {
             List<DefectProposal> defectProposals;
             if (lineId != null) {
-                defectProposals = defectProposalRepository.findByProductLineIdAndCreatedBy(lineId, currentUser);
+                defectProposals = defectProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId, currentUser);
             } else {
                 defectProposals = defectProposalRepository.findByDeleteFlagFalse().stream()
                         .filter(p -> currentUser.equals(p.getCreatedBy()))
@@ -266,7 +266,7 @@ public class DashboardServiceImpl implements DashboardService {
         if (type == null || type == 4) {
             List<TrainingSampleProposal> sampleProposals;
             if (lineId != null) {
-                sampleProposals = trainingSampleProposalRepository.findByProductLineIdAndCreatedBy(lineId, currentUser);
+                sampleProposals = trainingSampleProposalRepository.findByProductLineIdAndCreatedByOrderByCreatedAtDesc(lineId, currentUser);
             } else {
                 sampleProposals = trainingSampleProposalRepository.findByDeleteFlagFalse().stream()
                         .filter(p -> currentUser.equals(p.getCreatedBy()))
@@ -648,7 +648,7 @@ public class DashboardServiceImpl implements DashboardService {
     public List<DefectTrendPoint> getDefectTrend(Long lineId) {
         List<Defect> allDefects;
         if (lineId != null) {
-            allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+            allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
         } else {
             List<Long> userLineIds = resolveUserLineIds(null);
             allDefects = userLineIds.isEmpty() ? List.of()
@@ -700,7 +700,7 @@ public class DashboardServiceImpl implements DashboardService {
     public List<StageDistribution> getDefectByProcess(Long lineId) {
         List<Defect> allDefects;
         if (lineId != null) {
-            allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+            allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
         } else {
             List<Long> userLineIds = resolveUserLineIds(null);
             allDefects = userLineIds.isEmpty() ? List.of()
@@ -734,7 +734,7 @@ public class DashboardServiceImpl implements DashboardService {
     public List<StageDistribution> getSampleByProcess(Long lineId) {
         List<TrainingSample> allSamples;
         if (lineId != null) {
-            allSamples = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(lineId);
+            allSamples = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
         } else {
             List<Long> userLineIds = resolveUserLineIds(null);
             allSamples = userLineIds.isEmpty() ? List.of()
@@ -975,7 +975,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Count defects for this team's lines in this month
             long defectCount = 0;
             for (TrainingPlan plan : teamPlans) {
-                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalse(plan.getLine().getId());
+                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(plan.getLine().getId());
                 defectCount += defects.stream()
                         .filter(d -> d.getDetectedDate() != null
                                 && !d.getDetectedDate().isBefore(monthStart)

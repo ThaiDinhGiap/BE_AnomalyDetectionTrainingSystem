@@ -83,4 +83,11 @@ public class TrainingSampleProposal extends BaseEntity implements Approvable {
         sb.append(currentVersion).append("|");
         return DigestUtils.sha256Hex(sb.toString());
     }
+
+    @Override
+    public void clearRejectFeedback() {
+        if (!details.isEmpty()) {
+            details.forEach(detail -> {detail.setRejectFeedback(null);});
+        }
+    }
 }

@@ -66,7 +66,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }
-
+        entity.clearRejectFeedback();
         ApprovalFlowStep firstStep = getFirstStep(entity.getEntityType());
         ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
         entity.setStatus(pendingStatus);

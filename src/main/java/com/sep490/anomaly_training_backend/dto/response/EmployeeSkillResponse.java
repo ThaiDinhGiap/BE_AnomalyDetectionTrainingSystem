@@ -11,7 +11,7 @@ public class EmployeeSkillResponse {
     Long id;
     String employeeName;
     String employeeCode;
-    Long processId;
+    ProcessResponse process;
     LocalDate certifiedDate;
     LocalDate expiryDate;
     EmployeeSkillStatus status;

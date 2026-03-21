@@ -6,13 +6,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ProcessMapper.class, EmployeeMapper.class})
 @Component
 public interface EmployeeSkillMapper {
 
     @Mapping(source = "employee.fullName", target = "employeeName")
     @Mapping(source = "employee.employeeCode", target = "employeeCode")
-    @Mapping(source = "process.id", target = "processId")
     EmployeeSkillResponse toDto(EmployeeSkill employeeSkill);
 
 }

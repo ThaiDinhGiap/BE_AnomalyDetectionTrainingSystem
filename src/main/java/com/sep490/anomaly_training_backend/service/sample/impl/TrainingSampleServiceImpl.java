@@ -14,6 +14,7 @@ import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.defect.DefectService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
@@ -51,10 +52,11 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final AttachmentService attachmentService;
     private final TrainingCodeGenerator trainingCodeGenerator;
     private final ProductService productService;
+    private final DefectService defectService;
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId) {
-        return trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(productLineId)
+        return trainingSampleRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId)
                 .stream()
                 .map(this::enrichResponse)
                 .toList();
@@ -71,7 +73,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     public List<TrainingSampleResponse> getTrainingSampleByProcess(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
-        return trainingSampleRepository.findByProcessIdAndDeleteFlagFalse(entity.getProcess().getId())
+        return trainingSampleRepository.findByProcessIdAndDeleteFlagFalseOrderByCreatedAtDesc(entity.getProcess().getId())
                 .stream().map(this::enrichResponse).toList();
     }
 
@@ -79,7 +81,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     public List<TrainingSampleResponse> getTrainingSampleByCategory(Long id) {
         TrainingSample entity = trainingSampleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
-        return trainingSampleRepository.findByCategoryNameAndDeleteFlagFalse(entity.getCategoryName())
+        return trainingSampleRepository.findByCategoryNameAndDeleteFlagFalseOrderByCreatedAtDesc(entity.getCategoryName())
                 .stream().map(this::enrichResponse).toList();
     }
 
@@ -409,6 +411,9 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         TrainingSampleResponse response = trainingSampleMapper.toDto(entity);
         if (entity.getProduct() != null) {
             response.setProduct(productService.getProductById(entity.getProduct().getId()));
+        }
+        if (entity.getDefect() != null) {
+            response.setDefect(defectService.getDefectById(entity.getDefect().getId()));
         }
         return addAttachment(response);
     }

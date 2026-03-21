@@ -1290,7 +1290,7 @@ CREATE TABLE approval_required_actions
 
 
 -- ============================================================================
--- PART 8: ANNUAL REVIEW (Kiểm tra lại mẫu huấn luyện định kỳ)
+-- PART 8: TRAINING SAMPLE REVIEW (Kiểm tra lại mẫu huấn luyện định kỳ)
 -- ============================================================================
 
 -- 8.1 TRAINING_SAMPLE_REVIEW_CONFIGS (Cấu hình review định kỳ)
@@ -1301,7 +1301,6 @@ CREATE TABLE training_sample_review_configs
     trigger_month    INT     NOT NULL DEFAULT 3 COMMENT 'Tháng bắt đầu review (1-12)',
     trigger_day      INT     NOT NULL DEFAULT 1 COMMENT 'Ngày bắt đầu review (1-31)',
     due_days         INT     NOT NULL DEFAULT 30 COMMENT 'Số ngày để hoàn thành review',
-
     delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
     created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
@@ -1325,11 +1324,11 @@ CREATE TABLE training_sample_reviews
     due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
     completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT  NOT NULL COMMENT 'TL thực hiện review',
-    result          ENUM ('NEED_ASSIGNED', 'PENDING', 'NEED_VERIFIED', 'REJECTED', 'APPROVED', 'OVERDUE')
-                            NOT NULL DEFAULT 'PENDING',
+    status          ENUM ('NEED_ASSIGNED', 'PENDING', 'DONE', 'REVISE', 'WAITING_SV',
+        'REJECTED_BY_SV', 'APPROVED', 'MISS') DEFAULT 'NEED_ASSIGNED',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
-
+    current_version INT              DEFAULT 1,
     delete_flag     BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by      VARCHAR(255),
@@ -1341,10 +1340,37 @@ CREATE TABLE training_sample_reviews
     FOREIGN KEY (reviewed_by) REFERENCES users (id),
     FOREIGN KEY (confirmed_by) REFERENCES users (id),
     INDEX idx_reviews_config (config_id),
-    INDEX idx_reviews_result (result),
     INDEX idx_reviews_due_date (due_date),
     INDEX idx_reviews_reviewed_by (reviewed_by),
     INDEX idx_reviews_delete_flag (delete_flag)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+CREATE TABLE training_sample_reviews_history
+(
+    id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
+    training_sample_review_id BIGINT NOT NULL,
+    version                 INT NOT NULL,
+    review_date            DATE,
+    due_date               DATE NOT NULL COMMENT 'Hạn chót phải hoàn thành',
+    completed_date         DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    reviewed_by            BIGINT NOT NULL COMMENT 'TL thực hiện review',
+    status                 VARCHAR(20),
+    sample_snapshot        JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
+    confirmed_by           BIGINT COMMENT 'SV xác nhận',
+    current_version        INT DEFAULT 1,
+    delete_flag            BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by             VARCHAR(255),
+    updated_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by             VARCHAR(255),
+
+    INDEX idx_reviews_history_review_date (review_date),
+    INDEX idx_reviews_history_due_date (due_date),
+    INDEX idx_reviews_history_reviewed_by (reviewed_by),
+    INDEX idx_reviews_history_delete_flag (delete_flag),
+    INDEX idx_reviews_history_version (version)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

@@ -1373,7 +1373,7 @@ VALUES ('DEFECT_PROPOSAL', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
        ('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
        ('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system'),
        ('TRAINING_RESULT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('TRAINING_RESULT', 2, 'ROLE_MANAGER', TRUE, 'system');
+       ('TRAINING_SAMPLE_REVIEW', 1, 'ROLE_SUPERVISOR', TRUE, 'system');
 
 -- ============================================================================
 -- PART 13: IMPORT HISTORIES
@@ -1521,7 +1521,7 @@ VALUES (1, 3, 1, 30, 'admin'),
        (2, 12, 1, 30, 'admin');
 
 INSERT INTO training_sample_reviews
-(config_id, product_line_id, review_date, due_date, completed_date, reviewed_by, result, sample_snapshot, confirmed_by,
+(config_id, product_line_id, review_date, due_date, completed_date, reviewed_by, status, sample_snapshot, confirmed_by,
  delete_flag, created_at, created_by, updated_at, updated_by)
 VALUES
 -- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
@@ -1540,12 +1540,12 @@ VALUES
 }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
-(2, 2, '2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED', '{
+(2, 2, '2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED_BY_SV', '{
   "total_samples": 45
 }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 
 -- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
-(4, 1, '2026-03-01', '2025-10-01', NULL, 1, 'OVERDUE', '{
+(4, 1, '2026-03-01', '2025-10-01', NULL, 1, 'MISS', '{
   "total_samples": 50
 }', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
 
