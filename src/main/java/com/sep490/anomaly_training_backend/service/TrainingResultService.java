@@ -41,6 +41,8 @@ public interface TrainingResultService {
 
     TrainingResultDetailResponse getTrainingResultDetail(Long id);
 
+    TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id);
+
     void submitResult(Long resultId);
 
     List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
