@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByGroupId(Long groupId);
 
+    List<Team> findByGroupIdIn(List<Long> groupIds);
+
     boolean existsByName(String name);
 
     @Query("SELECT t FROM Team t JOIN FETCH t.group WHERE t.teamLeader.id = :leaderId")

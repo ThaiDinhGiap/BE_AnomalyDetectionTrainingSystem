@@ -19,6 +19,9 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
 
     List<TrainingSample> findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(Long productLineId);
 
+    @Query("SELECT ts FROM TrainingSample ts WHERE ts.productLine.id IN :lineIds AND ts.deleteFlag = false")
+    List<TrainingSample> findByProductLineIdInAndDeleteFlagFalse(@Param("lineIds") List<Long> lineIds);
+
     Optional<TrainingSample> findByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 
     List<TrainingSample> findByDefectId(Long defectId);
