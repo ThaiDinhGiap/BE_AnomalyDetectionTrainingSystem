@@ -61,7 +61,7 @@ CREATE TABLE users
 (
     id                BIGINT PRIMARY KEY AUTO_INCREMENT,
     username          VARCHAR(50)  NOT NULL UNIQUE,
-    email             VARCHAR(100) NOT NULL UNIQUE,
+    email             VARCHAR(100) UNIQUE,
     password_hash     VARCHAR(255),
     full_name         VARCHAR(100) NOT NULL,
     is_active         BOOLEAN                     DEFAULT TRUE,
@@ -211,14 +211,14 @@ CREATE TABLE role_permissions
 CREATE TABLE sections
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code        VARCHAR(20)  NOT NULL UNIQUE,
-    name        VARCHAR(100) NOT NULL,
+    code        VARCHAR(20) NOT NULL UNIQUE,
+    name        VARCHAR(100),
     manager_id  BIGINT,
 
-    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     FOREIGN KEY (manager_id) REFERENCES users (id),
@@ -233,14 +233,14 @@ CREATE TABLE sections
 CREATE TABLE `groups`
 (
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    section_id    BIGINT       NOT NULL,
-    name          VARCHAR(100) NOT NULL,
+    section_id    BIGINT,
+    name          VARCHAR(100),
     supervisor_id BIGINT,
 
-    delete_flag   BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    delete_flag   BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at    TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
-    updated_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
     FOREIGN KEY (section_id) REFERENCES sections (id),
@@ -257,15 +257,15 @@ CREATE TABLE `groups`
 CREATE TABLE teams
 (
     id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
-    group_id            BIGINT       NOT NULL,
-    name                VARCHAR(100) NOT NULL,
-    team_leader_id      BIGINT       NOT NULL,
-    final_inspection_id BIGINT       NOT NULL,
+    group_id            BIGINT,
+    name                VARCHAR(100),
+    team_leader_id      BIGINT,
+    final_inspection_id BIGINT,
 
-    delete_flag         BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    delete_flag         BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by          VARCHAR(255),
-    updated_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by          VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
@@ -283,12 +283,12 @@ CREATE TABLE teams
 CREATE TABLE employees
 (
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    employee_code VARCHAR(20)  NOT NULL UNIQUE,
-    full_name     VARCHAR(100) NOT NULL,
+    employee_code VARCHAR(20) NOT NULL UNIQUE,
+    full_name     VARCHAR(100),
     team_id       BIGINT,
     status        ENUM ('ACTIVE', 'MATERNITY_LEAVE', 'RESIGNED') DEFAULT 'ACTIVE',
 
-    delete_flag   BOOLEAN      NOT NULL                          DEFAULT FALSE,
+    delete_flag   BOOLEAN     NOT NULL                           DEFAULT FALSE,
     created_at    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP,
     created_by    VARCHAR(255),
     updated_at    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -308,15 +308,15 @@ CREATE TABLE employees
 CREATE TABLE product_lines
 (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code        VARCHAR(20)  NOT NULL,
-    name        VARCHAR(100) NOT NULL,
+    code        VARCHAR(20) NOT NULL,
+    name        VARCHAR(100),
 
     group_id    BIGINT,
 
-    delete_flag BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    delete_flag BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by  VARCHAR(255),
-    updated_at  TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by  VARCHAR(255),
 
     FOREIGN KEY (group_id) REFERENCES `groups` (id),
@@ -331,20 +331,20 @@ CREATE TABLE product_lines
 CREATE TABLE processes
 (
     id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    code             VARCHAR(20)  NOT NULL,
-    name             VARCHAR(200) NOT NULL,
+    code             VARCHAR(20),
+    name             VARCHAR(200) UNIQUE,
     description      TEXT,
-    classification   TINYINT      NOT NULL DEFAULT 4
+    classification   TINYINT NOT NULL DEFAULT 4
         COMMENT '1,2,3=Quan trọng cần FI ký, 4=Thường',
     standard_time_jt DECIMAL(10, 2)
         COMMENT 'Thời gian tiêu chuẩn (giây)',
 
-    product_line_id  BIGINT       NOT NULL,
+    product_line_id  BIGINT,
 
-    delete_flag      BOOLEAN      NOT NULL DEFAULT FALSE,
-    created_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (product_line_id) REFERENCES product_lines (id),
@@ -831,10 +831,10 @@ CREATE TABLE training_plan_details
 
     reject_feedback  JSON,
 
-    delete_flag      BOOLEAN     NOT NULL               DEFAULT FALSE,
-    created_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP,
+    delete_flag      BOOLEAN     NOT NULL             DEFAULT FALSE,
+    created_at       TIMESTAMP                        DEFAULT CURRENT_TIMESTAMP,
     created_by       VARCHAR(255),
-    updated_at       TIMESTAMP                          DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP                        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by       VARCHAR(255),
 
     FOREIGN KEY (training_plan_id) REFERENCES training_plans (id) ON DELETE CASCADE,
@@ -968,19 +968,19 @@ CREATE TABLE training_results
 CREATE TABLE training_result_details
 (
     id                      BIGINT PRIMARY KEY AUTO_INCREMENT,
-    training_result_id      BIGINT  NOT NULL,
-    training_plan_detail_id BIGINT  NULL COMMENT 'Link về kế hoạch',
+    training_result_id      BIGINT      NOT NULL,
+    training_plan_detail_id BIGINT      NULL COMMENT 'Link về kế hoạch',
 
     -- Định danh ai làm gì
-    employee_id             BIGINT  NULL,
-    process_id              BIGINT  NULL,
+    employee_id             BIGINT      NULL,
+    process_id              BIGINT      NULL,
     training_sample_id      BIGINT COMMENT 'Mẫu huấn luyện sử dụng (từ danh sách)',
     product_id              BIGINT COMMENT 'Mã sản phẩm đang chạy lúc test',
     classification          INT COMMENT 'Phân loại công đoạn',
     training_topic          VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
     sample_code             VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
     cycle_time_standard     DECIMAL(10, 2) COMMENT 'Thời gian chuẩn (giây)',
-    batch_id                 VARCHAR(36) NULL,
+    batch_id                VARCHAR(36) NULL,
 
     -- Thời gian thực tế
     planned_date            DATE,
@@ -990,7 +990,7 @@ CREATE TABLE training_result_details
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
     status                  ENUM ('PENDING', 'DONE', 'REVISE', 'WAITING_SV',
         'REJECTED_BY_SV', 'APPROVED', 'MISS')
-                                             DEFAULT 'PENDING',
+                                                 DEFAULT 'PENDING',
 
     -- Kết quả
     detection_time          INT COMMENT 'Thời gian phát hiện (giây)',
@@ -1008,10 +1008,10 @@ CREATE TABLE training_result_details
 
     reject_feedback         JSON,
 
-    delete_flag             BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at              TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    delete_flag             BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at              TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by              VARCHAR(255),
-    updated_at              TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by              VARCHAR(255),
 
     FOREIGN KEY (training_result_id) REFERENCES training_results (id) ON DELETE CASCADE,
@@ -1075,7 +1075,7 @@ CREATE TABLE training_result_detail_history
     process_id                 BIGINT,
     training_sample_id         BIGINT,
     product_id                 BIGINT,
-    batch_id                 VARCHAR(36) NULL,
+    batch_id                   VARCHAR(36) NULL,
 
     training_topic             VARCHAR(255) COMMENT 'Hạng mục huấn luyện bất thường (không thuộc danh sách)',
     sample_code                VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
@@ -1095,10 +1095,10 @@ CREATE TABLE training_result_detail_history
     signature_pro_out_name     VARCHAR(100),
     signature_fi_out_name      VARCHAR(100),
 
-    delete_flag                BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+    delete_flag                BOOLEAN     NOT NULL DEFAULT FALSE,
+    created_at                 TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
     created_by                 VARCHAR(255),
-    updated_at                 TIMESTAMP        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at                 TIMESTAMP            DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by                 VARCHAR(255),
 
     FOREIGN KEY (training_result_history_id) REFERENCES training_result_history (id) ON DELETE CASCADE,

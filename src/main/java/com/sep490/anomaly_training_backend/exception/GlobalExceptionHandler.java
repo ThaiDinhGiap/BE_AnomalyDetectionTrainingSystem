@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,6 +33,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e.getErrorCode(), e.getMessage());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadRequestException(BadRequestException e) {
+        log.warn("Bad Request Exception: {}", e.getMessage());
+        return buildErrorResponse(ErrorCode.IMPORT_VALIDATION_ERROR, e.getMessage());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentialsException(BadCredentialsException ex) {
         log.warn("Bad credentials: {}", ex.getMessage());
@@ -47,7 +54,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException e) {
         String enumKey = Objects.requireNonNull(e.getBindingResult().getFieldError()).getDefaultMessage();
-        Map<String, Object> validationAttributes = null;
+        Map validationAttributes = null;
         try {
             validationAttributes = Objects.requireNonNull(e.getBindingResult().getFieldError())
                     .unwrap(ConstraintViolation.class)

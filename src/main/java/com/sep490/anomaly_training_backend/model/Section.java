@@ -34,13 +34,17 @@ public class Section extends BaseEntity {
     @Column(nullable = false, length = 20)
     private String code;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User manager;
+
+    public Section(String code) {
+        this.code = code;
+    }
 }
 

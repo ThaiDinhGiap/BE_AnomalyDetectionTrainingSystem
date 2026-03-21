@@ -31,7 +31,7 @@ public class Group extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -40,7 +40,7 @@ public class Group extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supervisor_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

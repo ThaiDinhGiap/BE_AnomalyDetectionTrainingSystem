@@ -112,6 +112,8 @@ public enum ErrorCode {
     UNEXPECTED_IMPORT_ERROR(7207, "An unexpected error occurred during the import process.", HttpStatus.INTERNAL_SERVER_ERROR),
     IMPORT_FAILED(7208, "Import failed. Please check the import history for details.", HttpStatus.BAD_REQUEST),
     INVALID_CELL_VALUE(7209, "Invalid cell value.", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_SKILL_IMPORT_ERROR(7210, "Error during employee skill import.", HttpStatus.BAD_REQUEST),
+    FILE_SIZE_EXCEEDS_LIMIT(7211, "File size exceeds 10MB limit.", HttpStatus.BAD_REQUEST),
 
     // Proposal Errors (range 73xx)
     DEFECT_PROPOSAL_NOT_FOUND(7300, "Defect proposal not found.", HttpStatus.NOT_FOUND),
