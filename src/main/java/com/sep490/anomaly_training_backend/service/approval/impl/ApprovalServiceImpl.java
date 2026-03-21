@@ -51,8 +51,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (entity == null) {
             return;
         }
-
-        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT ) {
             if (entity.getStatus() != ReportStatus.ON_GOING) {
                 throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Result can only be submitted when in ONGOING status");
             }
@@ -63,7 +62,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             return;
         }
 
-        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE)) {
+        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE) && (entity.getStatus() != ReportStatus.PENDING)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }
         entity.clearRejectFeedback();

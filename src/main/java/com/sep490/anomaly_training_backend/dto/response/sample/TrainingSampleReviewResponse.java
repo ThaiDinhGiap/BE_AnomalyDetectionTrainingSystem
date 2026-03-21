@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response.sample;
 
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -15,7 +16,7 @@ public class TrainingSampleReviewResponse {
     LocalDate dueDate;
     LocalDate completedDate;
     String reviewedBy;
-    String result;
+    ReportStatus status;
     String sampleSnapshot;
     String confirmedBy;
 }

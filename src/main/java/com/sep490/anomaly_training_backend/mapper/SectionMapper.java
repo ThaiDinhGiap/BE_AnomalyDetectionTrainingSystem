@@ -8,7 +8,7 @@ import com.sep490.anomaly_training_backend.repository.UserRepository;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {GroupMapper.class})
 public abstract class SectionMapper {
 
     @Autowired
