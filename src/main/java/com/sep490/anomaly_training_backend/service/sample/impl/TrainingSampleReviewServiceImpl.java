@@ -140,6 +140,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         TrainingSampleReview review = trainingSampleReviewRepository.findById(reviewRequest.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
         review.setSampleSnapshot(reviewRequest.getSampleSnapshot());
+        review.setReviewDate(LocalDate.now());
         review = trainingSampleReviewRepository.save(review);
         approvalService.submit(review, currentUser, request);
         return trainingSampleReviewMapper.toDto(review);

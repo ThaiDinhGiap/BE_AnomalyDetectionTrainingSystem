@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.dto.response;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class SectionResponse {
@@ -15,4 +16,5 @@ public class SectionResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    List<GroupResponse> groups;
 }

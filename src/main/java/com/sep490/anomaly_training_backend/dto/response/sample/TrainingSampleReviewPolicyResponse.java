@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response.sample;
 
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,6 @@ public class TrainingSampleReviewPolicyResponse {
     LocalDate expirationDate;
     PolicyStatus status;
     String description;
+    ProductLineResponse productLine;
     List<TrainingSampleReviewConfigResponse> reviewConfigs;
 }

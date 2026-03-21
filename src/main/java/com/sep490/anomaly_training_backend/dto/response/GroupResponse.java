@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.dto.response;
 import lombok.Data;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class GroupResponse {
@@ -17,6 +18,8 @@ public class GroupResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    List<TeamResponse> teams;
 
     public GroupResponse() {
     }
