@@ -27,4 +27,6 @@ public interface ProcessRepository extends JpaRepository<Process, Long> {
     Optional<Process> findByCode(String code);
 
     Optional<Process> findByProductLineCodeAndCode(String productLineCode, String processCode);
+
+    Optional<Process> findByName(String processName);
 }

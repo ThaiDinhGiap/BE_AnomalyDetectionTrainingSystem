@@ -38,26 +38,30 @@ public class Process extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_line_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ProductLine productLine;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String code;
 
-    @Column(nullable = false, length = 200)
+    @Column(length = 200)
     private String name;
 
     @Column(columnDefinition = "text")
     private String description;
 
     @Convert(converter = ProcessClassification.ConverterImpl.class)
-    @Column(name = "classification", columnDefinition = "TINYINT", nullable = false)
+    @Column(name = "classification", columnDefinition = "TINYINT")
     @Builder.Default
     private ProcessClassification classification = ProcessClassification.C4;
 
     @Column(name = "standard_time_jt")
     private BigDecimal standardTimeJt;
+
+    public Process(String name) {
+        this.name = name;
+    }
 }

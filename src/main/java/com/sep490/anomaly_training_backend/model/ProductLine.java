@@ -39,16 +39,20 @@ public class ProductLine extends BaseEntity {
     @Column(nullable = false, length = 20)
     private String code;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     @ToString.Exclude
     Group group;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     String name;
 
     @OneToMany(mappedBy = "productLine", cascade = CascadeType.ALL)
     @ToString.Exclude
     @Builder.Default
     List<Process> processes = new ArrayList<>();
+
+    public ProductLine(String code) {
+        this.code = code;
+    }
 }

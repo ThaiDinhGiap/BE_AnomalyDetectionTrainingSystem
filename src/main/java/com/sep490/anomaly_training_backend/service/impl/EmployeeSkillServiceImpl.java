@@ -1,35 +1,52 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.EmployeeSkillCertificationImportDto;
+import com.sep490.anomaly_training_backend.dto.ImportSkillMatrixResult;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
+import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.EmployeeSkillsDto;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.ProcessCompletionDto;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillStatusDto;
-import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
+import com.sep490.anomaly_training_backend.util.helper.EmployeeSkillCertificationImportHelper;
+import com.sep490.anomaly_training_backend.util.validator.EmployeeSkillCertificationImportValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
     private final EmployeeRepository employeeRepository;
@@ -37,6 +54,13 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     private final EmployeeSkillRepository employeeSkillRepository;
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final EmployeeSkillMapper employeeSkillMapper;
+
+    private final EmployeeSkillCertificationImportHelper importHelper;
+    private final EmployeeSkillCertificationImportValidator importValidator;
+    private final ProductLineRepository productLineRepository;
+    private final SectionRepository sectionRepository;
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 
     @Override
@@ -145,6 +169,112 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         response.setProcesses(processDtos);
         response.setEmployeeSkills(employeeSkillsDtos);
         return response;
+    }
+
+    @Override
+    public void importSkillMatrix(MultipartFile file) {
+        log.info("Starting skill matrix import from file: {}", file.getOriginalFilename());
+
+        try {
+            validateFile(file);
+
+            List<ImportErrorItem> errors = new ArrayList<>();
+            ImportSkillMatrixResult parseResult =
+                    parseExcelFileWithHierarchy(file, errors);
+
+            List<EmployeeSkillCertificationImportDto> parsedRows = parseResult.getParsedRows();
+            Map<String, Map<String, Set<String>>> hierarchyMap = parseResult.getHierarchyMap();
+
+            importValidator.validateFileData(parsedRows, errors);
+
+            if (!errors.isEmpty()) {
+                log.error("Validation errors found: {}", errors.size());
+                throw buildAppException(errors);
+            }
+
+            log.info("Skill matrix import completed. Rows: {}, Hierarchy: {}",
+                    parsedRows.size(), hierarchyMap.size());
+
+            processParsedData(new ImportSkillMatrixResult(parsedRows, hierarchyMap));
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during import: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.UNEXPECTED_IMPORT_ERROR, "Unexpected error: " + e.getMessage());
+        }
+    }
+
+    private ImportSkillMatrixResult parseExcelFileWithHierarchy(
+            MultipartFile file,
+            List<ImportErrorItem> errors) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null) {
+                throw new AppException(ErrorCode.EXCEL_SHEET_NOT_FOUND);
+            }
+
+            return importHelper.parseExcelRowsWithHierarchy(sheet, errors);
+        } catch (IOException e) {
+            log.error("Error reading Excel file: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.CANNOT_READ_EXCEL_FILE, "Cannot read Excel file: " + e.getMessage());
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error parsing Excel rows: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.IMPORT_PARSE_ERROR, "Error parsing rows: " + e.getMessage());
+        }
+    }
+
+    private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult) {
+        for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : importSkillMatrixResult.getHierarchyMap().entrySet()) {
+            String sectionCode = sectionEntry.getKey();
+            Section section = sectionRepository.findByCode(sectionCode)
+                    .orElseGet(() -> sectionRepository.save(new Section(sectionCode)));
+
+            for (Map.Entry<String, Set<String>> plEntry : sectionEntry.getValue().entrySet()) {
+                String productLineCode = plEntry.getKey();
+                ProductLine productLine = productLineRepository.findByCode(productLineCode)
+                        .orElseGet(() -> productLineRepository.save(new ProductLine(productLineCode)));
+                
+                for (String processName : plEntry.getValue()) {
+                    Process process = processRepository.findByName(processName)
+                            .orElseGet(() -> processRepository.save(new Process(processName)));
+
+                    // Insert ProcessInProductLine
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate file format
+     */
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_IS_EMPTY);
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.endsWith(".xlsx") && !filename.endsWith(".xls"))) {
+            throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new AppException(ErrorCode.FILE_SIZE_EXCEEDS_LIMIT);
+        }
+    }
+
+    /**
+     * Build AppException from error list
+     */
+    private AppException buildAppException(List<ImportErrorItem> errors) {
+        StringBuilder message = new StringBuilder("Import validation failed:\n");
+        for (ImportErrorItem error : errors) {
+            message.append("Row ").append(error.getRowNumber())
+                    .append(" (").append(error.getField()).append(")")
+                    .append(": ").append(error.getMessage()).append("\n");
+        }
+        return new AppException(ErrorCode.IMPORT_VALIDATION_ERROR, message.toString());
     }
 
     private SkillStatusDto mapToSkillStatusDto(EmployeeSkill skill) {

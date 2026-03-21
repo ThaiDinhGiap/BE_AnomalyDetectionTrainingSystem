@@ -43,7 +43,7 @@ public class Employee extends BaseEntity {
     @Column(name = "employee_code", nullable = false, unique = true, length = 20)
     private String employeeCode;
 
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", length = 100)
     private String fullName;
 
     @ManyToOne(fetch = FetchType.LAZY)
