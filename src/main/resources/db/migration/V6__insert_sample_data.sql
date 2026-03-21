@@ -225,14 +225,15 @@ VALUES
 -- action_item (15)
 (59, 'action_item.view', 'Xem các mục cần làm', 15, 'view', 1, TRUE, 'system');
 
-INSERT INTO required_actions (action_name, created_by) VALUES
-('Chỉnh sửa và gửi lại', 'system'),
-('Bổ sung thông tin', 'system'),
-('Làm lại hoàn toàn', 'system'),
-('Trao đổi với cấp trên', 'system'),
-('Không cần hành động', 'system');
+INSERT INTO required_actions (action_name, created_by)
+VALUES ('Chỉnh sửa và gửi lại', 'system'),
+       ('Bổ sung thông tin', 'system'),
+       ('Làm lại hoàn toàn', 'system'),
+       ('Trao đổi với cấp trên', 'system'),
+       ('Không cần hành động', 'system');
 
-INSERT INTO reject_reasons (category_name, reason_name, created_by) VALUES
+INSERT INTO reject_reasons (category_name, reason_name, created_by)
+VALUES
 -- Nhóm Dữ liệu
 ('Dữ liệu', 'Thiếu dữ liệu', 'system'),
 ('Dữ liệu', 'Dữ liệu không chính xác', 'system'),
@@ -443,13 +444,13 @@ VALUES (1, 'SEC-CK', 'Xưởng Gia Công Cơ Khí', 2, 'admin'),
        (2, 'SEC-LA', 'Xưởng Lắp Ráp & Đóng Gói', 2, 'admin'),
        (3, 'SEC-QC', 'Xưởng Kiểm Định Chất Lượng', 2, 'admin');
 
-INSERT INTO `groups` (id, section_id, name, supervisor_id, created_by)
-VALUES (1, 1, 'Khu Vực Tiện CNC', 3, 'admin'),
-       (2, 1, 'Khu Vực Phay CNC', 3, 'admin'),
-       (3, 1, 'Khu Vực Hàn & Gia Công Nhiệt', 4, 'admin'),
-       (4, 2, 'Khu Vực Lắp Ráp Máy Bơm', 4, 'admin'),
-       (5, 2, 'Khu Vực Lắp Ráp Động Cơ', 5, 'admin'),
-       (6, 3, 'Khu Vực KCS & Kiểm Tra Cuối', 5, 'admin');
+INSERT INTO `groups` (id, code, section_id, name, supervisor_id, created_by)
+VALUES (1, 'G1', 1, 'Khu Vực Tiện CNC', 3, 'admin'),
+       (2, 'G2', 1, 'Khu Vực Phay CNC', 3, 'admin'),
+       (3, 'G3', 1, 'Khu Vực Hàn & Gia Công Nhiệt', 4, 'admin'),
+       (4, 'G4', 2, 'Khu Vực Lắp Ráp Máy Bơm', 4, 'admin'),
+       (5, 'G5', 2, 'Khu Vực Lắp Ráp Động Cơ', 5, 'admin'),
+       (6, 'G6', 3, 'Khu Vực KCS & Kiểm Tra Cuối', 5, 'admin');
 
 INSERT INTO product_lines (id, code, name, group_id, created_by)
 VALUES (1, 'PL-TIEN-P1', 'Dòng Máy Bơm Nước P-Series (Tiện)', 1, 'admin'),
@@ -458,13 +459,13 @@ VALUES (1, 'PL-TIEN-P1', 'Dòng Máy Bơm Nước P-Series (Tiện)', 1, 'admin'
        (4, 'PL-LA-E1', 'Dây Chuyền Lắp Ráp Động Cơ E-Series', 5, 'admin'),
        (5, 'PL-LA-B1', 'Dây Chuyền Lắp Ráp Máy Bơm B-Series', 4, 'admin');
 
-INSERT INTO teams (id, group_id, name, team_leader_id, final_inspection_id, created_by)
-VALUES (1, 1, 'Tổ Tiện Ca Ngày', 6, 12, 'admin'),
-       (2, 2, 'Tổ Phay Ca Ngày', 7, 12, 'admin'),
-       (3, 3, 'Tổ Hàn & Nhiệt Luyện', 10, 12, 'admin'),
-       (4, 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 13, 'admin'),
-       (5, 5, 'Tổ Lắp Ráp Động Cơ', 9, 13, 'admin'),
-       (6, 6, 'Tổ KCS & Kiểm Cuối', 11, 13, 'admin');
+INSERT INTO teams (id, code, group_id, name, team_leader_id, final_inspection_id, created_by)
+VALUES (1, 'T1', 1, 'Tổ Tiện Ca Ngày', 6, 12, 'admin'),
+       (2, 'T2', 2, 'Tổ Phay Ca Ngày', 7, 12, 'admin'),
+       (3, 'T3', 3, 'Tổ Hàn & Nhiệt Luyện', 10, 12, 'admin'),
+       (4, 'T4', 4, 'Tổ Lắp Ráp Bơm Ca Sáng', 8, 13, 'admin'),
+       (5, 'T5', 5, 'Tổ Lắp Ráp Động Cơ', 9, 13, 'admin'),
+       (6, 'T6', 6, 'Tổ KCS & Kiểm Cuối', 11, 13, 'admin');
 
 INSERT INTO employees (id, employee_code, full_name, team_id, status, created_by)
 VALUES
