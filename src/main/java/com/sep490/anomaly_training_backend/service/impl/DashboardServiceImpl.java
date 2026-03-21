@@ -129,7 +129,7 @@ public class DashboardServiceImpl implements DashboardService {
         int pendingSignCount = pendingSignatures.size();
 
         // Monthly defects
-        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
         int monthlyDefects = (int) allDefects.stream()
                 .filter(d -> d.getDetectedDate() != null &&
                         !d.getDetectedDate().isBefore(monthStart) &&
@@ -556,7 +556,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<DefectTrendPoint> getDefectTrend(Long lineId) {
-        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
 
         // Group by detected_date, last 30 days
         LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
@@ -601,7 +601,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<StageDistribution> getDefectByProcess(Long lineId) {
-        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalse(lineId);
+        List<Defect> allDefects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
 
         Map<String, Integer> countByProcess = new LinkedHashMap<>();
         for (Defect d : allDefects) {
@@ -628,7 +628,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public List<StageDistribution> getSampleByProcess(Long lineId) {
-        List<TrainingSample> allSamples = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalse(lineId);
+        List<TrainingSample> allSamples = trainingSampleRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedAtDesc(lineId);
 
         Map<String, Integer> countByProcess = new LinkedHashMap<>();
         for (TrainingSample s : allSamples) {
@@ -843,7 +843,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Count defects for this team's lines in this month
             long defectCount = 0;
             for (TrainingPlan plan : teamPlans) {
-                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalse(plan.getLine().getId());
+                List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(plan.getLine().getId());
                 defectCount += defects.stream()
                         .filter(d -> d.getDetectedDate() != null
                                 && !d.getDetectedDate().isBefore(monthStart)

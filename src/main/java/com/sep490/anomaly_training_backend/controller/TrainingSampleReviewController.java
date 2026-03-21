@@ -8,7 +8,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.TrainingSampleReviewPolicyService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +35,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Training Sample Review Management", description = "API for scheduling the annual review of the training sample list and reporting the results")
 public class TrainingSampleReviewController {
-    private final TrainingSampleReviewPolicyService trainingSampleReviewPolicyService;
+    private final TrainingSampleReviewService trainingSampleReviewPolicyService;
 
     @GetMapping("/policies/product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
@@ -101,20 +101,19 @@ public class TrainingSampleReviewController {
     }
 
 
-    @PutMapping("/reviews/{reviewId}/confirm")
+    @PutMapping("/reviews/submit")
     @PreAuthorize("hasAuthority('training_sample_review.update')")
     @Operation(summary = "Confirm review by team lead", description = "Confirm training sample review results")
-    public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> confirmReviewByTeamLead(
-            @PathVariable Long reviewId,
-            @RequestBody TrainingSampleReviewRequest request) {
-        request.setId(reviewId);
-        TrainingSampleReviewResponse response = trainingSampleReviewPolicyService.confirmReviewByTeamLead(request);
+    public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> submit(@RequestBody TrainingSampleReviewRequest reviewRequest,
+                                                                            @AuthenticationPrincipal User currentUser,
+                                                                            HttpServletRequest request) {
+        TrainingSampleReviewResponse response = trainingSampleReviewPolicyService.submit(reviewRequest, currentUser, request);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
     }
 
     @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('defect.revise')")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -131,7 +130,7 @@ public class TrainingSampleReviewController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Defect Proposal is not found")
     })
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    @PreAuthorize("hasAuthority('training_sample_review.approve')")
     public ResponseEntity<String> approveProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -148,7 +147,7 @@ public class TrainingSampleReviewController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+    @PreAuthorize("hasAuthority('training_sample_review.update')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

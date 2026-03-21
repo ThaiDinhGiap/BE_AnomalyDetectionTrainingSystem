@@ -23,6 +23,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.checkerframework.checker.units.qual.A;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -75,7 +77,7 @@ public class TrainingSampleReview extends BaseEntity implements Approvable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    TrainingSampleReviewResult result = TrainingSampleReviewResult.PENDING;
+    ReportStatus status = ReportStatus.NEED_ASSIGNED;
 
     @Column(name = "sample_snapshot", columnDefinition = "json")
     String sampleSnapshot;
@@ -86,38 +88,30 @@ public class TrainingSampleReview extends BaseEntity implements Approvable {
     @EqualsAndHashCode.Exclude
     User confirmedBy;
 
+    @Column(name = "current_version")
+    @Builder.Default
+    Integer currentVersion = 1;
+
     @Override
     public ApprovalEntityType getEntityType() {
-        return null;
-    }
-
-    @Override
-    public ReportStatus getStatus() {
-        return null;
-    }
-
-    @Override
-    public void setStatus(ReportStatus status) {
-
-    }
-
-    @Override
-    public Integer getCurrentVersion() {
-        return 0;
-    }
-
-    @Override
-    public void setCurrentVersion(Integer version) {
-
+        return ApprovalEntityType.TRAINING_SAMPLE_REVIEW;
     }
 
     @Override
     public Long getGroupId() {
-        return 0L;
+        return productLine.getGroup().getId();
     }
 
     @Override
     public String computeContentHash() {
-        return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(id).append("|");
+        sb.append(currentVersion).append("|");
+        return DigestUtils.sha256Hex(sb.toString());
+    }
+
+    @Override
+    public void clearRejectFeedback() {
+
     }
 }

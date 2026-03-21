@@ -5,10 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
 import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
-import com.sep490.anomaly_training_backend.service.ProcessService;
-import com.sep490.anomaly_training_backend.service.ProductLineService;
-import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +34,7 @@ public class ManufacturingLineController {
     private final ProcessService processService;
     private final EmployeeSkillService employeeSkillService;
     private final ProductService productService;
+    private final ImportHistoryService importHistoryService;
 
     @GetMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
@@ -189,5 +187,21 @@ public class ManufacturingLineController {
                 ))
                 .contentLength(file.contentLength())
                 .body(resource);
+    }
+
+    @Operation(summary = "Get history import Training Sample")
+    @GetMapping("/product/import-history")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
+    @Operation(summary = "Get history import Training Sample")
+    @GetMapping("/product-line/import-history")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductLineImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_LINE_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 }

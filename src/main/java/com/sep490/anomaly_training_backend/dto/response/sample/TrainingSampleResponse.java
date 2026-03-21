@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response.sample;
 
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,9 +14,7 @@ public class TrainingSampleResponse {
     Long processId;
     String processName;
     ProductResponse product;
-    String productCode;
-    Long defectId;
-    String defectDescription;
+    DefectResponse defect;
     String trainingSampleCode;
     String categoryName;
     String trainingDescription;

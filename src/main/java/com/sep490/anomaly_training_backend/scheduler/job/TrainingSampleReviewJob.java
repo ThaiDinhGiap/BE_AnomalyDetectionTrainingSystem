@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.scheduler.job;
 
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
@@ -51,7 +52,7 @@ public class TrainingSampleReviewJob implements Job {
                     .productLine(productLine)
                     .reviewDate(LocalDate.now())
                     .dueDate(LocalDate.now().plusDays(config.getDueDays()))
-                    .result(com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult.PENDING)
+                    .status(ReportStatus.NEED_ASSIGNED)
                     .build();
 
             TrainingSampleReview savedReview = trainingSampleReviewRepository.save(review);

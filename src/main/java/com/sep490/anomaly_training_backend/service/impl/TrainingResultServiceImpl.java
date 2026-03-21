@@ -196,7 +196,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public List<TrainingResultOptionResponse> getTrainingTopicsByProcess(Long processId) {
-        List<TrainingSample> samples = trainingSampleRepository.findByProcessId(processId);
+        List<TrainingSample> samples = trainingSampleRepository.findByProcessIdOrderByCreatedAtDesc(processId);
         return samples.stream()
                 .map(s -> new TrainingResultOptionResponse(s.getId(), s.getCategoryName()))
                 .toList();

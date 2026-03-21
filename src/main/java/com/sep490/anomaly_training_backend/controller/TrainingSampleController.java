@@ -4,8 +4,10 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.*;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
@@ -52,6 +54,7 @@ public class TrainingSampleController {
     public final TrainingSampleService trainingSampleService;
     public final TrainingSampleProposalService trainingSampleProposalService;
     public final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
+    public final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get training samples by product line")
     @GetMapping("/")
@@ -219,6 +222,14 @@ public class TrainingSampleController {
                 ))
                 .contentLength(file.contentLength())
                 .body(resource);
+    }
+
+    @Operation(summary = "Get history import Training Sample")
+    @GetMapping("/import-history")
+    @PreAuthorize("hasAuthority('training_sample.import')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyDefectImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "TRAINING_SAMPLE_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
 }
