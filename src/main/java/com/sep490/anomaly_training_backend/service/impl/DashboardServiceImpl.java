@@ -34,6 +34,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProcessRepository processRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final TrainingSampleRepository trainingSampleRepository;
+    private final UserRepository userRepository;
 
     // ======================== Color palette for pie charts
     // ========================
@@ -767,22 +768,42 @@ public class DashboardServiceImpl implements DashboardService {
     private final GroupRepository groupRepository;
 
     /**
+     * Resolve danh sách groupIds theo supervisorId.
+     * Khi groupId != null → trả về [groupId].
+     * Khi groupId == null → lấy tất cả group mà SV quản lý.
+     */
+    private List<Long> resolveSvGroupIds(Long groupId) {
+        if (groupId != null) return List.of(groupId);
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(currentUser).orElse(null);
+        if (user == null) return List.of();
+        return groupRepository.findBySupervisorId(user.getId()).stream()
+                .map(Group::getId).toList();
+    }
+
+    /**
      * Resolve danh sách lineIds theo groupId + optional lineId.
      */
     private List<Long> resolveLineIds(Long groupId, Long lineId) {
         if (lineId != null) {
             return List.of(lineId);
         }
-        return productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId)
-                .stream().map(ProductLine::getId).toList();
+        List<Long> groupIds = resolveSvGroupIds(groupId);
+        if (groupIds.isEmpty()) return List.of();
+        return groupIds.stream()
+                .flatMap(gId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(gId).stream())
+                .map(ProductLine::getId)
+                .distinct()
+                .toList();
     }
 
     // ======================== SV-1. Lines for dropdown ========================
 
     @Override
     public List<SvDashboardLineResponse> getSvLines(Long groupId) {
-        return productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId)
-                .stream()
+        List<Long> groupIds = resolveSvGroupIds(groupId);
+        return groupIds.stream()
+                .flatMap(gId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(gId).stream())
                 .map(pl -> SvDashboardLineResponse.builder()
                         .id(pl.getId())
                         .code(pl.getCode())
@@ -796,16 +817,16 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public SvTodoData getSvTodo(Long groupId, Long lineId) {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Long> groupIds = resolveSvGroupIds(groupId);
         List<SvTodoItem> pendingItems = new ArrayList<>();
 
         // --- Pass Rate: calculated from TrainingResultDetail with actualDate ---
         long totalEvaluated = 0;
         long totalPassed = 0;
 
-        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId);
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupIds(groupIds);
         List<TrainingResult> filteredResults = allResults.stream()
                 .filter(r -> lineIds.contains(r.getLine().getId()))
-                .filter(r -> !r.isDeleteFlag())
                 .toList();
 
         for (TrainingResult result : filteredResults) {
@@ -828,9 +849,8 @@ public class DashboardServiceImpl implements DashboardService {
         long totalPlanned = 0;
         long totalParticipated = 0;
 
-        List<TrainingPlan> approvedPlans = trainingPlanRepository.findByGroupId(groupId).stream()
+        List<TrainingPlan> approvedPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> !p.isDeleteFlag())
                 .filter(p -> p.getStatus() == ReportStatus.APPROVED
                         || p.getStatus() == ReportStatus.ON_GOING
                         || p.getStatus() == ReportStatus.DONE)
@@ -851,9 +871,8 @@ public class DashboardServiceImpl implements DashboardService {
                 : "0%";
 
         // --- Pending Approval: plans/results with status WAITING_SV ---
-        List<TrainingPlan> waitingPlans = trainingPlanRepository.findByGroupId(groupId).stream()
+        List<TrainingPlan> waitingPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> !p.isDeleteFlag())
                 .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
                 .toList();
 
@@ -868,9 +887,8 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        List<TrainingResult> waitingResults = trainingResultRepository.findByGroupId(groupId).stream()
+        List<TrainingResult> waitingResults = trainingResultRepository.findByGroupIds(groupIds).stream()
                 .filter(r -> lineIds.contains(r.getLine().getId()))
-                .filter(r -> !r.isDeleteFlag())
                 .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
                 .toList();
 
@@ -917,9 +935,10 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
 
         List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<Long> groupIds = resolveSvGroupIds(groupId);
 
-        // Get all teams in this group
-        List<Team> teams = teamRepository.findByGroupId(groupId);
+        // Get all teams in this group(s)
+        List<Team> teams = teamRepository.findByGroupIdIn(groupIds);
 
         List<SvTeamBenchmark> benchmarks = new ArrayList<>();
 
@@ -1081,8 +1100,9 @@ public class DashboardServiceImpl implements DashboardService {
         long currentPassed = 0, currentEvaluated = 0;
         long prevPassed = 0, prevEvaluated = 0;
 
-        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+        List<Long> groupIds = resolveSvGroupIds(groupId);
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupIds(groupIds).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
                 .toList();
 
         for (TrainingResult result : allResults) {
@@ -1128,7 +1148,7 @@ public class DashboardServiceImpl implements DashboardService {
         String defectSub = (defectDiff >= 0 ? "+" : "") + defectDiff + "% so với tháng trước";
 
         // --- 3. Training Coverage ---
-        List<Team> teams = teamRepository.findByGroupId(groupId);
+        List<Team> teams = teamRepository.findByGroupIdIn(resolveSvGroupIds(groupId));
         long totalEmployees = 0;
         long employeesWithValidSkill = 0;
 
@@ -1152,12 +1172,12 @@ public class DashboardServiceImpl implements DashboardService {
                 : 0;
 
         // --- 4. Pending Approval Count ---
-        long pendingPlans = trainingPlanRepository.findByGroupId(groupId).stream()
-                .filter(p -> lineIds.contains(p.getLine().getId()) && !p.isDeleteFlag())
+        long pendingPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()))
                 .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
                 .count();
-        long pendingResults = trainingResultRepository.findByGroupId(groupId).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+        long pendingResults = trainingResultRepository.findByGroupIds(groupIds).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
                 .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
                 .count();
         int totalPending = (int) (pendingPlans + pendingResults);
@@ -1179,7 +1199,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<SvWatchlistItem> getSvWatchlist(Long groupId, Long lineId) {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
-        List<Team> teams = teamRepository.findByGroupId(groupId);
+        List<Team> teams = teamRepository.findByGroupIdIn(resolveSvGroupIds(groupId));
         List<SvWatchlistItem> items = new ArrayList<>();
 
         for (Team team : teams) {
@@ -1237,8 +1257,8 @@ public class DashboardServiceImpl implements DashboardService {
         List<SvRecentActivityItem> items = new ArrayList<>();
 
         // Get recent training evaluations from all results in this group
-        List<TrainingResult> results = trainingResultRepository.findByGroupId(groupId).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+        List<TrainingResult> results = trainingResultRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
                 .toList();
 
         for (TrainingResult result : results) {
@@ -1295,8 +1315,8 @@ public class DashboardServiceImpl implements DashboardService {
         int completed = 0;
         int overdue = 0;
 
-        List<TrainingPlan> plans = trainingPlanRepository.findByGroupId(groupId).stream()
-                .filter(p -> lineIds.contains(p.getLine().getId()) && !p.isDeleteFlag())
+        List<TrainingPlan> plans = trainingPlanRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
+                .filter(p -> lineIds.contains(p.getLine().getId()))
                 .filter(p -> p.getStatus() == ReportStatus.APPROVED
                         || p.getStatus() == ReportStatus.ON_GOING
                         || p.getStatus() == ReportStatus.DONE)
@@ -1346,8 +1366,8 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate today = LocalDate.now();
 
         // Collect all result details and defects once
-        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
                 .toList();
 
         List<TrainingResultDetail> allDetails = new ArrayList<>();
@@ -1395,8 +1415,8 @@ public class DashboardServiceImpl implements DashboardService {
     public List<SvTopTrainingSampleItem> getSvTopTrainingSamples(Long groupId, Long lineId) {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
 
-        List<TrainingResult> allResults = trainingResultRepository.findByGroupId(groupId).stream()
-                .filter(r -> lineIds.contains(r.getLine().getId()) && !r.isDeleteFlag())
+        List<TrainingResult> allResults = trainingResultRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
+                .filter(r -> lineIds.contains(r.getLine().getId()))
                 .toList();
 
         List<TrainingResultDetail> allDetails = new ArrayList<>();
