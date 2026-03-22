@@ -629,9 +629,9 @@ CREATE TABLE training_samples
     training_description VARCHAR(255) NOT NULL COMMENT 'Nội dung huấn luyện',
     product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
     training_sample_code VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
-    process_order        INT          NOT NULL COMMENT 'Thứ tự công đoạn',
-    category_order       INT          NOT NULL COMMENT 'Thứ tự hạng mục trong công đoạn',
-    content_order        INT          NOT NULL COMMENT 'Thứ tự nội dung trong hạng mục',
+    process_order        INT           COMMENT 'Thứ tự công đoạn',
+    category_order       INT           COMMENT 'Thứ tự hạng mục trong công đoạn',
+    content_order        INT           COMMENT 'Thứ tự nội dung trong hạng mục',
     note                 TEXT,
 
     delete_flag          BOOLEAN      NOT NULL DEFAULT FALSE,

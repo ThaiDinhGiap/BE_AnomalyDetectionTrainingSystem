@@ -98,6 +98,12 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProcessId(id)));
     }
 
+    @GetMapping("/product-by-line/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
+    }
+
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
@@ -127,6 +133,11 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.edit')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProcess(@PathVariable Long id, @RequestBody ProcessRequest processRequest) {
         return ResponseEntity.ok(ApiResponse.success(processService.updateProcessByAdmin(id, processRequest)));
+    }
+    @PutMapping("/product")
+    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+    public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
+        return null;
     }
 //    @PutMapping("/employee-skills/{id}")
 //    @PreAuthorize("hasAuthority('manufacturing_line.edit')")

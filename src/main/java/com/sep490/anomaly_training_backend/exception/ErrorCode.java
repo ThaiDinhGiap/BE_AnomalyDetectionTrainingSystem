@@ -55,6 +55,7 @@ public enum ErrorCode {
     EMPLOYEE_SKILL_NOT_FOUND(6019, "Employee skill not found.", HttpStatus.NOT_FOUND),
     NOTIFICATION_TEMPLATE_NOT_FOUND(6020, "Notification template not found.", HttpStatus.NOT_FOUND),
     ONLY_AUTHOR_CAN_EDIT(6021, "Only the author can edit this item.", HttpStatus.FORBIDDEN),
+    TRAINING_SAMPLE_ALREADY_EXISTS(6022, "Training sample already exists.", HttpStatus.CONFLICT),
 
     // Attachment Errors (range 61xx)
     INVALID_FILE_TYPE(6100, "Only image files (JPG, PNG, etc.) are allowed.", HttpStatus.BAD_REQUEST),

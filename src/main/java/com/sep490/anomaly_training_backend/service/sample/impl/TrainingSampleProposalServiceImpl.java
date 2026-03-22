@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalReq
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailUpdateResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.enums.ProposalType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -26,6 +27,7 @@ import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,6 +120,23 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
+                TrainingSample validateEntity = trainingSampleRepository.checkExist(item.getProcessId(),
+                                item.getCategoryName(),
+                                item.getTrainingDescription(),
+                                item.getProductId(),
+                                item.getTrainingSampleCode())
+                        .orElse(null);
+                if (!item.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != item.getTrainingSampleId()) {
+                    throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
+                            "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
+                            validateEntity.getTrainingCode(),
+                            validateEntity.getProcess().getCode(),
+                            item.getCategoryName(),
+                            item.getTrainingDescription(),
+                            validateEntity.getProduct().getCode(),
+                            item.getTrainingSampleCode()
+                    ));
+                }
                 newEntity = trainingSampleProposalDetailRepository.save(newEntity);
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     attachmentService.uploadAttachments(item.getImages(), "TRAINING_SAMPLE_PROPOSAL", newEntity.getId(), currentUser.getUsername());
@@ -125,8 +144,11 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 continue;
             }
             requestDetailIds.add(item.getTrainingSampleProposalDetailId());
-            TrainingSampleProposalDetail entity = mapToEntity(item, proposal);
-            entity.setId(item.getTrainingSampleProposalDetailId());
+            TrainingSampleProposalDetail entity = existingMap.get(item.getTrainingSampleProposalDetailId());
+            if (entity == null) {
+                throw new AppException(ErrorCode.INVALID_DETAIL_ID_FOR_PROPOSAL);
+            }
+            updateDetailFields(entity, item, proposal);
             trainingSampleProposalDetailRepository.save(entity);
             if (item.getImages() != null && !item.getImages().isEmpty()) {
                 attachmentService.deleteAttachments("TRAINING_SAMPLE_PROPOSAL", entity.getId());
@@ -219,6 +241,23 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+          TrainingSample validateEntity = trainingSampleRepository.checkExist(detailRequest.getProcessId(),
+                                                                              detailRequest.getCategoryName(),
+                                                                              detailRequest.getTrainingDescription(),
+                                                                              detailRequest.getProductId(),
+                                                                              detailRequest.getTrainingSampleCode())
+                                                                              .orElse(null);
+          if (!detailRequest.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != detailRequest.getTrainingSampleId()) {
+              throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
+                      "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
+                      validateEntity.getTrainingCode(),
+                      validateEntity.getProcess().getCode(),
+                      detailRequest.getCategoryName(),
+                      detailRequest.getTrainingDescription(),
+                      validateEntity.getProduct().getCode(),
+                      detailRequest.getTrainingSampleCode()
+              ));
+          }
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
 
             // Handle trainingSample - can be null
@@ -339,5 +378,49 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
                 throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
             }
         }
+    }
+
+    /**
+     * Update existing detail fields from request, preserving non-requested fields like rejectFeedback
+     */
+    private void updateDetailFields(TrainingSampleProposalDetail entity, TrainingSampleProposalDetailRequest request, TrainingSampleProposal proposal) {
+        if (request == null) throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT);
+        if (request.getProposalType() == null) throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
+        if (request.getProcessId() == null) throw new AppException(ErrorCode.MISSING_PROCESS_ID);
+        if (request.getCategoryName() == null || request.getCategoryName().isBlank()) {
+            throw new AppException(ErrorCode.MISSING_CATEGORY_NAME);
+        }
+        if (request.getTrainingDescription() == null || request.getTrainingDescription().isBlank()) {
+            throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
+        }
+
+        entity.setTrainingSampleProposal(proposal);
+        entity.setProposalType(request.getProposalType());
+        entity.setProcess(processRepository.getReferenceById(request.getProcessId()));
+
+        if (request.getTrainingSampleId() != null) {
+            entity.setTrainingSample(trainingSampleRepository.getReferenceById(request.getTrainingSampleId()));
+        } else {
+            entity.setTrainingSample(null);
+        }
+
+        if (request.getProductId() != null) {
+            entity.setProduct(productRepository.getReferenceById(request.getProductId()));
+        } else {
+            entity.setProduct(null);
+        }
+
+        if (request.getDefectId() != null) {
+            entity.setDefect(defectRepository.getReferenceById(request.getDefectId()));
+        } else {
+            entity.setDefect(null);
+        }
+
+        entity.setCategoryName(request.getCategoryName());
+        entity.setTrainingSampleCode(request.getTrainingSampleCode());
+        entity.setTrainingDescription(request.getTrainingDescription());
+        entity.setNote(request.getNote());
+
+        // rejectFeedback được giữ nguyên, không bị thay đổi
     }
 }

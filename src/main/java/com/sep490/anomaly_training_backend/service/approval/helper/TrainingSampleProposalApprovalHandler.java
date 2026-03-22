@@ -66,10 +66,16 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         created.setTrainingCode(trainingCode);
         log.info("Generated trainingCode: {} for new TrainingSample", trainingCode);
 
-        // Ensure non-null fields required for TrainingSample
-        if (created.getProcessOrder() == null || created.getCategoryOrder() == null || created.getContentOrder() == null) {
-            throw new IllegalStateException("Missing orders (processOrder/categoryOrder/contentOrder) for CREATE. DetailId=" + d.getId());
-        }
+        // Calculate and set order fields
+        Integer processOrder = calculateProcessOrder(d.getProcess().getId());
+        Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
+        Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
+        
+        created.setProcessOrder(processOrder);
+        created.setCategoryOrder(categoryOrder);
+        created.setContentOrder(contentOrder);
+        
+        log.info("Set orders - processOrder: {}, categoryOrder: {}, contentOrder: {}", processOrder, categoryOrder, contentOrder);
 
         // Check for unique constraint before saving
         if (created.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
@@ -98,8 +104,30 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Validate fields for UPDATE
         validateUpdateFields(d);
 
+        // Store old values to detect changes
+        Long oldProcessId = existing.getProcess().getId();
+        String oldCategoryName = existing.getCategoryName();
+        String oldTrainingDescription = existing.getTrainingDescription();
+
         // Copy new values from the proposal detail to the existing TrainingSample
         copyFromDetailToTrainingSample(d, existing);
+
+        // Recalculate order fields if process, categoryName, or trainingDescription changed
+        if (!oldProcessId.equals(d.getProcess().getId()) || 
+            !oldCategoryName.equals(d.getCategoryName()) || 
+            !oldTrainingDescription.equals(d.getTrainingDescription())) {
+            
+            Integer processOrder = calculateProcessOrder(d.getProcess().getId());
+            Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
+            Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
+            
+            existing.setProcessOrder(processOrder);
+            existing.setCategoryOrder(categoryOrder);
+            existing.setContentOrder(contentOrder);
+            
+            log.info("Recalculated orders for TrainingSample ID {} - processOrder: {}, categoryOrder: {}, contentOrder: {}", 
+                     existing.getId(), processOrder, categoryOrder, contentOrder);
+        }
 
         // Note: trainingCode should NOT be changed on UPDATE (it's a permanent identifier)
         log.info("Updating TrainingSample ID: {} with existing trainingCode: {}", existing.getId(), existing.getTrainingCode());
@@ -166,5 +194,57 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         target.setTrainingDescription(d.getTrainingDescription());
         target.setNote(d.getNote());
         target.setTrainingSampleCode(d.getTrainingSampleCode());
+    }
+
+    /* ===================== ORDER CALCULATION HELPERS ===================== */
+
+
+    private Integer calculateProcessOrder(Long processId) {
+        // Check if this process already has an order assigned
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findProcessOrderByProcessId(processId);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} already has processOrder: {}", processId, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max processOrder across all processes and increment
+        Integer maxProcessOrder = trainingSampleRepository.findMaxProcessOrderByProcessId(processId);
+        Integer newProcessOrder = maxProcessOrder + 1;
+        log.debug("Assigning new processOrder {} for processId {}", newProcessOrder, processId);
+        return newProcessOrder;
+    }
+
+
+    private Integer calculateCategoryOrder(Long processId, String categoryName) {
+        // Check if this (process, category) combination already exists
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findCategoryOrderByProcessAndCategory(processId, categoryName);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} + CategoryName {} already has categoryOrder: {}", processId, categoryName, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max categoryOrder for this process and increment
+        Integer maxCategoryOrder = trainingSampleRepository.findMaxCategoryOrderByProcessAndCategory(processId, categoryName);
+        Integer newCategoryOrder = maxCategoryOrder + 1;
+        log.debug("Assigning new categoryOrder {} for processId {} + categoryName {}", newCategoryOrder, processId, categoryName);
+        return newCategoryOrder;
+    }
+
+
+    private Integer calculateContentOrder(Long processId, String categoryName, String trainingDescription) {
+        // Check if this (process, category, description) combination already exists
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} + CategoryName {} + TrainingDescription {} already has contentOrder: {}", 
+                     processId, categoryName, trainingDescription, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max contentOrder for this (process, category) and increment
+        Integer maxContentOrder = trainingSampleRepository.findMaxContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
+        Integer newContentOrder = maxContentOrder + 1;
+        log.debug("Assigning new contentOrder {} for processId {} + categoryName {} + trainingDescription {}", 
+                 newContentOrder, processId, categoryName, trainingDescription);
+        return newContentOrder;
     }
 }

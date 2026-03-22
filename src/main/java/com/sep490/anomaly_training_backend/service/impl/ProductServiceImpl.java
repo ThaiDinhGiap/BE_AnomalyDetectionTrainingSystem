@@ -96,6 +96,15 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    @Override
+    public List<ProductResponse> getProductsByProductLineId(Long productLineId) {
+        ProductLine productLine = productLineRepository.findById(productLineId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+        return productRepository.findByProductLineIdAndDeleteFlagFalse(productLineId)
+                                .stream()
+                                .map(productMapper::toDto).toList();
+    }
+
     /**
      * Process all rows with proper error handling
      * - Finds existing or creates new Product
