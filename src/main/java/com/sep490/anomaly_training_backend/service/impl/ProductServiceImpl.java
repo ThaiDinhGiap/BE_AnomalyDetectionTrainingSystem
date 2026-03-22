@@ -102,7 +102,35 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         return productRepository.findByProductLineIdAndDeleteFlagFalse(productLineId)
                                 .stream()
-                                .map(productMapper::toDto).toList();
+                                .map(this::enrichProductResponse).toList();
+    }
+
+    private ProductResponse enrichProductResponse(Product product) {
+        ProductResponse productResponse = productMapper.toDto(product);
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+        List<String> urls = new ArrayList<>();
+        for (Attachment attachment : attachments) {
+            urls.add(attachment.getUrl());
+        }
+        productResponse.setAttachmentUrls(urls);
+        List<ProcessResponse>  processResponses = product.getProductProcesses()
+                .stream()
+                .filter(pp -> !pp.isDeleteFlag())
+                .map(pp -> {
+                    Process process = pp.getProcess();
+                    ProcessResponse processResponse = new ProcessResponse();
+                    processResponse.setId(process.getId());
+                    processResponse.setCode(process.getCode());
+                    processResponse.setName(process.getName());
+                    processResponse.setProductLineName(process.getProductLine().getName());
+                    processResponse.setProductLineName(process.getProductLine().getCode());
+                    processResponse.setProductLineId(process.getProductLine().getId());
+                    processResponse.setStandardTimeJt(pp.getStandardTimeJt());
+                    return processResponse;
+                })
+                .toList();
+        productResponse.setProcesses(processResponses);
+        return productResponse;
     }
 
     /**

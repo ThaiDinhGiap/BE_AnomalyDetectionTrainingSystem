@@ -172,11 +172,10 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
 
     @Override
     public List<TrainingSampleReviewResponse> findByReviewedById(Long productLineId, Long reviewedId) {
-//        return trainingSampleReviewRepository.findReviewTask(productLineId, reviewedId, ReportStatus.valueOf(status))
-//                .stream()
-//                .map(trainingSampleReviewMapper::toDto)
-//                .toList();
-        return null;
+        return trainingSampleReviewRepository.findReviewTask(productLineId, reviewedId)
+                .stream()
+                .map(trainingSampleReviewMapper::toDto)
+                .toList();
     }
 
     private String generateReviewPolicyCode() {
