@@ -242,9 +242,11 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     private void processHierarchyMap(String teamCode, String groupCode, Map<String, Map<String, Set<String>>> hierarchyMap) {
         Team team = teamRepository.findByCode(teamCode)
                 .orElse(new Team(teamCode));
+        teamRepository.save(team);
 
         Group group = groupRepository.findByCode(groupCode)
                 .orElse(new Group(groupCode));
+        groupRepository.save(group);
 
         // Process hierarchy map
         for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
@@ -252,6 +254,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
             Section section = sectionRepository.findByCode(sectionCode)
                     .orElse(new Section(sectionCode));
+            sectionRepository.save(section);
 
             if (group.getSection() == null) {
                 group.setSection(section);
