@@ -551,12 +551,53 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
-        // Auto-mark các detail quá hạn thành MISS
         markOverdueDetailsAsMiss(result);
 
         User user = userRepository.findByUsername(result.getCreatedBy())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
+        TrainingResultDetailResponse response = buildHeaderResponse(result, user);
+
+        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = result.getDetails().stream()
+                .map(this::mapDetailToRow)
+                .collect(Collectors.toList());
+
+        response.setDetails(detailDtos);
+        return response;
+    }
+
+    private static final Set<ReportStatus> SV_VISIBLE_STATUSES = Set.of(
+            ReportStatus.WAITING_SV,
+            ReportStatus.REJECTED_BY_SV,
+            ReportStatus.APPROVED);
+
+    @Override
+    @Transactional
+    public TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id) {
+        TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        markOverdueDetailsAsMiss(result);
+
+        User user = userRepository.findByUsername(result.getCreatedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        TrainingResultDetailResponse response = buildHeaderResponse(result, user);
+
+        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = result.getDetails().stream()
+                .filter(detail -> detail.getStatus() != null && SV_VISIBLE_STATUSES.contains(detail.getStatus()))
+                .map(this::mapDetailToRow)
+                .collect(Collectors.toList());
+
+        response.setDetails(detailDtos);
+        return response;
+    }
+
+    /**
+     * Build header response (thông tin chung của TrainingResult) — dùng chung cho
+     * TL và SV.
+     */
+    private TrainingResultDetailResponse buildHeaderResponse(TrainingResult result, User user) {
         TrainingResultDetailResponse response = new TrainingResultDetailResponse();
 
         response.setId(result.getId());
@@ -582,112 +623,112 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             response.setTrainingPlanTitle(result.getTrainingPlan().getTitle());
         }
 
-        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = new ArrayList<>();
+        return response;
+    }
 
-        for (TrainingResultDetail detail : result.getDetails()) {
-            TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
+    /**
+     * Map 1 TrainingResultDetail → DetailRowDto — dùng chung cho TL và SV.
+     */
+    private TrainingResultDetailResponse.DetailRowDto mapDetailToRow(TrainingResultDetail detail) {
+        TrainingResultDetailResponse.DetailRowDto row = new TrainingResultDetailResponse.DetailRowDto();
 
-            row.setId(detail.getId());
-            row.setPlannedDate(detail.getPlannedDate());
-            row.setActualDate(detail.getActualDate());
-            row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
+        row.setId(detail.getId());
+        row.setPlannedDate(detail.getPlannedDate());
+        row.setActualDate(detail.getActualDate());
+        row.setDetailStatus(detail.getStatus() != null ? detail.getStatus().toString() : null);
 
-            TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
-            if (planDetail != null) {
-                row.setTrainingPlanDetailId(planDetail.getId());
-                row.setBatchId(planDetail.getBatchId());
+        TrainingPlanDetail planDetail = detail.getTrainingPlanDetail();
+        if (planDetail != null) {
+            row.setTrainingPlanDetailId(planDetail.getId());
+            row.setBatchId(planDetail.getBatchId());
 
-                if (planDetail.getEmployee() != null) {
-                    row.setEmployeeId(planDetail.getEmployee().getId());
-                    row.setEmployeeName(planDetail.getEmployee().getFullName());
-                    row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
-                }
-            } else if (detail.getBatchId() != null) {
-                row.setBatchId(detail.getBatchId());
+            if (planDetail.getEmployee() != null) {
+                row.setEmployeeId(planDetail.getEmployee().getId());
+                row.setEmployeeName(planDetail.getEmployee().getFullName());
+                row.setEmployeeCode(planDetail.getEmployee().getEmployeeCode());
             }
-
-            if (detail.getEmployee() != null) {
-                row.setEmployeeId(detail.getEmployee().getId());
-                row.setEmployeeName(detail.getEmployee().getFullName());
-                row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
-            }
-
-            if (detail.getProcess() != null) {
-                row.setProcessId(detail.getProcess().getId());
-                row.setProcessCode(detail.getProcess().getCode());
-                row.setProcessName(detail.getProcess().getName());
-                if (detail.getClassification() != null) {
-                    row.setClassification(detail.getClassification());
-                } else if (detail.getProcess().getClassification() != null) {
-                    row.setClassification(detail.getProcess().getClassification().getValue());
-                }
-                if (detail.getCycleTimeStandard() != null) {
-                    row.setStandardTime(detail.getCycleTimeStandard());
-                } else if (detail.getProcess().getStandardTimeJt() != null) {
-                    row.setStandardTime(detail.getProcess().getStandardTimeJt());
-                }
-            }
-
-            if (detail.getProduct() != null) {
-                row.setProductId(detail.getProduct().getId());
-                row.setProductCode(detail.getProduct().getCode());
-                row.setProductName(detail.getProduct().getName());
-            }
-
-            if (detail.getTrainingSample() != null) {
-                row.setTrainingSampleId(detail.getTrainingSample().getId());
-                row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
-            }
-
-            if (detail.getSampleCode() != null) {
-                row.setSampleCode(detail.getSampleCode());
-            } else if (detail.getTrainingSample() != null
-                    && detail.getTrainingSample().getTrainingSampleCode() != null) {
-                row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
-            }
-
-            row.setTrainingTopic(detail.getTrainingTopic());
-
-            if (row.getClassification() == null && detail.getClassification() != null) {
-                row.setClassification(detail.getClassification());
-            }
-            if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
-                row.setStandardTime(detail.getCycleTimeStandard());
-            }
-
-            row.setTimeIn(detail.getTimeIn());
-            row.setTimeStartOp(detail.getTimeStartOp());
-            row.setTimeOut(detail.getTimeOut());
-            row.setDetectionTime(detail.getDetectionTime());
-
-            row.setIsPass(detail.getIsPass());
-            row.setIsRetrained(detail.getIsRetrained());
-            row.setNote(detail.getNote());
-
-            if (detail.getSignatureProIn() != null) {
-                row.setSignatureProInId(detail.getSignatureProIn().getId());
-                row.setSignatureProInName(detail.getSignatureProIn().getFullName());
-            }
-            if (detail.getSignatureFiIn() != null) {
-                row.setSignatureFiInId(detail.getSignatureFiIn().getId());
-                row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
-            }
-            if (detail.getSignatureProOut() != null) {
-                row.setSignatureProOutId(detail.getSignatureProOut().getId());
-                row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
-            }
-            if (detail.getSignatureFiOut() != null) {
-                row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
-                row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
-            }
-
-            row.setRejectFeedback(detail.getRejectFeedback());
-
-            detailDtos.add(row);
+        } else if (detail.getBatchId() != null) {
+            row.setBatchId(detail.getBatchId());
         }
 
-        response.setDetails(detailDtos);
-        return response;
+        if (detail.getEmployee() != null) {
+            row.setEmployeeId(detail.getEmployee().getId());
+            row.setEmployeeName(detail.getEmployee().getFullName());
+            row.setEmployeeCode(detail.getEmployee().getEmployeeCode());
+        }
+
+        if (detail.getProcess() != null) {
+            row.setProcessId(detail.getProcess().getId());
+            row.setProcessCode(detail.getProcess().getCode());
+            row.setProcessName(detail.getProcess().getName());
+            if (detail.getClassification() != null) {
+                row.setClassification(detail.getClassification());
+            } else if (detail.getProcess().getClassification() != null) {
+                row.setClassification(detail.getProcess().getClassification().getValue());
+            }
+            if (detail.getCycleTimeStandard() != null) {
+                row.setStandardTime(detail.getCycleTimeStandard());
+            } else if (detail.getProcess().getStandardTimeJt() != null) {
+                row.setStandardTime(detail.getProcess().getStandardTimeJt());
+            }
+        }
+
+        if (detail.getProduct() != null) {
+            row.setProductId(detail.getProduct().getId());
+            row.setProductCode(detail.getProduct().getCode());
+            row.setProductName(detail.getProduct().getName());
+        }
+
+        if (detail.getTrainingSample() != null) {
+            row.setTrainingSampleId(detail.getTrainingSample().getId());
+            row.setTrainingSampleName(detail.getTrainingSample().getCategoryName());
+        }
+
+        if (detail.getSampleCode() != null) {
+            row.setSampleCode(detail.getSampleCode());
+        } else if (detail.getTrainingSample() != null
+                && detail.getTrainingSample().getTrainingSampleCode() != null) {
+            row.setSampleCode(detail.getTrainingSample().getTrainingSampleCode());
+        }
+
+        row.setTrainingTopic(detail.getTrainingTopic());
+
+        if (row.getClassification() == null && detail.getClassification() != null) {
+            row.setClassification(detail.getClassification());
+        }
+        if (row.getStandardTime() == null && detail.getCycleTimeStandard() != null) {
+            row.setStandardTime(detail.getCycleTimeStandard());
+        }
+
+        row.setTimeIn(detail.getTimeIn());
+        row.setTimeStartOp(detail.getTimeStartOp());
+        row.setTimeOut(detail.getTimeOut());
+        row.setDetectionTime(detail.getDetectionTime());
+
+        row.setIsPass(detail.getIsPass());
+        row.setIsRetrained(detail.getIsRetrained());
+        row.setNote(detail.getNote());
+
+        if (detail.getSignatureProIn() != null) {
+            row.setSignatureProInId(detail.getSignatureProIn().getId());
+            row.setSignatureProInName(detail.getSignatureProIn().getFullName());
+        }
+        if (detail.getSignatureFiIn() != null) {
+            row.setSignatureFiInId(detail.getSignatureFiIn().getId());
+            row.setSignatureFiInName(detail.getSignatureFiIn().getFullName());
+        }
+        if (detail.getSignatureProOut() != null) {
+            row.setSignatureProOutId(detail.getSignatureProOut().getId());
+            row.setSignatureProOutName(detail.getSignatureProOut().getFullName());
+        }
+        if (detail.getSignatureFiOut() != null) {
+            row.setSignatureFiOutId(detail.getSignatureFiOut().getId());
+            row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
+        }
+
+        row.setRejectFeedback(detail.getRejectFeedback());
+
+        return row;
     }
 
     @Override

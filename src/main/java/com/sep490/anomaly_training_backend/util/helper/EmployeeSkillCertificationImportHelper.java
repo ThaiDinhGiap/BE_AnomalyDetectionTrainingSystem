@@ -1,8 +1,8 @@
 package com.sep490.anomaly_training_backend.util.helper;
 
 import com.sep490.anomaly_training_backend.dto.EmployeeSkillCertificationImportDto;
+import com.sep490.anomaly_training_backend.dto.EmployeeSkillCertificationImportRowData;
 import com.sep490.anomaly_training_backend.dto.ImportSkillMatrixResult;
-import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillCertificationImportRowData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,8 @@ import java.util.Set;
 
 /**
  * Helper để parse EmployeeSkillCertification từ Excel import
- * CHỈ parse raw data, không validate database
+ * Parse Team Code & Group Code từ file header
+ * Parse data rows từ row 5+
  * ĐỒNG THỜI build map hierarchy: SectionCode → ProductLineCode → Set<ProcessName>
  */
 @Component
@@ -34,31 +35,49 @@ import java.util.Set;
 @Slf4j
 public class EmployeeSkillCertificationImportHelper {
 
-    // 0-based column indices
+    // Header row indices (0-based)
+    private static final int HEADER_TEAM_CODE_ROW = 0;    // Row 1
+    private static final int HEADER_GROUP_CODE_ROW = 1;   // Row 2
+
+    // Header column indices (0-based)
+    private static final int HEADER_TEAM_CODE_COL = 1;    // Column B
+    private static final int HEADER_GROUP_CODE_COL = 1;   // Column B
+
+    // Data column indices (0-based)
     private static final int COL_SECTION_CODE = 0;
     private static final int COL_PRODUCT_LINE_CODE = 1;
     private static final int COL_PROCESS_NAME = 2;
-    private static final int COL_CERTIFIED_QUANTITY = 3;
-    private static final int COL_EMPLOYEE = 4;
-    private static final int COL_CERTIFICATION_DATE = 5;
-    private static final int COL_LAST_ACTION_DATE = 6;
+    private static final int COL_CERTIFIED_QUANTITY = 4;
+    private static final int COL_EMPLOYEE = 5;
+    private static final int COL_CERTIFICATION_DATE = 6;
+    private static final int COL_LAST_ACTION_DATE = 7;
 
     /**
-     * Parse tất cả rows từ sheet, xử lý merged cells
-     * Đồng thời build hierarchy map
-     *
-     * @param sheet  Excel sheet
-     * @param errors List để collect parse errors
-     * @return ImportSkillMatrixResult chứa cả parsed rows và hierarchy map
+     * Parse Excel file:
+     * 1. Extract Team Code từ Row 1, Column B
+     * 2. Extract Group Code từ Row 2, Column B
+     * 3. Parse data rows từ row 5+
+     * 4. Build hierarchy map
      */
     public ImportSkillMatrixResult parseExcelRowsWithHierarchy(
             Sheet sheet,
             List<ImportErrorItem> errors) {
 
+        // Step 1: Extract Team Code & Group Code từ header
+        String teamCode = extractTeamCode(sheet);
+        String groupCode = extractGroupCode(sheet);
+
+        if (teamCode == null || teamCode.isBlank()) {
+            errors.add(buildRowError(1, "teamCode", null, "Team code is required (Row 1, Column B)"));
+        }
+        if (groupCode == null || groupCode.isBlank()) {
+            errors.add(buildRowError(2, "groupCode", null, "Group code is required (Row 2, Column B)"));
+        }
+
         List<EmployeeSkillCertificationImportDto> results = new ArrayList<>();
         Map<String, Map<String, Set<String>>> hierarchyMap = new HashMap<>();
 
-        // Step 1: Parse raw rows
+        // Step 2: Parse raw data rows
         List<EmployeeSkillCertificationImportRowData> rawRows = new ArrayList<>();
         for (int i = 4; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
@@ -75,13 +94,13 @@ public class EmployeeSkillCertificationImportHelper {
             }
         }
 
-        // Step 2: Apply carry-forward logic, build DTOs, AND build hierarchy map
+        // Step 3: Apply carry-forward logic, build DTOs, AND build hierarchy map
         String currentSectionCode = null;
         String currentProductLineCode = null;
         String currentProcessName = null;
 
         for (EmployeeSkillCertificationImportRowData rawRow : rawRows) {
-            // Update carry-forward values - handle merged cells
+            // Update carry-forward values
             if (rawRow.getSectionCodeColumn() != null && !rawRow.getSectionCodeColumn().trim().isEmpty()) {
                 currentSectionCode = rawRow.getSectionCodeColumn().trim();
             } else {
@@ -109,70 +128,69 @@ public class EmployeeSkillCertificationImportHelper {
                 }
             }
 
-            // Build resolved DTO with carry-forward values
+            // Build resolved DTO với Team Code & Group Code từ header
             EmployeeSkillCertificationImportDto resolvedDto = EmployeeSkillCertificationImportDto.builder()
                     .excelRowNumber(rawRow.getExcelRowNumber())
+                    .teamCode(teamCode)
+                    .groupCode(groupCode)
                     .sectionCode(currentSectionCode)
                     .productLineCode(currentProductLineCode)
                     .processName(currentProcessName)
                     .certifiedQuantity(parseInteger(rawRow.getCertifiedQuantityColumn()))
                     .employeeId(rawRow.getEmployeeId())
                     .employeeFullName(rawRow.getEmployeeFullName())
-                    .certificationDate(rawRow.getCertificationDateColumn() != null
-                            ? parseLocalDate(rawRow.getCertificationDateColumn())
-                            : null)
-                    .lastActionDate(rawRow.getLastActionDateColumn() != null
-                            ? parseLocalDate(rawRow.getLastActionDateColumn())
-                            : null)
+                    .certificationDate(rawRow.getCertificationDateColumn())
+                    .lastActionDate(rawRow.getLastActionDateColumn())
                     .build();
 
             results.add(resolvedDto);
 
-            // BUILD HIERARCHY MAP NGAY TẠI ĐÂY
+            // BUILD HIERARCHY MAP
             addToHierarchyMap(hierarchyMap, currentSectionCode, currentProductLineCode, currentProcessName);
         }
 
-        return new ImportSkillMatrixResult(results, hierarchyMap);
+        return new ImportSkillMatrixResult(teamCode, groupCode, results, hierarchyMap);
     }
 
     /**
-     * Thêm entry vào hierarchy map
-     * Map<SectionCode, Map<ProductLineCode, Set<ProcessName>>>
-     * <p>
-     * Tự động deduplication vì sử dụng Set
+     * Extract Team Code từ Row 1 (index 0), Column B (index 1)
      */
-    private void addToHierarchyMap(
-            Map<String, Map<String, Set<String>>> hierarchyMap,
-            String sectionCode,
-            String productLineCode,
-            String processName) {
-
-        if (sectionCode == null || productLineCode == null || processName == null) {
-            return; // Skip nếu thiếu dữ liệu
+    private String extractTeamCode(Sheet sheet) {
+        Row row = sheet.getRow(HEADER_TEAM_CODE_ROW);
+        if (row == null) {
+            return null;
         }
-
-        // Level 1: Section
-        hierarchyMap.putIfAbsent(sectionCode, new HashMap<>());
-
-        // Level 2: ProductLine
-        Map<String, Set<String>> productLineMap = hierarchyMap.get(sectionCode);
-        productLineMap.putIfAbsent(productLineCode, new HashSet<>());
-
-        // Level 3: Process (auto-dedup với Set)
-        Set<String> processSet = productLineMap.get(productLineCode);
-        processSet.add(processName);
+        Cell cell = row.getCell(HEADER_TEAM_CODE_COL);
+        return getOptionalStringCellValue(cell);
     }
 
-    // ====== CÁC HÀM HỖ TRỢ CŨ (giữ nguyên) ======
+    /**
+     * Extract Group Code từ Row 2 (index 1), Column B (index 1)
+     */
+    private String extractGroupCode(Sheet sheet) {
+        Row row = sheet.getRow(HEADER_GROUP_CODE_ROW);
+        if (row == null) {
+            return null;
+        }
+        Cell cell = row.getCell(HEADER_GROUP_CODE_COL);
+        return getOptionalStringCellValue(cell);
+    }
 
+    /**
+     * Parse một raw row từ Excel (starting from row 5)
+     */
     private EmployeeSkillCertificationImportRowData parseRawRow(Row row, int excelRowNumber, Sheet sheet) {
         String sectionCodeColumn = getOptionalStringCellValue(row.getCell(COL_SECTION_CODE));
         String productLineCodeColumn = getOptionalStringCellValue(row.getCell(COL_PRODUCT_LINE_CODE));
         String processNameColumn = getOptionalStringCellValue(row.getCell(COL_PROCESS_NAME));
         String certifiedQuantityColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFIED_QUANTITY));
         String employeeColumn = getOptionalStringCellValue(row.getCell(COL_EMPLOYEE));
-        String certificationDateColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE));
-        String lastActionDateColumn = getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE));
+        LocalDate certificationDateColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE)) != null
+                ? LocalDate.parse(getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE)))
+                : null;
+        LocalDate lastActionDateColumn = getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE)) != null
+                ? LocalDate.parse(getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE)))
+                : null;
 
         String employeeId = null;
         String employeeFullName = null;
@@ -200,6 +218,28 @@ public class EmployeeSkillCertificationImportHelper {
                 .build();
     }
 
+    /**
+     * Thêm entry vào hierarchy map
+     */
+    private void addToHierarchyMap(
+            Map<String, Map<String, Set<String>>> hierarchyMap,
+            String sectionCode,
+            String productLineCode,
+            String processName) {
+
+        if (sectionCode == null || productLineCode == null || processName == null) {
+            return;
+        }
+
+        hierarchyMap.putIfAbsent(sectionCode, new HashMap<>());
+        Map<String, Set<String>> productLineMap = hierarchyMap.get(sectionCode);
+        productLineMap.putIfAbsent(productLineCode, new HashSet<>());
+        productLineMap.get(productLineCode).add(processName);
+    }
+
+    /**
+     * Get value từ merged cell
+     */
     private String getMergedCellValue(Sheet sheet, int rowIndex, int colIndex) {
         if (!(sheet instanceof XSSFSheet xSheet)) {
             return null;
@@ -220,6 +260,9 @@ public class EmployeeSkillCertificationImportHelper {
         return null;
     }
 
+    /**
+     * Check row trống
+     */
     private boolean isRowEmpty(Row row) {
         if (row == null) {
             return true;
@@ -238,6 +281,9 @@ public class EmployeeSkillCertificationImportHelper {
         return true;
     }
 
+    /**
+     * Lấy optional string value từ cell
+     */
     private String getOptionalStringCellValue(Cell cell) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
             return null;
@@ -266,6 +312,9 @@ public class EmployeeSkillCertificationImportHelper {
         }
     }
 
+    /**
+     * Normalize string
+     */
     private String normalize(String value) {
         if (value == null) {
             return null;
@@ -274,6 +323,9 @@ public class EmployeeSkillCertificationImportHelper {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    /**
+     * Parse integer từ string
+     */
     private Integer parseInteger(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -287,6 +339,9 @@ public class EmployeeSkillCertificationImportHelper {
         }
     }
 
+    /**
+     * Parse LocalDate từ string (format: dd/MM/yyyy)
+     */
     private LocalDate parseLocalDate(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -301,6 +356,9 @@ public class EmployeeSkillCertificationImportHelper {
         }
     }
 
+    /**
+     * Build error item
+     */
     private ImportErrorItem buildRowError(Integer rowNumber, String field, String value, String message) {
         return ImportErrorItem.builder()
                 .rowNumber(rowNumber)

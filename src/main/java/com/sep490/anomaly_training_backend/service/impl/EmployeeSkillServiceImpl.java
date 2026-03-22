@@ -9,19 +9,24 @@ import com.sep490.anomaly_training_backend.dto.response.skill_matrix.EmployeeSki
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.ProcessCompletionDto;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillStatusDto;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.util.helper.EmployeeSkillCertificationImportHelper;
@@ -32,6 +37,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -59,6 +65,8 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     private final EmployeeSkillCertificationImportValidator importValidator;
     private final ProductLineRepository productLineRepository;
     private final SectionRepository sectionRepository;
+    private final TeamRepository teamRepository;
+    private final GroupRepository groupRepository;
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -172,6 +180,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     }
 
     @Override
+    @Transactional
     public void importSkillMatrix(MultipartFile file) {
         log.info("Starting skill matrix import from file: {}", file.getOriginalFilename());
 
@@ -179,23 +188,19 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
             validateFile(file);
 
             List<ImportErrorItem> errors = new ArrayList<>();
-            ImportSkillMatrixResult parseResult =
-                    parseExcelFileWithHierarchy(file, errors);
+            ImportSkillMatrixResult importSkillMatrixResult = parseExcelFileWithHierarchy(file, errors);
 
-            List<EmployeeSkillCertificationImportDto> parsedRows = parseResult.getParsedRows();
-            Map<String, Map<String, Set<String>>> hierarchyMap = parseResult.getHierarchyMap();
-
-            importValidator.validateFileData(parsedRows, errors);
+            importValidator.validateFileData(importSkillMatrixResult.getParsedRows(), errors);
 
             if (!errors.isEmpty()) {
                 log.error("Validation errors found: {}", errors.size());
                 throw buildAppException(errors);
             }
 
-            log.info("Skill matrix import completed. Rows: {}, Hierarchy: {}",
-                    parsedRows.size(), hierarchyMap.size());
+            // Setup mối quan hệ với Team & Group cố định
+            processParsedData(importSkillMatrixResult);
 
-            processParsedData(new ImportSkillMatrixResult(parsedRows, hierarchyMap));
+            log.info("Skill matrix import completed.");
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
@@ -225,24 +230,91 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         }
     }
 
+    /**
+     * Process parsed data và setup mối quan hệ
+     * Tất cả data thuộc về 1 Team cố định từ file header
+     */
     private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult) {
-        for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : importSkillMatrixResult.getHierarchyMap().entrySet()) {
+        processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getHierarchyMap());
+        processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getParsedRows());
+    }
+
+    private void processHierarchyMap(String teamCode, String groupCode, Map<String, Map<String, Set<String>>> hierarchyMap) {
+        Team team = teamRepository.findByCode(teamCode)
+                .orElse(new Team(teamCode));
+        teamRepository.save(team);
+
+        Group group = groupRepository.findByCode(groupCode)
+                .orElse(new Group(groupCode));
+        groupRepository.save(group);
+
+        // Process hierarchy map
+        for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
             String sectionCode = sectionEntry.getKey();
+
             Section section = sectionRepository.findByCode(sectionCode)
-                    .orElseGet(() -> sectionRepository.save(new Section(sectionCode)));
+                    .orElse(new Section(sectionCode));
+            sectionRepository.save(section);
+
+            if (group.getSection() == null) {
+                group.setSection(section);
+            }
 
             for (Map.Entry<String, Set<String>> plEntry : sectionEntry.getValue().entrySet()) {
                 String productLineCode = plEntry.getKey();
+
                 ProductLine productLine = productLineRepository.findByCode(productLineCode)
-                        .orElseGet(() -> productLineRepository.save(new ProductLine(productLineCode)));
-                
+                        .orElseGet(() -> {
+                            ProductLine newPL = ProductLine.builder()
+                                    .code(productLineCode)
+                                    .group(group)
+                                    .build();
+                            return productLineRepository.save(newPL);
+                        });
+
                 for (String processName : plEntry.getValue()) {
                     Process process = processRepository.findByName(processName)
-                            .orElseGet(() -> processRepository.save(new Process(processName)));
+                            .orElseGet(() -> {
+                                Process newProcess = Process.builder()
+                                        .name(processName)
+                                        .productLine(productLine)
+                                        .build();
+                                return processRepository.save(newProcess);
+                            });
 
-                    // Insert ProcessInProductLine
+                    log.info("Processed: Team={}, Group={}, Section={}, ProductLine={}, Process={}",
+                            team.getCode(), group.getCode(), section.getCode(), productLine.getCode(), process.getCode());
                 }
             }
+        }
+    }
+
+    private void processParsedRawData(String teamCode, String groupCode, List<EmployeeSkillCertificationImportDto> parsedResults) {
+        for (EmployeeSkillCertificationImportDto raw : parsedResults) {
+            Employee employee = employeeRepository.findByEmployeeCode(raw.getEmployeeId())
+                    .orElseGet(() -> {
+                        Employee newEmployee = Employee.builder()
+                                .employeeCode(raw.getEmployeeId())
+                                .fullName(raw.getEmployeeFullName())
+                                .team(teamRepository.findByCode(teamCode)
+                                        .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND, "Team not found: " + teamCode)))
+                                .build();
+                        return employeeRepository.save(newEmployee);
+                    });
+
+            Process process = processRepository.findByName(raw.getProcessName())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND, "Process not found: " + raw.getProcessName()));
+
+            EmployeeSkill skill = EmployeeSkill.builder()
+                    .employee(employee)
+                    .process(process)
+                    .certifiedDate(raw.getCertificationDate())
+                    .status(EmployeeSkillStatus.VALID)
+                    .build();
+
+            employeeSkillRepository.save(skill);
+
+            log.info("Saved skill for employee {} on process {}", employee.getEmployeeCode(), process.getCode());
         }
     }
 

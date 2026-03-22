@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SvDefectByOperation {
     private String op;    // process code, e.g. "CĐ-01"
+    String  opName;   // process name, e.g. "Cắt dây"
     private int errors;   // count of defects
 }

@@ -200,6 +200,14 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
 
+    @Operation(summary = "Get training result details for Supervisor", description = "Returns only details with status WAITING_SV, REJECTED_BY_SV, or APPROVED.")
+    @GetMapping("/{id}/verify-view")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<TrainingResultDetailResponse> getResultDetailForVerify(
+            @Parameter(description = "Training Result Header ID") @PathVariable Long id) {
+        return ResponseEntity.ok(trainingResultService.getTrainingResultDetailForVerify(id));
+    }
+
     @Operation(summary = "Get processes by product line", description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")
     @GetMapping("/processes-by-line/{lineId}")
     @PreAuthorize("hasAuthority('training_result.view')")
@@ -261,8 +269,7 @@ public class TrainingResultController {
         return ResponseEntity.ok("Đã đánh dấu huấn luyện lại!");
     }
 
-    @Operation(summary = "Revise a rejected detail (Chỉnh sửa lại detail bị từ chối)",
-            description = "Chuyển detail bị reject về PENDING và tạo snapshot lịch sử.")
+    @Operation(summary = "Revise a rejected detail (Chỉnh sửa lại detail bị từ chối)", description = "Chuyển detail bị reject về PENDING và tạo snapshot lịch sử.")
     @PutMapping("/details/{detailId}/revise")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<String> reviseDetail(
@@ -279,8 +286,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getSkillCertificates(resultId));
     }
 
-    @Operation(summary = "Approve training result",
-            description = "Approve the training result. Only authorized personnel can perform this action.")
+    @Operation(summary = "Approve training result", description = "Approve the training result. Only authorized personnel can perform this action.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Approved successfully"),
             @ApiResponse(responseCode = "403", description = "No approval permission"),
@@ -298,8 +304,7 @@ public class TrainingResultController {
         return ResponseEntity.ok("Plan has been approved successfully!");
     }
 
-    @Operation(summary = "Reject training result",
-            description = "Reject and request revision of the result.")
+    @Operation(summary = "Reject training result", description = "Reject and request revision of the result.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Result rejected"),
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
@@ -316,8 +321,7 @@ public class TrainingResultController {
         return ResponseEntity.ok("Plan has been rejected!");
     }
 
-    @Operation(summary = "Revise training result (chỉnh sửa lại sau khi bị từ chối)",
-            description = "Chuyển trạng thái result về REVISE, các detail bị reject về PENDING, tăng version và tạo snapshot lịch sử.")
+    @Operation(summary = "Revise training result (chỉnh sửa lại sau khi bị từ chối)", description = "Chuyển trạng thái result về REVISE, các detail bị reject về PENDING, tăng version và tạo snapshot lịch sử.")
     @PutMapping("/{id}/revise")
     @PreAuthorize("hasAuthority('training_result.edit')")
     public ResponseEntity<String> reviseResult(

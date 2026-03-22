@@ -50,4 +50,14 @@ public interface DashboardService {
     List<SvTrainingEffectivenessPoint> getSvTrainingEffectiveness(Long groupId, Long lineId, Integer months);
 
     List<SvTopTrainingSampleItem> getSvTopTrainingSamples(Long groupId, Long lineId);
+
+    List<TrainingExecutionPoint> getSvTrainingExecution(Long groupId, Long lineId, Integer year, Integer month);
+
+    List<SkillCertificateItem> getSvSkillCertificates(Long groupId, Long lineId);
+
+    List<DefectTrendPoint> getSvDefectTrend(Long groupId, Long lineId);
+
+    List<StageDistribution> getSvDefectByProcess(Long groupId, Long lineId);
+
+    List<StageDistribution> getSvSampleByProcess(Long groupId, Long lineId);
 }
