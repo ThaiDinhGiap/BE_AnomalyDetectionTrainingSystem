@@ -22,9 +22,6 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
     @Query("SELECT ts FROM TrainingSample ts WHERE ts.productLine.id IN :lineIds AND ts.deleteFlag = false")
     List<TrainingSample> findByProductLineIdInAndDeleteFlagFalse(@Param("lineIds") List<Long> lineIds);
 
-    Optional<TrainingSample> findByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
-
-    List<TrainingSample> findByDefectId(Long defectId);
 
     Boolean existsByProductLineIdAndTrainingSampleCode(Long productLineId, String trainingSampleCode);
 
@@ -58,4 +55,59 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
     List<TrainingSample> findByProductIdOrGlobal(@Param("productId") Long productId);
 
     List<TrainingSample> findByProductIdAndProcessId(Long productId, Long processId);
+
+    @Query("""
+    select ts
+    from TrainingSample ts
+    where ts.process.id = :processId
+      and ts.categoryName = :categoryName
+      and ts.trainingDescription = :trainingDescription
+      and ts.product.id = :productId
+      and ts.trainingSampleCode = :trainingSampleCode
+""")
+    Optional<TrainingSample> checkExist(
+            @Param("processId") Long processId,
+            @Param("categoryName") String categoryName,
+            @Param("trainingDescription") String trainingDescription,
+            @Param("productId") Long productId,
+            @Param("trainingSampleCode") String trainingSampleCode
+    );
+
+    /**
+     * Find maximum processOrder for a given process.
+     * Used to determine next processOrder for a new process.
+     */
+    @Query("SELECT COALESCE(MAX(ts.processOrder), 0) FROM TrainingSample ts WHERE ts.process.id = :processId AND ts.deleteFlag = false")
+    Integer findMaxProcessOrderByProcessId(@Param("processId") Long processId);
+
+    /**
+     * Find existing processOrder for a given process.
+     * Assumes all TrainingSample with same processId have same processOrder (grouped by process).
+     */
+    @Query(value = "SELECT DISTINCT ts.process_order FROM training_samples ts WHERE ts.process_id = :processId AND ts.delete_flag = false LIMIT 1", nativeQuery = true)
+    Optional<Integer> findProcessOrderByProcessId(@Param("processId") Long processId);
+
+    /**
+     * Find maximum categoryOrder for a given process and categoryName.
+     */
+    @Query("SELECT COALESCE(MAX(ts.categoryOrder), 0) FROM TrainingSample ts WHERE ts.process.id = :processId AND ts.categoryName = :categoryName AND ts.deleteFlag = false")
+    Integer findMaxCategoryOrderByProcessAndCategory(@Param("processId") Long processId, @Param("categoryName") String categoryName);
+
+    /**
+     * Find existing categoryOrder for a given process and categoryName.
+     */
+    @Query(value = "SELECT DISTINCT ts.category_order FROM training_samples ts WHERE ts.process_id = :processId AND ts.category_name = :categoryName AND ts.delete_flag = false LIMIT 1", nativeQuery = true)
+    Optional<Integer> findCategoryOrderByProcessAndCategory(@Param("processId") Long processId, @Param("categoryName") String categoryName);
+
+    /**
+     * Find maximum contentOrder for a given process, categoryName, and trainingDescription.
+     */
+    @Query("SELECT COALESCE(MAX(ts.contentOrder), 0) FROM TrainingSample ts WHERE ts.process.id = :processId AND ts.categoryName = :categoryName AND ts.trainingDescription = :trainingDescription AND ts.deleteFlag = false")
+    Integer findMaxContentOrderByProcessCategoryAndDescription(@Param("processId") Long processId, @Param("categoryName") String categoryName, @Param("trainingDescription") String trainingDescription);
+
+    /**
+     * Find existing contentOrder for a given process, categoryName, and trainingDescription.
+     */
+    @Query(value = "SELECT DISTINCT ts.content_order FROM training_samples ts WHERE ts.process_id = :processId AND ts.category_name = :categoryName AND ts.training_description = :trainingDescription AND ts.delete_flag = false LIMIT 1", nativeQuery = true)
+    Optional<Integer> findContentOrderByProcessCategoryAndDescription(@Param("processId") Long processId, @Param("categoryName") String categoryName, @Param("trainingDescription") String trainingDescription);
 }
