@@ -47,10 +47,10 @@ public class EmployeeSkillCertificationImportHelper {
     private static final int COL_SECTION_CODE = 0;
     private static final int COL_PRODUCT_LINE_CODE = 1;
     private static final int COL_PROCESS_NAME = 2;
-    private static final int COL_CERTIFIED_QUANTITY = 3;
-    private static final int COL_EMPLOYEE = 4;
-    private static final int COL_CERTIFICATION_DATE = 5;
-    private static final int COL_LAST_ACTION_DATE = 6;
+    private static final int COL_CERTIFIED_QUANTITY = 4;
+    private static final int COL_EMPLOYEE = 5;
+    private static final int COL_CERTIFICATION_DATE = 6;
+    private static final int COL_LAST_ACTION_DATE = 7;
 
     /**
      * Parse Excel file:
@@ -139,12 +139,8 @@ public class EmployeeSkillCertificationImportHelper {
                     .certifiedQuantity(parseInteger(rawRow.getCertifiedQuantityColumn()))
                     .employeeId(rawRow.getEmployeeId())
                     .employeeFullName(rawRow.getEmployeeFullName())
-                    .certificationDate(rawRow.getCertificationDateColumn() != null
-                            ? parseLocalDate(rawRow.getCertificationDateColumn())
-                            : null)
-                    .lastActionDate(rawRow.getLastActionDateColumn() != null
-                            ? parseLocalDate(rawRow.getLastActionDateColumn())
-                            : null)
+                    .certificationDate(rawRow.getCertificationDateColumn())
+                    .lastActionDate(rawRow.getLastActionDateColumn())
                     .build();
 
             results.add(resolvedDto);
@@ -189,8 +185,12 @@ public class EmployeeSkillCertificationImportHelper {
         String processNameColumn = getOptionalStringCellValue(row.getCell(COL_PROCESS_NAME));
         String certifiedQuantityColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFIED_QUANTITY));
         String employeeColumn = getOptionalStringCellValue(row.getCell(COL_EMPLOYEE));
-        String certificationDateColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE));
-        String lastActionDateColumn = getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE));
+        LocalDate certificationDateColumn = getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE)) != null
+                ? LocalDate.parse(getOptionalStringCellValue(row.getCell(COL_CERTIFICATION_DATE)))
+                : null;
+        LocalDate lastActionDateColumn = getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE)) != null
+                ? LocalDate.parse(getOptionalStringCellValue(row.getCell(COL_LAST_ACTION_DATE)))
+                : null;
 
         String employeeId = null;
         String employeeFullName = null;

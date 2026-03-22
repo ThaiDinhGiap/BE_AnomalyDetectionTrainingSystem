@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,8 +19,8 @@ public class EmployeeSkillCertificationImportRowData {
     private String processNameColumn;
     private String certifiedQuantityColumn;
     private String employeeColumn;
-    private String certificationDateColumn;
-    private String lastActionDateColumn;
+    private LocalDate certificationDateColumn;
+    private LocalDate lastActionDateColumn;
 
     private String employeeId;
     private String employeeFullName;

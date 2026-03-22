@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
+import com.sep490.anomaly_training_backend.dto.EmployeeSkillCertificationImportDto;
 import com.sep490.anomaly_training_backend.dto.ImportSkillMatrixResult;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
@@ -8,6 +9,7 @@ import com.sep490.anomaly_training_backend.dto.response.skill_matrix.EmployeeSki
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.ProcessCompletionDto;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillStatusDto;
+import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
@@ -233,15 +235,19 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
      * Tất cả data thuộc về 1 Team cố định từ file header
      */
     private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult) {
+        processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getHierarchyMap());
+        processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getParsedRows());
+    }
 
-        Team team = teamRepository.findByCode(importSkillMatrixResult.getTeamCode())
-                .orElse(new Team(importSkillMatrixResult.getTeamCode()));
+    private void processHierarchyMap(String teamCode, String groupCode, Map<String, Map<String, Set<String>>> hierarchyMap) {
+        Team team = teamRepository.findByCode(teamCode)
+                .orElse(new Team(teamCode));
 
-        Group group = groupRepository.findByCode(importSkillMatrixResult.getGroupCode())
-                .orElse(new Group(importSkillMatrixResult.getGroupCode()));
+        Group group = groupRepository.findByCode(groupCode)
+                .orElse(new Group(groupCode));
 
         // Process hierarchy map
-        for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : importSkillMatrixResult.getHierarchyMap().entrySet()) {
+        for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
             String sectionCode = sectionEntry.getKey();
 
             Section section = sectionRepository.findByCode(sectionCode)
@@ -277,6 +283,35 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                             team.getCode(), group.getCode(), section.getCode(), productLine.getCode(), process.getCode());
                 }
             }
+        }
+    }
+
+    private void processParsedRawData(String teamCode, String groupCode, List<EmployeeSkillCertificationImportDto> parsedResults) {
+        for (EmployeeSkillCertificationImportDto raw : parsedResults) {
+            Employee employee = employeeRepository.findByEmployeeCode(raw.getEmployeeId())
+                    .orElseGet(() -> {
+                        Employee newEmployee = Employee.builder()
+                                .employeeCode(raw.getEmployeeId())
+                                .fullName(raw.getEmployeeFullName())
+                                .team(teamRepository.findByCode(teamCode)
+                                        .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND, "Team not found: " + teamCode)))
+                                .build();
+                        return employeeRepository.save(newEmployee);
+                    });
+
+            Process process = processRepository.findByName(raw.getProcessName())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND, "Process not found: " + raw.getProcessName()));
+
+            EmployeeSkill skill = EmployeeSkill.builder()
+                    .employee(employee)
+                    .process(process)
+                    .certifiedDate(raw.getCertificationDate())
+                    .status(EmployeeSkillStatus.VALID)
+                    .build();
+
+            employeeSkillRepository.save(skill);
+
+            log.info("Saved skill for employee {} on process {}", employee.getEmployeeCode(), process.getCode());
         }
     }
 
