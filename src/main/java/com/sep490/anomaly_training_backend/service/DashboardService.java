@@ -60,4 +60,26 @@ public interface DashboardService {
     List<StageDistribution> getSvDefectByProcess(Long groupId, Long lineId);
 
     List<StageDistribution> getSvSampleByProcess(Long groupId, Long lineId);
+
+    // ==================== MNG Dashboard ====================
+
+    MngOrgStats getMngOrgStats(Long sectionId, Long lineId);
+
+    List<MngPendingApprovalItem> getMngPendingApprovals(Long sectionId, Long lineId);
+
+    List<MngTrainingProgressPoint> getMngTrainingProgress(Long sectionId, Long lineId, Integer month, Integer year);
+
+    SvKpiData getMngKpi(Long sectionId, Long lineId, Integer year, Integer month);
+
+    List<SvTrainingEffectivenessPoint> getMngTrainingEffectiveness(Long sectionId, Long lineId, Integer months);
+
+    List<TrainingExecutionPoint> getMngTrainingExecution(Long sectionId, Long lineId, Integer year, Integer month);
+
+    List<SkillCertificateItem> getMngSkillCertificates(Long sectionId, Long lineId);
+
+    List<DefectTrendPoint> getMngDefectTrend(Long sectionId, Long lineId);
+
+    List<StageDistribution> getMngDefectByProcess(Long sectionId, Long lineId);
+
+    List<StageDistribution> getMngSampleByProcess(Long sectionId, Long lineId);
 }
