@@ -38,16 +38,20 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductLineRepository productLineRepository;
     private final ProductMapper productMapper;
     private final ImportHistoryService importHistoryService;
     private final ProductImportHelper importHelper;
     private final ProductImportValidator importValidator;
     private final ImportImageHandlerService importImageHandlerService;
     private final AttachmentService attachmentService;
+    private final ProductProcessRepository productProcessRepository;
 
     @Override
-    public List<ProductResponse> importProduct(User user, MultipartFile productFile) {
+    public List<ProductResponse> importProduct(User user, Long productLineId, MultipartFile productFile) {
         List<ImportErrorItem> errors = new ArrayList<>();
+        ProductLine productLine = productLineRepository.findById(productLineId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
 
         try (Workbook workbook = WorkbookFactory.create(productFile.getInputStream())) {
             validateImportFile(productFile);
@@ -68,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             // Step 3: Process all rows with proper error handling
-            List<ProductResponse> responses = processAllRows(parsedRows, user);
+            List<ProductResponse> responses = processAllRows(parsedRows, productLine, user);
 
             // Step 4: If any errors occurred during processing, save them
             if (!errors.isEmpty()) {
@@ -99,6 +103,7 @@ public class ProductServiceImpl implements ProductService {
      */
     private List<ProductResponse> processAllRows(
             List<ProductImportDto> parsedRows,
+            ProductLine productLine,
             User user) {
 
         List<ProductResponse> responses = new ArrayList<>();
@@ -108,7 +113,16 @@ public class ProductServiceImpl implements ProductService {
             Product product = findOrCreateProduct(dto);
             // Step 2: Update Product fields
             updateProductFields(product, dto);
-            // Step 3: Save to database
+            //Step 3: Apply all processes to product
+            List<Process> processes = productLine.getProcesses();
+            for (Process process : processes) {
+                ProductProcess productProcess = productProcessRepository.findByProductIdAndProcessId(product.getId(), process.getId())
+                        .orElseGet(ProductProcess::new);
+                productProcess.setProduct(product);
+                productProcess.setProcess(process);
+                productProcessRepository.save(productProcess);
+            }
+            // Step 4: Save to database
             Product saved = productRepository.save(product);
             handleProductImages(dto.getImageData(), saved, user);
             responses.add(productMapper.toDto(saved));

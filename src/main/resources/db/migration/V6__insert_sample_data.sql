@@ -155,16 +155,18 @@ VALUES
 (111, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 6, TRUE, 'system'),
 (113, 'defect.import', 'Nhập danh sách lỗi từ file', 1, 'create', 7, TRUE, 'system'),
 -- training_sample (2)
-(6, 'training_sample_proposal.view', 'Xem chủ đề đào tạo', 2, 'view', 1, TRUE, 'system'),
-(7, 'training_sample_proposal.create', 'Tạo chủ đề đào tạo', 2, 'create', 2, TRUE, 'system'),
-(8, 'training_sample_proposal.edit', 'Sửa chủ đề đào tạo', 2, 'edit', 3, TRUE, 'system'),
-(9, 'training_sample_proposal.delete', 'Xoá chủ đề đào tạo', 2, 'delete', 4, TRUE, 'system'),
+(6, 'training_sample_proposal.view', 'Xem mẫu huấn luyện', 2, 'view', 1, TRUE, 'system'),
+(7, 'training_sample_proposal.create', 'Tạo mẫu huấn luyện', 2, 'create', 2, TRUE, 'system'),
+(8, 'training_sample_proposal.edit', 'Sửa mẫu huấn luyện', 2, 'edit', 3, TRUE, 'system'),
+(9, 'training_sample_proposal.delete', 'Xoá mẫu huấn luyện', 2, 'delete', 4, TRUE, 'system'),
 (100, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 5, TRUE, 'system'),
 (102, 'training_sample.import', 'Nhập danh sách mẫu huấn luyện', 2, 'create', 6, TRUE, 'system'),
 (201, 'training_sample_review.view', 'Xem chính sách kiểm tra mẫu huấn luyện hằng năm', 2, 'view', 7, TRUE, 'system'),
 (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 8, TRUE, 'system'),
 (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 9, TRUE, 'system'),
 (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
+(205, 'training_sample_proposal.approve', 'Phê duyệt mẫu huấn luyện', 2, 'delete', 4, TRUE, 'system'),
+
 -- training_plan (3)
 (10, 'training_plan.view', 'Xem kế hoạch đào tạo', 3, 'view', 1, TRUE, 'system'),
 (11, 'training_plan.create', 'Tạo kế hoạch đào tạo', 3, 'create', 2, TRUE, 'system'),
@@ -281,7 +283,7 @@ VALUES
 (2, 201),
 (2, 202),
 (2, 203),
-(2, 204),
+(2, 205),
 -- training plan
 (2, 10),
 (2, 11),
@@ -344,6 +346,7 @@ VALUES
 (3, 202),
 (3, 203),
 (3, 204),
+(3, 205),
 -- training plan
 (3, 10),
 (3, 11),
@@ -360,7 +363,6 @@ VALUES
 (3, 36),
 -- dashboard
 (3, 40),
--- staff org
 (3, 43),
 -- manufacturing line (bổ sung)
 (3, 47),
@@ -412,6 +414,10 @@ VALUES
 -- manufacturing line
 (4, 47),
 (4, 200),
+(4, 43),
+(4, 44),
+(4, 45),
+(4, 46),
 -- attachment
 (4, 56),
 (4, 57),

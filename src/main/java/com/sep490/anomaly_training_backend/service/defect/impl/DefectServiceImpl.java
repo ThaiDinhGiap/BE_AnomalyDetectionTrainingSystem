@@ -193,6 +193,12 @@ public class DefectServiceImpl implements DefectService {
         return defectsInProcess;
     }
 
+    @Override
+    public byte[] exportDefect(Long productLineId) {
+        List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId);
+        return null;
+    }
+
     private void validateImportFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_IS_EMPTY);
