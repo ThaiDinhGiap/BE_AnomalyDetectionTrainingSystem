@@ -168,6 +168,18 @@ public class TrainingSampleController {
         return ResponseEntity.ok("Training Sample Proposal has been rejected!");
     }
 
+    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
+    @PutMapping("/{id}/revise")
+    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+    public ResponseEntity<String> revise(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
+        trainingSampleProposalService.revise(id, currentUser, request);
+        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
+    }
+
     @Operation(summary = "Check user approval permission for proposal")
     @GetMapping("/{id}/permission")
     @PreAuthorize("isAuthenticated()")
@@ -179,7 +191,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get training sample detail information")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('defect.view')")
+    @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<TrainingSampleResponse>> getTrainingSampleDetail(@PathVariable("id") Long id) {
         TrainingSampleResponse response = trainingSampleService.getTrainingSampleById(id);
         return ResponseEntity.ok(ApiResponse.success(response));

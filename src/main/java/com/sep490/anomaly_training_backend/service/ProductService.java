@@ -57,6 +57,6 @@ public interface ProductService {
      */
     boolean isProductCodeExistsExcludingId(String code, Long excludingId);
 
-    List<ProductResponse> importProduct(User user, MultipartFile productFile) throws BadRequestException;
+    List<ProductResponse> importProduct(User user, Long productLineId, MultipartFile productFile) throws BadRequestException;
 }
 

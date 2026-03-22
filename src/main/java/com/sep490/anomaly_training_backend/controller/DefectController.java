@@ -216,6 +216,14 @@ public class DefectController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    @Operation(summary = "Export data (Defect Banking)")
+        @PostMapping("/export/{productLineId}")
+        @PreAuthorize("hasAuthority('defect.import')")
+        public ResponseEntity<byte[]> exportDefect(@PathVariable Long productLineId) throws BadRequestException {
+            byte[] data = defectService.exportDefect(productLineId);
+            return ResponseEntity.ok(data);
+        }
+
     @Operation(summary = "Submit defect proposal for approval", description = "Change defect proposal status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('training_sample_proposal.edit')")

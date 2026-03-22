@@ -158,10 +158,12 @@ public class ManufacturingLineController {
 
     // ====================== IMPORT ======================
     @Operation(summary = "Import Product data")
-    @PostMapping("/import-products")
+    @PostMapping("/import-products/{productLineId}")
     @PreAuthorize("hasAuthority('manufacturing_line.import')")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> importProduct(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
-        List<ProductResponse> data = productService.importProduct(currentUser, file);
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> importProduct(@RequestPart("file") MultipartFile file,
+                                                                            @AuthenticationPrincipal User currentUser,
+                                                                            @PathVariable Long productLineId) throws BadRequestException {
+        List<ProductResponse> data = productService.importProduct(currentUser, productLineId, file);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
