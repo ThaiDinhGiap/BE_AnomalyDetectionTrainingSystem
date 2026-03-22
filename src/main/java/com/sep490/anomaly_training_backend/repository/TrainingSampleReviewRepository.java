@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.repository;
 
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,14 @@ import java.util.Optional;
 public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSampleReview, Long> {
     Optional<TrainingSampleReview> findByProductLineIdAndReviewDate(Long productLineId, LocalDate reviewDate);
 
-    List<TrainingSampleReview> findByReviewedById(Long reviewedById);
+    @Query("SELECT tr FROM TrainingSampleReview tr " +
+            "WHERE tr.reviewedBy.id = :userId  " +
+            "AND tr.config.reviewPolicy.productLine.id = :productLine  " +
+            "AND tr.status = :status "+
+            "AND tr.deleteFlag = false")
+    List<TrainingSampleReview> findReviewTask(@Param("productLine") Long productLindId,
+                                              @Param("userId") Long userId,
+                                              @Param("status") ReportStatus status);
 
     List<TrainingSampleReview> findByConfigId(Long configId);
 

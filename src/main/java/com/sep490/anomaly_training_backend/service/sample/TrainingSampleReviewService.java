@@ -31,4 +31,6 @@ public interface TrainingSampleReviewService {
     void revise(Long id, User currentUser, HttpServletRequest request);
 
     void reject(Long id, User currentUser, RejectRequest rejectRequest, HttpServletRequest request);
+
+    List<TrainingSampleReviewResponse> findByReviewedById(Long productLineId, Long reviewedId);
 }

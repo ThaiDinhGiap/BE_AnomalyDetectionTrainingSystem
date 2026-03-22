@@ -170,6 +170,15 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         approvalService.reject(review, currentUser, req, request);
     }
 
+    @Override
+    public List<TrainingSampleReviewResponse> findByReviewedById(Long productLineId, Long reviewedId) {
+//        return trainingSampleReviewRepository.findReviewTask(productLineId, reviewedId, ReportStatus.valueOf(status))
+//                .stream()
+//                .map(trainingSampleReviewMapper::toDto)
+//                .toList();
+        return null;
+    }
+
     private String generateReviewPolicyCode() {
         int currentYear = Year.now().getValue();
         StringBuilder suffix = new StringBuilder(SUFFIX_LENGTH);
