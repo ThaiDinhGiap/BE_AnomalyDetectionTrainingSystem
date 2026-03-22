@@ -241,5 +241,240 @@ VALUES
 (12, 8, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
 (12, 9, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW());
 
+-- ============================================================================
+-- 1. BỔ SUNG PRODUCT LINES cho các group chưa có line (group 3,4,5,6)
+--    Hiện tại: G1→line1, G2→line2, G3→line3, G4→line5, G5→line4, G6→chưa có
+-- ============================================================================
+
+INSERT INTO product_lines (id, code, name, group_id, created_by)
+VALUES
+    (6,  'PL-TIEN-S1', 'Dòng Bơm Chìm S-Series (Tiện)',     1, 'admin'),
+    (7,  'PL-TIEN-V1', 'Dòng Van Công Nghiệp V-Series',      1, 'admin'),
+    (8,  'PL-TIEN-C1', 'Dòng Trục Khuỷu C-Series',           1, 'admin'),
+    (9,  'PL-HAN-W2',  'Dòng Bơm Ly Tâm W200-Series (Hàn)',  3, 'admin'),
+    (10, 'PL-LA-B2',   'Dây Chuyền Lắp Ráp Bơm Bùn B2',     4, 'admin'),
+    (11, 'PL-QC-01',   'Kiểm Định Chất Lượng Tổng Hợp',      6, 'admin')
+    ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- ============================================================================
+-- 2. PROCESSES cho các lines mới (nếu chưa có)
+-- ============================================================================
+
+INSERT IGNORE INTO processes (id, code, name, description, classification, standard_time_jt, product_line_id, created_by)
+VALUES
+-- Line 6 — Bơm Chìm S-Series
+(22, 'BC-01', 'Tiện Trục Bơm Chìm Inox', 'Gia công trục bơm chìm inox 304', 1, 50.00, 6, 'admin'),
+(23, 'BC-02', 'Tiện Vỏ Bơm Chìm', 'Gia công vỏ bơm chìm đúc', 1, 65.00, 6, 'admin'),
+(24, 'BC-03', 'Tiện Cánh Bơm Chìm', 'Gia công cánh bơm đúc ly tâm', 2, 40.00, 6, 'admin'),
+-- Line 7 — Van V-Series
+(25, 'VN-01', 'Tiện Mặt Tựa Van', 'Gia công mặt tựa van chính xác', 1, 70.00, 7, 'admin'),
+(26, 'VN-02', 'Tiện Trục Van', 'Gia công trục van điều khiển', 1, 55.00, 7, 'admin'),
+(27, 'VN-03', 'Tiện Đế Van', 'Gia công đế van lắp bích', 2, 45.00, 7, 'admin'),
+-- Line 8 — Trục Khuỷu C-Series
+(28, 'TK-01', 'Tiện Cổ Trục Chính', 'Gia công cổ trục chính ±0.01', 1, 120.00, 8, 'admin'),
+(29, 'TK-02', 'Tiện Cổ Biên', 'Gia công cổ biên offset', 1, 110.00, 8, 'admin'),
+(30, 'TK-03', 'Mài Cổ Trục', 'Mài cổ trục Ra 0.4', 1, 90.00, 8, 'admin'),
+-- Line 9 — Hàn W200
+(31, 'HA-W2-01', 'Hàn MIG Thân Bơm W200', 'Hàn MIG vòng bích W200', 1, 130.00, 9, 'admin'),
+(32, 'HA-W2-02', 'Hàn TIG Ống W200', 'Hàn TIG ống nội W200', 1, 160.00, 9, 'admin'),
+-- Line 10 — Lắp Ráp Bơm Bùn B2
+(33, 'LA-B2-01', 'Lắp Cánh Bùn B2', 'Lắp cánh bơm bùn chịu mài mòn', 1, 85.00, 10, 'admin'),
+(34, 'LA-B2-02', 'Test Bơm Bùn B2', 'Test áp bùn 2x danh định', 1, 70.00, 10, 'admin'),
+-- Line 11 — KCS
+(35, 'QC-01', 'Kiểm Tra Ngoại Quan', 'Kiểm tra bề mặt, kích thước tổng quan', 1, 30.00, 11, 'admin'),
+(36, 'QC-02', 'Kiểm Tra Chức Năng', 'Test chạy thử và đo thông số', 1, 45.00, 11, 'admin');
+
+
+-- ============================================================================
+-- 3. TRAINING SAMPLES cho các lines mới
+-- ============================================================================
+
+INSERT IGNORE INTO training_samples (id, training_code, category_name, process_id, product_line_id, created_by, delete_flag, created_at, updated_at)
+VALUES
+-- Line 6
+(31, 'TS-BC-01', 'Mẫu Tiện Trục Bơm Chìm', 22, 6, 'system', 0, NOW(), NOW()),
+(32, 'TS-BC-02', 'Mẫu Tiện Vỏ Bơm Chìm', 23, 6, 'system', 0, NOW(), NOW()),
+(33, 'TS-BC-03', 'Mẫu Tiện Cánh Bơm Chìm', 24, 6, 'system', 0, NOW(), NOW()),
+-- Line 7
+(34, 'TS-VN-01', 'Mẫu Tiện Mặt Tựa Van', 25, 7, 'system', 0, NOW(), NOW()),
+(35, 'TS-VN-02', 'Mẫu Tiện Trục Van', 26, 7, 'system', 0, NOW(), NOW()),
+(36, 'TS-VN-03', 'Mẫu Tiện Đế Van', 27, 7, 'system', 0, NOW(), NOW()),
+-- Line 9
+(37, 'TS-HW2-01', 'Mẫu Hàn MIG W200', 31, 9, 'system', 0, NOW(), NOW()),
+(38, 'TS-HW2-02', 'Mẫu Hàn TIG W200', 32, 9, 'system', 0, NOW(), NOW()),
+-- Line 10
+(39, 'TS-LB2-01', 'Mẫu Lắp Cánh Bùn B2', 33, 10, 'system', 0, NOW(), NOW()),
+(40, 'TS-LB2-02', 'Mẫu Test Bơm Bùn B2', 34, 10, 'system', 0, NOW(), NOW());
+
+
+-- ============================================================================
+-- 4. TRAINING PLANS — WAITING_MANAGER (cho MNG Pending Approvals)
+-- ============================================================================
+
+INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version, note, min_training_per_day, max_training_per_day, created_by)
+VALUES
+-- Section 1 → Group 1 (Tiện CNC)
+(300, 'TP-MNG-W01', 'KH HL T3/2026 - Tiện Trục Bơm (Chờ MNG)',      '2026-03-01', '2026-03-31', 1, 1, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
+(301, 'TP-MNG-W02', 'KH HL T4/2026 - Bơm Chìm S (Chờ MNG)',         '2026-04-01', '2026-04-30', 1, 6, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
+-- Section 1 → Group 2 (Phay CNC)
+(302, 'TP-MNG-W03', 'KH HL T3/2026 - Phay Vỏ Bơm (Chờ MNG)',        '2026-03-01', '2026-03-31', 2, 2, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_phay01'),
+-- Section 1 → Group 3 (Hàn)
+(303, 'TP-MNG-W04', 'KH HL T3/2026 - Hàn Thân Bơm (Chờ MNG)',       '2026-03-01', '2026-03-31', 3, 3, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_hanlap01'),
+-- Section 2 → Group 4 (Lắp Ráp Bơm)
+(304, 'TP-MNG-W05', 'KH HL T3/2026 - Lắp Ráp Máy Bơm (Chờ MNG)',   '2026-03-01', '2026-03-31', 4, 5, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_laprap01'),
+-- Section 2 → Group 5 (Lắp Ráp Động Cơ)
+(305, 'TP-MNG-W06', 'KH HL T3/2026 - Lắp Ráp Động Cơ (Chờ MNG)',   '2026-03-01', '2026-03-31', 5, 4, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_dongco01');
+
+
+-- ============================================================================
+-- 5. DEFECT PROPOSALS — WAITING_MANAGER (cho MNG Pending Approvals)
+-- ============================================================================
+
+INSERT INTO defect_proposals (id, form_code, status, product_line_id, current_version, created_by, delete_flag, created_at, updated_at)
+VALUES
+    (100, 'DP-MNG-001', 'WAITING_MANAGER', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+    (101, 'DP-MNG-002', 'WAITING_MANAGER', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 30 HOUR), DATE_SUB(NOW(), INTERVAL 30 HOUR)),
+    (102, 'DP-MNG-003', 'WAITING_MANAGER', 3, 1, 'tl_hanlap01', 0, DATE_SUB(NOW(), INTERVAL 5 HOUR), DATE_SUB(NOW(), INTERVAL 5 HOUR)),
+    (103, 'DP-MNG-004', 'WAITING_MANAGER', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 48 HOUR), DATE_SUB(NOW(), INTERVAL 48 HOUR)),
+    (104, 'DP-MNG-005', 'WAITING_MANAGER', 4, 1, 'tl_dongco01', 0, DATE_SUB(NOW(), INTERVAL 10 HOUR), DATE_SUB(NOW(), INTERVAL 10 HOUR));
+
+
+-- ============================================================================
+-- 6. TRAINING SAMPLE PROPOSALS — WAITING_MANAGER (cho MNG Pending Approvals)
+-- ============================================================================
+
+INSERT INTO training_sample_proposals (id, form_code, status, product_line_id, current_version, created_by, delete_flag, created_at, updated_at)
+VALUES
+    (100, 'TSP-MNG-001', 'WAITING_MANAGER', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+    (101, 'TSP-MNG-002', 'WAITING_MANAGER', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 26 HOUR), DATE_SUB(NOW(), INTERVAL 26 HOUR)),
+    (102, 'TSP-MNG-003', 'WAITING_MANAGER', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 6 HOUR), DATE_SUB(NOW(), INTERVAL 6 HOUR));
+
+
+-- ============================================================================
+-- 7. TRAINING RESULTS + DETAILS cho Section 2 & 3 lines
+--    (Để MNG Training Progress có dữ liệu từ nhiều lines)
+-- ============================================================================
+
+-- Results cho Group 3 (Hàn), Group 4 (Lắp Bơm), Group 5 (Lắp ĐC)
+INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
+VALUES
+-- Group 3 (Hàn, line 3)
+(300, NULL, 'KQ HL T3/2026 - Hàn Bơm W100',   'TR-MNG-01', 2026, 3, 3, 'APPROVED', 1, 'Đã hoàn thành.', 'tl_hanlap01'),
+-- Group 4 (Lắp Bơm, line 5)
+(301, NULL, 'KQ HL T3/2026 - Lắp Ráp Bơm B', 'TR-MNG-02', 2026, 4, 5, 'APPROVED', 1, 'Đã hoàn thành.', 'tl_laprap01'),
+-- Group 5 (Lắp ĐC, line 4)
+(302, NULL, 'KQ HL T3/2026 - Lắp Ráp ĐC E',  'TR-MNG-03', 2026, 5, 4, 'ON_GOING', 1, 'Đang thực hiện.', 'tl_dongco01'),
+-- Group 3 (Hàn W200, line 9)
+(303, NULL, 'KQ HL T2/2026 - Hàn W200',       'TR-MNG-04', 2026, 3, 9, 'APPROVED', 1, 'Đã hoàn thành.', 'tl_hanlap01');
+
+
+-- Result Details — rải Feb & Mar 2026
+INSERT INTO training_result_details (training_result_id, employee_id, training_sample_id, planned_date, actual_date, status, is_pass, note, created_by, delete_flag, created_at, updated_at)
+VALUES
+-- Result 300 (Hàn, line 3) — 8 details
+(300, 13, NULL, '2026-02-05', '2026-02-05', 'APPROVED', TRUE,  'Feb - NV013 pass Hàn MIG', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 14, NULL, '2026-02-10', '2026-02-10', 'APPROVED', TRUE,  'Feb - NV014 pass Hàn TIG', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 15, NULL, '2026-02-15', '2026-02-15', 'APPROVED', FALSE, 'Feb - NV015 fail Hàn Điểm', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 16, NULL, '2026-02-20', '2026-02-20', 'APPROVED', TRUE,  'Feb - NV016 pass', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 13, NULL, '2026-03-05', '2026-03-05', 'APPROVED', TRUE,  'Mar - NV013 pass', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 14, NULL, '2026-03-10', '2026-03-10', 'APPROVED', TRUE,  'Mar - NV014 pass', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 15, NULL, '2026-03-15', '2026-03-15', 'APPROVED', TRUE,  'Mar - NV015 pass lần 2', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 16, NULL, '2026-03-20', NULL, 'PENDING', NULL, 'Mar - NV016 chưa HL', 'tl_hanlap01', 0, NOW(), NOW()),
+
+-- Result 301 (Lắp Bơm, line 5) — 8 details
+(301, 17, NULL, '2026-02-03', '2026-02-03', 'APPROVED', TRUE,  'Feb - NV017 pass Lắp BCT', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 18, NULL, '2026-02-08', '2026-02-08', 'APPROVED', FALSE, 'Feb - NV018 fail Ron', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 19, NULL, '2026-02-14', '2026-02-14', 'APPROVED', TRUE,  'Feb - NV019 pass Test Áp', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 20, NULL, '2026-02-20', '2026-02-20', 'APPROVED', TRUE,  'Feb - NV020 pass', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 17, NULL, '2026-03-03', '2026-03-03', 'APPROVED', TRUE,  'Mar - NV017 pass', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 18, NULL, '2026-03-08', '2026-03-08', 'APPROVED', TRUE,  'Mar - NV018 pass lần 2', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 19, NULL, '2026-03-15', '2026-03-15', 'APPROVED', FALSE, 'Mar - NV019 fail', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 20, NULL, '2026-03-22', NULL, 'PENDING', NULL, 'Mar - NV020 chưa HL', 'tl_laprap01', 0, NOW(), NOW()),
+
+-- Result 302 (Lắp ĐC, line 4) — 8 details
+(302, 22, NULL, '2026-02-05', '2026-02-05', 'APPROVED', TRUE,  'Feb - NV022 pass Lắp Piston', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 23, NULL, '2026-02-12', '2026-02-12', 'APPROVED', TRUE,  'Feb - NV023 pass Nắp Máy', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 24, NULL, '2026-02-18', '2026-02-18', 'APPROVED', FALSE, 'Feb - NV024 fail Cân Bằng', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 25, NULL, '2026-02-25', '2026-02-25', 'APPROVED', TRUE,  'Feb - NV025 pass', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 22, NULL, '2026-03-03', '2026-03-03', 'APPROVED', TRUE,  'Mar - NV022 pass', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 23, NULL, '2026-03-10', '2026-03-10', 'APPROVED', TRUE,  'Mar - NV023 pass', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 24, NULL, '2026-03-18', '2026-03-18', 'APPROVED', FALSE, 'Mar - NV024 fail lần 2', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 26, NULL, '2026-03-22', NULL, 'PENDING', NULL, 'Mar - NV026 chưa HL', 'tl_dongco01', 0, NOW(), NOW()),
+
+-- Result 303 (Hàn W200, line 9) — 6 details
+(303, 13, 37, '2026-02-10', '2026-02-10', 'APPROVED', TRUE,  'Feb - NV013 pass Hàn W200', 'tl_hanlap01', 0, NOW(), NOW()),
+(303, 14, 38, '2026-02-18', '2026-02-18', 'APPROVED', TRUE,  'Feb - NV014 pass TIG W200', 'tl_hanlap01', 0, NOW(), NOW()),
+(303, 15, 37, '2026-03-05', '2026-03-05', 'APPROVED', TRUE,  'Mar - NV015 pass', 'tl_hanlap01', 0, NOW(), NOW()),
+(303, 16, 38, '2026-03-12', '2026-03-12', 'APPROVED', FALSE, 'Mar - NV016 fail TIG W200', 'tl_hanlap01', 0, NOW(), NOW()),
+(303, 13, 37, '2026-03-18', '2026-03-18', 'APPROVED', TRUE,  'Mar - NV013 pass lần 2', 'tl_hanlap01', 0, NOW(), NOW()),
+(303, 14, 38, '2026-03-25', NULL, 'PENDING', NULL, 'Mar - NV014 chưa HL', 'tl_hanlap01', 0, NOW(), NOW());
+
+
+-- ============================================================================
+-- 8. DEFECTS cho Section 2 & 3 lines — phong phú MNG defect trend
+-- ============================================================================
+
+INSERT INTO defects (defect_code, defect_description, process_id, detected_date, defect_type, origin_measures, outflow_measures, conclusion, note, created_by, delete_flag, created_at, updated_at)
+VALUES
+-- Line 3 (Hàn W-Series) — tháng 2 & 3/2026
+('MNG-D01', 'Rỗ khí mối hàn MIG thân bơm W100 lô tháng 2',      10, '2026-02-08', 'CLAIM', 'M1', 'M2', 'Điều chỉnh khí', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D02', 'Nứt mối hàn TIG ống nội W100 tháng 2',              11, '2026-02-15', 'CLAIM', 'M1', 'M2', 'Preheat 150°C', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D03', 'Biến dạng nhiệt thân bơm tháng 3',                  10, '2026-03-05', 'DEFECTIVE_GOODS', 'M1', 'M2', 'Thêm jig', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D04', 'Hàn điểm giá đỡ bong tháng 3',                      12, '2026-03-12', 'DEFECTIVE_GOODS', 'M1', 'M2', 'Tăng dòng', 'MNG mock', 'system', 0, NOW(), NOW()),
+-- Line 5 (Lắp Bơm B-Series)
+('MNG-D05', 'Ron cao su rách khi test áp tháng 2',                19, '2026-02-10', 'CLAIM', 'M1', 'M2', 'Đồ gá mới', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D06', 'Bánh CK lắp ngược gây rung tháng 3',                18, '2026-03-08', 'CLAIM', 'M1', 'M2', 'Marking hướng', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D07', 'Test áp thất bại mặt bích tháng 3',                  20, '2026-03-18', 'DEFECTIVE_GOODS', 'M1', 'M2', 'Kiểm ren', 'MNG mock', 'system', 0, NOW(), NOW()),
+-- Line 4 (Lắp Động Cơ E-Series)
+('MNG-D08', 'Piston lắp ngược tháng 2',                           14, '2026-02-12', 'CLAIM', 'M1', 'M2', 'Poka-yoke', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D09', 'Moment bu-lông nắp máy không đạt tháng 3',           15, '2026-03-10', 'CLAIM', 'M1', 'M2', 'Hiệu chuẩn', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D10', 'Áp suất dầu < 3bar khi test tháng 3',               17, '2026-03-20', 'DEFECTIVE_GOODS', 'M1', 'M2', 'Bơm dầu mòn', 'MNG mock', 'system', 0, NOW(), NOW()),
+-- Line 9 (Hàn W200)
+('MNG-D11', 'Rỗ khí hàn MIG W200 tháng 2',                       31, '2026-02-20', 'CLAIM', 'M1', 'M2', 'Kiểm khí', 'MNG mock', 'system', 0, NOW(), NOW()),
+('MNG-D12', 'Nứt hàn TIG W200 tháng 3',                           32, '2026-03-15', 'DEFECTIVE_GOODS', 'M1', 'M2', 'Vật liệu sai', 'MNG mock', 'system', 0, NOW(), NOW());
+
+
+-- ============================================================================
+-- 9. EMPLOYEE SKILLS bổ sung cho Section 2 & 3 teams — Coverage data
+-- ============================================================================
+
+INSERT IGNORE INTO employee_skills (employee_id, process_id, status, certified_date, expiry_date, created_by, delete_flag, created_at, updated_at)
+VALUES
+-- Tổ Hàn (team 3, emp 13-16) — processes 10-13
+(13, 10, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(13, 11, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(14, 10, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(14, 11, 'PENDING_REVIEW', '2025-03-01', DATE_ADD(@today, INTERVAL 12 DAY), 'system_mock', 0, NOW(), NOW()),
+(15, 12, 'REVOKED',        '2025-01-01', '2026-01-01', 'system_mock', 0, NOW(), NOW()),
+(15, 13, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(16, 10, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(16, 12, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+-- Tổ Lắp Bơm (team 4, emp 17-21) — processes 18-21
+(17, 18, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(17, 19, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(18, 18, 'PENDING_REVIEW', '2025-03-01', DATE_ADD(@today, INTERVAL 7 DAY), 'system_mock', 0, NOW(), NOW()),
+(18, 20, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(19, 19, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(19, 20, 'REVOKED',        '2025-01-01', '2026-01-01', 'system_mock', 0, NOW(), NOW()),
+(20, 18, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(20, 21, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+-- Tổ Lắp ĐC (team 5, emp 22-26) — processes 14-17
+(22, 14, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(22, 15, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(23, 14, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(23, 16, 'PENDING_REVIEW', '2025-03-01', DATE_ADD(@today, INTERVAL 14 DAY), 'system_mock', 0, NOW(), NOW()),
+(24, 15, 'REVOKED',        '2025-01-01', '2026-01-01', 'system_mock', 0, NOW(), NOW()),
+(24, 17, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(25, 14, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(25, 16, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(26, 17, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+-- Tổ KCS (team 6, emp 27-30) — processes 35-36
+(27, 35, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(27, 36, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(28, 35, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW()),
+(28, 36, 'PENDING_REVIEW', '2025-03-01', DATE_ADD(@today, INTERVAL 5 DAY), 'system_mock', 0, NOW(), NOW()),
+(29, 35, 'REVOKED',        '2025-01-01', '2026-01-01', 'system_mock', 0, NOW(), NOW()),
+(30, 36, 'VALID',          '2024-06-01', '2027-06-01', 'system_mock', 0, NOW(), NOW());
+
 
 SET FOREIGN_KEY_CHECKS = 1;
