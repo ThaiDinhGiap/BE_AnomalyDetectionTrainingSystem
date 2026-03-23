@@ -178,7 +178,10 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
             review.setReviewDate(LocalDate.now());
 
             // Step 4: Save review to database
-            review.setStatus(ReportStatus.PENDING);
+            if (review.getStatus().equals(ReportStatus.REJECTED_BY_SV)) {
+                review.setStatus(ReportStatus.PENDING);
+                review.setCurrentVersion(review.getCurrentVersion() + 1);
+            }
             review = trainingSampleReviewRepository.save(review);
 
             // Step 5: Submit for approval
