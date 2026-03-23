@@ -9,7 +9,6 @@ import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleRev
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
@@ -178,6 +177,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
             review.setReviewDate(LocalDate.now());
 
             // Step 4: Save review to database
+            review.setStatus(ReportStatus.PENDING);
             review = trainingSampleReviewRepository.save(review);
 
             // Step 5: Submit for approval

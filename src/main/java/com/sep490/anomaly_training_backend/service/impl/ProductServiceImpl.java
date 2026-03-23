@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ImageData;
-import com.sep490.anomaly_training_backend.dto.request.ProductImportDto;
+import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
@@ -46,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ImportImageHandlerService importImageHandlerService;
     private final AttachmentService attachmentService;
     private final ProductProcessRepository productProcessRepository;
+    private final ProcessRepository processRepository;
 
     @Override
     public List<ProductResponse> importProduct(User user, Long productLineId, MultipartFile productFile) {
@@ -104,6 +104,50 @@ public class ProductServiceImpl implements ProductService {
                                 .stream()
                                 .map(this::enrichProductResponse).toList();
     }
+
+    @Override
+    public ProductResponse createProduct(ProductRequest productRequest, User currentUser) {
+        Product product = upsertProduct(productRequest, currentUser);
+        return enrichProductResponse(product);
+    }
+
+    @Override
+    public List<ProductResponse> syncProduct(List<ProductRequest> productRequestList, User currentUser) {
+        List<ProductResponse> responses = new ArrayList<>();
+        for (ProductRequest productRequest : productRequestList) {
+            Product entity = upsertProduct(productRequest, currentUser);
+            ProductResponse productResponse = enrichProductResponse(entity);
+            responses.add(productResponse);
+        }
+        return responses;
+    }
+
+    private Product upsertProduct(ProductRequest productRequest, User currentUser) {
+        Product product = productRepository.findById(productRequest.getId())
+                .orElseGet(Product::new);
+        product.setCode(productRequest.getCode());
+        product.setName(productRequest.getName());
+        product.setDescription(productRequest.getDescription());
+        product =  productRepository.save(product);
+        List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+        if (!originAttachments.isEmpty() || productRequest.getImages() != null) {
+            attachmentService.deleteAttachments("PRODUCT", product.getId());
+            List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT", product.getId(), currentUser.getUsername());
+        }
+        if (productRequest.getProcesses() != null) {
+            for (ProcessRequest processRequest : productRequest.getProcesses()) {
+                Process process = processRepository.findById(processRequest.getId())
+                        .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+                ProductProcess productProcess = new ProductProcess();
+                productProcess.setProcess(process);
+                productProcess.setProduct(product);
+                productProcess.setStandardTimeJt(processRequest.getStandardTimeJt());
+                productProcessRepository.save(productProcess);
+            }
+        }
+        return product;
+    }
+
 
     private ProductResponse enrichProductResponse(Product product) {
         ProductResponse productResponse = productMapper.toDto(product);
