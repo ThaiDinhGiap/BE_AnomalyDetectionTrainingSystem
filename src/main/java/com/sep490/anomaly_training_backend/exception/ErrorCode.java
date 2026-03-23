@@ -56,6 +56,7 @@ public enum ErrorCode {
     NOTIFICATION_TEMPLATE_NOT_FOUND(6020, "Notification template not found.", HttpStatus.NOT_FOUND),
     ONLY_AUTHOR_CAN_EDIT(6021, "Only the author can edit this item.", HttpStatus.FORBIDDEN),
     TRAINING_SAMPLE_ALREADY_EXISTS(6022, "Training sample already exists.", HttpStatus.CONFLICT),
+    TRAINING_SAMPLE_CODE_ALREADY_EXISTS(6023, "Training sample code already exists in t.", HttpStatus.CONFLICT),
 
     // Attachment Errors (range 61xx)
     INVALID_FILE_TYPE(6100, "Only image files (JPG, PNG, etc.) are allowed.", HttpStatus.BAD_REQUEST),
@@ -92,6 +93,7 @@ public enum ErrorCode {
     PROCESS_NOT_IN_PRODUCT_LINE(7026, "The selected process does not belong to the plan's product line.", HttpStatus.BAD_REQUEST),
     REVIEW_POLICY_NOT_FOUND(7027, "The selected review policy not found.", HttpStatus.NOT_FOUND),
     REVIEW_REPORT_NOT_FOUND(7028, "The selected review report not found.", HttpStatus.NOT_FOUND),
+    MISSING_PROCESS(7029, "Process must be do in at least one process.", HttpStatus.BAD_REQUEST),
 
     // Training Result Errors (range 71xx)
     TRAINING_RESULT_NOT_FOUND(7100, "Training result not found.", HttpStatus.NOT_FOUND),
@@ -128,6 +130,7 @@ public enum ErrorCode {
     MISSING_CATEGORY_NAME(7308, "Category name is required.", HttpStatus.BAD_REQUEST),
     MISSING_TRAINING_DESCRIPTION(7309, "Training description is required.", HttpStatus.BAD_REQUEST),
     MISSING_PRODUCT_ID(7310, "Product is required.", HttpStatus.BAD_REQUEST),
+    MISSING_TRAINING_SAMPLE(7311, "Training Sample is required.", HttpStatus.BAD_REQUEST),
 
     // Approval Errors (range 74xx)
     INVALID_ENTITY_STATUS(7400, "Invalid entity status for this operation.", HttpStatus.BAD_REQUEST),

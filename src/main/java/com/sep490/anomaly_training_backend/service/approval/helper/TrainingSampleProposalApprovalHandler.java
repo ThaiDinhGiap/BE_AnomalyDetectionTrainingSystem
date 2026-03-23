@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.service.approval.helper;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
@@ -81,8 +83,8 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         log.info("Set orders - processOrder: {}, categoryOrder: {}, contentOrder: {}", processOrder, categoryOrder, contentOrder);
 
         // Check for unique constraint before saving
-        if (created.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
-            throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
+        if (!created.getTrainingSampleCode().isEmpty() && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
+            throw new AppException(ErrorCode.TRAINING_SAMPLE_CODE_ALREADY_EXISTS, "trainingSampleCode already exists for this productLine. proposalDetail detailId=" + d.getId());
         }
         // Save the new TrainingSample
         created = trainingSampleRepository.save(created);
@@ -116,12 +118,12 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private void applyUpdate(TrainingSampleProposalDetail d) {
         // UPDATE: TrainingSample must exist
         if (d.getTrainingSample() == null || d.getTrainingSample().getId() == null) {
-            throw new IllegalStateException("UPDATE detail must reference existing trainingSample. detailId=" + d.getId());
+            throw new AppException(ErrorCode.MISSING_TRAINING_SAMPLE, "Không thế xoá hoặc chỉnh sửa một training sample không tồn tại");
         }
 
         // Find the existing TrainingSample to update
         TrainingSample existing = trainingSampleRepository.findById(d.getTrainingSample().getId())
-                .orElseThrow(() -> new IllegalStateException("TrainingSample not found id=" + d.getTrainingSample().getId()));
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_NOT_FOUND));
 
         // Validate fields for UPDATE
         validateUpdateFields(d);
@@ -155,13 +157,13 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         log.info("Updating TrainingSample ID: {} with existing trainingCode: {}", existing.getId(), existing.getTrainingCode());
 
         // Check for unique constraint violation for updated trainingSampleCode
-        if (existing.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
-            throw new IllegalStateException("trainingSampleCode already exists for this productLine. DetailId=" + d.getId());
+        if (!existing.getTrainingSampleCode().isEmpty() && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
+            throw new AppException(ErrorCode.TRAINING_SAMPLE_CODE_ALREADY_EXISTS, "trainingSampleCode already exists for this productLine. proposalDetail detailId=" + d.getId());
         }
 
         //Replace images if there are new ones in the proposal
         List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
-        if (proposalImages != null) {
+        if (proposalImages != null || !proposalImages.isEmpty()) {
             attachmentService.deleteAttachments("TRAINING_SAMPLE", existing.getId());
             for (Attachment proposal : proposalImages) {
                 Attachment attachment = new Attachment();

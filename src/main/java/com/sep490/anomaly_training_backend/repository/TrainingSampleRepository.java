@@ -39,11 +39,8 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
     Optional<TrainingSample> findByTrainingCode(String trainingCode);
 
     @Query(value = """
-    SELECT MAX(CAST(SUBSTRING(training_code, 3) AS UNSIGNED))
-    FROM training_samples
-    WHERE training_code LIKE 'TS%'
-      AND delete_flag = false
-""", nativeQuery = true)
+    SELECT MAX(CAST(SUBSTRING(ts.trainingCode, 3) AS long)) FROM TrainingSample ts WHERE ts.trainingCode LIKE 'TS%'
+""")
     Optional<Long> findMaxTrainingCodeSequence();
 
     List<TrainingSample> findByProductId(Long productId);
