@@ -165,7 +165,7 @@ VALUES
 (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 8, TRUE, 'system'),
 (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 9, TRUE, 'system'),
 (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
-(209, 'training_sample_review.approve', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
+(209, 'training_sample_review.approve', 'Phê duyệt chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
 (205, 'training_sample_proposal.approve', 'Phê duyệt mẫu huấn luyện', 2, 'delete', 4, TRUE, 'system'),
 
 -- training_plan (3)
