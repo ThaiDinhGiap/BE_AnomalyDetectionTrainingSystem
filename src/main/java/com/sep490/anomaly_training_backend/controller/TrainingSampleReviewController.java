@@ -35,16 +35,26 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Training Sample Review Management", description = "API for scheduling the annual review of the training sample list and reporting the results")
 public class TrainingSampleReviewController {
-    private final TrainingSampleReviewService trainingSampleReviewPolicyService;
+    private final TrainingSampleReviewService trainingSampleReviewService;
 
     @GetMapping("/policies/product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get review policies by product line", description = "Retrieve a list of review policies by product line")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewPolicyResponse>>> getReviewPoliciesByProductLine(
             @PathVariable Long productLineId) {
-        List<TrainingSampleReviewPolicyResponse> policies = trainingSampleReviewPolicyService
+        List<TrainingSampleReviewPolicyResponse> policies = trainingSampleReviewService
                 .getTrainingSampleReviewPoliciesByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách chính sách rà soát thành công", policies));
+    }
+
+    @GetMapping("/task/{productLineId}")
+    @PreAuthorize("hasAuthority('training_sample_review.view')")
+    @Operation(summary = "Get review policies by product line", description = "Retrieve a list of review policies by product line")
+    public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getTask(
+            @PathVariable Long productLineId,
+            @AuthenticationPrincipal User currentUser) {
+        List<TrainingSampleReviewResponse> reviewTask = trainingSampleReviewService.findByReviewedById(productLineId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách công việc thành công", reviewTask));
     }
 
 
@@ -53,7 +63,7 @@ public class TrainingSampleReviewController {
     @Operation(summary = "Create new review policy", description = "Create a new review policy for the training sample list")
     public ResponseEntity<ApiResponse<TrainingSampleReviewPolicyResponse>> createNewReviewPolicy(
             @RequestBody TrainingSampleReviewPolicyRequest request) {
-        TrainingSampleReviewPolicyResponse response = trainingSampleReviewPolicyService.createNewReviewPolicy(request);
+        TrainingSampleReviewPolicyResponse response = trainingSampleReviewService.createNewReviewPolicy(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo chính sách rà soát thành công", response));
     }
@@ -64,7 +74,7 @@ public class TrainingSampleReviewController {
     @Operation(summary = "Get reviews by config", description = "Retrieve a list of training sample reviews by configuration")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getReviewsByConfigId(
             @PathVariable Long configId) {
-        List<TrainingSampleReviewResponse> reviews = trainingSampleReviewPolicyService.findByConfigId(configId);
+        List<TrainingSampleReviewResponse> reviews = trainingSampleReviewService.findByConfigId(configId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách rà soát thành công", reviews));
     }
 
@@ -74,7 +84,7 @@ public class TrainingSampleReviewController {
     @Operation(summary = "Get reviews by product line", description = "Lấy danh sách rà soát mẫu huấn luyện theo dây chuyền sản xuất")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getReviewsByProductLine(
             @PathVariable Long productLineId) {
-        List<TrainingSampleReviewResponse> reviews = trainingSampleReviewPolicyService.findByProductLine(productLineId);
+        List<TrainingSampleReviewResponse> reviews = trainingSampleReviewService.findByProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách rà soát thành công", reviews));
     }
 
@@ -84,7 +94,7 @@ public class TrainingSampleReviewController {
     @Operation(summary = "Delete review policy", description = "Delete review policy (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deleteReviewPolicy(
             @PathVariable Long policyId) {
-        trainingSampleReviewPolicyService.deletePolicy(policyId);
+        trainingSampleReviewService.deletePolicy(policyId);
         return ResponseEntity.ok(ApiResponse.success("Xóa chính sách rà soát thành công", null));
     }
 
@@ -96,7 +106,7 @@ public class TrainingSampleReviewController {
             @PathVariable Long reviewId,
             @RequestBody TrainingSampleReviewRequest request) {
         request.setId(reviewId);
-        TrainingSampleReviewResponse response = trainingSampleReviewPolicyService.assignTeamLeadToReview(request);
+        TrainingSampleReviewResponse response = trainingSampleReviewService.assignTeamLeadToReview(request);
         return ResponseEntity.ok(ApiResponse.success("Gán trưởng nhóm thành công", response));
     }
 
@@ -107,7 +117,7 @@ public class TrainingSampleReviewController {
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> submit(@RequestBody TrainingSampleReviewRequest reviewRequest,
                                                                             @AuthenticationPrincipal User currentUser,
                                                                             HttpServletRequest request) {
-        TrainingSampleReviewResponse response = trainingSampleReviewPolicyService.submit(reviewRequest, currentUser, request);
+        TrainingSampleReviewResponse response = trainingSampleReviewService.submit(reviewRequest, currentUser, request);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
     }
 
@@ -119,7 +129,7 @@ public class TrainingSampleReviewController {
             @PathVariable Long id,
             HttpServletRequest request
     ) {
-        trainingSampleReviewPolicyService.revise(id, currentUser, request);
+        trainingSampleReviewService.revise(id, currentUser, request);
         return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
     }
 
@@ -137,7 +147,7 @@ public class TrainingSampleReviewController {
             @Valid @RequestBody ApproveRequest approveRequest,
             HttpServletRequest request) {
 
-        trainingSampleReviewPolicyService.approve(id, currentUser, approveRequest, request);
+        trainingSampleReviewService.approve(id, currentUser, approveRequest, request);
         return ResponseEntity.ok("Defect Proposal has been approved successfully!");
     }
 
@@ -154,7 +164,7 @@ public class TrainingSampleReviewController {
             @Valid @RequestBody RejectRequest rejectRequest,
             HttpServletRequest request) {
 
-        trainingSampleReviewPolicyService.reject(id, currentUser, rejectRequest, request);
+        trainingSampleReviewService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Defect Proposal has been rejected!");
     }
 

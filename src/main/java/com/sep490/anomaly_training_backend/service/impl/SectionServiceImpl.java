@@ -1,11 +1,14 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
 import com.sep490.anomaly_training_backend.mapper.SectionMapper;
 import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.service.SectionService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,8 @@ public class SectionServiceImpl implements SectionService {
 
     private final SectionRepository sectionRepository;
     private final SectionMapper sectionMapper;
+    private final ProductLineRepository productLineRepository;
+    private final ProductLineMapper productLineMapper;
 
     @Override
     @Transactional
@@ -66,7 +71,17 @@ public class SectionServiceImpl implements SectionService {
     public List<SectionResponse> getAllSections() {
         return sectionRepository.findAll().stream()
                 .filter(s -> !s.isDeleteFlag())
-                .map(sectionMapper::toDTO)
+                .map(this::enrichDto)
                 .collect(Collectors.toList());
+    }
+
+    private SectionResponse enrichDto(Section section) {
+        SectionResponse sectionResponse = sectionMapper.toDTO(section);
+        List<ProductLineResponse> productLineResponse = productLineRepository.findBySection(section.getId())
+                .stream()
+                .map(productLineMapper::toDto)
+                .toList();
+        sectionResponse.setProductLines(productLineResponse);
+        return sectionResponse;
     }
 }
