@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
+import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
@@ -98,6 +99,12 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProcessId(id)));
     }
 
+    @GetMapping("/product-by-line/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
+    }
+
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
@@ -108,6 +115,18 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.create')")
     public ResponseEntity<ApiResponse<ProcessResponse>> createProcess(@RequestBody ProcessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(processService.createProcess(request)));
+    }
+
+    @PostMapping("/product")
+    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody ProductRequest request, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
+    }
+
+    @PostMapping("/product/sync")
+    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@RequestBody List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
     }
 
     @PostMapping("/employee-skills")
@@ -127,6 +146,11 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.edit')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProcess(@PathVariable Long id, @RequestBody ProcessRequest processRequest) {
         return ResponseEntity.ok(ApiResponse.success(processService.updateProcessByAdmin(id, processRequest)));
+    }
+    @PutMapping("/product")
+    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+    public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
+        return null;
     }
 //    @PutMapping("/employee-skills/{id}")
 //    @PreAuthorize("hasAuthority('manufacturing_line.edit')")

@@ -1,12 +1,12 @@
 package com.sep490.anomaly_training_backend.service.approval.helper;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +20,9 @@ import java.util.List;
 public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private final TrainingSampleRepository trainingSampleRepository;
     private final TrainingCodeGenerator trainingCodeGenerator;
+    private final AttachmentService attachmentService;
+    private final TrainingSampleProposalDetailRepository proposalDetailRepository;
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     public ApprovalEntityType getType() {
@@ -66,22 +69,47 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         created.setTrainingCode(trainingCode);
         log.info("Generated trainingCode: {} for new TrainingSample", trainingCode);
 
-        // Ensure non-null fields required for TrainingSample
-        if (created.getProcessOrder() == null || created.getCategoryOrder() == null || created.getContentOrder() == null) {
-            throw new IllegalStateException("Missing orders (processOrder/categoryOrder/contentOrder) for CREATE. DetailId=" + d.getId());
-        }
+        // Calculate and set order fields
+        Integer processOrder = calculateProcessOrder(d.getProcess().getId());
+        Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
+        Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
+        
+        created.setProcessOrder(processOrder);
+        created.setCategoryOrder(categoryOrder);
+        created.setContentOrder(contentOrder);
+        
+        log.info("Set orders - processOrder: {}, categoryOrder: {}, contentOrder: {}", processOrder, categoryOrder, contentOrder);
 
         // Check for unique constraint before saving
         if (created.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
             throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
         }
-
         // Save the new TrainingSample
-        trainingSampleRepository.save(created);
+        created = trainingSampleRepository.save(created);
         log.info("TrainingSample created successfully with ID: {} and trainingCode: {}", created.getId(), created.getTrainingCode());
-
+        //Save image
+        List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
+        if (proposalImages != null) {
+            for (Attachment proposal : proposalImages) {
+                Attachment attachment = new Attachment();
+                attachment.setEntityId(created.getId());
+                attachment.setEntityType("TRAINING_SAMPLE");
+                attachment.setBucket(proposal.getBucket());
+                attachment.setObjectKey(proposal.getObjectKey());
+                attachment.setOriginalFilename(proposal.getOriginalFilename());
+                attachment.setContentType(proposal.getContentType());
+                attachment.setSizeBytes(proposal.getSizeBytes());
+                attachment.setStatus(proposal.getStatus());
+                attachment.setCreatedBy(proposal.getCreatedBy());
+                attachment.setPrimary(proposal.isPrimary());
+                attachment.setNote(proposal.getNote());
+                attachment.setSortOrder(proposal.getSortOrder());
+                attachmentRepository.save(attachment);
+            }
+        }
         // Set the newly created TrainingSample back to the proposal detail for auditing purposes
         d.setTrainingSample(created);
+        proposalDetailRepository.save(d);
     }
 
     /* ===================== APPLY UPDATE ===================== */
@@ -98,8 +126,30 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Validate fields for UPDATE
         validateUpdateFields(d);
 
+        // Store old values to detect changes
+        Long oldProcessId = existing.getProcess().getId();
+        String oldCategoryName = existing.getCategoryName();
+        String oldTrainingDescription = existing.getTrainingDescription();
+
         // Copy new values from the proposal detail to the existing TrainingSample
         copyFromDetailToTrainingSample(d, existing);
+
+        // Recalculate order fields if process, categoryName, or trainingDescription changed
+        if (!oldProcessId.equals(d.getProcess().getId()) || 
+            !oldCategoryName.equals(d.getCategoryName()) || 
+            !oldTrainingDescription.equals(d.getTrainingDescription())) {
+            
+            Integer processOrder = calculateProcessOrder(d.getProcess().getId());
+            Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
+            Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
+            
+            existing.setProcessOrder(processOrder);
+            existing.setCategoryOrder(categoryOrder);
+            existing.setContentOrder(contentOrder);
+            
+            log.info("Recalculated orders for TrainingSample ID {} - processOrder: {}, categoryOrder: {}, contentOrder: {}", 
+                     existing.getId(), processOrder, categoryOrder, contentOrder);
+        }
 
         // Note: trainingCode should NOT be changed on UPDATE (it's a permanent identifier)
         log.info("Updating TrainingSample ID: {} with existing trainingCode: {}", existing.getId(), existing.getTrainingCode());
@@ -107,6 +157,28 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Check for unique constraint violation for updated trainingSampleCode
         if (existing.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
             throw new IllegalStateException("trainingSampleCode already exists for this productLine. DetailId=" + d.getId());
+        }
+
+        //Replace images if there are new ones in the proposal
+        List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
+        if (proposalImages != null) {
+            attachmentService.deleteAttachments("TRAINING_SAMPLE", existing.getId());
+            for (Attachment proposal : proposalImages) {
+                Attachment attachment = new Attachment();
+                attachment.setEntityId(existing.getId());
+                attachment.setEntityType("TRAINING_SAMPLE");
+                attachment.setBucket(proposal.getBucket());
+                attachment.setObjectKey(proposal.getObjectKey());
+                attachment.setOriginalFilename(proposal.getOriginalFilename());
+                attachment.setContentType(proposal.getContentType());
+                attachment.setSizeBytes(proposal.getSizeBytes());
+                attachment.setStatus(proposal.getStatus());
+                attachment.setCreatedBy(proposal.getCreatedBy());
+                attachment.setPrimary(proposal.isPrimary());
+                attachment.setNote(proposal.getNote());
+                attachment.setSortOrder(proposal.getSortOrder());
+                attachmentRepository.save(attachment);
+            }
         }
 
         // Save the updated TrainingSample
@@ -166,5 +238,57 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         target.setTrainingDescription(d.getTrainingDescription());
         target.setNote(d.getNote());
         target.setTrainingSampleCode(d.getTrainingSampleCode());
+    }
+
+    /* ===================== ORDER CALCULATION HELPERS ===================== */
+
+
+    private Integer calculateProcessOrder(Long processId) {
+        // Check if this process already has an order assigned
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findProcessOrderByProcessId(processId);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} already has processOrder: {}", processId, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max processOrder across all processes and increment
+        Integer maxProcessOrder = trainingSampleRepository.findMaxProcessOrderByProcessId(processId);
+        Integer newProcessOrder = maxProcessOrder + 1;
+        log.debug("Assigning new processOrder {} for processId {}", newProcessOrder, processId);
+        return newProcessOrder;
+    }
+
+
+    private Integer calculateCategoryOrder(Long processId, String categoryName) {
+        // Check if this (process, category) combination already exists
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findCategoryOrderByProcessAndCategory(processId, categoryName);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} + CategoryName {} already has categoryOrder: {}", processId, categoryName, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max categoryOrder for this process and increment
+        Integer maxCategoryOrder = trainingSampleRepository.findMaxCategoryOrderByProcessAndCategory(processId, categoryName);
+        Integer newCategoryOrder = maxCategoryOrder + 1;
+        log.debug("Assigning new categoryOrder {} for processId {} + categoryName {}", newCategoryOrder, processId, categoryName);
+        return newCategoryOrder;
+    }
+
+
+    private Integer calculateContentOrder(Long processId, String categoryName, String trainingDescription) {
+        // Check if this (process, category, description) combination already exists
+        java.util.Optional<Integer> existingOrder = trainingSampleRepository.findContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
+        if (existingOrder.isPresent()) {
+            log.debug("ProcessId {} + CategoryName {} + TrainingDescription {} already has contentOrder: {}", 
+                     processId, categoryName, trainingDescription, existingOrder.get());
+            return existingOrder.get();
+        }
+
+        // If not, get max contentOrder for this (process, category) and increment
+        Integer maxContentOrder = trainingSampleRepository.findMaxContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
+        Integer newContentOrder = maxContentOrder + 1;
+        log.debug("Assigning new contentOrder {} for processId {} + categoryName {} + trainingDescription {}", 
+                 newContentOrder, processId, categoryName, trainingDescription);
+        return newContentOrder;
     }
 }

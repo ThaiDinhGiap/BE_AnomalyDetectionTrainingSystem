@@ -284,4 +284,113 @@ public class DashboardController {
         List<StageDistribution> data = dashboardService.getSvSampleByProcess(groupId, lineId);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    // ==================== MNG Dashboard ====================
+
+    @Operation(summary = "[MNG] Get organization stats")
+    @GetMapping("/mng/org-stats")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<MngOrgStats>> getMngOrgStats(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        MngOrgStats data = dashboardService.getMngOrgStats(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get pending approvals list")
+    @GetMapping("/mng/pending-approvals")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<MngPendingApprovalItem>>> getMngPendingApprovals(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<MngPendingApprovalItem> data = dashboardService.getMngPendingApprovals(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get training progress by line (current vs previous month)")
+    @GetMapping("/mng/training-progress")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<MngTrainingProgressPoint>>> getMngTrainingProgress(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "year", required = false) Integer year) {
+        List<MngTrainingProgressPoint> data = dashboardService.getMngTrainingProgress(sectionId, lineId, month, year);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get KPI data")
+    @GetMapping("/mng/kpi")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<SvKpiData>> getMngKpi(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        SvKpiData data = dashboardService.getMngKpi(sectionId, lineId, year, month);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get training effectiveness (training vs defects)")
+    @GetMapping("/mng/training-effectiveness")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SvTrainingEffectivenessPoint>>> getMngTrainingEffectiveness(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "months", required = false) Integer months) {
+        List<SvTrainingEffectivenessPoint> data = dashboardService.getMngTrainingEffectiveness(sectionId, lineId, months);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get training execution chart data")
+    @GetMapping("/mng/training-execution")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<TrainingExecutionPoint>>> getMngTrainingExecution(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "month", required = false) Integer month) {
+        List<TrainingExecutionPoint> data = dashboardService.getMngTrainingExecution(sectionId, lineId, year, month);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get skill certificate statistics")
+    @GetMapping("/mng/skill-certificates")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<SkillCertificateItem>>> getMngSkillCertificates(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<SkillCertificateItem> data = dashboardService.getMngSkillCertificates(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get defect trend over time")
+    @GetMapping("/mng/defect-trend")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<DefectTrendPoint>>> getMngDefectTrend(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<DefectTrendPoint> data = dashboardService.getMngDefectTrend(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get defect distribution by process")
+    @GetMapping("/mng/defect-by-process")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<StageDistribution>>> getMngDefectByProcess(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<StageDistribution> data = dashboardService.getMngDefectByProcess(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "[MNG] Get training sample distribution by process")
+    @GetMapping("/mng/sample-by-process")
+    @PreAuthorize("hasAuthority('dashboard.view')")
+    public ResponseEntity<ApiResponse<List<StageDistribution>>> getMngSampleByProcess(
+            @RequestParam(value = "sectionId", required = false) Long sectionId,
+            @RequestParam(value = "lineId", required = false) Long lineId) {
+        List<StageDistribution> data = dashboardService.getMngSampleByProcess(sectionId, lineId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 }

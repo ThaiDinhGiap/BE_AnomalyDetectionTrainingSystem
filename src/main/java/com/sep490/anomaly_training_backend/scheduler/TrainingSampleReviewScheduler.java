@@ -25,8 +25,6 @@ import org.springframework.stereotype.Service;
 public class TrainingSampleReviewScheduler {
 
     private final Scheduler scheduler;
-    private final TrainingSampleReviewConfigRepository configRepository;
-    private final TrainingSampleReviewPolicyRepository policyRepository;
 
     public void registerJob(TrainingSampleReviewConfig config) {
         try {

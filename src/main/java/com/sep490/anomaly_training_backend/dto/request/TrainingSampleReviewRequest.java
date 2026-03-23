@@ -7,6 +7,6 @@ import lombok.Data;
 @Builder
 public class TrainingSampleReviewRequest {
     Long id;
-    String sampleSnapshot;
+//    String sampleSnapshot;
     Long teamLeadId;
 }

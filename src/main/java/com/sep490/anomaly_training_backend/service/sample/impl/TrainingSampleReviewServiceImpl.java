@@ -9,7 +9,6 @@ import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleRev
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
@@ -25,7 +24,9 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewReposi
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.scheduler.TrainingSampleReviewScheduler;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,8 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     private final TrainingSampleReviewPolicyMapper trainingSampleReviewPolicyMapper;
     private final ApprovalService approvalService;
     private final TrainingSampleReviewScheduler scheduler;
+    private final TrainingSampleService trainingSampleService;
+    private final ObjectMapper objectMapper;
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int SUFFIX_LENGTH = 3; // Độ dài phần đuôi ngẫu nhiên
@@ -139,11 +142,54 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     public TrainingSampleReviewResponse submit(TrainingSampleReviewRequest reviewRequest, User currentUser, HttpServletRequest request) {
         TrainingSampleReview review = trainingSampleReviewRepository.findById(reviewRequest.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
-        review.setSampleSnapshot(reviewRequest.getSampleSnapshot());
-        review.setReviewDate(LocalDate.now());
-        review = trainingSampleReviewRepository.save(review);
-        approvalService.submit(review, currentUser, request);
-        return trainingSampleReviewMapper.toDto(review);
+
+        // Validate that review has a config and config has a policy
+        if (review.getConfig() == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReview config is null");
+        }
+
+        TrainingSampleReviewConfig config = review.getConfig();
+        if (config.getReviewPolicy() == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReviewConfig reviewPolicy is null");
+        }
+
+        TrainingSampleReviewPolicy policy = config.getReviewPolicy();
+        if (policy.getProductLine() == null) {
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReviewPolicy productLine is null");
+        }
+
+        Long productLineId = policy.getProductLine().getId();
+
+        try {
+            // Step 1: Fetch training sample data by product line
+            List<com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse> trainingSamples
+                = trainingSampleService.getTrainingSampleByProductLine(productLineId);
+
+            if (trainingSamples == null || trainingSamples.isEmpty()) {
+                trainingSamples = new ArrayList<>();
+            }
+
+            // Step 2: Convert response to JSON string
+            String sampleSnapshot = objectMapper.writeValueAsString(trainingSamples);
+
+            // Step 3: Save JSON snapshot to sampleSnapshot field
+            review.setSampleSnapshot(sampleSnapshot);
+            review.setReviewDate(LocalDate.now());
+
+            // Step 4: Save review to database
+            review.setStatus(ReportStatus.PENDING);
+            review = trainingSampleReviewRepository.save(review);
+
+            // Step 5: Submit for approval
+            approvalService.submit(review, currentUser, request);
+
+            return trainingSampleReviewMapper.toDto(review);
+
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to serialize training sample snapshot: " + e.getMessage());
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Error during review submission: " + e.getMessage());
+        }
     }
 
     @Override
@@ -168,6 +214,14 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
         approvalService.reject(review, currentUser, req, request);
+    }
+
+    @Override
+    public List<TrainingSampleReviewResponse> findByReviewedById(Long productLineId, Long reviewedId) {
+        return trainingSampleReviewRepository.findReviewTask(productLineId, reviewedId)
+                .stream()
+                .map(trainingSampleReviewMapper::toDto)
+                .toList();
     }
 
     private String generateReviewPolicyCode() {

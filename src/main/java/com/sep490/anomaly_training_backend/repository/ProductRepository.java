@@ -82,4 +82,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         AND p.deleteFlag = false
     """)
     Optional<Product> findByCodeAndNotDeleted(@Param("code") String code);
+
+    @Query("""
+        SELECT p FROM Product p
+        JOIN p.productProcesses pp
+        JOIN pp.process pr
+        JOIN pr.productLine pl
+        WHERE pl.id = :productLineId
+        AND p.deleteFlag = false
+    """)
+    List<Product> findByProductLineIdAndDeleteFlagFalse(Long productLineId);
 }

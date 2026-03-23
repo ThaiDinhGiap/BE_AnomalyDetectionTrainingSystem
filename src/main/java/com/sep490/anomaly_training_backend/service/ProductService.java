@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service;
 
+import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import org.apache.coyote.BadRequestException;
@@ -58,5 +59,13 @@ public interface ProductService {
     boolean isProductCodeExistsExcludingId(String code, Long excludingId);
 
     List<ProductResponse> importProduct(User user, Long productLineId, MultipartFile productFile) throws BadRequestException;
+
+    List<ProductResponse> getProductsByProductLineId(Long productLineId);
+
+    ProductResponse createProduct(ProductRequest productRequest, User currentUser);
+
+    List<ProductResponse> syncProduct(List<ProductRequest> productRequestList, User currentUser);
+
+
 }
 

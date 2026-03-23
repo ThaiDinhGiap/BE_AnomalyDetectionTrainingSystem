@@ -17,4 +17,5 @@ public class SectionResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     List<GroupResponse> groups;
+    List<ProductLineResponse> productLines;
 }
