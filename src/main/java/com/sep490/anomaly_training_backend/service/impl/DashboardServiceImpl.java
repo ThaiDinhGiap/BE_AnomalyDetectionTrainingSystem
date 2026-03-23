@@ -769,6 +769,8 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProductLineRepository productLineRepository;
     private final TeamRepository teamRepository;
     private final GroupRepository groupRepository;
+    private final SectionRepository sectionRepository;
+    private final EmployeeRepository employeeRepository;
 
     /**
      * Resolve danh sách groupIds theo supervisorId.
@@ -1740,6 +1742,639 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public List<StageDistribution> getSvSampleByProcess(Long groupId, Long lineId) {
         List<Long> lineIds = resolveLineIds(groupId, lineId);
+        List<TrainingSample> allSamples = lineIds.isEmpty() ? List.of()
+                : trainingSampleRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
+
+        Map<String, Integer> countByProcess = new LinkedHashMap<>();
+        for (TrainingSample s : allSamples) {
+            String processName = s.getProcess() != null ? s.getProcess().getName() : "Khác";
+            countByProcess.merge(processName, 1, Integer::sum);
+        }
+
+        int colorIndex = 0;
+        List<StageDistribution> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : countByProcess.entrySet()) {
+            result.add(StageDistribution.builder()
+                    .stage(entry.getKey())
+                    .value(entry.getValue())
+                    .color(PIE_COLORS[colorIndex % PIE_COLORS.length])
+                    .build());
+            colorIndex++;
+        }
+
+        return result;
+    }
+
+    // ======================== MNG Dashboard ========================
+
+    /**
+     * Resolve danh sách sections mà Manager hiện tại quản lý.
+     * Khi sectionId != null → trả về [section đó].
+     * Khi sectionId == null → tất cả sections mà Manager được gán.
+     */
+    private List<Section> resolveMngSections(Long sectionId) {
+        if (sectionId != null) {
+            return sectionRepository.findById(sectionId)
+                    .filter(s -> !s.isDeleteFlag())
+                    .map(List::of)
+                    .orElse(List.of());
+        }
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(currentUser).orElse(null);
+        if (user == null)
+            return List.of();
+        return sectionRepository.findByManagerId(user.getId());
+    }
+
+    /**
+     * Resolve all group IDs under this manager's sections.
+     */
+    private List<Long> resolveMngGroupIds(Long sectionId) {
+        return resolveMngSections(sectionId).stream()
+                .flatMap(s -> s.getGroups().stream())
+                .filter(g -> !g.isDeleteFlag())
+                .map(Group::getId)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * Resolve all line IDs under this manager's sections.
+     * Khi lineId != null → trả về [lineId].
+     * Khi lineId == null → tất cả lines trong sections đã resolve.
+     */
+    private List<Long> resolveMngLineIds(Long sectionId, Long lineId) {
+        if (lineId != null) {
+            return List.of(lineId);
+        }
+        List<Long> groupIds = resolveMngGroupIds(sectionId);
+        if (groupIds.isEmpty())
+            return List.of();
+        return groupIds.stream()
+                .flatMap(gId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(gId).stream())
+                .map(ProductLine::getId)
+                .distinct()
+                .toList();
+    }
+
+    // ======================== MNG-1. Organization Stats ========================
+
+    @Override
+    public MngOrgStats getMngOrgStats(Long sectionId, Long lineId) {
+        List<Section> sections = resolveMngSections(sectionId);
+        if (sections.isEmpty()) {
+            return MngOrgStats.builder()
+                    .totalGroups(0).totalLines(0).totalTeams(0).totalEmployees(0)
+                    .build();
+        }
+
+        List<Group> allGroups = sections.stream()
+                .flatMap(s -> s.getGroups().stream())
+                .filter(g -> !g.isDeleteFlag())
+                .toList();
+
+        int totalGroups = allGroups.size();
+
+        int totalTeams = allGroups.stream()
+                .flatMap(g -> g.getTeams().stream())
+                .filter(t -> !t.isDeleteFlag())
+                .mapToInt(t -> 1)
+                .sum();
+
+        List<Long> groupIds = allGroups.stream().map(Group::getId).toList();
+
+        List<ProductLine> allLines = groupIds.stream()
+                .flatMap(gId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(gId).stream())
+                .toList();
+        // Filter by lineId if provided
+        if (lineId != null) {
+            allLines = allLines.stream().filter(l -> l.getId().equals(lineId)).toList();
+        }
+        int totalLines = allLines.size();
+
+        int totalEmployees = 0;
+        for (Long gId : groupIds) {
+            totalEmployees += employeeRepository.findAllActiveByGroupId(gId).size();
+        }
+
+        return MngOrgStats.builder()
+                .totalGroups(totalGroups)
+                .totalLines(totalLines)
+                .totalTeams(totalTeams)
+                .totalEmployees(totalEmployees)
+                .build();
+    }
+
+    // ======================== MNG-2. Pending Approvals ========================
+
+    @Override
+    public List<MngPendingApprovalItem> getMngPendingApprovals(Long sectionId, Long lineId) {
+        List<Long> mngLineIds = resolveMngLineIds(sectionId, lineId);
+
+        List<MngPendingApprovalItem> items = new ArrayList<>();
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+        // 1. Training Plans with WAITING_MANAGER
+        List<TrainingPlan> waitingPlans = trainingPlanRepository.findAll().stream()
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> p.getStatus() == ReportStatus.WAITING_MANAGER)
+                .filter(p -> mngLineIds.contains(p.getLine().getId()))
+                .toList();
+
+        for (TrainingPlan plan : waitingPlans) {
+            boolean urgent = plan.getUpdatedAt() != null
+                    && java.time.Duration.between(plan.getUpdatedAt(), now).toHours() >= 24;
+            items.add(MngPendingApprovalItem.builder()
+                    .id(plan.getId())
+                    .entityType("TRAINING_PLAN")
+                    .title(plan.getTitle() != null ? plan.getTitle() : "Kế hoạch #" + plan.getId())
+                    .formCode(plan.getFormCode())
+                    .submittedByName(plan.getCreatedBy() != null ? plan.getCreatedBy() : "N/A")
+                    .submittedAt(formatTimeAgo(plan.getUpdatedAt()))
+                    .isUrgent(urgent)
+                    .build());
+        }
+
+        // 2. Defect Proposals with WAITING_MANAGER
+        List<DefectProposal> waitingDefects = defectProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .filter(d -> mngLineIds.contains(d.getProductLine().getId()))
+                .toList();
+
+        for (DefectProposal dp : waitingDefects) {
+            boolean urgent = dp.getUpdatedAt() != null
+                    && java.time.Duration.between(dp.getUpdatedAt(), now).toHours() >= 24;
+            items.add(MngPendingApprovalItem.builder()
+                    .id(dp.getId())
+                    .entityType("DEFECT_PROPOSAL")
+                    .title("Đề xuất xử lý lỗi #" + dp.getId())
+                    .formCode(dp.getFormCode())
+                    .submittedByName(dp.getCreatedBy() != null ? dp.getCreatedBy() : "N/A")
+                    .submittedAt(formatTimeAgo(dp.getUpdatedAt()))
+                    .isUrgent(urgent)
+                    .build());
+        }
+
+        // 3. Training Sample Proposals with WAITING_MANAGER
+        List<TrainingSampleProposal> waitingSamples = trainingSampleProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .filter(s -> mngLineIds.contains(s.getProductLine().getId()))
+                .toList();
+
+        for (TrainingSampleProposal sp : waitingSamples) {
+            boolean urgent = sp.getUpdatedAt() != null
+                    && java.time.Duration.between(sp.getUpdatedAt(), now).toHours() >= 24;
+            items.add(MngPendingApprovalItem.builder()
+                    .id(sp.getId())
+                    .entityType("TRAINING_SAMPLE_PROPOSAL")
+                    .title("Đề xuất mẫu huấn luyện #" + sp.getId())
+                    .formCode(sp.getFormCode())
+                    .submittedByName(sp.getCreatedBy() != null ? sp.getCreatedBy() : "N/A")
+                    .submittedAt(formatTimeAgo(sp.getUpdatedAt()))
+                    .isUrgent(urgent)
+                    .build());
+        }
+
+        return items;
+    }
+
+    private String formatTimeAgo(java.time.LocalDateTime dateTime) {
+        if (dateTime == null)
+            return "N/A";
+        java.time.Duration duration = java.time.Duration.between(dateTime, java.time.LocalDateTime.now());
+        long hours = duration.toHours();
+        if (hours < 1)
+            return duration.toMinutes() + " phút trước";
+        if (hours < 24)
+            return hours + "h trước";
+        long days = duration.toDays();
+        return days + " ngày trước";
+    }
+
+    // ======================== MNG-3. Training Progress Chart ========================
+
+    @Override
+    public List<MngTrainingProgressPoint> getMngTrainingProgress(Long sectionId, Long lineId, Integer month, Integer year) {
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+
+        // Current month range
+        LocalDate currentStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate currentEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+
+        // Previous month range
+        YearMonth prevYm = YearMonth.of(targetYear, targetMonth).minusMonths(1);
+        LocalDate prevStart = prevYm.atDay(1);
+        LocalDate prevEnd = prevYm.atEndOfMonth();
+
+        // Get all lines under this manager's sections
+        List<Long> mngLineIds = resolveMngLineIds(sectionId, lineId);
+        if (mngLineIds.isEmpty())
+            return List.of();
+
+        List<ProductLine> allLines = mngLineIds.stream()
+                .map(lId -> productLineRepository.findById(lId).orElse(null))
+                .filter(l -> l != null)
+                .toList();
+
+        List<MngTrainingProgressPoint> result = new ArrayList<>();
+
+        for (ProductLine line : allLines) {
+            // Get results for this line
+            List<TrainingResult> lineResults = trainingResultRepository.findByLineIdAndDeleteFlagFalse(line.getId());
+
+            double currentPassRate = calculatePassRate(lineResults, currentStart, currentEnd);
+            double previousPassRate = calculatePassRate(lineResults, prevStart, prevEnd);
+
+            result.add(MngTrainingProgressPoint.builder()
+                    .lineName(line.getName() != null ? line.getName() : line.getCode())
+                    .currentPassRate(currentPassRate)
+                    .previousPassRate(previousPassRate)
+                    .build());
+        }
+
+        return result;
+    }
+
+    private double calculatePassRate(List<TrainingResult> results, LocalDate start, LocalDate end) {
+        long totalEvaluated = 0;
+        long totalPassed = 0;
+
+        for (TrainingResult result : results) {
+            List<TrainingResultDetail> details = trainingResultDetailRepository
+                    .findByTrainingResultId(result.getId());
+            for (TrainingResultDetail d : details) {
+                if (d.getActualDate() != null && d.getIsPass() != null
+                        && !d.getActualDate().isBefore(start)
+                        && !d.getActualDate().isAfter(end)) {
+                    totalEvaluated++;
+                    if (Boolean.TRUE.equals(d.getIsPass())) {
+                        totalPassed++;
+                    }
+                }
+            }
+        }
+
+        return totalEvaluated > 0
+                ? Math.round((double) totalPassed / totalEvaluated * 1000.0) / 10.0
+                : 0;
+    }
+
+    // ======================== MNG-4. KPI ========================
+
+    @Override
+    public SvKpiData getMngKpi(Long sectionId, Long lineId, Integer year, Integer month) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+        LocalDate prevMonthStart = monthStart.minusMonths(1);
+        LocalDate prevMonthEnd = YearMonth.of(prevMonthStart.getYear(), prevMonthStart.getMonthValue()).atEndOfMonth();
+
+        // --- 1. Pass Rate ---
+        long currentPassed = 0, currentEvaluated = 0;
+        long prevPassed = 0, prevEvaluated = 0;
+
+        List<TrainingResult> allResults = new ArrayList<>();
+        for (Long lId : lineIds) {
+            allResults.addAll(trainingResultRepository.findByLineIdAndDeleteFlagFalse(lId));
+        }
+
+        for (TrainingResult result : allResults) {
+            List<TrainingResultDetail> details = trainingResultDetailRepository
+                    .findByTrainingResultId(result.getId());
+            for (TrainingResultDetail d : details) {
+                if (d.getActualDate() != null && d.getIsPass() != null) {
+                    if (!d.getActualDate().isBefore(monthStart) && !d.getActualDate().isAfter(monthEnd)) {
+                        currentEvaluated++;
+                        if (Boolean.TRUE.equals(d.getIsPass())) currentPassed++;
+                    }
+                    if (!d.getActualDate().isBefore(prevMonthStart) && !d.getActualDate().isAfter(prevMonthEnd)) {
+                        prevEvaluated++;
+                        if (Boolean.TRUE.equals(d.getIsPass())) prevPassed++;
+                    }
+                }
+            }
+        }
+
+        double currentPassPct = currentEvaluated > 0 ? (double) currentPassed / currentEvaluated * 100 : 0;
+        double prevPassPct = prevEvaluated > 0 ? (double) prevPassed / prevEvaluated * 100 : 0;
+        double passRateDiff = Math.round((currentPassPct - prevPassPct) * 10.0) / 10.0;
+        String passRateStr = Math.round(currentPassPct * 10.0) / 10.0 + "%";
+        String passRateSub = (passRateDiff >= 0 ? "+" : "") + passRateDiff + "% so với tháng trước";
+
+        // --- 2. Defect Count ---
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+        long currentDefects = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null
+                        && !d.getDetectedDate().isBefore(monthStart)
+                        && !d.getDetectedDate().isAfter(monthEnd))
+                .count();
+        long prevDefects = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null
+                        && !d.getDetectedDate().isBefore(prevMonthStart)
+                        && !d.getDetectedDate().isAfter(prevMonthEnd))
+                .count();
+        double defectDiff = prevDefects > 0
+                ? Math.round((double) (currentDefects - prevDefects) / prevDefects * 1000.0) / 10.0
+                : 0;
+        String defectSub = (defectDiff >= 0 ? "+" : "") + defectDiff + "% so với tháng trước";
+
+        // --- 3. Training Coverage ---
+        List<Long> mngGroupIds = resolveMngGroupIds(sectionId);
+        List<Team> teams = teamRepository.findByGroupIdIn(mngGroupIds);
+        long totalEmployees = 0;
+        long employeesWithValidSkill = 0;
+
+        for (Team team : teams) {
+            if (team.getEmployees() != null) {
+                for (Employee emp : team.getEmployees()) {
+                    if (emp.isDeleteFlag()) continue;
+                    totalEmployees++;
+                    List<EmployeeSkill> skills = employeeSkillRepository
+                            .findByEmployeeIdAndDeleteFlagFalse(emp.getId());
+                    boolean hasValid = skills.stream()
+                            .anyMatch(s -> s.getStatus() == EmployeeSkillStatus.VALID);
+                    if (hasValid) employeesWithValidSkill++;
+                }
+            }
+        }
+        double coveragePct = totalEmployees > 0
+                ? Math.round((double) employeesWithValidSkill / totalEmployees * 1000.0) / 10.0
+                : 0;
+
+        // --- 4. Pending Approval Count (WAITING_MANAGER) ---
+        long pendingPlans = trainingPlanRepository.findAll().stream()
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> lineIds.contains(p.getLine().getId()))
+                .filter(p -> p.getStatus() == ReportStatus.WAITING_MANAGER)
+                .count();
+        long pendingResults = allResults.stream()
+                .filter(r -> r.getStatus() == ReportStatus.WAITING_MANAGER)
+                .count();
+        int totalPending = (int) (pendingPlans + pendingResults);
+
+        return SvKpiData.builder()
+                .passRate(passRateStr)
+                .passRateSub(passRateSub)
+                .defectCount((int) currentDefects)
+                .defectSub(defectSub)
+                .trainingCoverage(coveragePct + "%")
+                .coverageSub("Nhân viên có chứng chỉ hợp lệ")
+                .pendingApprovalCount(totalPending)
+                .pendingSub(totalPending > 0 ? "Hồ sơ đang chờ phê duyệt" : "Không có hồ sơ chờ duyệt")
+                .build();
+    }
+
+    // ======================== MNG-5. Training Effectiveness ========================
+
+    @Override
+    public List<SvTrainingEffectivenessPoint> getMngTrainingEffectiveness(Long sectionId, Long lineId, Integer months) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        int numMonths = (months != null && months > 0) ? months : 6;
+        LocalDate today = LocalDate.now();
+
+        List<TrainingResult> allResults = new ArrayList<>();
+        for (Long lId : lineIds) {
+            allResults.addAll(trainingResultRepository.findByLineIdAndDeleteFlagFalse(lId));
+        }
+
+        List<TrainingResultDetail> allDetails = new ArrayList<>();
+        for (TrainingResult result : allResults) {
+            allDetails.addAll(trainingResultDetailRepository.findByTrainingResultId(result.getId()));
+        }
+
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+        List<SvTrainingEffectivenessPoint> points = new ArrayList<>();
+
+        for (int i = numMonths - 1; i >= 0; i--) {
+            LocalDate monthDate = today.minusMonths(i);
+            LocalDate monthStart = LocalDate.of(monthDate.getYear(), monthDate.getMonthValue(), 1);
+            LocalDate monthEnd = YearMonth.of(monthDate.getYear(), monthDate.getMonthValue()).atEndOfMonth();
+
+            int trainingCount = (int) allDetails.stream()
+                    .filter(d -> d.getActualDate() != null
+                            && !d.getActualDate().isBefore(monthStart)
+                            && !d.getActualDate().isAfter(monthEnd))
+                    .count();
+
+            int defectCount = (int) allDefects.stream()
+                    .filter(d -> d.getDetectedDate() != null
+                            && !d.getDetectedDate().isBefore(monthStart)
+                            && !d.getDetectedDate().isAfter(monthEnd))
+                    .count();
+
+            points.add(SvTrainingEffectivenessPoint.builder()
+                    .month(monthNames[monthDate.getMonthValue() - 1])
+                    .trainingHours(trainingCount)
+                    .defects(defectCount)
+                    .build());
+        }
+
+        return points;
+    }
+
+    // ======================== MNG-6. Training Execution ========================
+
+    @Override
+    public List<TrainingExecutionPoint> getMngTrainingExecution(Long sectionId, Long lineId, Integer year, Integer month) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        LocalDate today = LocalDate.now();
+        int targetYear = year != null ? year : today.getYear();
+        int targetMonth = month != null ? month : today.getMonthValue();
+
+        LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
+        LocalDate monthEnd = YearMonth.of(targetYear, targetMonth).atEndOfMonth();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        // Get all plans for these lines
+        List<TrainingPlan> plans = trainingPlanRepository.findAll().stream()
+                .filter(p -> !p.isDeleteFlag())
+                .filter(p -> lineIds.contains(p.getLine().getId()))
+                .filter(p -> p.getStatus() == ReportStatus.APPROVED
+                        || p.getStatus() == ReportStatus.ON_GOING
+                        || p.getStatus() == ReportStatus.DONE)
+                .toList();
+
+        List<TrainingPlanDetail> allDetails = new ArrayList<>();
+        for (TrainingPlan plan : plans) {
+            allDetails.addAll(trainingPlanDetailRepository.findByTrainingPlanIdAndDeleteFlagFalse(plan.getId()));
+        }
+
+        // Filter to this month
+        allDetails = allDetails.stream()
+                .filter(d -> d.getPlannedDate() != null
+                        && !d.getPlannedDate().isBefore(monthStart)
+                        && !d.getPlannedDate().isAfter(monthEnd))
+                .toList();
+
+        // Build daily points
+        List<TrainingExecutionPoint> points = new ArrayList<>();
+        int cumulativePlan = 0, cumulativeActual = 0, cumulativeMissed = 0;
+
+        for (LocalDate date = monthStart; !date.isAfter(monthEnd); date = date.plusDays(1)) {
+            final LocalDate currentDate = date;
+            long plannedOnDate = allDetails.stream()
+                    .filter(d -> d.getPlannedDate().equals(currentDate))
+                    .count();
+            cumulativePlan += (int) plannedOnDate;
+
+            long doneOnDate = allDetails.stream()
+                    .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() == TrainingPlanDetailStatus.DONE)
+                    .count();
+            cumulativeActual += (int) doneOnDate;
+
+            if (!date.isAfter(today)) {
+                long missedOnDate = allDetails.stream()
+                        .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .count();
+                cumulativeMissed += (int) missedOnDate;
+            }
+
+            points.add(TrainingExecutionPoint.builder()
+                    .date(date.format(dateFormatter))
+                    .keHoach(cumulativePlan)
+                    .thucTe(cumulativeActual)
+                    .biLo(cumulativeMissed)
+                    .build());
+        }
+
+        return points;
+    }
+
+    // ======================== MNG-7. Skill Certificates ========================
+
+    @Override
+    public List<SkillCertificateItem> getMngSkillCertificates(Long sectionId, Long lineId) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        List<Process> processes = lineIds.isEmpty() ? List.of()
+                : processRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
+
+        return processes.stream()
+                .sorted(Comparator.comparing(Process::getCode))
+                .map(process -> {
+                    List<EmployeeSkill> skills = employeeSkillRepository
+                            .findByProcessIdAndDeleteFlagFalse(process.getId());
+
+                    List<String> validNames = new ArrayList<>();
+                    List<String> expiringNames = new ArrayList<>();
+                    List<String> revokedNames = new ArrayList<>();
+
+                    for (EmployeeSkill skill : skills) {
+                        String empName = skill.getEmployee() != null ? skill.getEmployee().getFullName() : "N/A";
+
+                        if (skill.getStatus() == EmployeeSkillStatus.VALID) {
+                            validNames.add(empName);
+                        } else if (skill.getStatus() == EmployeeSkillStatus.PENDING_REVIEW) {
+                            String suffix = skill.getExpiryDate() != null
+                                    ? " (" + skill.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM")) + ")"
+                                    : "";
+                            expiringNames.add(empName + suffix);
+                        } else if (skill.getStatus() == EmployeeSkillStatus.REVOKED) {
+                            revokedNames.add(empName + " (Đã thu hồi)");
+                        }
+                    }
+
+                    return SkillCertificateItem.builder()
+                            .process(process.getCode() + " (" + process.getName() + ")")
+                            .valid(validNames.size())
+                            .validNames(validNames)
+                            .expiring(expiringNames.size())
+                            .expiringNames(expiringNames)
+                            .revoked(revokedNames.size())
+                            .revokedNames(revokedNames)
+                            .build();
+                })
+                .toList();
+    }
+
+    // ======================== MNG-8. Defect Trend ========================
+
+    @Override
+    public List<DefectTrendPoint> getMngDefectTrend(Long sectionId, Long lineId) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        Map<LocalDate, List<Defect>> byDate = allDefects.stream()
+                .filter(d -> d.getDetectedDate() != null && !d.getDetectedDate().isBefore(thirtyDaysAgo))
+                .collect(Collectors.groupingBy(Defect::getDetectedDate, TreeMap::new, Collectors.toList()));
+
+        return byDate.entrySet().stream()
+                .map(entry -> {
+                    LocalDate date = entry.getKey();
+                    List<Defect> defects = entry.getValue();
+
+                    Map<String, List<Defect>> byDescription = defects.stream()
+                            .collect(Collectors.groupingBy(
+                                    d -> d.getDefectDescription() + "|" +
+                                            (d.getProcess() != null ? d.getProcess().getName() : "N/A")));
+
+                    List<DefectErrorDetail> errors = byDescription.entrySet().stream()
+                            .map(e -> {
+                                String[] parts = e.getKey().split("\\|", 2);
+                                return DefectErrorDetail.builder()
+                                        .content(parts[0])
+                                        .process(parts.length > 1 ? parts[1] : "N/A")
+                                        .quantity(e.getValue().size())
+                                        .build();
+                            })
+                            .toList();
+
+                    return DefectTrendPoint.builder()
+                            .date(date.format(formatter))
+                            .totalErrors(defects.size())
+                            .errors(errors)
+                            .build();
+                })
+                .toList();
+    }
+
+    // ======================== MNG-9. Defect by Process ========================
+
+    @Override
+    public List<StageDistribution> getMngDefectByProcess(Long sectionId, Long lineId) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
+        List<Defect> allDefects = lineIds.isEmpty() ? List.of()
+                : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
+
+        Map<String, Integer> countByProcess = new LinkedHashMap<>();
+        for (Defect d : allDefects) {
+            String processName = d.getProcess() != null ? d.getProcess().getName() : "Khác";
+            countByProcess.merge(processName, 1, Integer::sum);
+        }
+
+        int colorIndex = 0;
+        List<StageDistribution> result = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : countByProcess.entrySet()) {
+            result.add(StageDistribution.builder()
+                    .stage(entry.getKey())
+                    .value(entry.getValue())
+                    .color(PIE_COLORS[colorIndex % PIE_COLORS.length])
+                    .build());
+            colorIndex++;
+        }
+
+        return result;
+    }
+
+    // ======================== MNG-10. Training Samples by Process ========================
+
+    @Override
+    public List<StageDistribution> getMngSampleByProcess(Long sectionId, Long lineId) {
+        List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
         List<TrainingSample> allSamples = lineIds.isEmpty() ? List.of()
                 : trainingSampleRepository.findByProductLineIdInAndDeleteFlagFalse(lineIds);
 
