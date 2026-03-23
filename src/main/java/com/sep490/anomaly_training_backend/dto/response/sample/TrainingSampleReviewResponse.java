@@ -14,7 +14,7 @@ public class TrainingSampleReviewResponse {
     Long id;
     String productLine;
     LocalDate reviewDate;
-    LocalTime startDate;
+    LocalDate startDate;
     LocalDate dueDate;
     LocalDate completedDate;
     String reviewedBy;
