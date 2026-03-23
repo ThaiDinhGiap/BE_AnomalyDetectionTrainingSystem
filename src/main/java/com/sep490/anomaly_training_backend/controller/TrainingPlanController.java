@@ -70,8 +70,10 @@ public class TrainingPlanController {
     )
     @GetMapping("/rejected")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    public ResponseEntity<List<TrainingPlanGenerationResponse>> getRejectedPlans() {
-        return ResponseEntity.ok(trainingPlanService.getRejectedPlans());
+    public ResponseEntity<List<TrainingPlanGenerationResponse>> getRejectedPlans(
+            @AuthenticationPrincipal User currentUser
+    ) {
+        return ResponseEntity.ok(trainingPlanService.getRejectedPlans(currentUser));
     }
 
     // ==================== MUTATION ====================

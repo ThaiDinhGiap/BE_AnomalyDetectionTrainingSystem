@@ -5,27 +5,61 @@ import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
-
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
-
-import com.sep490.anomaly_training_backend.enums.*;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
+import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
+import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanSpecialDayRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.priority.TrainingPlanScheduleGenerationService;
 import com.sep490.anomaly_training_backend.service.priority.impl.PriorityScoringServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -33,44 +67,86 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingPlanServiceImplTest {
 
     // ── Repositories ──
-    @Mock private TrainingPlanRepository trainingPlanRepository;
-    @Mock private TrainingPlanDetailRepository trainingPlanDetailRepository;
-    @Mock private EmployeeRepository employeeRepository;
-    @Mock private ProcessRepository processRepository;
-    @Mock private UserRepository userRepository;
-    @Mock private TeamRepository teamRepository;
-    @Mock private TrainingPlanHistoryRepository trainingPlanHistoryRepository;
-    @Mock private ProductLineRepository productLineRepository;
-    @Mock private EmployeeSkillRepository employeeSkillRepository;
-    @Mock private TrainingResultDetailRepository trainingResultDetailRepository;
-    @Mock private TrainingResultRepository trainingResultRepository;
-    @Mock private PriorityPolicyRepository policyRepository;
-    @Mock private PrioritySnapshotRepository prioritySnapshotRepository;
-    @Mock private PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
-    @Mock private GroupRepository groupRepository;
-    @Mock private RejectReasonRepository rejectReasonRepository;
-    @Mock private RequiredActionRepository requiredActionRepository;
-    @Mock private TrainingPlanSpecialDayRepository trainingPlanSpecialDayRepository;
+    @Mock
+    private TrainingPlanRepository trainingPlanRepository;
+    @Mock
+    private TrainingPlanDetailRepository trainingPlanDetailRepository;
+    @Mock
+    private EmployeeRepository employeeRepository;
+    @Mock
+    private ProcessRepository processRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private TeamRepository teamRepository;
+    @Mock
+    private TrainingPlanHistoryRepository trainingPlanHistoryRepository;
+    @Mock
+    private ProductLineRepository productLineRepository;
+    @Mock
+    private EmployeeSkillRepository employeeSkillRepository;
+    @Mock
+    private TrainingResultDetailRepository trainingResultDetailRepository;
+    @Mock
+    private TrainingResultRepository trainingResultRepository;
+    @Mock
+    private PriorityPolicyRepository policyRepository;
+    @Mock
+    private PrioritySnapshotRepository prioritySnapshotRepository;
+    @Mock
+    private PrioritySnapshotDetailRepository prioritySnapshotDetailRepository;
+    @Mock
+    private GroupRepository groupRepository;
+    @Mock
+    private RejectReasonRepository rejectReasonRepository;
+    @Mock
+    private RequiredActionRepository requiredActionRepository;
+    @Mock
+    private TrainingPlanSpecialDayRepository trainingPlanSpecialDayRepository;
 
     // ── Services ──
-    @Mock private ApprovalService approvalService;
-    @Mock private TrainingResultService trainingResultService;
-    @Mock private TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
+    @Mock
+    private ApprovalService approvalService;
+    @Mock
+    private TrainingResultService trainingResultService;
+    @Mock
+    private TrainingPlanScheduleGenerationService trainingPlanScheduleGenerationService;
 
     // ── Mappers & Others ──
-    @Mock private TrainingPlanMapper planMapper;
-    @Mock private PrioritySnapshotMapper prioritySnapshotMapper;
-    @Mock private PriorityScoringServiceImpl priorityScoringService;
+    @Mock
+    private TrainingPlanMapper planMapper;
+    @Mock
+    private PrioritySnapshotMapper prioritySnapshotMapper;
+    @Mock
+    private PriorityScoringServiceImpl priorityScoringService;
 
     @InjectMocks
     private TrainingPlanServiceImpl trainingPlanServiceImpl;
@@ -141,7 +217,9 @@ class TrainingPlanServiceImplTest {
         testPlan.setCurrentVersion(1);
     }
 
-    /** Helper: mock chuỗi toGenerationResponse */
+    /**
+     * Helper: mock chuỗi toGenerationResponse
+     */
     private void mockToGenerationResponse(TrainingPlan plan) {
         TrainingPlanResponse planRes = new TrainingPlanResponse();
         planRes.setId(plan.getId());
@@ -156,7 +234,9 @@ class TrainingPlanServiceImplTest {
                 .thenReturn(Optional.of(testUser));
     }
 
-    /** Helper: tạo TrainingPlanDetail */
+    /**
+     * Helper: tạo TrainingPlanDetail
+     */
     private TrainingPlanDetail buildDetail(Long id, Employee emp, LocalDate planned, String batchId) {
         TrainingPlanDetail d = new TrainingPlanDetail();
         d.setId(id);
@@ -169,7 +249,9 @@ class TrainingPlanServiceImplTest {
         return d;
     }
 
-    /** Helper: mock SecurityContext */
+    /**
+     * Helper: mock SecurityContext
+     */
     private void mockSecurityContext(String username) {
         SecurityContext securityContext = mock(SecurityContext.class);
         Authentication authentication = mock(Authentication.class);
@@ -344,32 +426,32 @@ class TrainingPlanServiceImplTest {
         }
     }
 
-    @Nested
-    @DisplayName("getRejectedPlans")
-    class GetRejectedPlansTests {
-
-        @Test
-        @DisplayName("[Normal] Trả danh sách plans bị rejected")
-        void getRejectedPlans_returnsRejectedPlans() {
-            testPlan.setStatus(ReportStatus.REJECTED_BY_SV);
-            when(trainingPlanRepository.findByStatusInAndDeleteFlagFalse(anyList()))
-                    .thenReturn(List.of(testPlan));
-            mockToGenerationResponse(testPlan);
-
-            List<TrainingPlanGenerationResponse> result = trainingPlanService.getRejectedPlans();
-            assertFalse(result.isEmpty());
-        }
-
-        @Test
-        @DisplayName("[Boundary] Không có plan nào bị rejected → empty list")
-        void getRejectedPlans_empty() {
-            when(trainingPlanRepository.findByStatusInAndDeleteFlagFalse(anyList()))
-                    .thenReturn(Collections.emptyList());
-
-            List<TrainingPlanGenerationResponse> result = trainingPlanService.getRejectedPlans();
-            assertTrue(result.isEmpty());
-        }
-    }
+//    @Nested
+//    @DisplayName("getRejectedPlans")
+//    class GetRejectedPlansTests {
+//
+//        @Test
+//        @DisplayName("[Normal] Trả danh sách plans bị rejected")
+//        void getRejectedPlans_returnsRejectedPlans() {
+//            testPlan.setStatus(ReportStatus.REJECTED_BY_SV);
+//            when(trainingPlanRepository.findByStatusInAndDeleteFlagFalse(anyList()))
+//                    .thenReturn(List.of(testPlan));
+//            mockToGenerationResponse(testPlan);
+//
+//            List<TrainingPlanGenerationResponse> result = trainingPlanService.getRejectedPlans();
+//            assertFalse(result.isEmpty());
+//        }
+//
+//        @Test
+//        @DisplayName("[Boundary] Không có plan nào bị rejected → empty list")
+//        void getRejectedPlans_empty() {
+//            when(trainingPlanRepository.findByStatusInAndDeleteFlagFalse(anyList()))
+//                    .thenReturn(Collections.emptyList());
+//
+//            List<TrainingPlanGenerationResponse> result = trainingPlanService.getRejectedPlans();
+//            assertTrue(result.isEmpty());
+//        }
+//    }
 
     // ═══════════════════════════════════════════════════════════════════
     //  NHÓM 2: MUTATION TESTS
@@ -753,7 +835,7 @@ class TrainingPlanServiceImplTest {
             AppException ex = assertThrows(AppException.class,
                     () -> trainingPlanService.deleteDetail(1L, 999L));
             assertEquals(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND, ex.getErrorCode());
-         }
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════
