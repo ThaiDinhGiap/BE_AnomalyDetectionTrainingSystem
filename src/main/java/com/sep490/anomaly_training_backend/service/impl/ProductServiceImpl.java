@@ -29,6 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -116,6 +120,7 @@ public class ProductServiceImpl implements ProductService {
         List<ProductResponse> responses = new ArrayList<>();
         for (ProductRequest productRequest : productRequestList) {
             Product entity = upsertProduct(productRequest, currentUser);
+            productRepository.save(entity);
             ProductResponse productResponse = enrichProductResponse(entity);
             responses.add(productResponse);
         }
@@ -129,21 +134,47 @@ public class ProductServiceImpl implements ProductService {
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
         product =  productRepository.save(product);
+
         List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
-        if (!originAttachments.isEmpty() || productRequest.getImages() != null) {
+        if (!originAttachments.isEmpty()) {
             attachmentService.deleteAttachments("PRODUCT", product.getId());
             List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT", product.getId(), currentUser.getUsername());
         }
-        if (productRequest.getProcesses() != null) {
-            for (ProcessRequest processRequest : productRequest.getProcesses()) {
-                Process process = processRepository.findById(processRequest.getId())
-                        .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-                ProductProcess productProcess = new ProductProcess();
-                productProcess.setProcess(process);
-                productProcess.setProduct(product);
-                productProcess.setStandardTimeJt(processRequest.getStandardTimeJt());
-                productProcessRepository.save(productProcess);
-            }
+
+        if (productRequest.getProcesses().isEmpty()) {
+            throw new AppException(ErrorCode.MISSING_PROCESS, "Sản phẩm phải được thực hiện trên ít nhất 1 công đoạn của dây chuyền đó");
+        }
+
+        List<ProductProcess> existingProductProcesses =
+                productProcessRepository.findByProductId(product.getId());
+
+        Map<Long, ProductProcess> existingProcessMap = existingProductProcesses.stream()
+                .collect(Collectors.toMap(
+                        pp -> pp.getProcess().getId(),
+                        Function.identity()
+                ));
+
+        Set<Long> requestProcessIds = productRequest.getProcesses().stream()
+                .map(ProcessRequest::getId)
+                .collect(Collectors.toSet());
+
+        List<ProductProcess> productProcessesToDelete = existingProductProcesses.stream()
+                .filter(pp -> !requestProcessIds.contains(pp.getProcess().getId()))
+                .toList();
+
+        if (!productProcessesToDelete.isEmpty()) {
+            productProcessRepository.deleteAll(productProcessesToDelete);
+        }
+
+        for (ProcessRequest processRequest : productRequest.getProcesses()) {
+            Process process = processRepository.findById(processRequest.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+            ProductProcess productProcess = productProcessRepository.findByProductIdAndProcessId(product.getId(), process.getId())
+                    .orElseGet(ProductProcess::new);
+            productProcess.setProcess(process);
+            productProcess.setProduct(product);
+            productProcess.setStandardTimeJt(processRequest.getStandardTimeJt());
+            productProcessRepository.save(productProcess);
         }
         return product;
     }
