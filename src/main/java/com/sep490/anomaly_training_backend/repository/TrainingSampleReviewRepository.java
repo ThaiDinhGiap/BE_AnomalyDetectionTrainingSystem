@@ -17,7 +17,7 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
 
     @Query("SELECT tr FROM TrainingSampleReview tr " +
             "WHERE tr.reviewedBy.id = :userId  " +
-            "AND tr.config.reviewPolicy.productLine.id = :productLine  " +
+            "AND tr.productLine.id = :productLine  " +
             "AND tr.status != com.sep490.anomaly_training_backend.enums.ReportStatus.APPROVED "+
             "AND tr.deleteFlag = false")
     List<TrainingSampleReview> findReviewTask(@Param("productLine") Long productLindId, @Param("userId") Long userId);

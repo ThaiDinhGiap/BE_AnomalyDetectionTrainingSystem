@@ -50,7 +50,7 @@ public class TrainingSampleReviewJob implements Job {
             TrainingSampleReview review = TrainingSampleReview.builder()
                     .config(config)
                     .productLine(productLine)
-                    .reviewDate(LocalDate.now())
+                    .startDate(LocalDate.now())
                     .dueDate(LocalDate.now().plusDays(config.getDueDays()))
                     .status(ReportStatus.NEED_ASSIGNED)
                     .build();

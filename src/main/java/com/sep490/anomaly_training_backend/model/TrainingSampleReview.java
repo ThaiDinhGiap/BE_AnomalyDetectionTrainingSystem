@@ -59,6 +59,9 @@ public class TrainingSampleReview extends BaseEntity implements Approvable {
     @EqualsAndHashCode.Exclude
     ProductLine productLine;
 
+    @Column(name = "start_date", nullable = false)
+    LocalDate startDate;
+
     @Column(name = "review_date", nullable = false)
     LocalDate reviewDate;
 
