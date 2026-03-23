@@ -1,12 +1,12 @@
 package com.sep490.anomaly_training_backend.service.approval.helper;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +20,9 @@ import java.util.List;
 public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private final TrainingSampleRepository trainingSampleRepository;
     private final TrainingCodeGenerator trainingCodeGenerator;
+    private final AttachmentService attachmentService;
+    private final TrainingSampleProposalDetailRepository proposalDetailRepository;
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     public ApprovalEntityType getType() {
@@ -81,13 +84,32 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         if (created.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
             throw new IllegalStateException("SampleCode already exists for this productLine. DetailId=" + d.getId());
         }
-
         // Save the new TrainingSample
-        trainingSampleRepository.save(created);
+        created = trainingSampleRepository.save(created);
         log.info("TrainingSample created successfully with ID: {} and trainingCode: {}", created.getId(), created.getTrainingCode());
-
+        //Save image
+        List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
+        if (proposalImages != null) {
+            for (Attachment proposal : proposalImages) {
+                Attachment attachment = new Attachment();
+                attachment.setEntityId(created.getId());
+                attachment.setEntityType("TRAINING_SAMPLE");
+                attachment.setBucket(proposal.getBucket());
+                attachment.setObjectKey(proposal.getObjectKey());
+                attachment.setOriginalFilename(proposal.getOriginalFilename());
+                attachment.setContentType(proposal.getContentType());
+                attachment.setSizeBytes(proposal.getSizeBytes());
+                attachment.setStatus(proposal.getStatus());
+                attachment.setCreatedBy(proposal.getCreatedBy());
+                attachment.setPrimary(proposal.isPrimary());
+                attachment.setNote(proposal.getNote());
+                attachment.setSortOrder(proposal.getSortOrder());
+                attachmentRepository.save(attachment);
+            }
+        }
         // Set the newly created TrainingSample back to the proposal detail for auditing purposes
         d.setTrainingSample(created);
+        proposalDetailRepository.save(d);
     }
 
     /* ===================== APPLY UPDATE ===================== */
@@ -135,6 +157,28 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Check for unique constraint violation for updated trainingSampleCode
         if (existing.getTrainingSampleCode() != null && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCodeAndIdNot(existing.getProductLine().getId(), existing.getTrainingSampleCode(), existing.getId())) {
             throw new IllegalStateException("trainingSampleCode already exists for this productLine. DetailId=" + d.getId());
+        }
+
+        //Replace images if there are new ones in the proposal
+        List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
+        if (proposalImages != null) {
+            attachmentService.deleteAttachments("TRAINING_SAMPLE", existing.getId());
+            for (Attachment proposal : proposalImages) {
+                Attachment attachment = new Attachment();
+                attachment.setEntityId(existing.getId());
+                attachment.setEntityType("TRAINING_SAMPLE");
+                attachment.setBucket(proposal.getBucket());
+                attachment.setObjectKey(proposal.getObjectKey());
+                attachment.setOriginalFilename(proposal.getOriginalFilename());
+                attachment.setContentType(proposal.getContentType());
+                attachment.setSizeBytes(proposal.getSizeBytes());
+                attachment.setStatus(proposal.getStatus());
+                attachment.setCreatedBy(proposal.getCreatedBy());
+                attachment.setPrimary(proposal.isPrimary());
+                attachment.setNote(proposal.getNote());
+                attachment.setSortOrder(proposal.getSortOrder());
+                attachmentRepository.save(attachment);
+            }
         }
 
         // Save the updated TrainingSample

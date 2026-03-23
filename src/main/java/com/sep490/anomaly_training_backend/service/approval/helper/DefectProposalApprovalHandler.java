@@ -90,6 +90,28 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
                     // Giữ nguyên defect code khi UPDATE, không tạo code mới
                     requireNonNullForUpdate(defect, d);
 
+                    //Replace images if there are new ones in the proposal
+                    List<Attachment> proposalImages = attachmentService.getAttachmentsByEntity("TRAINING_SAMPLE_PROPOSAL", d.getId());
+                    if (proposalImages != null) {
+                        attachmentService.deleteAttachments("TRAINING_SAMPLE", defect.getId());
+                        for (Attachment proposalImage : proposalImages) {
+                            Attachment attachment = new Attachment();
+                            attachment.setEntityId(defect.getId());
+                            attachment.setEntityType("TRAINING_SAMPLE");
+                            attachment.setBucket(proposalImage.getBucket());
+                            attachment.setObjectKey(proposalImage.getObjectKey());
+                            attachment.setOriginalFilename(proposalImage.getOriginalFilename());
+                            attachment.setContentType(proposalImage.getContentType());
+                            attachment.setSizeBytes(proposalImage.getSizeBytes());
+                            attachment.setStatus(proposalImage.getStatus());
+                            attachment.setCreatedBy(proposalImage.getCreatedBy());
+                            attachment.setPrimary(proposalImage.isPrimary());
+                            attachment.setNote(proposalImage.getNote());
+                            attachment.setSortOrder(proposalImage.getSortOrder());
+                            attachmentRepository.save(attachment);
+                        }
+                    }
+
                     Defect updated = defectRepository.save(defect);
                     uploadAttachmentToDefect(updated, d);
                 }

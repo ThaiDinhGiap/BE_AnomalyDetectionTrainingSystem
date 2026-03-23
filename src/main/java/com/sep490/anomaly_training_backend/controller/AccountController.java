@@ -38,7 +38,6 @@ public class AccountController {
         User user = userRepository.findByUsernameAndDeleteFlagFalse(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-
         return ResponseEntity.ok(ApiResponse.success(UserResponse.fromEntity(user)));
     }
 }
