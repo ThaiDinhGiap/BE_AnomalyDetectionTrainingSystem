@@ -5,6 +5,7 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewConfigRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewRequest;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewPolicyResponse;
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
@@ -162,7 +163,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
 
         try {
             // Step 1: Fetch training sample data by product line
-            List<com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse> trainingSamples
+            List<TrainingSampleResponse> trainingSamples
                 = trainingSampleService.getTrainingSampleByProductLine(productLineId);
 
             if (trainingSamples == null || trainingSamples.isEmpty()) {
@@ -196,7 +197,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     public void approve(Long id, User currentUser, ApproveRequest approveRequest, HttpServletRequest request) {
         TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
-        approvalService.canApprove(review, currentUser);
+        approvalService.approve(review, currentUser, approveRequest, request);
     }
 
     @Override
