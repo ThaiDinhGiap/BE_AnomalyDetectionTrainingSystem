@@ -26,7 +26,7 @@ public interface TrainingPlanService {
 
     List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId);
 
-    List<TrainingPlanGenerationResponse> getRejectedPlans();
+    List<TrainingPlanGenerationResponse> getRejectedPlans(User currentUser);
 
     // ── Mutation ─────────────────────────────────────────────────────────────
 

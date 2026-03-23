@@ -91,7 +91,7 @@ public class User extends BaseEntity implements UserDetails {
 
                 if (Boolean.TRUE.equals(r.getIsActive())) {
 
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + r.getRoleCode()));
+                    authorities.add(new SimpleGrantedAuthority(r.getRoleCode()));
 
                     if (r.getPermissions() != null) {
                         r.getPermissions().forEach(p ->
@@ -110,6 +110,14 @@ public class User extends BaseEntity implements UserDetails {
     public boolean hasRole(String roleCode) {
         return roles.stream()
                 .anyMatch(r -> r.getRoleCode().equals(roleCode));
+    }
+
+    public boolean hasPermission(String permissionCode) {
+        if (roles == null) return false;
+        return roles.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                .flatMap(r -> r.getPermissions().stream())
+                .anyMatch(p -> permissionCode.equals(p.getPermissionCode()));
     }
 
     // ================= UserDetails =================

@@ -26,8 +26,23 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.PriorityPolicy;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
+import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
 import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
+import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
@@ -65,7 +80,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +91,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class TrainingPlanServiceImpl implements TrainingPlanService {
+
+    private static final String PERM_VIEW_SECTION = "training_plan.view.section";
+    private static final String PERM_VIEW_OWN_GROUP = "training_plan.view.own_group";
+    private static final String PERM_VIEW_CROSS_GROUP = "training_plan.view.cross_group";
 
     private final TrainingPlanRepository trainingPlanRepository;
     private final TrainingPlanDetailRepository trainingPlanDetailRepository;
@@ -125,292 +143,140 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         return toGenerationResponse(plan);
     }
 
+    // ── Query: getAllPlans (refactored) ───────────────────────────────────────
+
+    /**
+     * Trả về danh sách training plans mà user được phép xem, dựa trên scope permission.
+     * <p>
+     * Thứ tự ưu tiên (từ rộng đến hẹp):
+     * 1. training_plan.view.section     → Manager: thấy toàn section, loại trừ DRAFT/REVISE
+     * 2. training_plan.view.own_group   → Supervisor: thấy các group mình phụ trách
+     * 3. training_plan.view.cross_group → Final Inspection: thấy groups liên kết với FI
+     * 4. (default)                      → Team Leader: chỉ thấy plans do mình tạo
+     * <p>
+     * Không hardcode role name → admin có thể gán scope permission cho bất kỳ role nào.
+     */
     @Override
     public List<TrainingPlanGenerationResponse> getAllPlans(User currentUser, Long lineId) {
 
-        // 1. Role: FINAL_INSPECTION
-        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
-            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
-            if (teams.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
-
-            if (lineId != null) {
-                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            } else {
-                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            }
+        if (currentUser.hasPermission(PERM_VIEW_SECTION)) {
+            return fetchBySection(currentUser, lineId);
         }
 
-        // Trạng thái loại trừ cho Manager
-        List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
-
-        // 2. Role: MANAGER
-        if (currentUser.hasRole("ROLE_MANAGER")) {
-            if (lineId != null) {
-                return trainingPlanRepository
-                        .findAllByManagerAndLineIdAndDeleteFlagFalse(currentUser.getId(), lineId, excludedStatuses)
-                        .stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            } else {
-                return trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(currentUser.getId(), excludedStatuses)
-                        .stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            }
+        if (currentUser.hasPermission(PERM_VIEW_OWN_GROUP)) {
+            return fetchByOwnGroups(currentUser, lineId);
         }
 
-        // 3. Role: SUPERVISOR
-        if (currentUser.hasRole("ROLE_SUPERVISOR")) {
-            List<Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
-            if (groups.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<Long> groupIds = groups.stream().map(com.sep490.anomaly_training_backend.model.Group::getId).distinct()
-                    .toList();
-
-            if (lineId != null) {
-                return trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId).stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            } else {
-                return trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds).stream()
-                        .map(this::toGenerationResponse)
-                        .collect(Collectors.toList());
-            }
+        if (currentUser.hasPermission(PERM_VIEW_CROSS_GROUP)) {
+            return fetchByCrossGroup(currentUser, lineId);
         }
 
-        // 4. Role mặc định (Người tạo)
-        if (lineId != null) {
-            return trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(currentUser.getUsername(), lineId)
-                    .stream()
-                    .map(this::toGenerationResponse)
-                    .collect(Collectors.toList());
-        } else {
-            return trainingPlanRepository.findByCreatedByAndDeleteFlagFalse(currentUser.getUsername()).stream()
-                    .map(this::toGenerationResponse)
-                    .collect(Collectors.toList());
-        }
+        // Default: Team Leader — chỉ thấy plans do chính mình tạo
+        return fetchByCreator(currentUser.getUsername(), lineId);
     }
 
+    /**
+     * Trả về danh sách plans bị từ chối, áp dụng cùng scope logic với getAllPlans.
+     * <p>
+     * Trước đây không nhận currentUser → trả về ALL rejected plans cho mọi user.
+     * Controller cần cập nhật signature để truyền currentUser vào.
+     */
     @Override
-    public List<TrainingPlanGenerationResponse> getRejectedPlans() {
+    public List<TrainingPlanGenerationResponse> getRejectedPlans(User currentUser) {
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REVISE,
                 ReportStatus.REJECTED_BY_SV,
                 ReportStatus.REJECTED_BY_MANAGER);
-        return trainingPlanRepository.findByStatusInAndDeleteFlagFalse(rejectedStatuses).stream()
+
+        // Reuse scope logic, sau đó filter thêm theo status
+        return getAllPlans(currentUser, null)
+                .stream()
+                .filter(r -> rejectedStatuses.contains(r.getTrainingPlan().getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    // ── Private: scope query helpers ─────────────────────────────────────────
+
+    /**
+     * Section scope (Manager):
+     * - Tìm plans thuộc section mà user là manager
+     * - Loại trừ DRAFT và REVISE (manager không cần thấy bản nháp của TL)
+     */
+    private List<TrainingPlanGenerationResponse> fetchBySection(User currentUser, Long lineId) {
+        List<ReportStatus> excludedStatuses = List.of(ReportStatus.DRAFT, ReportStatus.REVISE);
+        List<TrainingPlan> plans = lineId != null
+                ? trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(
+                currentUser.getId(), lineId, excludedStatuses)
+                : trainingPlanRepository.findAllByManagerAndDeleteFlagFalse(
+                currentUser.getId(), excludedStatuses);
+        return toResponses(plans);
+    }
+
+    /**
+     * Own group scope (Supervisor):
+     * - Tìm tất cả groups mà user là supervisor
+     * - Trả về tất cả plans trong các groups đó (kể cả DRAFT của TL dưới quyền)
+     */
+    private List<TrainingPlanGenerationResponse> fetchByOwnGroups(User currentUser, Long lineId) {
+        List<Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+        if (groups.isEmpty()) return Collections.emptyList();
+
+        List<Long> groupIds = groups.stream()
+                .map(Group::getId)
+                .distinct()
+                .toList();
+
+        return fetchByGroupIds(groupIds, lineId);
+    }
+
+    /**
+     * Cross group scope (Final Inspection):
+     * - FI không thuộc hierarchy section→group→team bình thường
+     * - Tìm các teams mà FI user được liên kết, lấy groupIds từ đó
+     */
+    private List<TrainingPlanGenerationResponse> fetchByCrossGroup(User currentUser, Long lineId) {
+        List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
+        if (teams.isEmpty()) return Collections.emptyList();
+
+        List<Long> groupIds = teams.stream()
+                .map(team -> team.getGroup().getId())
+                .distinct()
+                .toList();
+
+        return fetchByGroupIds(groupIds, lineId);
+    }
+
+    /**
+     * Creator scope (Team Leader — default):
+     * - Chỉ trả về plans do chính user này tạo
+     */
+    private List<TrainingPlanGenerationResponse> fetchByCreator(String username, Long lineId) {
+        List<TrainingPlan> plans = lineId != null
+                ? trainingPlanRepository.findByCreatedByAndLineIdAndDeleteFlagFalse(username, lineId)
+                : trainingPlanRepository.findByCreatedByAndDeleteFlagFalse(username);
+        return toResponses(plans);
+    }
+
+    /**
+     * Shared helper: query theo danh sách groupIds + optional lineId filter.
+     */
+    private List<TrainingPlanGenerationResponse> fetchByGroupIds(List<Long> groupIds, Long lineId) {
+        List<TrainingPlan> plans = lineId != null
+                ? trainingPlanRepository.findAllByGroupIdsAndLineIdAndDeleteFlagFalse(groupIds, lineId)
+                : trainingPlanRepository.findAllByGroupIdsAndDeleteFlagFalse(groupIds);
+        return toResponses(plans);
+    }
+
+    /**
+     * Shared helper: convert list TrainingPlan → list response.
+     */
+    private List<TrainingPlanGenerationResponse> toResponses(List<TrainingPlan> plans) {
+        return plans.stream()
                 .map(this::toGenerationResponse)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ProcessResponse> getProcessesByProductLine(Long productLineId) {
-        List<Process> processes = processRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
-        return processes.stream().map(p -> {
-            ProcessResponse res = new ProcessResponse(p.getId(), p.getCode(), p.getName());
-            res.setProductLineId(productLineId);
-            return res;
-        }).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ProductLineResponse> getProductLinesByGroupId(Long groupId) {
-        List<ProductLine> productLines = productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId);
-        return productLines.stream().map(pl -> ProductLineResponse.builder()
-                .id(pl.getId())
-                .groupId(pl.getGroup().getId())
-                .name(pl.getName())
-                .build()).collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
-    public TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request) {
-        // 1. Load plan
-        TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        // 2. Chỉ cho thêm khi DRAFT hoặc REJECTED
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
-        }
-
-        // 3. Validate Employee
-        Employee employee = getValidatedEmployee(request.getEmployeeId());
-
-        // 4. Tạo detail rows cho từng schedule
-        List<TrainingPlanDetail> addedDetails = new ArrayList<>();
-        String batchId = java.util.UUID.randomUUID().toString();
-        if (request.getSchedules() != null) {
-            for (ScheduleRequest schedule : request.getSchedules()) {
-                if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
-                    TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
-                    detail.setStatus(TrainingPlanDetailStatus.PENDING);
-                    detail.setBatchId(batchId);
-                    plan.getDetails().add(detail);
-                    addedDetails.add(detail);
-                }
-            }
-        }
-
-        if (addedDetails.isEmpty()) {
-            throw new AppException(ErrorCode.MISSING_SCHEDULE);
-        }
-
-        trainingPlanRepository.save(plan);
-
-        // Nếu plan đã APPROVED, tạo result detail cho plan details mới thêm
-        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
-            regenerateResultDetails(plan);
-        }
-
-        // Trả về detail đầu tiên kèm employeeProcesses
-        TrainingPlanDetail firstAdded = addedDetails.get(0);
-        TrainingPlanDetailResponse response = planMapper.toDetailResponse(firstAdded);
-        populateDetailProcesses(response, plan);
-        return response;
-    }
-
-    @Override
-    @Transactional
-    public TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request) {
-        // 1. Load plan
-        TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        // 2. Validate trạng thái
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
-            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
-        }
-
-        // 3. Tìm detail
-        TrainingPlanDetail detail = plan.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
-                .findFirst()
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
-
-        // 4. Validate & update Employee nếu thay đổi
-        if (request.getEmployeeId() != null) {
-            Employee employee = getValidatedEmployee(request.getEmployeeId());
-            detail.setEmployee(employee);
-        }
-
-        // 5. Validate & update Process nếu thay đổi
-        Long currentProductLineId = (plan.getLine() != null) ? plan.getLine().getId() : null;
-
-        // 6. Update note
-        if (request.getNote() != null) {
-            detail.setNote(request.getNote());
-        }
-
-        // 7. Update schedule nếu có (lấy schedule đầu tiên để update ngày)
-        if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
-            ScheduleRequest schedule = request.getSchedules().get(0);
-            LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1);
-            detail.setTargetMonth(targetMonth);
-            try {
-                LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
-                detail.setPlannedDate(plannedDate);
-            } catch (DateTimeException e) {
-                throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
-            }
-        }
-
-        trainingPlanRepository.save(plan);
-        TrainingPlanDetailResponse response = planMapper.toDetailResponse(detail);
-        populateDetailProcesses(response, plan);
-        return response;
-    }
-
-    @Override
-    public List<PrioritizedEmployeeResponse> getEmployeesNotInPlan(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
-                ? plan.getLine().getGroup().getId()
-                : (plan.getTeam() != null && plan.getTeam().getGroup() != null
-                        ? plan.getTeam().getGroup().getId()
-                        : null);
-
-        if (groupId == null)
-            return List.of();
-
-        List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId);
-        Set<Long> inPlanIds = new java.util.HashSet<>(
-                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
-
-        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
-        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
-                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
-
-        return allEmployees.stream()
-                .filter(emp -> !inPlanIds.contains(emp.getId()))
-                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
-        if (teamId == null)
-            return List.of();
-
-        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
-
-        Set<Long> inPlanIds = new java.util.HashSet<>(
-                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
-
-        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
-
-        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
-                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
-
-        return allEmployees.stream()
-                .map(emp -> buildPrioritizedEmployeeResponsee(emp, snapshotMap, lastTrainingMap, inPlanIds))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser,
-            TrainingPlanGenerationRequest request) {
-        TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
-
-        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
-        PriorityPolicy priorityPolicy = policyRepository
-                .findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
-                .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND,
-                        "No active priority policy found for employees"));
-
-        PrioritySnapshot prioritySnapshot = priorityScoringService.generateSnapshot(priorityPolicy.getId(),
-                request.getTeamId(), teamMembers);
-        prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
-        prioritySnapshotRepository.save(prioritySnapshot);
-
-        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(prioritySnapshot);
-
-        TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
-        response.setPrioritySnapshot(prioritySnapshotResponse);
-        response.setTrainingPlan(
-                toTrainingPlanResponse(
-                        trainingPlanScheduleGenerationService
-                                .generateOptimalSchedule(
-                                        generatedTrainingPlan.getId(),
-                                        prioritySnapshot.getId(),
-                                        LocalDate.now().getYear())));
-
-        return response;
-    }
+    // ── Mutation ─────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -432,15 +298,12 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         TrainingPlan savedPlan = trainingPlanRepository.save(plan);
 
-        // Nếu plan đã APPROVED, tạo result detail cho batch mới thêm
         if (isApproved) {
             regenerateResultDetails(savedPlan);
         }
 
         return toGenerationResponse(savedPlan);
     }
-
-    // ==================== HEADER UPDATE ====================
 
     private void updateHeaderIfPresent(TrainingPlan plan, TrainingPlanUpdateRequest request) {
         if (request.getTitle() != null) {
@@ -456,7 +319,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             plan.setEndDate(request.getEndDate());
         }
 
-        // Validate date range
         LocalDate start = request.getStartDate() != null ? request.getStartDate() : plan.getStartDate();
         LocalDate end = request.getEndDate() != null ? request.getEndDate() : plan.getEndDate();
         if (start != null && end != null && end.isBefore(start)) {
@@ -470,14 +332,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
     }
 
-    // ==================== DETAIL ACTIONS (1 FLOW CHUNG) ====================
-
     private void processDetailActions(TrainingPlan plan,
-            List<TrainingPlanUpdateRequest.DetailAction> actions,
-            boolean isApproved) {
+                                      List<TrainingPlanUpdateRequest.DetailAction> actions,
+                                      boolean isApproved) {
         Long productLineId = (plan.getLine() != null) ? plan.getLine().getId() : null;
 
-        // Index details hiện tại theo ID → O(1) lookup
         Map<Long, TrainingPlanDetail> detailMap = plan.getDetails().stream()
                 .filter(d -> d.getId() != null)
                 .collect(Collectors.toMap(TrainingPlanDetail::getId, d -> d));
@@ -496,12 +355,9 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
     }
 
-    /**
-     * ADD: Thêm employee vào plan, process tự lấy từ employee_skill
-     */
     private void handleAddAction(TrainingPlan plan,
-            TrainingPlanUpdateRequest.DetailAction action,
-            Long productLineId) {
+                                 TrainingPlanUpdateRequest.DetailAction action,
+                                 Long productLineId) {
         if (action.getEmployeeId() == null) {
             throw new AppException(ErrorCode.MISSING_EMPLOYEE_ID);
         }
@@ -512,8 +368,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
-        // Tạo batchId chung cho lần ADD này → phân biệt các lần thêm khác nhau của cùng
-        // 1 employee
         String batchId = java.util.UUID.randomUUID().toString();
 
         for (ScheduleRequest schedule : action.getSchedules()) {
@@ -526,12 +380,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
     }
 
-    /**
-     * ADD_SCHEDULE: Thêm ngày vào batch cũ (giữ nguyên row trên FE)
-     * FE gửi batchId → tìm employee từ batch đó → tạo detail mới cùng batchId
-     */
     private void handleAddScheduleAction(TrainingPlan plan,
-            TrainingPlanUpdateRequest.DetailAction action) {
+                                         TrainingPlanUpdateRequest.DetailAction action) {
         if (action.getBatchId() == null || action.getBatchId().isBlank()) {
             throw new AppException(ErrorCode.MISSING_BATCH_ID);
         }
@@ -540,7 +390,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.MISSING_SCHEDULE);
         }
 
-        // Tìm employee từ batch hiện tại (lấy detail đầu tiên cùng batchId)
         Employee employee;
         if (action.getEmployeeId() != null) {
             employee = getValidatedEmployee(action.getEmployeeId());
@@ -552,7 +401,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             employee = existingDetail.getEmployee();
         }
 
-        // Note: nếu không gửi note → lấy note từ detail cũ cùng batch
         String note = action.getNote();
         if (note == null) {
             note = plan.getDetails().stream()
@@ -566,20 +414,16 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, note, schedule);
                 detail.setStatus(TrainingPlanDetailStatus.PENDING);
-                detail.setBatchId(action.getBatchId()); // Giữ nguyên batchId cũ
+                detail.setBatchId(action.getBatchId());
                 plan.getDetails().add(detail);
             }
         }
     }
 
-    /**
-     * UPDATE: Sửa 1 detail cụ thể theo detailId — chỉ update field được gửi lên
-     * (non-null)
-     */
     private void handleUpdateAction(TrainingPlanUpdateRequest.DetailAction action,
-            Map<Long, TrainingPlanDetail> detailMap,
-            Long productLineId,
-            boolean isApproved) {
+                                    Map<Long, TrainingPlanDetail> detailMap,
+                                    Long productLineId,
+                                    boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -589,7 +433,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
-        // Bản APPROVED: không cho sửa detail đã hoàn thành
         if (isApproved && detail.getStatus() == TrainingPlanDetailStatus.DONE) {
             throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
         }
@@ -601,7 +444,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             detail.setNote(action.getNote());
         }
 
-        // Update schedule trực tiếp (targetMonth + plannedDay)
         if (action.getTargetMonth() != null && action.getPlannedDay() != null) {
             LocalDate targetMonth = action.getTargetMonth().withDayOfMonth(1);
             detail.setTargetMonth(targetMonth);
@@ -612,7 +454,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             }
         }
 
-        // Hoặc update qua schedules list (lấy đầu tiên)
         if (action.getSchedules() != null && !action.getSchedules().isEmpty()
                 && action.getTargetMonth() == null) {
             ScheduleRequest schedule = action.getSchedules().get(0);
@@ -626,13 +467,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
     }
 
-    /**
-     * DELETE: Xóa hoặc đánh dấu MISSED tùy trạng thái plan
-     */
     private void handleDeleteAction(TrainingPlan plan,
-            TrainingPlanUpdateRequest.DetailAction action,
-            Map<Long, TrainingPlanDetail> detailMap,
-            boolean isApproved) {
+                                    TrainingPlanUpdateRequest.DetailAction action,
+                                    Map<Long, TrainingPlanDetail> detailMap,
+                                    boolean isApproved) {
         if (action.getDetailId() == null) {
             throw new AppException(ErrorCode.MISSING_DETAIL_ID);
         }
@@ -643,17 +481,99 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         if (isApproved) {
-            // APPROVED: không xóa thật, đánh dấu MISSED
             if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
                 throw new AppException(ErrorCode.CANNOT_DELETE_COMPLETED_DETAIL);
             }
             detail.setStatus(TrainingPlanDetailStatus.MISS);
             detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
         } else {
-            // DRAFT/REJECTED: xóa training_result_details con trước rồi xóa thật
             trainingResultDetailRepository.deleteByTrainingPlanDetailId(detail.getId());
             plan.getDetails().remove(detail);
         }
+    }
+
+    @Override
+    @Transactional
+    public TrainingPlanDetailResponse addDetail(Long planId, TrainingPlanDetailRequest request) {
+        TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
+
+        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
+        }
+
+        Employee employee = getValidatedEmployee(request.getEmployeeId());
+
+        List<TrainingPlanDetail> addedDetails = new ArrayList<>();
+        String batchId = java.util.UUID.randomUUID().toString();
+        if (request.getSchedules() != null) {
+            for (ScheduleRequest schedule : request.getSchedules()) {
+                if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
+                    TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
+                    detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                    detail.setBatchId(batchId);
+                    plan.getDetails().add(detail);
+                    addedDetails.add(detail);
+                }
+            }
+        }
+
+        if (addedDetails.isEmpty()) {
+            throw new AppException(ErrorCode.MISSING_SCHEDULE);
+        }
+
+        trainingPlanRepository.save(plan);
+
+        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
+            regenerateResultDetails(plan);
+        }
+
+        TrainingPlanDetail firstAdded = addedDetails.get(0);
+        TrainingPlanDetailResponse response = planMapper.toDetailResponse(firstAdded);
+        populateDetailProcesses(response, plan);
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public TrainingPlanDetailResponse updateDetail(Long planId, Long detailId, TrainingPlanDetailRequest request) {
+        TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
+
+        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
+        }
+
+        TrainingPlanDetail detail = plan.getDetails().stream()
+                .filter(d -> d.getId().equals(detailId))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
+
+        if (request.getEmployeeId() != null) {
+            Employee employee = getValidatedEmployee(request.getEmployeeId());
+            detail.setEmployee(employee);
+        }
+
+        if (request.getNote() != null) {
+            detail.setNote(request.getNote());
+        }
+
+        if (request.getSchedules() != null && !request.getSchedules().isEmpty()) {
+            ScheduleRequest schedule = request.getSchedules().get(0);
+            LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1);
+            detail.setTargetMonth(targetMonth);
+            try {
+                LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
+                detail.setPlannedDate(plannedDate);
+            } catch (DateTimeException e) {
+                throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
+            }
+        }
+
+        trainingPlanRepository.save(plan);
+        TrainingPlanDetailResponse response = planMapper.toDetailResponse(detail);
+        populateDetailProcesses(response, plan);
+        return response;
     }
 
     @Override
@@ -662,19 +582,16 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // Only allow deletion of DRAFT or REJECTED plans
         if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
                 && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-        // Verify ownership - user must be the creator or have delete permission
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!plan.getCreatedBy().equals(currentUsername)) {
             User currentUser = userRepository.findByUsername(currentUsername)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-            // Check if user is team leader of the same group
             boolean isTeamLeader = teamRepository.findAllByTeamLeaderId(currentUser.getId())
                     .stream()
                     .anyMatch(team -> team.getId().equals(plan.getTeam().getId()));
@@ -684,7 +601,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             }
         }
 
-        // Xóa training_result_details con trước (FK constraint)
         List<Long> detailIds = plan.getDetails().stream()
                 .map(TrainingPlanDetail::getId)
                 .filter(Objects::nonNull)
@@ -719,18 +635,15 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     @Transactional
     public void deleteDetail(Long planId, Long detailId) {
-        // 1. Tìm plan
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        // 2. Chỉ cho phép xóa detail khi plan ở trạng thái DRAFT hoặc REJECTED
         if (plan.getStatus() != ReportStatus.DRAFT
                 && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
                 && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-        // 3. Tìm detail trong danh sách
         TrainingPlanDetail detailToRemove = plan.getDetails().stream()
                 .filter(d -> d.getId().equals(detailId))
                 .findFirst()
@@ -740,141 +653,122 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-        // 4. Xóa training_result_details con trước (FK constraint)
         trainingResultDetailRepository.deleteByTrainingPlanDetailId(detailToRemove.getId());
-
-        // 5. Xóa detail khỏi collection (orphanRemoval=true sẽ xóa khỏi DB)
         plan.getDetails().remove(detailToRemove);
-
-        // 6. Lưu plan (cascade sẽ xử lý việc xóa detail)
         trainingPlanRepository.save(plan);
     }
 
-    // ==================== HELPER METHODS ====================
+    // ── Lookup ───────────────────────────────────────────────────────────────
 
-    /**
-     * Populate employeeProcesses cho 1 detail response đơn lẻ.
-     * Hiển thị các công đoạn mà employee CÓ chứng chỉ VALID.
-     */
-    private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {
-        Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
-        if (productLineId == null || detailResponse.getEmployeeId() == null)
-            return;
+    @Override
+    public List<PrioritizedEmployeeResponse> getEmployeesNotInPlan(Long planId) {
+        TrainingPlan plan = trainingPlanRepository.findById(planId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        List<EmployeeSkill> skills = employeeSkillRepository
-                .findValidSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
+        Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
+                ? plan.getLine().getGroup().getId()
+                : (plan.getTeam() != null && plan.getTeam().getGroup() != null
+                ? plan.getTeam().getGroup().getId()
+                : null);
 
-        List<TrainingPlanDetailResponse.ProcessInfo> processes = skills.stream()
-                .map(skill -> {
-                    TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
-                    info.setId(skill.getProcess().getId());
-                    info.setName(skill.getProcess().getName());
-                    return info;
-                })
-                .toList();
+        if (groupId == null) return List.of();
 
-        detailResponse.setEmployeeProcesses(processes);
+        List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId);
+        Set<Long> inPlanIds = new java.util.HashSet<>(
+                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
+
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
+
+        return allEmployees.stream()
+                .filter(emp -> !inPlanIds.contains(emp.getId()))
+                .map(emp -> buildPrioritizedEmployeeResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Tạo lại training_result_details cho plan đã APPROVED.
-     * Tìm TrainingResult liên quan, tạo result detail cho mỗi plan detail chưa có.
-     */
-    private void regenerateResultDetails(TrainingPlan plan) {
-        List<TrainingResult> results = trainingResultRepository.findByTrainingPlanId(plan.getId());
-        if (results.isEmpty())
-            return;
+    @Override
+    public List<PrioritizedEmployeeResponse> getEmployeesInTeams(Long planId) {
+        TrainingPlan plan = trainingPlanRepository.findById(planId)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        TrainingResult result = results.get(0);
+        Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
+        if (teamId == null) return List.of();
 
-        // Collect existing plan detail IDs that already have result details
-        Set<Long> existingPlanDetailIds = result.getDetails().stream()
-                .filter(rd -> rd.getTrainingPlanDetail() != null)
-                .map(rd -> rd.getTrainingPlanDetail().getId())
-                .collect(Collectors.toSet());
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+        Set<Long> inPlanIds = new java.util.HashSet<>(
+                trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
 
-        // Create result detail for each plan detail that doesn't have one yet
-        for (TrainingPlanDetail planDetail : plan.getDetails()) {
-            if (planDetail.getId() != null && !existingPlanDetailIds.contains(planDetail.getId())) {
-                TrainingResultDetail newResultDetail = new TrainingResultDetail();
-                newResultDetail.setTrainingResult(result);
-                newResultDetail.setTrainingPlanDetail(planDetail);
-                newResultDetail.setEmployee(planDetail.getEmployee());
-                newResultDetail.setPlannedDate(planDetail.getPlannedDate());
-                newResultDetail.setBatchId(planDetail.getBatchId());
-                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
-                result.getDetails().add(newResultDetail);
-            }
-        }
+        Map<Long, PrioritySnapshotDetail> snapshotMap = loadSnapshotMap(planId);
+        Map<Long, TrainingResultDetail> lastTrainingMap = loadLastTrainingMap(
+                allEmployees.stream().map(Employee::getId).collect(Collectors.toList()));
 
-        trainingResultRepository.save(result);
-
-        // Override createdBy cho new details = người tạo plan
-        String planCreator = plan.getCreatedBy();
-        trainingResultDetailRepository.updateCreatedByForResult(result.getId(), planCreator);
+        return allEmployees.stream()
+                .map(emp -> buildPrioritizedEmployeeResponse(emp, snapshotMap, lastTrainingMap, inPlanIds))
+                .collect(Collectors.toList());
     }
 
-    private Employee getValidatedEmployee(Long employeeId) {
-        // Nên dùng getReferenceById nếu chỉ cần gán quan hệ (lazy), nhưng findById an
-        // toàn hơn để check tồn tại
-        return employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+    @Override
+    public List<ProcessResponse> getProcessesByProductLine(Long productLineId) {
+        List<Process> processes = processRepository.findByProductLineIdAndDeleteFlagFalse(productLineId);
+        return processes.stream().map(p -> {
+            ProcessResponse res = new ProcessResponse(p.getId(), p.getCode(), p.getName());
+            res.setProductLineId(productLineId);
+            return res;
+        }).collect(Collectors.toList());
     }
 
-    private Process getValidatedProcess(Long processId, Long productLineId) {
-        Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-
-        // Validate Process thuộc ProductLine được chọn trong Plan
-        if (productLineId != null && process.getProductLine() != null) {
-            if (!process.getProductLine().getId().equals(productLineId)) {
-                throw new AppException(ErrorCode.PROCESS_NOT_IN_PRODUCT_LINE);
-            }
-        }
-
-        return process;
+    @Override
+    public List<ProductLineResponse> getProductLinesByGroupId(Long groupId) {
+        List<ProductLine> productLines = productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId);
+        return productLines.stream().map(pl -> ProductLineResponse.builder()
+                .id(pl.getId())
+                .groupId(pl.getGroup().getId())
+                .name(pl.getName())
+                .build()).collect(Collectors.toList());
     }
 
-    private TrainingPlanDetail createBaseDetail(TrainingPlan plan, Employee employee, String note,
-            ScheduleRequest schedule) {
-        TrainingPlanDetail detailEntity = new TrainingPlanDetail();
+    // ── Generate ─────────────────────────────────────────────────────────────
 
-        // Gán các quan hệ
-        detailEntity.setTrainingPlan(plan);
-        detailEntity.setEmployee(employee);
+    @Override
+    public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser,
+                                                                TrainingPlanGenerationRequest request) {
+        TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
 
-        // Gán thông tin text
-        detailEntity.setNote(note);
+        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
+        PriorityPolicy priorityPolicy = policyRepository
+                .findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
+                .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND,
+                        "No active priority policy found for employees"));
 
-        // Xử lý ngày tháng
-        LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1); // Luôn lấy ngày mùng 1 để chuẩn hóa
-        detailEntity.setTargetMonth(targetMonth);
+        PrioritySnapshot prioritySnapshot = priorityScoringService.generateSnapshot(
+                priorityPolicy.getId(), request.getTeamId(), teamMembers);
+        prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
+        prioritySnapshotRepository.save(prioritySnapshot);
 
-        try {
-            // Tạo ngày cụ thể từ ngày mùng 1 + số ngày user chọn
-            // Ví dụ: targetMonth = 01/11, plannedDay = 15 => 15/11
-            // Nếu user gửi plannedDay = 31 mà tháng chỉ có 30 ngày => Sẽ throw exception
-            LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
-            detailEntity.setPlannedDate(plannedDate);
-        } catch (DateTimeException e) {
-            throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
-        }
+        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(prioritySnapshot);
 
-        return detailEntity;
+        TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
+        response.setPrioritySnapshot(prioritySnapshotResponse);
+        response.setTrainingPlan(
+                toTrainingPlanResponse(
+                        trainingPlanScheduleGenerationService.generateOptimalSchedule(
+                                generatedTrainingPlan.getId(),
+                                prioritySnapshot.getId(),
+                                LocalDate.now().getYear())));
+
+        return response;
     }
 
-    // Relate approval methods
+    // ── Approval workflow ────────────────────────────────────────────────────
+
     @Override
     public void submitPlanForApproval(Long reportId, User currentUser, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
-
         validatePlanForSubmission(report);
-
         report.setFormCode(
                 ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_PLAN, report.getLine().getCode(), reportId));
-
         approvalService.submit(report, currentUser, request);
-
         trainingPlanRepository.save(report);
     }
 
@@ -890,7 +784,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Transactional
     public void revise(Long reportId, User currentUser, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
-
         if (!report.getCreatedBy().equals(currentUser.getUsername())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
@@ -925,27 +818,24 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             Boolean hasPermission = approvalService.canApprove(report, currentUser);
             return ResponseEntity.ok(hasPermission);
         } catch (AppException e) {
-
             return ResponseEntity.ok(Boolean.FALSE);
         }
     }
 
-    // ── Save feedback ─────────────────────────────────────────────────────────
+    // ── Feedback ─────────────────────────────────────────────────────────────
+
     @Override
     @Transactional
     public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
-
         TrainingPlanDetail detail = trainingPlanDetailRepository.findByIdAndDeleteFlagFalse(detailId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
 
-        // Tất cả null/empty → xoá feedback
         if (isEmptyFeedback(request)) {
             detail.setRejectFeedback(null);
             trainingPlanDetailRepository.save(detail);
             return;
         }
 
-        // Batch load reasons + action
         List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
         if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
             reasonSnapshots = rejectReasonRepository
@@ -982,24 +872,109 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
     }
 
+    @Override
+    @Transactional
+    public void clearFeedback(Long proposalId) {
+        List<TrainingPlanDetail> details = trainingPlanDetailRepository
+                .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+        details.forEach(d -> d.setRejectFeedback(null));
+        trainingPlanDetailRepository.saveAll(details);
+        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
     private boolean isEmptyFeedback(DetailFeedbackRequest r) {
         return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
                 && r.getRequiredActionId() == null
                 && (r.getComment() == null || r.getComment().isBlank());
     }
 
-    // ── Clear feedback (khi TL revise lại) ───────────────────────────────────
+    private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {
+        Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
+        if (productLineId == null || detailResponse.getEmployeeId() == null) return;
 
-    @Override
-    @Transactional
-    public void clearFeedback(Long proposalId) {
-        List<TrainingPlanDetail> details = trainingPlanDetailRepository
-                .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+        List<EmployeeSkill> skills = employeeSkillRepository
+                .findValidSkillsByEmployeeAndLine(detailResponse.getEmployeeId(), productLineId);
 
-        details.forEach(d -> d.setRejectFeedback(null));
-        trainingPlanDetailRepository.saveAll(details);
+        List<TrainingPlanDetailResponse.ProcessInfo> processes = skills.stream()
+                .map(skill -> {
+                    TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
+                    info.setId(skill.getProcess().getId());
+                    info.setName(skill.getProcess().getName());
+                    return info;
+                })
+                .toList();
 
-        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
+        detailResponse.setEmployeeProcesses(processes);
+    }
+
+    private void regenerateResultDetails(TrainingPlan plan) {
+        List<TrainingResult> results = trainingResultRepository.findByTrainingPlanId(plan.getId());
+        if (results.isEmpty()) return;
+
+        TrainingResult result = results.get(0);
+
+        Set<Long> existingPlanDetailIds = result.getDetails().stream()
+                .filter(rd -> rd.getTrainingPlanDetail() != null)
+                .map(rd -> rd.getTrainingPlanDetail().getId())
+                .collect(Collectors.toSet());
+
+        for (TrainingPlanDetail planDetail : plan.getDetails()) {
+            if (planDetail.getId() != null && !existingPlanDetailIds.contains(planDetail.getId())) {
+                TrainingResultDetail newResultDetail = new TrainingResultDetail();
+                newResultDetail.setTrainingResult(result);
+                newResultDetail.setTrainingPlanDetail(planDetail);
+                newResultDetail.setEmployee(planDetail.getEmployee());
+                newResultDetail.setPlannedDate(planDetail.getPlannedDate());
+                newResultDetail.setBatchId(planDetail.getBatchId());
+                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
+                result.getDetails().add(newResultDetail);
+            }
+        }
+
+        trainingResultRepository.save(result);
+
+        String planCreator = plan.getCreatedBy();
+        trainingResultDetailRepository.updateCreatedByForResult(result.getId(), planCreator);
+    }
+
+    private Employee getValidatedEmployee(Long employeeId) {
+        return employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+    }
+
+    private Process getValidatedProcess(Long processId, Long productLineId) {
+        Process process = processRepository.findById(processId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+
+        if (productLineId != null && process.getProductLine() != null) {
+            if (!process.getProductLine().getId().equals(productLineId)) {
+                throw new AppException(ErrorCode.PROCESS_NOT_IN_PRODUCT_LINE);
+            }
+        }
+
+        return process;
+    }
+
+    private TrainingPlanDetail createBaseDetail(TrainingPlan plan, Employee employee, String note,
+                                                ScheduleRequest schedule) {
+        TrainingPlanDetail detailEntity = new TrainingPlanDetail();
+        detailEntity.setTrainingPlan(plan);
+        detailEntity.setEmployee(employee);
+        detailEntity.setNote(note);
+
+        LocalDate targetMonth = schedule.getTargetMonth().withDayOfMonth(1);
+        detailEntity.setTargetMonth(targetMonth);
+
+        try {
+            LocalDate plannedDate = targetMonth.withDayOfMonth(schedule.getPlannedDay());
+            detailEntity.setPlannedDate(plannedDate);
+        } catch (DateTimeException e) {
+            throw new AppException(ErrorCode.INVALID_DAY_OF_MONTH);
+        }
+
+        return detailEntity;
     }
 
     private TrainingPlan getReportById(Long id) {
@@ -1007,42 +982,30 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
     }
 
-    // private methods
     private void validatePlanForSubmission(TrainingPlan plan) {
-        // Business rules specific to TrainingPlan
         if (plan.getDetails() == null || plan.getDetails().isEmpty()) {
             throw new AppException(ErrorCode.PLAN_HAS_NO_DETAILS);
         }
-
         if (plan.getTitle() == null || plan.getTitle().trim().isEmpty()) {
             throw new AppException(ErrorCode.MISSING_PLAN_TITLE);
         }
-
-        // Validate date range
         if (plan.getEndDate().isBefore(plan.getStartDate())) {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
-        // Validate details have required fields and business rules
         for (TrainingPlanDetail detail : plan.getDetails()) {
             if (detail.getEmployee() == null) {
                 throw new AppException(ErrorCode.MISSING_EMPLOYEE_IN_DETAIL);
             }
-            // if (detail.getProcess() == null) {
-            // throw new IllegalArgumentException("Detail lack of Process Information.");
-            // }
             if (detail.getPlannedDate() == null) {
                 throw new AppException(ErrorCode.MISSING_PLANNED_DATE_IN_DETAIL);
             }
-
-            // Validate plannedDate is within plan's date range
             if (detail.getPlannedDate().isBefore(plan.getStartDate()) ||
                     detail.getPlannedDate().isAfter(plan.getEndDate())) {
                 throw new AppException(ErrorCode.PLANNED_DATE_OUT_OF_RANGE);
             }
         }
 
-        // Check for duplicates: same employee + date + batchId
         for (int i = 0; i < plan.getDetails().size(); i++) {
             TrainingPlanDetail detail1 = plan.getDetails().get(i);
             for (int j = i + 1; j < plan.getDetails().size(); j++) {
@@ -1050,7 +1013,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
                 boolean sameEmployee = detail1.getEmployee().getId().equals(detail2.getEmployee().getId());
                 boolean sameDate = detail1.getPlannedDate().equals(detail2.getPlannedDate());
-                boolean sameBatch = (detail1.getBatchId() != null && detail1.getBatchId().equals(detail2.getBatchId()));
+                boolean sameBatch = detail1.getBatchId() != null && detail1.getBatchId().equals(detail2.getBatchId());
 
                 if (sameEmployee && sameDate && sameBatch) {
                     throw new AppException(ErrorCode.DUPLICATE_TRAINING_SCHEDULE);
@@ -1059,9 +1022,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
     }
 
-    /**
-     * Hàm private thực hiện việc copy dữ liệu từ Plan -> History Entity
-     */
     private void createHistorySnapshot(TrainingPlan plan) {
         TrainingPlanHistory history = TrainingPlanHistory.builder()
                 .trainingPlan(plan)
@@ -1076,14 +1036,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .detailHistories(new ArrayList<>())
                 .build();
 
-        // 2. Map Details (TrainingPlanDetail -> TrainingPlanDetailHistory)
         if (plan.getDetails() != null) {
             for (TrainingPlanDetail detail : plan.getDetails()) {
-
                 TrainingPlanDetailHistory detailHistory = TrainingPlanDetailHistory.builder()
                         .trainingPlanHistory(history)
                         .employeeId(detail.getEmployee().getId())
-                        // .processId(detail.getProcess().getId())
                         .targetMonth(detail.getTargetMonth())
                         .plannedDate(detail.getPlannedDate())
                         .actualDate(detail.getActualDate())
@@ -1091,7 +1048,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         .batchId(detail.getBatchId())
                         .note(detail.getNote())
                         .build();
-
                 history.getDetailHistories().add(detailHistory);
             }
         }
@@ -1139,41 +1095,30 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(trainingPlan.getTeam().getId());
 
         List<TrainingPlanDetailResponse> prefilledDetails = new ArrayList<>();
-
         if (teamMembers != null) {
             for (Employee emp : teamMembers) {
                 TrainingPlanDetailResponse detailRes = new TrainingPlanDetailResponse();
-
                 detailRes.setEmployeeId(emp.getId());
                 detailRes.setEmployeeCode(emp.getEmployeeCode());
                 detailRes.setEmployeeName(emp.getFullName());
                 detailRes.setBatchId(java.util.UUID.randomUUID().toString());
-
                 detailRes.setId(null);
                 detailRes.setPlannedDate(null);
                 detailRes.setStatus(null);
                 detailRes.setNote("");
-
                 prefilledDetails.add(detailRes);
             }
         }
 
         response.setDetails(prefilledDetails);
         populateEmployeeProcesses(response, trainingPlan);
-
         return response;
     }
 
-    /**
-     * Populate employeeProcesses cho từng detail + build groupedDetails (group theo
-     * batchId)
-     */
     private void populateEmployeeProcesses(TrainingPlanResponse response, TrainingPlan plan) {
         Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
-        if (response.getDetails() == null || productLineId == null)
-            return;
+        if (response.getDetails() == null || productLineId == null) return;
 
-        // Cache skill lookup để không query trùng employee
         Map<Long, List<TrainingPlanDetailResponse.ProcessInfo>> skillCache = new java.util.HashMap<>();
 
         for (TrainingPlanDetailResponse detail : response.getDetails()) {
@@ -1185,7 +1130,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                     .findValidSkillsByEmployeeAndLine(empId, productLineId);
                             return skills.stream()
                                     .map(skill -> {
-                                        TrainingPlanDetailResponse.ProcessInfo info = new TrainingPlanDetailResponse.ProcessInfo();
+                                        TrainingPlanDetailResponse.ProcessInfo info =
+                                                new TrainingPlanDetailResponse.ProcessInfo();
                                         info.setId(skill.getProcess().getId());
                                         info.setName(skill.getProcess().getName());
                                         return info;
@@ -1196,16 +1142,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             }
         }
 
-        // Build groupedDetails: group theo batchId (phân biệt các lần thêm khác nhau
-        // của cùng 1 employee)
         Map<String, EmployeePlanGroup> groupMap = new java.util.LinkedHashMap<>();
-
         for (TrainingPlanDetailResponse detail : response.getDetails()) {
-            if (detail.getEmployeeId() == null)
-                continue;
+            if (detail.getEmployeeId() == null) continue;
 
-            // Dùng batchId làm key. Nếu batchId null (data cũ chưa có) → fallback dùng
-            // "employee_{id}"
             String key = detail.getBatchId() != null
                     ? detail.getBatchId()
                     : "employee_" + detail.getEmployeeId();
@@ -1240,7 +1180,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         trainingPlanResponse.setCreatedBy(planCreator.getFullName());
 
         response.setTrainingPlan(trainingPlanResponse);
-
         response.setPrioritySnapshot(prioritySnapshotResponse);
         return response;
     }
@@ -1258,8 +1197,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     private Map<Long, TrainingResultDetail> loadLastTrainingMap(List<Long> employeeIds) {
-        if (employeeIds.isEmpty())
-            return Map.of();
+        if (employeeIds.isEmpty()) return Map.of();
         return trainingResultDetailRepository
                 .findLatestByEmployeeIds(employeeIds)
                 .stream()
@@ -1269,7 +1207,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                         (d1, d2) -> d1.getActualDate().isAfter(d2.getActualDate()) ? d1 : d2));
     }
 
-    private PrioritizedEmployeeResponse buildPrioritizedEmployeeResponsee(
+    private PrioritizedEmployeeResponse buildPrioritizedEmployeeResponse(
             Employee emp,
             Map<Long, PrioritySnapshotDetail> snapshotMap,
             Map<Long, TrainingResultDetail> lastTrainingMap,
@@ -1299,10 +1237,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     private String buildPriorityReason(PrioritySnapshotDetail snapshot) {
-        if (snapshot == null)
-            return null;
-        if ("UNTIERED".equals(snapshot.getTierName()))
-            return "Không có tiêu chí ưu tiên";
+        if (snapshot == null) return null;
+        if ("UNTIERED".equals(snapshot.getTierName())) return "Không có tiêu chí ưu tiên";
         return snapshot.getTierName() + " — Hạng #" + snapshot.getSortRank();
     }
 }
