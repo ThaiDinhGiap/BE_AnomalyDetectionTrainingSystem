@@ -9,6 +9,7 @@ import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.GroupService;
@@ -29,6 +30,7 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMapper groupMapper;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
+    private final SectionRepository sectionRepository;
 
     @Override
     @Transactional
@@ -66,6 +68,9 @@ public class GroupServiceImpl implements GroupService {
         }
         if (request.getSupervisorId() != null && (group.getSupervisor() == null || !request.getSupervisorId().equals(group.getSupervisor().getId()))) {
             group.setSupervisor(userRepository.findById(request.getSectionId()).orElse(null));
+        }
+        if (request.getSectionId() != null && (group.getSection() == null || !request.getSectionId().equals(group.getSection().getId()))) {
+            group.setSection(sectionRepository.findById(request.getSectionId()).orElse(null));
         }
 
         return groupMapper.toDTO(groupRepository.save(group));

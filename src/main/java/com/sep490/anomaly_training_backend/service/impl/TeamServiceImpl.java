@@ -6,6 +6,7 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TeamService;
@@ -24,6 +25,7 @@ public class TeamServiceImpl implements TeamService {
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
     private final UserRepository userRepository;
+    private final GroupRepository groupRepository;
 
     @Override
     @Transactional
@@ -43,7 +45,7 @@ public class TeamServiceImpl implements TeamService {
         if (request.getTeamLeaderId() != null && (team.getTeamLeader() == null || !request.getTeamLeaderId().equals(team.getTeamLeader().getId()))) {
             team.setTeamLeader(userRepository.findById(request.getTeamLeaderId()).orElse(null));
         }
-        
+
         return teamMapper.toDTO(teamRepository.save(team));
     }
 
@@ -61,6 +63,9 @@ public class TeamServiceImpl implements TeamService {
         }
         if (request.getTeamLeaderId() != null && (team.getTeamLeader() == null || !request.getTeamLeaderId().equals(team.getTeamLeader().getId()))) {
             team.setTeamLeader(userRepository.findById(request.getTeamLeaderId()).orElse(null));
+        }
+        if (request.getGroupId() != null && (team.getGroup() == null || !request.getGroupId().equals(team.getGroup().getId()))) {
+            team.setGroup(groupRepository.findById(request.getGroupId()).orElse(null));
         }
 
         return teamMapper.toDTO(teamRepository.save(team));
