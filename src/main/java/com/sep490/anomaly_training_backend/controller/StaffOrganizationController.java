@@ -78,7 +78,7 @@ public class StaffOrganizationController {
     }
 
     @GetMapping("/member/{teamId}")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @PreAuthorize("hasAuthority('team.manage')")
     @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByTeam(
             @Parameter(description = "ID của Team (Tổ)") @PathVariable Long teamId) {

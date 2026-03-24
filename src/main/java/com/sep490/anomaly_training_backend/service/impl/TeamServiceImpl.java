@@ -62,7 +62,6 @@ public class TeamServiceImpl implements TeamService {
 
         team.setGroup(null);
 
-        // 4. Lưu lại
         teamRepository.save(team);
     }
 

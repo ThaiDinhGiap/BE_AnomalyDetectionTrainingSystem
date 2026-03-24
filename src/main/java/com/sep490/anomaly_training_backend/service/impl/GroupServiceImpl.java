@@ -62,6 +62,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Transactional
     public void removeGroupFromSection(Long id) {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
