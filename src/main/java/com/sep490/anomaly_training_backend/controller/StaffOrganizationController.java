@@ -15,6 +15,7 @@ import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
 import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
 import com.sep490.anomaly_training_backend.service.GroupService;
 import com.sep490.anomaly_training_backend.service.SectionService;
@@ -28,6 +29,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,12 +79,12 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
 
-    @GetMapping("/member/{teamId}")
+    @GetMapping("/member")
     @PreAuthorize("hasAuthority('team.manage')")
     @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
-    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByTeam(
-            @Parameter(description = "ID của Team (Tổ)") @PathVariable Long teamId) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByTeam(teamId)));
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesUnderManagement(currentUser)));
     }
 
     @GetMapping("/users")

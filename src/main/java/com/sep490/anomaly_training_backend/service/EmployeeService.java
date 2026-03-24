@@ -4,6 +4,7 @@ import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.model.User;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface EmployeeService {
 
     List<EmployeeResponse> getAllEmployees();
 
-    List<EmployeeResponse> getEmployeesByTeam(Long teamId);
+    List<EmployeeResponse> getEmployeesUnderManagement(User currentUser);
 
     List<EmployeeNoAccountDTO> getEmployeesWithoutAccount();
 

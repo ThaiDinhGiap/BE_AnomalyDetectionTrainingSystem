@@ -23,4 +23,15 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByFinalInspectionId(Long finalInspectionId);
 
     Optional<Team> findByCode(String code);
+
+    @Query("SELECT t FROM Team t " +
+            "JOIN t.group g " +
+            "JOIN g.section s " +
+            "WHERE s.manager.id = :sectionManagerId AND t.deleteFlag = false")
+    List<Team> findAllBySectionManagerId(@Param("sectionManagerId") Long sectionManagerId);
+
+    @Query("SELECT t FROM Team t " +
+            "JOIN t.group g " +
+            "WHERE g.supervisor.id = :groupSupervisorId AND t.deleteFlag = false")
+    List<Team> findAllByGroupSupervisorId(@Param("groupSupervisorId") Long groupSupervisorId);
 }

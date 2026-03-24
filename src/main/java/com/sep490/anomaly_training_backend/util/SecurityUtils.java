@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.util;
 
+import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.User;
@@ -69,4 +70,9 @@ public class SecurityUtils {
         return authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals(permissionCode));
     }
+
+    public static boolean hasPermission(User user, String permission) {
+        return UserResponse.fromEntity(user).getPermissions().contains(permission);
+    }
+
 }

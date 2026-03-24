@@ -22,12 +22,19 @@ import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
+import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.sep490.anomaly_training_backend.util.SecurityUtils.hasPermission;
 import static java.util.stream.Collectors.toList;
 
 @Service
@@ -164,39 +171,63 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public List<EmployeeResponse> getEmployeesByTeam(Long teamId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+    public List<EmployeeResponse> getEmployeesUnderManagement(User currentUser) {
+        Set<Long> teamIds = new HashSet<>();
 
-        List<EmployeeResponse> results = employeeRepository.findByTeamsId(teamId).stream()
-                .filter(e -> !e.isDeleteFlag())
-                .map(employee -> {
-                    EmployeeResponse employeeResponse = employeeMapper.toDTO(employee);
-                    employeeResponse.setTeamName(team.getName());
-                    employeeResponse.setGroupName(team.getGroup() != null ? team.getGroup().getName() : "N/A");
-                    employeeResponse.setSectionName(team.getGroup() != null && team.getGroup().getSection() != null ? team.getGroup().getSection().getName() : "N/A");
-
-                    User user = userRepository.findByEmployeeCodeAndDeleteFlagFalse(employee.getEmployeeCode()).orElse(null);
-                    if (user != null) {
-                        employeeResponse.setRoles(user.getRoles().stream().map(Role::getDisplayName).toList());
-                    }
-                    return employeeResponse;
-                })
-                .toList();
-
-        for (EmployeeResponse employee : results) {
-            Integer totalTraining = 0;
-            Integer totalFail = 0;
-            List<TrainingResultDetail> resultEmployee = trainingResultDetailRepository.findAllByEmployeeIdAndDeleteFlagFalse(employee.getId());
-            for (TrainingResultDetail employeeDetail : resultEmployee) {
-                if (Boolean.FALSE.equals(employeeDetail.getIsPass())) {
-                    totalFail++;
-                }
-                totalTraining++;
+        if (currentUser != null) {
+            if (SecurityUtils.hasPermission(currentUser, "section.manage")) {
+                teamIds.addAll(teamRepository.findAllBySectionManagerId(currentUser.getId())
+                        .stream().map(Team::getId).toList());
             }
-            employee.setTotalTraining(totalTraining);
-            employee.setTotalFail(totalFail);
+            if (hasPermission(currentUser, "group.manage")) {
+                teamIds.addAll(teamRepository.findAllByGroupSupervisorId(currentUser.getId())
+                        .stream().map(Team::getId).toList());
+            }
+            if (hasPermission(currentUser, "team.manage")) {
+                teamIds.addAll(teamRepository.findAllByTeamLeaderId(currentUser.getId())
+                        .stream().map(Team::getId).toList());
+            }
         }
-        return results;
+
+        if (teamIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Employee> employees = employeeRepository.findAllByTeamIdIn(new ArrayList<>(teamIds));
+
+        return employees.stream()
+                .filter(e -> !e.isDeleteFlag())
+                .map(this::enrichEmployeeData)
+                .toList();
+    }
+
+    private EmployeeResponse enrichEmployeeData(Employee employee) {
+        EmployeeResponse dto = employeeMapper.toDTO(employee);
+
+        if (employee.getTeams() != null && !employee.getTeams().isEmpty()) {
+            String teamNames = employee.getTeams().stream()
+                    .map(Team::getName).collect(Collectors.joining(", "));
+            dto.setTeamName(teamNames);
+
+            Team firstTeam = employee.getTeams().get(0);
+            dto.setGroupName(firstTeam.getGroup() != null ? firstTeam.getGroup().getName() : "N/A");
+            dto.setSectionName(firstTeam.getGroup() != null && firstTeam.getGroup().getSection() != null
+                    ? firstTeam.getGroup().getSection().getName() : "N/A");
+        }
+
+        userRepository.findByEmployeeCodeAndDeleteFlagFalse(employee.getEmployeeCode())
+                .ifPresent(user -> dto.setRoles(user.getRoles().stream()
+                        .map(Role::getDisplayName).toList()));
+
+        List<TrainingResultDetail> results = trainingResultDetailRepository
+                .findAllByEmployeeIdAndDeleteFlagFalse(employee.getId());
+
+        int totalTraining = results.size();
+        long totalFail = results.stream().filter(r -> Boolean.FALSE.equals(r.getIsPass())).count();
+
+        dto.setTotalTraining(totalTraining);
+        dto.setTotalFail((int) totalFail);
+
+        return dto;
     }
 }
