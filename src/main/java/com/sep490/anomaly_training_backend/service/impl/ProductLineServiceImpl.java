@@ -182,7 +182,6 @@ public class ProductLineServiceImpl implements ProductLineService {
             return positionSuperVisor(user);
         }
         return positionManager(user);
-
     }
 
     private List<WorkingPosition> positionTeamLead(User user) {

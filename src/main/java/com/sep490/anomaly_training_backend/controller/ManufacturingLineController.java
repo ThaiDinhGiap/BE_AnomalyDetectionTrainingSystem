@@ -69,7 +69,6 @@ public class ManufacturingLineController {
     public ResponseEntity<ApiResponse<List<WorkingPosition>>> getWorkingPosition(@AuthenticationPrincipal User user) {
         List<WorkingPosition> result = productLineService.getWorkingPosition(user);
         return ResponseEntity.ok(ApiResponse.success(result));
-
     }
 
     @GetMapping("/product-lines-detail")

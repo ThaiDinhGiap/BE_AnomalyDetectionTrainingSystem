@@ -45,6 +45,9 @@ public class TeamServiceImpl implements TeamService {
         if (request.getTeamLeaderId() != null && (team.getTeamLeader() == null || !request.getTeamLeaderId().equals(team.getTeamLeader().getId()))) {
             team.setTeamLeader(userRepository.findById(request.getTeamLeaderId()).orElse(null));
         }
+        if (request.getGroupId() != null && (team.getGroup() == null || !request.getGroupId().equals(team.getGroup().getId()))) {
+            team.setGroup(groupRepository.findById(request.getGroupId()).orElse(null));
+        }
 
         return teamMapper.toDTO(teamRepository.save(team));
     }

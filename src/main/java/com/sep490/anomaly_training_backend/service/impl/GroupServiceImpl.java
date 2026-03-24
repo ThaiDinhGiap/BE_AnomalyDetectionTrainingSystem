@@ -50,6 +50,9 @@ public class GroupServiceImpl implements GroupService {
         if (request.getSupervisorId() != null && (group.getSupervisor() == null || !request.getSupervisorId().equals(group.getSupervisor().getId()))) {
             group.setSupervisor(userRepository.findById(request.getSectionId()).orElse(null));
         }
+        if (request.getSectionId() != null && (group.getSection() == null || !request.getSectionId().equals(group.getSection().getId()))) {
+            group.setSection(sectionRepository.findById(request.getSectionId()).orElse(null));
+        }
 
         return groupMapper.toDTO(groupRepository.save(group));
     }
