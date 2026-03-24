@@ -47,11 +47,15 @@ public class SectionServiceImpl implements SectionService {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        section.setName(request.getName());
-        section.setCode(request.getCode());
-        section.setManager(userRepository.findById(request.getManagerId()).orElse(null));
-
-        sectionRepository.save(section);
+        if (request.getName() != null && !request.getName().equals(section.getName())) {
+            section.setName(request.getName());
+        }
+        if (request.getCode() != null && !request.getCode().equals(section.getCode())) {
+            section.setCode(request.getCode());
+        }
+        if (request.getManagerId() != null && (section.getManager() == null || !request.getManagerId().equals(section.getManager().getId()))) {
+            section.setManager(userRepository.findById(request.getManagerId()).orElse(null));
+        }
 
         return sectionMapper.toDTO(sectionRepository.save(section));
     }

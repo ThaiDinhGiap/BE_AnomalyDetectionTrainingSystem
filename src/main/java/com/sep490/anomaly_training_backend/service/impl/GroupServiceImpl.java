@@ -47,12 +47,15 @@ public class GroupServiceImpl implements GroupService {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
-
-        group.setName(request.getName());
-        group.setCode(request.getCode());
-        group.setSupervisor(userRepository.findById(request.getSupervisorId()).orElse(null));
-
-        groupRepository.save(group);
+        if (request.getName() != null && !request.getName().equals(group.getName())) {
+            group.setName(request.getName());
+        }
+        if (request.getCode() != null && !request.getCode().equals(group.getCode())) {
+            group.setCode(request.getCode());
+        }
+        if (request.getSupervisorId() != null && (group.getSupervisor() == null || !request.getSupervisorId().equals(group.getSupervisor().getId()))) {
+            group.setSupervisor(userRepository.findById(request.getSectionId()).orElse(null));
+        }
 
         return groupMapper.toDTO(groupRepository.save(group));
     }
