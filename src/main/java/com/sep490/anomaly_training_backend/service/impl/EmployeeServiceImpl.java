@@ -86,15 +86,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional
     public void removeEmployeesFromTeam(Long teamId, List<Long> employeeId) {
-        List<Employee> employees = employeeRepository.findAllById(employeeId);
+        if (employeeId == null || employeeId.isEmpty()) return;
 
-        for (Employee employee : employees) {
-            if (employee.getTeams() != null && !employee.getTeams().isEmpty()) {
-                employee.getTeams().removeIf(team -> team.getId().equals(teamId));
-                employeeRepository.save(employee);
-            }
+        if (!teamRepository.existsById(teamId)) {
+            throw new AppException(ErrorCode.TEAM_NOT_FOUND);
         }
+
+        employeeRepository.removeEmployeesFromTeam(teamId, employeeId);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         processResponse.setEmployeeSkills(employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(processId).stream()
                 .map(employeeSkillMapper::toDto).toList());
-        
+
         return processResponse;
     }
 

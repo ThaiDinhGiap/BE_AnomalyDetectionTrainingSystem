@@ -3,9 +3,11 @@ package com.sep490.anomaly_training_backend.repository;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,4 +41,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Employee> findAllEmployeesWithoutAccount();
 
     List<Employee> findByDeleteFlagFalse();
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM employee_teams WHERE team_id = :teamId AND employee_id IN :employeeIds", nativeQuery = true)
+    void removeEmployeesFromTeam(@Param("teamId") Long teamId, @Param("employeeIds") List<Long> employeeIds);
 }
