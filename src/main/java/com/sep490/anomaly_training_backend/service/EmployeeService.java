@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.service;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 
 import java.util.List;
 
@@ -22,4 +23,6 @@ public interface EmployeeService {
     List<EmployeeNoAccountDTO> getEmployeesWithoutAccount();
 
     void removeEmployeesFromTeam(Long teamId, List<Long> employeeId);
+
+    ProcessResponse getEmployeesByProcess(Long processId);
 }

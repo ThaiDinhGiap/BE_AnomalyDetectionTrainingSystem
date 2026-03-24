@@ -3,14 +3,19 @@ package com.sep490.anomaly_training_backend.service.impl;
 import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
+import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
+import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
@@ -19,7 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +35,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
     private final TeamRepository teamRepository;
+    private final ProcessRepository processRepository;
     private final TeamMapper teamMapper;
     private final TrainingResultDetailRepository trainingResultDetailRepository;
+    private final EmployeeSkillRepository employeeSkillRepository;
+
+    private final EmployeeSkillMapper employeeSkillMapper;
+    private final ProcessMapper processMapper;
 
     @Override
     @Transactional
@@ -71,7 +82,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .teamName(e.getTeams() != null ? e.getTeams().get(0).getName() : "N/A")
                         .status(e.getStatus().name())
                         .build())
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override
@@ -84,6 +95,17 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employeeRepository.save(employee);
             }
         }
+    }
+
+    @Override
+    public ProcessResponse getEmployeesByProcess(Long processId) {
+        ProcessResponse processResponse = processRepository.findById(processId).map(processMapper::toDTO)
+                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+
+        processResponse.setEmployeeSkills(employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(processId).stream()
+                .map(employeeSkillMapper::toDto).toList());
+        
+        return processResponse;
     }
 
     @Override
@@ -135,7 +157,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeeRepository.findAll().stream()
                 .filter(e -> !e.isDeleteFlag())
                 .map(employeeMapper::toDTO)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     @Override

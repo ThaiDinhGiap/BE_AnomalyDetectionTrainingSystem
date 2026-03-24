@@ -23,6 +23,8 @@ public class ProcessResponse {
 
     private LocalDateTime createdAt;
 
+    private List<EmployeeSkillResponse> employeeSkills;
+
     public ProcessResponse() {
     }
 
@@ -30,13 +32,5 @@ public class ProcessResponse {
         this.id = id;
         this.code = code;
         this.name = name;
-    }
-    private List<EmployeeSkillResponse> skillsProcess;
-
-    public List<EmployeeSkillResponse> getSkillsProcess() {
-        return skillsProcess;
-    }
-    public void setSkillsProcess(List<EmployeeSkillResponse> skillsProcess) {
-        this.skillsProcess = skillsProcess;
     }
 }

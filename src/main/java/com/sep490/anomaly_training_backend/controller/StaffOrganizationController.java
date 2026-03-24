@@ -10,6 +10,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
 import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
@@ -113,6 +114,14 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    @GetMapping("/process/{processId}/employeeSkills")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Employees with skills in process", description = "Used to get list employee skills")
+    public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeSkillsByProcess(
+            @PathVariable Long processId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByProcess(processId)));
+    }
 
     // ====================== CREATE ======================
 
