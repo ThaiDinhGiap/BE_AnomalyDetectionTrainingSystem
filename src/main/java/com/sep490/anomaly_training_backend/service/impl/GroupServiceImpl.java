@@ -62,6 +62,15 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public void removeGroupFromSection(Long id) {
+        Group group = groupRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
+
+        group.setSection(null);
+        groupRepository.save(group);
+    }
+
+    @Override
     public GroupResponse getGroupById(Long id) {
         return groupRepository.findById(id)
                 .filter(g -> !g.isDeleteFlag())

@@ -55,6 +55,18 @@ public class TeamServiceImpl implements TeamService {
     }
 
     @Override
+    @Transactional
+    public void deleteTeamFromGroup(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+
+        team.setGroup(null);
+
+        // 4. Lưu lại
+        teamRepository.save(team);
+    }
+
+    @Override
     public TeamResponse getTeamById(Long id) {
         return teamRepository.findById(id)
                 .filter(t -> !t.isDeleteFlag())

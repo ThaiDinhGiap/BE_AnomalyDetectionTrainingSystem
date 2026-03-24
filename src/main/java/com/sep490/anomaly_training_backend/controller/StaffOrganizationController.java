@@ -228,12 +228,30 @@ public class StaffOrganizationController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/remove-group-from-section/{groupId}")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "delete(Group)")
+    public ResponseEntity<Void> removeGroupFromSection(
+            @Parameter(description = "ID của Group") @PathVariable Long groupId) {
+        groupService.deleteGroup(groupId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/teams/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "delete (Team)")
     public ResponseEntity<Void> deleteTeam(
             @Parameter(description = "ID của Team") @PathVariable Long id) {
         teamService.deleteTeam(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/remove-team-from-group/{teamId}")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "delete (Team)")
+    public ResponseEntity<Void> removeTeamFromGroup(
+            @Parameter(description = "ID của Team") @PathVariable Long teamId) {
+        teamService.deleteTeamFromGroup(teamId);
         return ResponseEntity.noContent().build();
     }
 
