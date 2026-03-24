@@ -47,4 +47,10 @@ public class ApiResponse<T> {
                 .errorCode(errorCode)
                 .build();
     }
+
+    public static ApiResponse<Void> success() {
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .build();
+    }
 }

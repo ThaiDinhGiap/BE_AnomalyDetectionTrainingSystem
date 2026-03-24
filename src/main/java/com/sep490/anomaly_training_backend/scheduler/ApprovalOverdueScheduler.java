@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.scheduler;
 
 import com.sep490.anomaly_training_backend.dto.notification.NotificationRequest;
+import com.sep490.anomaly_training_backend.dto.request.SendInAppNotificationRequest;
+import com.sep490.anomaly_training_backend.enums.InAppNotificationType;
 import com.sep490.anomaly_training_backend.enums.NotificationChannel;
 import com.sep490.anomaly_training_backend.enums.NotificationType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
@@ -14,6 +16,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.service.InAppNotificationService;
 import com.sep490.anomaly_training_backend.service.notification.NotificationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -42,188 +45,148 @@ public class ApprovalOverdueScheduler {
     private final TrainingSampleProposalRepository trainingSampleProposalRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final InAppNotificationService inAppService;
 
     @Value("${app.scheduler.approval-overdue-hours:24}")
     private int overdueHours;
 
-    /**
-     * Use Case 5: Nhắc nhở phê duyệt tồn đọng
-     * Chạy lúc 8:00 và 14:00 hàng ngày
-     */
     @Scheduled(cron = "${app.scheduler.approval-overdue: 0 0 8,14 * * ?}")
     @Transactional(readOnly = true)
     public void checkAndSendOverdueApprovalReminders() {
         log.info("=== Starting Approval Overdue Check Job ===");
-
-        LocalDateTime overdueThreshold = LocalDateTime.now().minusHours(overdueHours);
+        LocalDateTime threshold = LocalDateTime.now().minusHours(overdueHours);
 
         try {
-            checkSupervisorOverdueApprovals(overdueThreshold);
-
-            checkManagerOverdueApprovals(overdueThreshold);
-
+            checkSupervisorOverdueApprovals(threshold);
+            checkManagerOverdueApprovals(threshold);
             log.info("=== Completed Approval Overdue Check Job ===");
-
         } catch (Exception e) {
             log.error("Error in Approval Overdue Check Job", e);
         }
     }
 
     private void checkSupervisorOverdueApprovals(LocalDateTime threshold) {
-        log.info("Checking Supervisor overdue approvals...");
+        Map<Long, PendingApprovalSummary> pendingBySv = new HashMap<>();
 
-        Map<Long, PendingApprovalSummary> supervisorPendings = new HashMap<>();
+        trainingPlanRepository
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_SV, threshold)
+                .forEach(plan -> pendingBySv
+                        .computeIfAbsent(plan.getTeam().getGroup().getSupervisor().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addTrainingPlan(plan));
 
-        List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_SV, threshold);
+        defectProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
+                .forEach(r -> pendingBySv
+                        .computeIfAbsent(r.getProductLine().getGroup().getSupervisor().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addDefectProposal(r));
 
-        for (TrainingPlan plan : pendingPlans) {
-            Long svId = plan.getTeam().getGroup().getSupervisor().getId();
-            supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
-                    .addTrainingPlan(plan);
-        }
+        trainingSampleProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
+                .forEach(r -> pendingBySv
+                        .computeIfAbsent(r.getProductLine().getGroup().getSupervisor().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addTrainingSampleProposal(r));
 
-        // Defect Proposals waiting for SV
-        List<DefectProposal> pendingDefectProposals = defectProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
+        trainingResultRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
+                .forEach(r -> pendingBySv
+                        .computeIfAbsent(r.getTeam().getGroup().getSupervisor().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addTrainingResult(r));
 
-        for (DefectProposal report : pendingDefectProposals) {
-            if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
-                Long svId = report.getProductLine().getGroup().getSupervisor().getId();
-                supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
-                        .addDefectProposal(report);
-            }
-        }
-
-        // Training Topic Reports waiting for SV
-        List<TrainingSampleProposal> pendingTrainingSampleProposals = trainingSampleProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
-
-        for (TrainingSampleProposal report : pendingTrainingSampleProposals) {
-            if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
-                Long svId = report.getProductLine().getGroup().getSupervisor().getId();
-                supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
-                        .addTrainingSampleProposal(report);
-            }
-        }
-
-        // List Training Results waiting for SV
-        List<TrainingResult> pendingTrainingResults = trainingResultRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV);
-
-        for (TrainingResult report : pendingTrainingResults) {
-            if (report.getUpdatedAt() != null && report.getUpdatedAt().isBefore(threshold)) {
-                Long svId = report.getTeam().getGroup().getSupervisor().getId();
-                supervisorPendings.computeIfAbsent(svId, k -> new PendingApprovalSummary())
-                        .addTrainingResult(report);
-            }
-        }
-
-        // Send notifications to supervisors
-        for (Map.Entry<Long, PendingApprovalSummary> entry : supervisorPendings.entrySet()) {
-            sendOverdueNotificationToUser(entry.getKey(), entry.getValue(), "Supervisor");
-        }
+        pendingBySv.forEach((svId, summary) ->
+                notify(svId, summary, NotificationType.APPROVAL_OVERDUE_SV, "Supervisor"));
     }
 
     private void checkManagerOverdueApprovals(LocalDateTime threshold) {
-        log.info("Checking Manager overdue approvals...");
+        Map<Long, PendingApprovalSummary> pendingByManager = new HashMap<>();
 
-        Map<Long, PendingApprovalSummary> managerPendings = new HashMap<>();
+        trainingPlanRepository
+                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER, threshold)
+                .forEach(plan -> pendingByManager
+                        .computeIfAbsent(plan.getTeam().getGroup().getSection().getManager().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addTrainingPlan(plan));
 
-        // Training Plans waiting for Manager
-        List<TrainingPlan> pendingPlans = trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER, threshold);
+        defectProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .filter(p -> p.getUpdatedAt() != null && p.getUpdatedAt().isBefore(threshold))
+                .forEach(p -> pendingByManager
+                        .computeIfAbsent(p.getProductLine().getGroup().getSection().getManager().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addDefectProposal(p));
 
-        for (TrainingPlan plan : pendingPlans) {
-            Long managerId = plan.getTeam().getGroup().getSection().getManager().getId();
-            managerPendings.computeIfAbsent(managerId, k -> new PendingApprovalSummary())
-                    .addTrainingPlan(plan);
-        }
+        trainingSampleProposalRepository
+                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .filter(p -> p.getUpdatedAt() != null && p.getUpdatedAt().isBefore(threshold))
+                .forEach(p -> pendingByManager
+                        .computeIfAbsent(p.getProductLine().getGroup().getSection().getManager().getId(),
+                                k -> new PendingApprovalSummary())
+                        .addTrainingSampleProposal(p));
 
-        // Defect Proposals waiting for Manager
-        List<DefectProposal> pendingDefectProposals = defectProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER);
-
-        for (DefectProposal proposal : pendingDefectProposals) {
-            if (proposal.getUpdatedAt() != null && proposal.getUpdatedAt().isBefore(threshold)) {
-                Long managerId = proposal.getProductLine().getGroup().getSection().getManager().getId();
-                managerPendings.computeIfAbsent(managerId, k -> new PendingApprovalSummary())
-                        .addDefectProposal(proposal);
-            }
-        }
-
-        // Training Sample Proposals waiting for Manager
-        List<TrainingSampleProposal> pendingTrainingSampleProposals = trainingSampleProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER);
-
-        for (TrainingSampleProposal proposal : pendingTrainingSampleProposals) {
-            if (proposal.getUpdatedAt() != null && proposal.getUpdatedAt().isBefore(threshold)) {
-                Long managerId = proposal.getProductLine().getGroup().getSection().getManager().getId();
-                managerPendings.computeIfAbsent(managerId, k -> new PendingApprovalSummary())
-                        .addTrainingSampleProposal(proposal);
-            }
-        }
-
-        // Send notifications to managers
-        for (Map.Entry<Long, PendingApprovalSummary> entry : managerPendings.entrySet()) {
-            sendOverdueNotificationToUser(entry.getKey(), entry.getValue(), "Manager");
-        }
+        pendingByManager.forEach((managerId, summary) ->
+                notify(managerId, summary, NotificationType.APPROVAL_OVERDUE_MANAGER, "Manager"));
     }
 
-    private void sendOverdueNotificationToUser(Long userId, PendingApprovalSummary summary, String role) {
+    private void notify(Long userId, PendingApprovalSummary summary,
+                        NotificationType emailType, String role) {
+        if (summary.getTotalCount() == 0) return;
+
         User user = userRepository.findById(userId).orElse(null);
-        if (user == null || user.getEmail() == null) {
-            log.warn("Cannot send notification to user {}: user not found or no email", userId);
+        if (user == null) {
+            log.warn("[ApprovalOverdue] User {} not found", userId);
             return;
         }
 
-        if (summary.getTotalCount() == 0) {
-            return;
+        // ── Email (async, qua RabbitMQ) ──
+        if (user.getEmail() != null) {
+            notificationService.sendNotification(
+                    NotificationRequest.builder()
+                            .recipientUserId(userId)
+                            .recipientEmail(user.getEmail())
+                            .recipientName(user.getFullName())
+                            .type(emailType)
+                            .channel(NotificationChannel.EMAIL)
+                            .build()
+            );
         }
 
-        String subject = String.format("[Nhắc nhở] Bạn có %d phê duyệt đang chờ xử lý", summary.getTotalCount());
-        String body = buildNotificationBody(summary, role);
+        // ── In-App ──
+        inAppService.send(
+                SendInAppNotificationRequest.builder()
+                        .recipientId(userId)
+                        .title("Phê duyệt đang chờ xử lý")
+                        .message(buildInAppMessage(summary, role))
+                        .type(InAppNotificationType.ACTION_REQUIRED)
+                        .actionUrl("/approvals?filter=overdue")
+                        .build()
+        );
 
-        NotificationType notificationType = "Supervisor".equals(role)
-                ? NotificationType.APPROVAL_OVERDUE_SV
-                : NotificationType.APPROVAL_OVERDUE_MANAGER;
-
-        NotificationRequest request = NotificationRequest.builder()
-                .recipientUserId(userId)
-                .recipientEmail(user.getEmail())
-                .recipientName(user.getFullName())
-                .type(notificationType)
-                .channel(NotificationChannel.EMAIL)
-                .build();
-
-        notificationService.sendNotification(request);
-        log.info("Sent overdue approval reminder to {} ({}): {} items", user.getFullName(), role, summary.getTotalCount());
+        log.info("[ApprovalOverdue] Notified {} {} ({}) — {} items",
+                role, user.getFullName(), userId, summary.getTotalCount());
     }
 
-    private String buildNotificationBody(PendingApprovalSummary summary, String role) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Kính gửi ").append(role).append(",\n\n");
-        sb.append("Bạn có các phê duyệt đang chờ xử lý:\n\n");
+    private String buildInAppMessage(PendingApprovalSummary summary, String role) {
+        List<String> parts = new ArrayList<>();
 
-        if (!summary.getTrainingPlans().isEmpty()) {
-            sb.append("- Kế hoạch huấn luyện: ").append(summary.getTrainingPlans().size()).append(" kế hoạch\n");
-        }
-        if (!summary.getTrainingResults().isEmpty()) {
-            sb.append("- Kết quả huấn luyện: ").append(summary.getTrainingResults().size()).append(" kết quả\n");
-        }
-        if (!summary.getDefectProposals().isEmpty()) {
-            sb.append("- Báo cáo lỗi: ").append(summary.getDefectProposals().size()).append(" báo cáo\n");
-        }
-        if (!summary.getTrainingSampleProposals().isEmpty()) {
-            sb.append("- Mẫu huấn luyện: ").append(summary.getTrainingSampleProposals().size()).append(" báo cáo\n");
-        }
+        if (!summary.getTrainingPlans().isEmpty())
+            parts.add(summary.getTrainingPlans().size() + " kế hoạch huấn luyện");
+        if (!summary.getTrainingResults().isEmpty())
+            parts.add(summary.getTrainingResults().size() + " kết quả huấn luyện");
+        if (!summary.getDefectProposals().isEmpty())
+            parts.add(summary.getDefectProposals().size() + " đề xuất lỗi");
+        if (!summary.getTrainingSampleProposals().isEmpty())
+            parts.add(summary.getTrainingSampleProposals().size() + " đề xuất mẫu");
 
-        sb.append("\nVui lòng đăng nhập hệ thống để xử lý.\n");
-        sb.append("\nTrân trọng,\nHệ thống Anomaly Training");
-
-        return sb.toString();
+        return String.format("Bạn có %d mục chờ phê duyệt quá %d giờ: %s.",
+                summary.getTotalCount(), overdueHours, String.join(", ", parts));
     }
-
+    
     @Data
     private static class PendingApprovalSummary {
         private final List<TrainingPlan> trainingPlans = new ArrayList<>();
@@ -231,24 +194,25 @@ public class ApprovalOverdueScheduler {
         private final List<DefectProposal> defectProposals = new ArrayList<>();
         private final List<TrainingSampleProposal> trainingSampleProposals = new ArrayList<>();
 
-        public void addTrainingPlan(TrainingPlan plan) {
-            trainingPlans.add(plan);
+        void addTrainingPlan(TrainingPlan p) {
+            trainingPlans.add(p);
         }
 
-        public void addTrainingResult(TrainingResult result) {
-            trainingResults.add(result);
+        void addTrainingResult(TrainingResult r) {
+            trainingResults.add(r);
         }
 
-        public void addDefectProposal(DefectProposal proposal) {
-            defectProposals.add(proposal);
+        void addDefectProposal(DefectProposal p) {
+            defectProposals.add(p);
         }
 
-        public void addTrainingSampleProposal(TrainingSampleProposal proposal) {
-            trainingSampleProposals.add(proposal);
+        void addTrainingSampleProposal(TrainingSampleProposal p) {
+            trainingSampleProposals.add(p);
         }
 
-        public int getTotalCount() {
-            return trainingPlans.size() + trainingResults.size() + defectProposals.size() + trainingSampleProposals.size();
+        int getTotalCount() {
+            return trainingPlans.size() + trainingResults.size()
+                    + defectProposals.size() + trainingSampleProposals.size();
         }
     }
 }

@@ -117,6 +117,8 @@ cors:
   max-age: 3600
 
 app:
+  websockert:
+    enabled: ${WEBSOCKET_ENABLED:true}
   rabbitmq:
     enabled: ${RABBITMQ_ENABLED:true}
   mail:
