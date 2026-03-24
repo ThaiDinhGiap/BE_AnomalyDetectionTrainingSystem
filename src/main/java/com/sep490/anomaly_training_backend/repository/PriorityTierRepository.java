@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface PriorityTierRepository extends JpaRepository<PriorityTier, Long> {
-
     List<PriorityTier> findByPolicyIdAndDeleteFlagFalseOrderByTierOrder(Long policyId);
+
+    void deleteByPolicyId(Long policyId);
 }

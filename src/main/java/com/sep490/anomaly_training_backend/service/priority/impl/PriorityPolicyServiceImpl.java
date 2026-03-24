@@ -20,6 +20,7 @@ import com.sep490.anomaly_training_backend.model.PriorityTier;
 import com.sep490.anomaly_training_backend.model.PriorityTierFilter;
 import com.sep490.anomaly_training_backend.repository.ComputedMetricRepository;
 import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
+import com.sep490.anomaly_training_backend.repository.PriorityTierRepository;
 import com.sep490.anomaly_training_backend.service.priority.PriorityPolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
     private final PriorityPolicyRepository policyRepository;
     private final ComputedMetricRepository computedMetricRepository;
     private final PriorityPolicyMapper mapper;
+    private final PriorityTierRepository priorityTierRepository;
 
     @Override
     @Transactional
@@ -80,6 +82,9 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
         policy.setEffectiveDate(request.getEffectiveDate());
         policy.setExpirationDate(request.getExpirationDate());
         policy.setDescription(request.getDescription());
+
+        priorityTierRepository.deleteByPolicyId(id);
+        priorityTierRepository.flush();
 
         policy.getTiers().clear();
         buildTiers(policy, request.getTiers(), entityType);
