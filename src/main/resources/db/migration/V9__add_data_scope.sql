@@ -8,7 +8,7 @@ VALUES ('training_plan.view.own_group',
         3, 'view', 22, TRUE, 'system'),
 
        ('training_plan.view.cross_group',
-        'Xem kế hoạch đào tạo nhiều group (Final Inspection)',
+        'Xem kế hoạch đào tạo nhiều group',
         3, 'view', 23, TRUE, 'system');
 
 

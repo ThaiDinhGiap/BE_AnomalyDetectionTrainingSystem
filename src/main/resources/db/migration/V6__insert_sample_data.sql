@@ -132,7 +132,7 @@ VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề 
        (4, 'training_result', 'Kết quả huấn luyện', 'Quản lý kết quả đào tạo', 4, 'system'),
        (5, 'employee', 'Nhân viên', 'Quản lý thông tin nhân viên', 5, 'system'),
        (6, 'user', 'Tài khoản người dùng', 'Quản lý tài khoản hệ thống', 6, 'system'),
-       (7, 'role', 'Vai trò & Phân quyền', 'Quản lý vai trò và phân quyền', 7, 'system'),
+       (7, 'role', 'Chức vụ & Quyền hạn', 'Quản lý vai trò và phân quyền', 7, 'system'),
        (9, 'scoring', 'Chấm điểm ưu tiên', 'Quản lý chính sách chấm điểm', 9, 'system'),
        (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard theo từng cấp', 10, 'system'),
        (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lý cấu trúc nhân sự công ty', 12, 'system'),
@@ -213,9 +213,9 @@ VALUES
 
 -- ── role module (7) ─────────────────────────────────────────────────────────
 -- PermissionController: GET /modules
-(25, 'role.view', 'Xem vai trò & phân quyền', 7, 'view', 1, TRUE, 'system'),
+(25, 'role.view', 'Xem Chức vụ & Quyền hạn', 7, 'view', 1, TRUE, 'system'),
 -- RoleController: CRUD roles, assign permissions
-(26, 'role.manage', 'Quản lý vai trò & phân quyền', 7, 'manage', 2, TRUE, 'system'),
+(26, 'role.manage', 'Quản lý Chức vụ & Quyền hạn', 7, 'manage', 2, TRUE, 'system'),
 
 -- ── scoring module (9) ──────────────────────────────────────────────────────
 -- PriorityPolicyController: GET /{id} GET / GET /metrics
@@ -225,11 +225,11 @@ VALUES
 
 -- ── dashboard module (10) ───────────────────────────────────────────────────
 -- DashboardController: /kpi /rejected-reports /training-tasks /heatmap /execution /process-flow /skill-certificates /defect-*  /sample-*
-(29, 'dashboard.team', 'Xem dashboard cấp tổ (Team Leader)', 10, 'view', 1, TRUE, 'system'),
+(29, 'dashboard.team', 'Xem dashboard cấp tổ', 10, 'view', 1, TRUE, 'system'),
 -- DashboardController: /sv/*
-(30, 'dashboard.group', 'Xem dashboard cấp dây chuyền (SV)', 10, 'view', 2, TRUE, 'system'),
+(30, 'dashboard.group', 'Xem dashboard cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
 -- DashboardController: /mng/*
-(31, 'dashboard.section', 'Xem dashboard cấp xưởng (Manager)', 10, 'view', 3, TRUE, 'system'),
+(31, 'dashboard.section', 'Xem dashboard cấp xưởng', 10, 'view', 3, TRUE, 'system'),
 
 -- ── staff_organization module (12) ──────────────────────────────────────────
 -- StaffOrganizationController: GET sections groups teams employees users
