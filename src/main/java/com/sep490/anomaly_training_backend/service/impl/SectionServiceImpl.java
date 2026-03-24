@@ -33,7 +33,7 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional
     public SectionResponse createSection(SectionRequest request) {
-        if (sectionRepository.existsByName(request.getName())) {
+        if (sectionRepository.existByCode(request.getCode())) {
             throw new AppException(ErrorCode.SECTION_NAME_ALREADY_EXISTS);
         }
 

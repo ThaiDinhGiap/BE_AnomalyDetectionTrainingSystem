@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface SectionRepository extends JpaRepository<Section, Long> {
     boolean existsByName(String name);
 
+    boolean existByCode(String code);
+
     List<Section> findByManagerId(Long managerId);
 
     Optional<Section> findByCode(String code);

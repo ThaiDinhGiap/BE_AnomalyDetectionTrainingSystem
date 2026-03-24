@@ -134,7 +134,7 @@ VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề 
        (6, 'user', 'Tài khoản người dùng', 'Quản lý tài khoản hệ thống', 6, 'system'),
        (7, 'role', 'Chức vụ & Quyền hạn', 'Quản lý vai trò và phân quyền', 7, 'system'),
        (9, 'scoring', 'Chấm điểm ưu tiên', 'Quản lý chính sách chấm điểm', 9, 'system'),
-       (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard theo từng cấp', 10, 'system'),
+       (10, 'manage', 'Phạm vi quản lý', 'Xem dashboard theo từng cấp', 10, 'system'),
        (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lý cấu trúc nhân sự công ty', 12, 'system'),
        (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lý cấu trúc dây chuyền', 13, 'system');
 
@@ -225,11 +225,11 @@ VALUES
 
 -- ── dashboard module (10) ───────────────────────────────────────────────────
 -- DashboardController: /kpi /rejected-reports /training-tasks /heatmap /execution /process-flow /skill-certificates /defect-*  /sample-*
-(29, 'dashboard.team', 'Xem dashboard cấp tổ', 10, 'view', 1, TRUE, 'system'),
+(29, 'team.manage', 'Xem dashboard cấp tổ', 10, 'view', 1, TRUE, 'system'),
 -- DashboardController: /sv/*
-(30, 'dashboard.group', 'Xem dashboard cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
+(30, 'group.manage', 'Xem dashboard cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
 -- DashboardController: /mng/*
-(31, 'dashboard.section', 'Xem dashboard cấp xưởng', 10, 'view', 3, TRUE, 'system'),
+(31, 'section.manage', 'Xem dashboard cấp xưởng', 10, 'view', 3, TRUE, 'system'),
 
 -- ── staff_organization module (12) ──────────────────────────────────────────
 -- StaffOrganizationController: GET sections groups teams employees users
