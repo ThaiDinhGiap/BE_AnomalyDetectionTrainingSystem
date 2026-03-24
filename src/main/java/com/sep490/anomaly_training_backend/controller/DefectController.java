@@ -24,9 +24,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -128,7 +128,7 @@ public class DefectController {
 
     @Operation(summary = "Create new defect proposal")
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAuthority('defect_proposal.create')")
+    @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(
             @ModelAttribute DefectProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
@@ -137,14 +137,14 @@ public class DefectController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('defect_proposal.delete')")
+    @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id) {
         defectProposalService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+    @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
             @ModelAttribute DefectProposalRequest request, @AuthenticationPrincipal User currentUser) throws BadRequestException {
@@ -154,7 +154,7 @@ public class DefectController {
 
     @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('defect_proposal.edit')")
+    @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -210,23 +210,23 @@ public class DefectController {
 
     @Operation(summary = "Import data (Defect Banking)")
     @PostMapping("/import")
-    @PreAuthorize("hasAuthority('defect.import')")
+    @PreAuthorize("hasAuthority('defect.manage')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> importDefect(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<DefectResponse> data = defectService.importDefect(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     @Operation(summary = "Export data (Defect Banking)")
-        @PostMapping("/export/{productLineId}")
-        @PreAuthorize("hasAuthority('defect.import')")
-        public ResponseEntity<byte[]> exportDefect(@PathVariable Long productLineId) throws BadRequestException {
-            byte[] data = defectService.exportDefect(productLineId);
-            return ResponseEntity.ok(data);
-        }
+    @PostMapping("/export/{productLineId}")
+    @PreAuthorize("hasAuthority('defect.manage')")
+    public ResponseEntity<byte[]> exportDefect(@PathVariable Long productLineId) throws BadRequestException {
+        byte[] data = defectService.exportDefect(productLineId);
+        return ResponseEntity.ok(data);
+    }
 
     @Operation(summary = "Submit defect proposal for approval", description = "Change defect proposal status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -235,20 +235,9 @@ public class DefectController {
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
 
-    @Operation(summary = "Submit defect proposal without save to draft", description = "Change defect proposal status from DRAFT to SUBMITTED.")
-    @PostMapping("/direct-submit")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
-    public ResponseEntity<String> directSubmission(
-            @AuthenticationPrincipal User currentUser,
-            @RequestBody DefectProposalRequest reportRequest,
-            HttpServletRequest request) {
-        defectProposalService.sendSubmission(reportRequest, currentUser, request);
-        return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
-    }
-
     @Operation(summary = "Import Defect template")
     @GetMapping("/download-template")
-    @PreAuthorize("hasAuthority('defect.import')")
+    @PreAuthorize("hasAuthority('defect.manage')")
     public ResponseEntity<Resource> downloadTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Defect_guideline.xlsx");
 
@@ -268,7 +257,7 @@ public class DefectController {
 
     @Operation(summary = "Get history import Defect")
     @GetMapping("/import-history")
-    @PreAuthorize("hasAuthority('defect.import')")
+    @PreAuthorize("hasAuthority('defect.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyDefectImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "DEFECT_IMPORT");
         return ResponseEntity.ok(ApiResponse.success(responses));

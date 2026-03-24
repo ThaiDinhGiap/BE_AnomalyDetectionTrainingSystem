@@ -27,7 +27,7 @@ public class ActionItemsController {
 
     @Operation(summary = "Get pending signatures for Team Lead")
     @GetMapping("/pending-signatures")
-    @PreAuthorize("hasAuthority('action_item.view')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<PendingSignatureResponse>> getPendingSignatures(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getPendingSignatures(lineId));
@@ -35,7 +35,7 @@ public class ActionItemsController {
 
     @Operation(summary = "Get failed trainings for Team Lead")
     @GetMapping("/failed-trainings")
-    @PreAuthorize("hasAuthority('action_item.view')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<FailedTrainingResponse>> getFailedTrainings(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getFailedTrainings(lineId));
@@ -43,7 +43,7 @@ public class ActionItemsController {
 
     @Operation(summary = "Get expiring skills for Team Lead")
     @GetMapping("/expiring-skills")
-    @PreAuthorize("hasAuthority('action_item.view')")
+    @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<ExpiringSkillResponse>> getExpiringSkills(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getExpiringSkills(lineId));

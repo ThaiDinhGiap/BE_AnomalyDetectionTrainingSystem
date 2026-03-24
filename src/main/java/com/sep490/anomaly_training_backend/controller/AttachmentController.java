@@ -6,7 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,7 +25,7 @@ public class AttachmentController {
     private final AttachmentService attachmentService;
 
     @PostMapping("/upload")
-    @PreAuthorize("hasAuthority('attachment.create')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Attachment> uploadAttachment(
             @RequestParam("file") MultipartFile file,
             @RequestParam("entityType") String entityType,
@@ -34,7 +40,7 @@ public class AttachmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('attachment.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Attachment>> getAttachments(
             @RequestParam("entityType") String entityType,
             @RequestParam("entityId") Long entityId) {
@@ -43,14 +49,14 @@ public class AttachmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('attachment.delete')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteAttachment(@PathVariable("id") Long id) {
         attachmentService.deleteAttachment(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/uploads")
-    @PreAuthorize("hasAuthority('attachment.create')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Attachment>> uploadAttachments(
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("entityType") String entityType,

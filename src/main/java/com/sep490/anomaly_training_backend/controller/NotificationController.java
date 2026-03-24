@@ -31,7 +31,7 @@ public class NotificationController {
                     Chỉ gửi được khi tài liệu đang ở trạng thái WAITING_SV hoặc WAITING_MANAGER.
                     """
     )
-    @PreAuthorize("hasAuthority('approval.nudge')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> nudgeApproval(
             @Parameter(description = "Loại tài liệu cần nhắc duyệt")
             @PathVariable ApprovalEntityType entityType,

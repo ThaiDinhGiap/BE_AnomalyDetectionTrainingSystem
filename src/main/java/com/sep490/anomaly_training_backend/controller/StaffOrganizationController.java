@@ -1,8 +1,23 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.*;
-import com.sep490.anomaly_training_backend.dto.response.*;
-import com.sep490.anomaly_training_backend.service.*;
+import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
+import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
+import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
+import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
+import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.service.EmployeeService;
+import com.sep490.anomaly_training_backend.service.GroupService;
+import com.sep490.anomaly_training_backend.service.SectionService;
+import com.sep490.anomaly_training_backend.service.TeamService;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +27,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -82,6 +104,7 @@ public class StaffOrganizationController {
     public ResponseEntity<ApiResponse<List<EmployeeNoAccountDTO>>> getEmployeesWithoutAccount() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
     }
+
     @GetMapping("/product-line/team-lead/{productLineId}")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
@@ -91,32 +114,31 @@ public class StaffOrganizationController {
     }
 
 
-
     // ====================== CREATE ======================
 
     @PostMapping("/sections")
-    @PreAuthorize("hasAuthority('staff_organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Section/Department")
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(sectionService.createSection(request)));
     }
 
     @PostMapping("/groups")
-    @PreAuthorize("hasAuthority('staff_organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Group")
     public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
     }
 
     @PostMapping("/teams")
-    @PreAuthorize("hasAuthority('staff_organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Team")
     public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
         return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
     }
 
     @PostMapping("/employees")
-    @PreAuthorize("hasAuthority('staff_organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Employee", description = "Must fill in all required fields correctly")
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody EmployeeRequest request) {
@@ -124,7 +146,7 @@ public class StaffOrganizationController {
     }
 
     @PostMapping("/users")
-    @PreAuthorize("hasAuthority('staff_organization.create')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Account (User)", description = "Will automatically send an email with a random password to the employee's email address")
     public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.createUser(request)));
@@ -133,7 +155,7 @@ public class StaffOrganizationController {
     // ====================== UPDATE ======================
 
     @PutMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Account", description = "Allows updating Email, permissions (Roles) and active status (isActive)")
     public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
             @Parameter(description = "ID của User") @PathVariable Long id,
@@ -142,7 +164,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/sections/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Section/Department")
     public ResponseEntity<ApiResponse<SectionResponse>> updateSection(
             @Parameter(description = "ID của Section") @PathVariable Long id,
@@ -151,7 +173,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/groups/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Group")
     public ResponseEntity<ApiResponse<GroupResponse>> updateGroup(
             @Parameter(description = "ID của Group") @PathVariable Long id,
@@ -160,7 +182,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/teams/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Team")
     public ResponseEntity<ApiResponse<TeamResponse>> updateTeam(
             @Parameter(description = "ID của Team") @PathVariable Long id,
@@ -169,7 +191,7 @@ public class StaffOrganizationController {
     }
 
     @PutMapping("/employees/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.edit')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Employee")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @Parameter(description = "ID của Employee") @PathVariable Long id,
@@ -180,7 +202,7 @@ public class StaffOrganizationController {
     // ====================== DELETE ======================
 
     @DeleteMapping("/sections/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Delete Section/Department")
     public ResponseEntity<Void> deleteSection(
             @Parameter(description = "ID của Section") @PathVariable Long id) {
@@ -189,7 +211,7 @@ public class StaffOrganizationController {
     }
 
     @DeleteMapping("/groups/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "delete(Group)")
     public ResponseEntity<Void> deleteGroup(
             @Parameter(description = "ID của Group") @PathVariable Long id) {
@@ -198,7 +220,7 @@ public class StaffOrganizationController {
     }
 
     @DeleteMapping("/teams/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "delete (Team)")
     public ResponseEntity<Void> deleteTeam(
             @Parameter(description = "ID của Team") @PathVariable Long id) {
@@ -207,7 +229,7 @@ public class StaffOrganizationController {
     }
 
     @DeleteMapping("/employees/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Delete (Employee)", description = "Xóa mềm (Soft Delete) nhân viên và tự động khóa tài khoản User liên kết")
     public ResponseEntity<ApiResponse<String>> deleteEmployee(
             @Parameter(description = "ID của Employee") @PathVariable Long id) {
@@ -216,7 +238,7 @@ public class StaffOrganizationController {
     }
 
     @DeleteMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.delete')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Delete (User)")
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID của User") @PathVariable Long id) {

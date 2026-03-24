@@ -12,7 +12,11 @@ import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.*;
+import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
+import com.sep490.anomaly_training_backend.service.ImportHistoryService;
+import com.sep490.anomaly_training_backend.service.ProcessService;
+import com.sep490.anomaly_training_backend.service.ProductLineService;
+import com.sep490.anomaly_training_backend.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -112,69 +116,70 @@ public class ManufacturingLineController {
     }
 
     @PostMapping("/processes")
-    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> createProcess(@RequestBody ProcessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(processService.createProcess(request)));
     }
 
     @PostMapping("/product")
-    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody ProductRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
     }
 
     @PostMapping("/product/sync")
-    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@RequestBody List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
     }
 
     @PostMapping("/employee-skills")
-    @PreAuthorize("hasAuthority('manufacturing_line.create')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<EmployeeSkillResponse>> createSkill(@RequestBody EmployeeSkillRequest request) {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.createEmployeeSkill(request)));
     }
 
     // ====================== UPDATE ======================
     @PutMapping("/product-lines/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> updateProductLine(@PathVariable Long id, @RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.updateProductLine(id, productLineRequest)));
     }
 
     @PutMapping("/processes/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProcess(@PathVariable Long id, @RequestBody ProcessRequest processRequest) {
         return ResponseEntity.ok(ApiResponse.success(processService.updateProcessByAdmin(id, processRequest)));
     }
+
     @PutMapping("/product")
-    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
         return null;
     }
 //    @PutMapping("/employee-skills/{id}")
-//    @PreAuthorize("hasAuthority('manufacturing_line.edit')")
+//    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
 //    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkillByTeamLead(@PathVariable Long id, @RequestBody List<EmployeeSkillRequest> employeeSkillRequestList) {
 //        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequestList)));
 //    }
 
     // ====================== DELETE ======================
     @DeleteMapping("/product-lines/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<Void> deleteProductLine(@PathVariable Long id) {
         productLineService.deleteProductLine(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/processes/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<Void> deleteProcess(@PathVariable Long id) {
         processService.deleteProcess(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/employee-skills/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.delete')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<Void> deleteEmployeeSkill(@PathVariable Long id) {
         employeeSkillService.deleteEmployeeSkill(id);
         return ResponseEntity.noContent().build();
@@ -183,7 +188,7 @@ public class ManufacturingLineController {
     // ====================== IMPORT ======================
     @Operation(summary = "Import Product data")
     @PostMapping("/import-products/{productLineId}")
-    @PreAuthorize("hasAuthority('manufacturing_line.import')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> importProduct(@RequestPart("file") MultipartFile file,
                                                                             @AuthenticationPrincipal User currentUser,
                                                                             @PathVariable Long productLineId) throws BadRequestException {
@@ -193,7 +198,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Import ProductLine data")
     @PostMapping("/import-product-lines")
-    @PreAuthorize("hasAuthority('manufacturing_line.import')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> importProductLine(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<ProductLineResponse> data = productLineService.importProductLine(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success(data));
@@ -201,7 +206,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Import Training Sample template")
     @GetMapping("/product/download-template")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadProductTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Product_guideline.xlsx");
 
@@ -221,7 +226,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Import Training Sample template")
     @GetMapping("/product-line/download-template")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadProductLineTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/ProductLine_guideline.xlsx");
 
@@ -241,7 +246,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Import Matrix Skill And Product Line Structure")
     @PostMapping("/import-matrix-skill")
-    @PreAuthorize("hasAuthority('manufacturing_line.import')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<String>> importMatrixSkill(
             @RequestPart("file") MultipartFile file,
             @AuthenticationPrincipal User currentUser) {
@@ -255,7 +260,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Get history import Training Sample")
     @GetMapping("/product/import-history")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_IMPORT");
         return ResponseEntity.ok(ApiResponse.success(responses));
@@ -263,7 +268,7 @@ public class ManufacturingLineController {
 
     @Operation(summary = "Get history import Training Sample")
     @GetMapping("/product-line/import-history")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductLineImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_LINE_IMPORT");
         return ResponseEntity.ok(ApiResponse.success(responses));

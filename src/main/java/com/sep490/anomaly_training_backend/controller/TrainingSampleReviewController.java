@@ -57,9 +57,8 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách công việc thành công", reviewTask));
     }
 
-
     @PostMapping("/policies")
-    @PreAuthorize("hasAuthority('training_sample_review.create')")
+    @PreAuthorize("hasAuthority('training_sample_review.manage')")
     @Operation(summary = "Create new review policy", description = "Create a new review policy for the training sample list")
     public ResponseEntity<ApiResponse<TrainingSampleReviewPolicyResponse>> createNewReviewPolicy(
             @RequestBody TrainingSampleReviewPolicyRequest request) {
@@ -67,7 +66,6 @@ public class TrainingSampleReviewController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo chính sách rà soát thành công", response));
     }
-
 
     @GetMapping("/reviews/config/{configId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
@@ -78,7 +76,6 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách rà soát thành công", reviews));
     }
 
-
     @GetMapping("/reviews/product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get reviews by product line", description = "Lấy danh sách rà soát mẫu huấn luyện theo dây chuyền sản xuất")
@@ -88,9 +85,8 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách rà soát thành công", reviews));
     }
 
-
     @DeleteMapping("/policies/{policyId}")
-    @PreAuthorize("hasAuthority('training_sample_review.delete')")
+    @PreAuthorize("hasAuthority('training_sample_review.manage')")
     @Operation(summary = "Delete review policy", description = "Delete review policy (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deleteReviewPolicy(
             @PathVariable Long policyId) {
@@ -98,9 +94,8 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Xóa chính sách rà soát thành công", null));
     }
 
-
     @PutMapping("/reviews/{reviewId}/assign-team-lead")
-    @PreAuthorize("hasAuthority('training_sample_review.update')")
+    @PreAuthorize("hasAuthority('training_sample_review.manage')")
     @Operation(summary = "Assign team lead to review", description = "Assign a team lead to perform the training sample review")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> assignTeamLeadToReview(
             @PathVariable Long reviewId,
@@ -110,27 +105,14 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Gán trưởng nhóm thành công", response));
     }
 
-
     @PutMapping("/submit")
-    @PreAuthorize("hasAuthority('training_sample_review.update')")
+    @PreAuthorize("hasAuthority('training_sample_review.perform')")
     @Operation(summary = "Confirm review by team lead", description = "Confirm training sample review results")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> submit(@RequestBody TrainingSampleReviewRequest reviewRequest,
                                                                             @AuthenticationPrincipal User currentUser,
                                                                             HttpServletRequest request) {
         TrainingSampleReviewResponse response = trainingSampleReviewService.submit(reviewRequest, currentUser, request);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
-    }
-
-    @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
-    @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_sample_review.update')")
-    public ResponseEntity<String> revise(
-            @AuthenticationPrincipal User currentUser,
-            @PathVariable Long id,
-            HttpServletRequest request
-    ) {
-        trainingSampleReviewService.revise(id, currentUser, request);
-        return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
     }
 
     @Operation(summary = "Approve defect proposal", description = "Approve the defect proposal.")
@@ -157,7 +139,7 @@ public class TrainingSampleReviewController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_sample_review.update')")
+    @PreAuthorize("hasAuthority('training_sample_review.approve')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -167,5 +149,4 @@ public class TrainingSampleReviewController {
         trainingSampleReviewService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Defect Proposal has been rejected!");
     }
-
 }

@@ -40,7 +40,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Create new priority policy")
     @PostMapping("/")
-    @PreAuthorize("hasAuthority('policy.create')")
+    @PreAuthorize("hasAuthority('scoring.create')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> createPolicy(
             @Valid @RequestBody PriorityPolicyRequest request) {
         PriorityPolicyResponse response = policyService.createPolicy(request);
@@ -49,7 +49,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Update priority policy")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('policy.edit')")
+    @PreAuthorize("hasAuthority('scoring.edit')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> updatePolicy(
             @PathVariable Long id,
             @Valid @RequestBody PriorityPolicyRequest request) {
@@ -59,7 +59,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Get priority policy details by ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('policy.view')")
+    @PreAuthorize("hasAuthority('scoring.view')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> getPolicy(@PathVariable Long id) {
         PriorityPolicyResponse response = policyService.getPolicy(id);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -67,7 +67,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Get priority policies list (paginated)")
     @GetMapping("/")
-    @PreAuthorize("hasAuthority('policy.view')")
+    @PreAuthorize("hasAuthority('scoring.view')")
     public ResponseEntity<ApiResponse<Page<PriorityPolicyListResponse>>> listPolicies(
             @RequestParam(required = false) PolicyEntityType entityType,
             @RequestParam(required = false) PolicyStatus status,
@@ -78,7 +78,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Activate priority policy")
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasAuthority('policy.activate')")
+    @PreAuthorize("hasAuthority('scoring.activate')")
     public ResponseEntity<ApiResponse<Void>> activatePolicy(@PathVariable Long id) {
         policyService.activatePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy activated successfully", null));
@@ -86,7 +86,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Archive priority policy")
     @PostMapping("/{id}/archive")
-    @PreAuthorize("hasAuthority('policy.archive')")
+    @PreAuthorize("hasAuthority('scoring.archive')")
     public ResponseEntity<ApiResponse<Void>> archivePolicy(@PathVariable Long id) {
         policyService.archivePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy archived successfully", null));
@@ -94,7 +94,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Delete priority policy")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('policy.delete')")
+    @PreAuthorize("hasAuthority('scoring.delete')")
     public ResponseEntity<ApiResponse<Void>> deletePolicy(@PathVariable Long id) {
         policyService.deletePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy deleted successfully", null));
@@ -102,7 +102,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Get available metrics by entity type")
     @GetMapping("/metrics")
-    @PreAuthorize("hasAuthority('policy.view')")
+    @PreAuthorize("hasAuthority('scoring.view')")
     public ResponseEntity<ApiResponse<List<ComputedMetricResponse>>> getAvailableMetrics(
             @RequestParam PolicyEntityType entityType) {
         List<ComputedMetricResponse> metrics = policyService.getAvailableMetrics(entityType);

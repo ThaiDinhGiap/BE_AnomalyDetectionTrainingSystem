@@ -5,7 +5,11 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.*;
+import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
@@ -57,7 +61,7 @@ public class TrainingSampleController {
     public final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get training samples by product line")
-    @GetMapping("/")
+    @GetMapping
     @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProductLine(productLineId);
@@ -108,7 +112,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Create new training sample proposal")
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('training_sample_proposal.create')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(
             @ModelAttribute("request") TrainingSampleProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
@@ -117,14 +121,14 @@ public class TrainingSampleController {
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('training_sample_proposal.delete')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<Void> deleteTrainingSampleProposal(@PathVariable("id") Long id) {
         trainingSampleProposalService.deleteTrainingSampleProposal(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingProposal(
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,
             @Valid @ModelAttribute TrainingSampleProposalRequest request,
@@ -170,7 +174,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Revising approval (Move to Draft)", description = "Move the proposal from the pending approval status back to the Draft status for further editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -199,7 +203,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Import data (Training Sample Banking)")
     @PostMapping("/import")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> importTrainingSample(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<TrainingSampleResponse> data = trainingSampleService.importTrainingSample(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success(data));
@@ -207,7 +211,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Submit training sample proposal for approval", description = "Change training sample proposal  status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_sample_proposal.edit')")
+    @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -218,7 +222,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Import Training Sample template")
     @GetMapping("/download-template")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Training_sample_guideline.xlsx");
 
@@ -238,7 +242,7 @@ public class TrainingSampleController {
 
     @Operation(summary = "Get history import Training Sample")
     @GetMapping("/import-history")
-    @PreAuthorize("hasAuthority('training_sample.import')")
+    @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyDefectImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "TRAINING_SAMPLE_IMPORT");
         return ResponseEntity.ok(ApiResponse.success(responses));
