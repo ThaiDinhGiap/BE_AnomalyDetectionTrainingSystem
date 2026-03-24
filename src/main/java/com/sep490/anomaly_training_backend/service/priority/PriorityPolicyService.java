@@ -6,8 +6,6 @@ import com.sep490.anomaly_training_backend.dto.scoring.PriorityPolicyRequest;
 import com.sep490.anomaly_training_backend.dto.scoring.PriorityPolicyResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -19,7 +17,7 @@ public interface PriorityPolicyService {
 
     PriorityPolicyResponse getPolicy(Long id);
 
-    Page<PriorityPolicyListResponse> listPolicies(PolicyEntityType entityType, PolicyStatus status, Pageable pageable);
+    List<PriorityPolicyListResponse> listPolicies(PolicyEntityType entityType, PolicyStatus status);
 
     void activatePolicy(Long id);
 

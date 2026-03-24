@@ -22,8 +22,6 @@ import com.sep490.anomaly_training_backend.repository.ComputedMetricRepository;
 import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
 import com.sep490.anomaly_training_backend.service.priority.PriorityPolicyService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,18 +97,18 @@ public class PriorityPolicyServiceImpl implements PriorityPolicyService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PriorityPolicyListResponse> listPolicies(PolicyEntityType entityType, PolicyStatus status, Pageable pageable) {
-        Page<PriorityPolicy> page;
+    public List<PriorityPolicyListResponse> listPolicies(PolicyEntityType entityType, PolicyStatus status) {
+        List<PriorityPolicy> priorityPolicies;
         if (entityType != null && status != null) {
-            page = policyRepository.findByEntityTypeAndStatusAndDeleteFlagFalse(entityType, status, pageable);
+            priorityPolicies = policyRepository.findByEntityTypeAndStatusAndDeleteFlagFalse(entityType, status);
         } else if (entityType != null) {
-            page = policyRepository.findByEntityTypeAndDeleteFlagFalse(entityType, pageable);
+            priorityPolicies = policyRepository.findByEntityTypeAndDeleteFlagFalse(entityType);
         } else if (status != null) {
-            page = policyRepository.findByStatusAndDeleteFlagFalse(status, pageable);
+            priorityPolicies = policyRepository.findByStatusAndDeleteFlagFalse(status);
         } else {
-            page = policyRepository.findByDeleteFlagFalse(pageable);
+            priorityPolicies = policyRepository.findByDeleteFlagFalse();
         }
-        return page.map(mapper::toListResponse);
+        return priorityPolicies.stream().map(mapper::toListResponse).toList();
     }
 
     @Override

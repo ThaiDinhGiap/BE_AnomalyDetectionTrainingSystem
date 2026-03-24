@@ -12,9 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,7 +37,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Create new priority policy")
     @PostMapping
-    @PreAuthorize("hasAuthority('scoring.create')")
+    @PreAuthorize("hasAuthority('scoring.manage')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> createPolicy(
             @Valid @RequestBody PriorityPolicyRequest request) {
         PriorityPolicyResponse response = policyService.createPolicy(request);
@@ -49,7 +46,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Update priority policy")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('scoring.edit')")
+    @PreAuthorize("hasAuthority('scoring.manage')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> updatePolicy(
             @PathVariable Long id,
             @Valid @RequestBody PriorityPolicyRequest request) {
@@ -68,17 +65,16 @@ public class PriorityPolicyController {
     @Operation(summary = "Get priority policies list (paginated)")
     @GetMapping
     @PreAuthorize("hasAuthority('scoring.view')")
-    public ResponseEntity<ApiResponse<Page<PriorityPolicyListResponse>>> listPolicies(
+    public ResponseEntity<ApiResponse<List<PriorityPolicyListResponse>>> listPolicies(
             @RequestParam(required = false) PolicyEntityType entityType,
-            @RequestParam(required = false) PolicyStatus status,
-            @PageableDefault(size = 10) Pageable pageable) {
-        Page<PriorityPolicyListResponse> page = policyService.listPolicies(entityType, status, pageable);
+            @RequestParam(required = false) PolicyStatus status) {
+        List<PriorityPolicyListResponse> page = policyService.listPolicies(entityType, status);
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
     @Operation(summary = "Activate priority policy")
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasAuthority('scoring.activate')")
+    @PreAuthorize("hasAuthority('scoring.manage')")
     public ResponseEntity<ApiResponse<Void>> activatePolicy(@PathVariable Long id) {
         policyService.activatePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy activated successfully", null));
@@ -86,7 +82,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Archive priority policy")
     @PostMapping("/{id}/archive")
-    @PreAuthorize("hasAuthority('scoring.archive')")
+    @PreAuthorize("hasAuthority('scoring.manage')")
     public ResponseEntity<ApiResponse<Void>> archivePolicy(@PathVariable Long id) {
         policyService.archivePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy archived successfully", null));
@@ -94,7 +90,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Delete priority policy")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('scoring.delete')")
+    @PreAuthorize("hasAuthority('scoring.manage')")
     public ResponseEntity<ApiResponse<Void>> deletePolicy(@PathVariable Long id) {
         policyService.deletePolicy(id);
         return ResponseEntity.ok(ApiResponse.success("Policy deleted successfully", null));
