@@ -123,242 +123,260 @@ VALUES (1, 1),
        (13, 5);
 
 -- ============================================================================
--- PART 2: MODULES & PERMISSIONS
--- Bỏ: training_sample.detail (101), defect.detail (112)
+-- PART 1: MODULES (giữ nguyên, thêm dashboard)
 -- ============================================================================
-
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
-VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cáo lỗi', 1, 'system'),
-       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý chủ đề đào tạo', 2, 'system'),
-       (3, 'training_plan', 'Kế hoạch đào tạo', 'Quản lý kế hoạch đào tạo', 3, 'system'),
-       (4, 'training_result', 'Kết quả đào tạo', 'Quản lý kết quả đào tạo', 4, 'system'),
+VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề xuất và danh sách lỗi', 1, 'system'),
+       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý mẫu HL và rà soát hàng năm', 2, 'system'),
+       (3, 'training_plan', 'Kế hoạch huấn luyện', 'Quản lý kế hoạch đào tạo', 3, 'system'),
+       (4, 'training_result', 'Kết quả huấn luyện', 'Quản lý kết quả đào tạo', 4, 'system'),
        (5, 'employee', 'Nhân viên', 'Quản lý thông tin nhân viên', 5, 'system'),
        (6, 'user', 'Tài khoản người dùng', 'Quản lý tài khoản hệ thống', 6, 'system'),
        (7, 'role', 'Vai trò & Phân quyền', 'Quản lý vai trò và phân quyền', 7, 'system'),
-       (8, 'master_data', 'Dữ liệu danh mục', 'Quản lý dữ liệu danh mục', 8, 'system'),
        (9, 'scoring', 'Chấm điểm ưu tiên', 'Quản lý chính sách chấm điểm', 9, 'system'),
-       (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard và báo cáo tổng hợp', 10, 'system'),
-       (11, 'system', 'Cài đặt hệ thống', 'Cài đặt và cấu hình hệ thống', 11, 'system'),
-       (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lí danh sách nhân sự công ty', 12, 'system'),
-       (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lí danh sách tổ chức dây chuyền', 13, 'system'),
-       (14, 'attachment', 'Quản lý File & Ảnh', 'Upload và xóa tệp MinIO', 14, 'system'),
-       (15, 'action_item', 'Việc cần làm', 'Quản lý các mục cần xử lý', 15, 'system');
+       (10, 'dashboard', 'Dashboard & Báo cáo', 'Xem dashboard theo từng cấp', 10, 'system'),
+       (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lý cấu trúc nhân sự công ty', 12, 'system'),
+       (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lý cấu trúc dây chuyền', 13, 'system');
 
+
+-- ============================================================================
+-- PART 2: PERMISSIONS
+-- Quy tắc đặt tên:
+--   *.view   = GET (xem list, detail) — chỉ đọc
+--   *.manage = POST/PUT/DELETE + import/export + submit/revise — TL thực hiện
+--   *.approve= approve/reject — cấp trên ký duyệt
+--   *.perform= hành động nghiệp vụ đặc thù (TL submit review)
+-- ============================================================================
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
 VALUES
--- defect_report (module_id=1)
-(300, 'defect_proposal.manage', 'Quản lý báo cáo lỗi', 1, 'manage', 2, TRUE, 'system'),
-(301, 'defect.manage', 'Quản lý danh sách lỗi', 1, 'manage', 6, TRUE, 'system'),
+-- ── defect_proposal module (1) ──────────────────────────────────────────────
+-- DefectController: GET / /process /count-defect /coverage /{id} /check-exist
+(1, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 1, TRUE, 'system'),
+-- DefectController: import /export /download-template /import-history
+(2, 'defect.manage', 'Quản lý danh sách lỗi quá khứ', 1, 'manage', 2, TRUE, 'system'),
+-- DefectController: GET /proposal /detail/{id}
+(3, 'defect_proposal.view', 'Xem đề xuất lỗi', 1, 'view', 3, TRUE, 'system'),
+-- DefectController: create update delete revise submit
+(4, 'defect_proposal.manage', 'Quản lý đề xuất lỗi', 1, 'manage', 4, TRUE, 'system'),
+-- DefectController: approve reject
+(5, 'defect_proposal.approve', 'Phê duyệt đề xuất lỗi', 1, 'approve', 5, TRUE, 'system'),
 
--- training_sample (module_id=2)
-(302, 'training_sample_proposal.manage', 'Quản lý mẫu huấn luyện', 2, 'manage', 2, TRUE, 'system'),
-(303, 'training_sample.manage', 'Quản lý danh sách mẫu huấn luyện', 2, 'manage', 5, TRUE, 'system'),
-(304, 'training_sample_review.manage', 'Quản lý chính sách kiểm tra mẫu', 2, 'manage', 8, TRUE, 'system'),
-(305, 'training_sample_review.perform', 'Thực hiện kiểm tra mẫu huấn luyện', 2, 'perform', 9, TRUE, 'system'),
+-- ── training_sample module (2) ──────────────────────────────────────────────
+-- TrainingSampleController: GET / /category /process /{id}
+(6, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 1, TRUE, 'system'),
+-- TrainingSampleController: import /download-template /import-history
+-- ManufacturingLineController: product/download-template product/import-history product-line/download-template product-line/import-history
+(7, 'training_sample.manage', 'Quản lý danh sách mẫu huấn luyện', 2, 'manage', 2, TRUE, 'system'),
+-- TrainingSampleController: GET /proposal /detail/{id} /category/{id}
+(8, 'training_sample_proposal.view', 'Xem đề xuất mẫu huấn luyện', 2, 'view', 3, TRUE, 'system'),
+-- TrainingSampleController: create update delete revise submit
+(9, 'training_sample_proposal.manage', 'Quản lý đề xuất mẫu huấn luyện', 2, 'manage', 4, TRUE, 'system'),
+-- TrainingSampleController: approve reject
+(10, 'training_sample_proposal.approve', 'Phê duyệt đề xuất mẫu huấn luyện', 2, 'approve', 5, TRUE, 'system'),
+-- TrainingSampleReviewController: GET /policies /task /reviews
+(11, 'training_sample_review.view', 'Xem rà soát mẫu huấn luyện', 2, 'view', 6, TRUE, 'system'),
+-- TrainingSampleReviewController: create/delete policy, assign-team-lead (SV)
+(12, 'training_sample_review.manage', 'Quản lý lịch rà soát mẫu HL', 2, 'manage', 7, TRUE, 'system'),
+-- TrainingSampleReviewController: submit (TL thực hiện)
+(13, 'training_sample_review.perform', 'Thực hiện rà soát mẫu huấn luyện', 2, 'perform', 8, TRUE, 'system'),
+-- TrainingSampleReviewController: approve reject (SV)
+(14, 'training_sample_review.approve', 'Phê duyệt rà soát mẫu huấn luyện', 2, 'approve', 9, TRUE, 'system'),
 
--- training_plan (module_id=3)
-(306, 'training_plan.manage', 'Quản lý kế hoạch đào tạo', 3, 'manage', 2, TRUE, 'system'),
+-- ── training_plan module (3) ────────────────────────────────────────────────
+-- TrainingPlanController: GET /{id} /list /rejected /employees /product-lines /processes /{id}/permission
+(15, 'training_plan.view', 'Xem kế hoạch huấn luyện', 3, 'view', 1, TRUE, 'system'),
+-- TrainingPlanController: update delete add/update details submit revise generate
+(16, 'training_plan.manage', 'Quản lý kế hoạch huấn luyện', 3, 'manage', 2, TRUE, 'system'),
+-- TrainingPlanController: approve reject
+(17, 'training_plan.approve', 'Phê duyệt kế hoạch huấn luyện', 3, 'approve', 3, TRUE, 'system'),
 
--- training_result (module_id=4)
-(307, 'training_result.manage', 'Quản lý kết quả đào tạo', 4, 'manage', 2, TRUE, 'system'),
+-- ── training_result module (4) ──────────────────────────────────────────────
+-- TrainingResultController: GET list detail kpi employees products processes
+-- ActionItemsController: pending-signatures failed-trainings expiring-skills
+(18, 'training_result.view', 'Xem kết quả huấn luyện', 4, 'view', 1, TRUE, 'system'),
+-- TrainingResultController: update fi-sign submit reject-detail retrain revise-detail revise
+(19, 'training_result.manage', 'Quản lý kết quả huấn luyện', 4, 'manage', 2, TRUE, 'system'),
+-- TrainingResultController: approve/{detailId} reject/{detailId}
+(20, 'training_result.approve', 'Phê duyệt kết quả huấn luyện', 4, 'approve', 3, TRUE, 'system'),
 
--- employee (module_id=5)
-(308, 'employee.manage', 'Quản lý nhân viên', 5, 'manage', 2, TRUE, 'system'),
+-- ── employee module (5) ─────────────────────────────────────────────────────
+-- TrainingResultController: GET /skills/matrix
+(21, 'employee.view', 'Xem thông tin nhân viên & kỹ năng', 5, 'view', 1, TRUE, 'system'),
+-- (employee.manage dùng trong staff_organization, không dùng ở controller riêng)
+(22, 'employee.manage', 'Quản lý nhân viên', 5, 'manage', 2, TRUE, 'system'),
 
--- user (module_id=6)
-(309, 'user.manage', 'Quản lý tài khoản người dùng', 6, 'manage', 2, TRUE, 'system'),
+-- ── user module (6) ─────────────────────────────────────────────────────────
+-- PermissionController: GET /users/{userId}
+(23, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
+-- UserRoleController: GET /{userId}/roles PUT /{userId}/roles
+(24, 'user.manage', 'Quản lý tài khoản người dùng', 6, 'manage', 2, TRUE, 'system'),
 
--- role (module_id=7)
-(310, 'role.manage', 'Quản lý vai trò', 7, 'manage', 2, TRUE, 'system'),
+-- ── role module (7) ─────────────────────────────────────────────────────────
+-- PermissionController: GET /modules
+(25, 'role.view', 'Xem vai trò & phân quyền', 7, 'view', 1, TRUE, 'system'),
+-- RoleController: CRUD roles, assign permissions
+(26, 'role.manage', 'Quản lý vai trò & phân quyền', 7, 'manage', 2, TRUE, 'system'),
 
--- master_data (module_id=8)
-(311, 'master_data.manage', 'Quản lý dữ liệu danh mục', 8, 'manage', 2, TRUE, 'system'),
+-- ── scoring module (9) ──────────────────────────────────────────────────────
+-- PriorityPolicyController: GET /{id} GET / GET /metrics
+(27, 'scoring.view', 'Xem chính sách chấm điểm ưu tiên', 9, 'view', 1, TRUE, 'system'),
+-- PriorityPolicyController: create update activate archive delete
+(28, 'scoring.manage', 'Quản lý chính sách chấm điểm ưu tiên', 9, 'manage', 2, TRUE, 'system'),
 
--- scoring (module_id=9)
-(312, 'scoring.manage', 'Quản lý chính sách chấm điểm', 9, 'manage', 2, TRUE, 'system'),
+-- ── dashboard module (10) ───────────────────────────────────────────────────
+-- DashboardController: /kpi /rejected-reports /training-tasks /heatmap /execution /process-flow /skill-certificates /defect-*  /sample-*
+(29, 'dashboard.team', 'Xem dashboard cấp tổ (Team Leader)', 10, 'view', 1, TRUE, 'system'),
+-- DashboardController: /sv/*
+(30, 'dashboard.group', 'Xem dashboard cấp dây chuyền (SV)', 10, 'view', 2, TRUE, 'system'),
+-- DashboardController: /mng/*
+(31, 'dashboard.section', 'Xem dashboard cấp xưởng (Manager)', 10, 'view', 3, TRUE, 'system'),
 
--- staff_organization (module_id=12)
-(313, 'staff_organization.manage', 'Quản lý cấu trúc nhân sự', 12, 'manage', 2, TRUE, 'system'),
+-- ── staff_organization module (12) ──────────────────────────────────────────
+-- StaffOrganizationController: GET sections groups teams employees users
+(32, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
+-- StaffOrganizationController: create update delete sections/groups/teams/employees/users
+(33, 'staff_organization.manage', 'Quản lý cấu trúc nhân sự', 12, 'manage', 2, TRUE, 'system'),
 
--- manufacturing_line (module_id=13)
-(314, 'manufacturing_line.manage', 'Quản lý cấu trúc dây chuyền', 13, 'manage', 2, TRUE, 'system');
+-- ── manufacturing_line module (13) ──────────────────────────────────────────
+-- ManufacturingLineController: GET product-lines working-positions processes products
+(34, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền sản xuất', 13, 'view', 1, TRUE, 'system'),
+-- ManufacturingLineController: create/update/delete processes products skills import-products import-product-lines import-matrix-skill
+(35, 'manufacturing_line.manage', 'Quản lý cấu trúc dây chuyền sản xuất', 13, 'manage', 2, TRUE, 'system');
+
 
 -- ============================================================================
--- GÁN QUYỀN: ADMIN (role_id=1) - TẤT CẢ QUYỀN
+-- PART 3: ROLE PERMISSIONS
 -- ============================================================================
+
+-- ── ADMIN (role_id=1): tất cả quyền ─────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 1, id
 FROM permissions;
 
--- ============================================================================
--- GÁN QUYỀN: MANAGER (role_id=2)
--- ============================================================================
+
+-- ── MANAGER (role_id=2) ──────────────────────────────────────────────────────
+-- Xem mọi thứ + approve + manage nhân viên + manage scoring
+-- KHÔNG có manage defect/sample/plan/result (chỉ approve)
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
--- defect_proposal
-(2, 1),
-(2, 5),
-(2, 300),
--- defect list
-(2, 111),
-(2, 301),
--- training sample proposal
-(2, 6),
-(2, 205),
-(2, 302),
--- training sample list
-(2, 100),
-(2, 303),
--- training sample review
-(2, 201),
-(2, 304),
-(2, 305),
--- training plan
-(2, 10),
-(2, 306),
-(2, 14),
--- training result
-(2, 15),
-(2, 307),
-(2, 17),
--- employee
-(2, 18),
-(2, 308),
--- user, role (readonly)
-(2, 22),
-(2, 27),
--- scoring
-(2, 36),
-(2, 312),
--- dashboard
-(2, 40),
-(2, 41),
--- staff org
-(2, 43),
-(2, 313),
--- manufacturing line
-(2, 47),
-(2, 314),
-(2, 200),
--- attachment
-(2, 56),
-(2, 57),
-(2, 58),
--- action item
-(2, 59);
+-- Defect
+(2, 1),  -- defect.view
+(2, 3),  -- defect_proposal.view
+(2, 5),  -- defect_proposal.approve
+-- Training Sample
+(2, 6),  -- training_sample.view
+(2, 8),  -- training_sample_proposal.view
+(2, 10), -- training_sample_proposal.approve
+(2, 11), -- training_sample_review.view
+-- Training Plan
+(2, 15), -- training_plan.view
+(2, 17), -- training_plan.approve
+-- Training Result
+(2, 18), -- training_result.view
+(2, 20), -- training_result.approve
+-- Employee
+(2, 21), -- employee.view
+(2, 22), -- employee.manage
+-- User/Role (readonly)
+(2, 23), -- user.view
+(2, 25), -- role.view
+-- Scoring
+(2, 27), -- scoring.view
+(2, 28), -- scoring.manage
+-- Dashboard
+(2, 29), -- dashboard.team
+(2, 30), -- dashboard.group
+(2, 31), -- dashboard.section
+-- Staff Org (readonly)
+(2, 32), -- staff_organization.view
+-- Manufacturing (readonly)
+(2, 34);
+-- manufacturing_line.view
 
--- ============================================================================
--- GÁN QUYỀN: SUPERVISOR (role_id=3)
--- ============================================================================
+
+-- ── SUPERVISOR (role_id=3) ───────────────────────────────────────────────────
+-- Xem mọi thứ + approve plan/defect/sample + manage review + xem dashboard team+group
+-- KHÔNG có manage plan/result/defect/sample (chỉ approve)
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
--- defect_proposal
-(3, 1),
-(3, 5),
-(3, 300),
--- defect list
-(3, 111),
-(3, 301),
--- training sample proposal
-(3, 6),
-(3, 205),
-(3, 302),
--- training sample list
-(3, 100),
-(3, 303),
--- training sample review
-(3, 201),
-(3, 304),
-(3, 305),
-(3, 209),
--- training plan
-(3, 10),
-(3, 306),
-(3, 14),
--- training result
-(3, 15),
-(3, 307),
--- employee
-(3, 18),
-(3, 308),
--- scoring (view only)
-(3, 36),
--- dashboard
-(3, 40),
--- staff org
-(3, 43),
-(3, 313),
--- manufacturing line
-(3, 47),
-(3, 314),
-(3, 200),
--- attachment
-(3, 56),
-(3, 57),
-(3, 58),
--- action item
-(3, 59);
+-- Defect
+(3, 1),  -- defect.view
+(3, 3),  -- defect_proposal.view
+(3, 5),  -- defect_proposal.approve
+-- Training Sample
+(3, 6),  -- training_sample.view
+(3, 8),  -- training_sample_proposal.view
+(3, 10), -- training_sample_proposal.approve
+(3, 11), -- training_sample_review.view
+(3, 12), -- training_sample_review.manage  ← SV tạo/xóa policy, gán TL
+(3, 14), -- training_sample_review.approve ← SV approve review
+-- Training Plan
+(3, 15), -- training_plan.view
+(3, 17), -- training_plan.approve
+-- Training Result
+(3, 18), -- training_result.view
+(3, 20), -- training_result.approve        ← SV approve từng detail
+-- Employee
+(3, 21), -- employee.view
+-- Scoring
+(3, 27), -- scoring.view
+-- Dashboard
+(3, 29), -- dashboard.team
+(3, 30), -- dashboard.group
+-- Staff Org (readonly)
+(3, 32), -- staff_organization.view
+-- Manufacturing (readonly)
+(3, 34);
+-- manufacturing_line.view
 
--- ============================================================================
--- GÁN QUYỀN: TEAM LEADER (role_id=4)
--- ============================================================================
+
+-- ── TEAM_LEADER (role_id=4) ──────────────────────────────────────────────────
+-- Người thực hiện chính: lập kế hoạch, ghi kết quả, submit, import
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
--- defect_proposal
-(4, 1),
-(4, 5),
-(4, 300),
--- defect list
-(4, 111),
-(4, 301),
--- training sample proposal
-(4, 6),
-(4, 205),
-(4, 302),
--- training sample list
-(4, 100),
-(4, 303),
--- training sample review
-(4, 201),
-(4, 304),
-(4, 305),
--- training plan
-(4, 10),
-(4, 306),
-(4, 14),
--- training result
-(4, 15),
-(4, 307),
-(4, 17),
--- dashboard
-(4, 40),
--- staff org
-(4, 43),
-(4, 313),
--- manufacturing line
-(4, 47),
-(4, 314),
-(4, 200),
--- attachment
-(4, 56),
-(4, 57),
-(4, 58),
--- action item
-(4, 59);
+-- Defect
+(4, 1),  -- defect.view
+(4, 2),  -- defect.manage                  ← import/export defect banking
+(4, 3),  -- defect_proposal.view
+(4, 4),  -- defect_proposal.manage         ← create/edit/delete/submit/revise
+-- Training Sample
+(4, 6),  -- training_sample.view
+(4, 7),  -- training_sample.manage         ← import sample, download template
+(4, 8),  -- training_sample_proposal.view
+(4, 9),  -- training_sample_proposal.manage ← create/edit/delete/submit/revise
+(4, 11), -- training_sample_review.view
+(4, 13), -- training_sample_review.perform  ← TL submit review
+-- Training Plan
+(4, 15), -- training_plan.view
+(4, 16), -- training_plan.manage            ← create/edit/delete/submit/revise/generate
+-- Training Result
+(4, 18), -- training_result.view
+(4, 19), -- training_result.manage          ← update/fi-sign/submit/revise/reject-detail/retrain
+-- Employee
+(4, 21), -- employee.view                   ← xem skill matrix
+-- Scoring
+(4, 27), -- scoring.view                    ← xem policy để generate plan
+-- Dashboard
+(4, 29), -- dashboard.team
+-- Manufacturing
+(4, 34);
+-- manufacturing_line.view         ← xem processes, products (dùng trong form)
 
--- ============================================================================
--- GÁN QUYỀN: FINAL INSPECTION (role_id=5)
--- ============================================================================
+
+-- ── FINAL_INSPECTION (role_id=5) ─────────────────────────────────────────────
+-- FI chỉ ký kết quả huấn luyện + xem defect/dashboard
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (5, 1),
-       (5, 300),
-       (5, 15),
-       (5, 307),
-       (5, 18),
-       (5, 40),
-       (5, 56),
-       (5, 57),
-       (5, 59);
+VALUES
+-- Defect (FI cần xem để hiểu context lỗi)
+(5, 1),  -- defect.view
+-- Training Result
+(5, 18), -- training_result.view
+(5, 19), -- training_result.manage  ← fi-sign endpoint dùng training_result.manage
+-- Employee
+(5, 21), -- employee.view
+-- Dashboard
+(5, 29);
+-- dashboard.team
 
 -- ============================================================================
 -- PART 3: ORGANIZATION STRUCTURE

@@ -186,7 +186,6 @@ class TrainingPlanServiceImplTest {
         testEmployee.setId(1L);
         testEmployee.setEmployeeCode("EMP001");
         testEmployee.setFullName("Nguyen Van A");
-        testEmployee.setTeam(testTeam);
         testEmployee.setStatus(EmployeeStatus.ACTIVE);
 
         Role tlRole = new Role();
@@ -1104,7 +1103,6 @@ class TrainingPlanServiceImplTest {
         @DisplayName("[Normal] getEmployeesNotInPlan - trả employees không trong plan")
         void getEmployeesNotInPlan_success() {
             when(trainingPlanRepository.findById(1L)).thenReturn(Optional.of(testPlan));
-            when(employeeRepository.findAllActiveByGroupId(1L)).thenReturn(List.of(testEmployee));
             when(trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(1L)).thenReturn(Collections.emptyList());
             when(prioritySnapshotRepository.findByTrainingPlanId(1L)).thenReturn(Optional.empty());
             when(trainingResultDetailRepository.findLatestByEmployeeIds(anyList())).thenReturn(Collections.emptyList());
@@ -1130,7 +1128,6 @@ class TrainingPlanServiceImplTest {
         @DisplayName("[Normal] getEmployeesInTeams - trả employees trong team")
         void getEmployeesInTeams_success() {
             when(trainingPlanRepository.findById(1L)).thenReturn(Optional.of(testPlan));
-            when(employeeRepository.findAllActiveByTeamId(1L)).thenReturn(List.of(testEmployee));
             when(trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(1L)).thenReturn(Collections.emptyList());
             when(prioritySnapshotRepository.findByTrainingPlanId(1L)).thenReturn(Optional.empty());
             when(trainingResultDetailRepository.findLatestByEmployeeIds(anyList())).thenReturn(Collections.emptyList());
