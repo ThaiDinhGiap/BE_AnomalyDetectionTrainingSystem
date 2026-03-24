@@ -39,7 +39,7 @@ public class PriorityPolicyController {
     private final PriorityPolicyService policyService;
 
     @Operation(summary = "Create new priority policy")
-    @PostMapping("/")
+    @PostMapping
     @PreAuthorize("hasAuthority('scoring.create')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> createPolicy(
             @Valid @RequestBody PriorityPolicyRequest request) {
@@ -66,7 +66,7 @@ public class PriorityPolicyController {
     }
 
     @Operation(summary = "Get priority policies list (paginated)")
-    @GetMapping("/")
+    @GetMapping
     @PreAuthorize("hasAuthority('scoring.view')")
     public ResponseEntity<ApiResponse<Page<PriorityPolicyListResponse>>> listPolicies(
             @RequestParam(required = false) PolicyEntityType entityType,
