@@ -165,6 +165,7 @@ VALUES
 (202, 'training_sample_review.update', 'Chỉ định người kiểm tra và nộp kết quả', 2, 'update', 8, TRUE, 'system'),
 (203, 'training_sample_review.create', 'Tạo chính sách kiểm tra mẫu huấn luyện', 2, 'create', 9, TRUE, 'system'),
 (204, 'training_sample_review.delete', 'Xoá chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
+(209, 'training_sample_review.approve', 'Phê duyệt chính sách kiểm tra mẫu huấn luyện', 2, 'delete', 10, TRUE, 'system'),
 (205, 'training_sample_proposal.approve', 'Phê duyệt mẫu huấn luyện', 2, 'delete', 4, TRUE, 'system'),
 
 -- training_plan (3)
@@ -368,6 +369,7 @@ VALUES
 -- manufacturing line (bổ sung)
 (3, 47),
 (3, 200),
+(3, 209),
 -- attachment
 (3, 56),
 (3, 57),
@@ -1512,49 +1514,49 @@ VALUES
 -- PART 15: TRAINING SAMPLE REVIEW CONFIG & POLICIES
 -- ============================================================================
 
-INSERT INTO training_sample_review_policies (policy_code, policy_name, product_line_id, effective_date, expiration_date,
-                                             status, description, created_by, updated_by)
-VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1, '2026-01-01', '2026-12-31', 'ACTIVE',
-        'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm cho tất cả dây chuyền năm 2026', 'admin', 'admin'),
-       ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1, '2025-01-01', '2025-12-31', 'ARCHIVED',
-        'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm năm 2025', 'admin', 'admin');
-
-INSERT INTO training_sample_review_configs (review_policy_id, trigger_month, trigger_day, due_days,
-                                            created_by)
-VALUES (1, 3, 1, 30, 'admin'),
-       (1, 5, 2, 30, 'admin'),
-       (1, 6, 1, 30, 'admin'),
-       (2, 9, 1, 30, 'admin'),
-       (2, 12, 1, 30, 'admin');
-
-INSERT INTO training_sample_reviews
-(config_id, product_line_id, review_date, start_date,due_date, completed_date, reviewed_by, status, sample_snapshot, confirmed_by,
- delete_flag, created_at, created_by, updated_at, updated_by)
-VALUES
--- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
-(1, 1, '2026-03-01','2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{
-  "total_samples": 50
-}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
-
--- 2. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 2: Đã làm xong, không có thay đổi, Sếp (ID=2) đã duyệt
-(1, 2, '2026-03-01','2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{
-  "total_samples": 45
-}', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
-
--- 3. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 1: Đợt rà soát tháng 5, mới lên lịch chờ làm
-(2, 1, '2026-03-01','2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{
-  "total_samples": 50
-}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
-
--- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
-(2, 2, '2026-03-01','2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED_BY_SV', '{
-  "total_samples": 45
-}', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
-
--- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
-(4, 1, '2026-03-01','2026-03-01', '2025-10-01', NULL, 1, 'MISS', '{
-  "total_samples": 50
-}', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
+-- INSERT INTO training_sample_review_policies (policy_code, policy_name, product_line_id, effective_date, expiration_date,
+--                                              status, description, created_by, updated_by)
+-- VALUES ('TSRP-2026-001', 'Chính xác kiểm tra 2026', 1, '2026-01-01', '2026-12-31', 'ACTIVE',
+--         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm cho tất cả dây chuyền năm 2026', 'admin', 'admin'),
+--        ('TSRP-2025-001', 'Chính xác kiểm tra 2026', 1, '2025-01-01', '2025-12-31', 'ARCHIVED',
+--         'Chính sách rà soát mẫu huấn luyện định kỳ hàng năm năm 2025', 'admin', 'admin');
+--
+-- INSERT INTO training_sample_review_configs (review_policy_id, trigger_month, trigger_day, due_days,
+--                                             created_by)
+-- VALUES (1, 3, 1, 30, 'admin'),
+--        (1, 5, 2, 30, 'admin'),
+--        (1, 6, 1, 30, 'admin'),
+--        (2, 9, 1, 30, 'admin'),
+--        (2, 12, 1, 30, 'admin');
+--
+-- INSERT INTO training_sample_reviews
+-- (config_id, product_line_id, review_date, start_date,due_date, completed_date, reviewed_by, status, sample_snapshot, confirmed_by,
+--  delete_flag, created_at, created_by, updated_at, updated_by)
+-- VALUES
+-- -- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
+-- (1, 1, '2026-03-01','2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{
+--   "total_samples": 50
+-- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+--
+-- -- 2. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 2: Đã làm xong, không có thay đổi, Sếp (ID=2) đã duyệt
+-- (1, 2, '2026-03-01','2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{
+--   "total_samples": 45
+-- }', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+--
+-- -- 3. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 1: Đợt rà soát tháng 5, mới lên lịch chờ làm
+-- (2, 1, '2026-03-01','2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{
+--   "total_samples": 50
+-- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+--
+-- -- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
+-- (2, 2, '2026-03-01','2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED_BY_SV', '{
+--   "total_samples": 45
+-- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
+--
+-- -- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
+-- (4, 1, '2026-03-01','2026-03-01', '2025-10-01', NULL, 1, 'MISS', '{
+--   "total_samples": 50
+-- }', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
 
 INSERT INTO notification_templates (code, subject_template, html_template_name, description, created_by)
 VALUES ('APPROVAL_NUDGE',
@@ -1592,362 +1594,6 @@ VALUES ('APPROVAL_NUDGE',
         'training-overdue-warning',
         'Gửi tự động cho TL khi có lịch huấn luyện đã qua ngày mà chưa cập nhật kết quả',
         'system');
-
-UPDATE `anomaly_training`.`training_sample_reviews` SET `sample_snapshot` = '[
-  {
-    "trainingSampleId": 1,
-    "processId": 2,
-    "processName": "Tiện Tinh Trục Bơm",
-    "product": {
-      "id": 1,
-      "code": "BOM-P100",
-      "name": "Bơm Nước Dân Dụng P100",
-      "attachmentUrls": [],
-      "processes": [
-        {
-          "id": 4,
-          "code": "TI-04",
-          "name": "Tiện Cắt Đứt & Vát Mép",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 1,
-          "code": "TI-01",
-          "name": "Tiện Thô Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 3,
-          "code": "TI-03",
-          "name": "Tiện Ren & Lỗ Tâm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 2,
-          "code": "TI-02",
-          "name": "Tiện Tinh Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        }
-      ]
-    },
-    "defect": {
-      "defectId": 1,
-      "defectCode": "DF001",
-      "defectDescription": "Xước bề mặt trục bơm do dao cụ mòn",
-      "processId": 2,
-      "processName": "Tiện Tinh Trục Bơm",
-      "detectedDate": "2025-01-10",
-      "note": null,
-      "originCause": "Mòn đột xuất",
-      "outflowCause": "Không SOI đèn",
-      "causePoint": "Đài dao tiện",
-      "originMeasures": "Thay dao theo schedule",
-      "outflowMeasures": "Kiểm 100% đầu ca",
-      "defectType": "DEFECTIVE_GOODS",
-      "customer": "Nội bộ",
-      "quantity": 5,
-      "conclusion": "Lập SOP thay dao định kỳ",
-      "product": null,
-      "attachmentUrls": []
-    },
-    "trainingSampleCode": "M-TI-01",
-    "categoryName": "Lỗi Ngoại Quan - Xước Bề Mặt",
-    "trainingDescription": "Soi đèn góc 45° để phát hiện vết xước trục bơm. Loại bỏ nếu vết > 0.1mm.",
-    "note": "Lỗi phổ biến nhất Line Tiện",
-    "attachmentUrls": []
-  },
-  {
-    "trainingSampleId": 2,
-    "processId": 1,
-    "processName": "Tiện Thô Trục Bơm",
-    "product": {
-      "id": 1,
-      "code": "BOM-P100",
-      "name": "Bơm Nước Dân Dụng P100",
-      "attachmentUrls": [],
-      "processes": [
-        {
-          "id": 4,
-          "code": "TI-04",
-          "name": "Tiện Cắt Đứt & Vát Mép",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 1,
-          "code": "TI-01",
-          "name": "Tiện Thô Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 3,
-          "code": "TI-03",
-          "name": "Tiện Ren & Lỗ Tâm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 2,
-          "code": "TI-02",
-          "name": "Tiện Tinh Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        }
-      ]
-    },
-    "defect": {
-      "defectId": 2,
-      "defectCode": "DF002",
-      "defectDescription": "Kích thước đường kính ngoài sai dung sai IT8",
-      "processId": 1,
-      "processName": "Tiện Thô Trục Bơm",
-      "detectedDate": "2025-01-17",
-      "note": "",
-      "originCause": "Lỗi operator – Setup sai G54",
-      "outflowCause": "Đo sai phương pháp",
-      "causePoint": "Tại kẹp phôi",
-      "originMeasures": "Hiệu chỉnh máy CNC",
-      "outflowMeasures": "Đào tạo lại đo lường",
-      "defectType": "CLAIM",
-      "customer": "KH Yamaha",
-      "quantity": 3,
-      "conclusion": "Chuẩn hóa quy trình setup",
-      "product": {
-        "id": 2,
-        "code": "BOM-P200",
-        "name": "Bơm Nước Dân Dụng P200",
-        "attachmentUrls": null,
-        "processes": null
-      },
-      "attachmentUrls": [
-        "http://localhost:9000/anomaly-training-bucket/defect_proposal/2026/03/22/76377ef6-truong-chinh.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20260322%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260322T174719Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cce2eebffa3e8cfa6b3a0407a7d76d56581f703c1a22d267b0b2695439f4c9c5"
-      ]
-    },
-    "trainingSampleCode": "M-TI-02",
-    "categoryName": "Lỗi Kích Thước - Đường Kính",
-    "trainingDescription": "Đo 3 điểm (đầu/giữa/cuối) bằng panme điện tử. Sai số cho phép ±0.015mm.",
-    "note": "Đo trước khi chuyển tiếp",
-    "attachmentUrls": []
-  },
-  {
-    "trainingSampleId": 5,
-    "processId": 4,
-    "processName": "Tiện Cắt Đứt & Vát Mép",
-    "product": {
-      "id": 1,
-      "code": "BOM-P100",
-      "name": "Bơm Nước Dân Dụng P100",
-      "attachmentUrls": [],
-      "processes": [
-        {
-          "id": 4,
-          "code": "TI-04",
-          "name": "Tiện Cắt Đứt & Vát Mép",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 1,
-          "code": "TI-01",
-          "name": "Tiện Thô Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 3,
-          "code": "TI-03",
-          "name": "Tiện Ren & Lỗ Tâm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 2,
-          "code": "TI-02",
-          "name": "Tiện Tinh Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        }
-      ]
-    },
-    "defect": {
-      "defectId": 1,
-      "defectCode": "DF001",
-      "defectDescription": "Xước bề mặt trục bơm do dao cụ mòn",
-      "processId": 2,
-      "processName": "Tiện Tinh Trục Bơm",
-      "detectedDate": "2025-01-10",
-      "note": null,
-      "originCause": "Mòn đột xuất",
-      "outflowCause": "Không SOI đèn",
-      "causePoint": "Đài dao tiện",
-      "originMeasures": "Thay dao theo schedule",
-      "outflowMeasures": "Kiểm 100% đầu ca",
-      "defectType": "DEFECTIVE_GOODS",
-      "customer": "Nội bộ",
-      "quantity": 5,
-      "conclusion": "Lập SOP thay dao định kỳ",
-      "product": null,
-      "attachmentUrls": []
-    },
-    "trainingSampleCode": "M-TI-05",
-    "categoryName": "Vát Mép - Kiểm Cạnh Sắc",
-    "trainingDescription": "Dùng dưỡng bán kính kiểm vát mép 1x45°. Không có cạnh sắc để ráy da.",
-    "note": "Safety handling",
-    "attachmentUrls": []
-  },
-  {
-    "trainingSampleId": 6,
-    "processId": 1,
-    "processName": "Tiện Thô Trục Bơm",
-    "product": {
-      "id": 1,
-      "code": "BOM-P100",
-      "name": "Bơm Nước Dân Dụng P100",
-      "attachmentUrls": [],
-      "processes": [
-        {
-          "id": 4,
-          "code": "TI-04",
-          "name": "Tiện Cắt Đứt & Vát Mép",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 1,
-          "code": "TI-01",
-          "name": "Tiện Thô Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 3,
-          "code": "TI-03",
-          "name": "Tiện Ren & Lỗ Tâm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        },
-        {
-          "id": 2,
-          "code": "TI-02",
-          "name": "Tiện Tinh Trục Bơm",
-          "description": null,
-          "classification": null,
-          "standardTimeJt": null,
-          "productLineId": 1,
-          "productLineName": "PL-TIEN-P1",
-          "createdAt": null,
-          "skillsProcess": null
-        }
-      ]
-    },
-    "defect": {
-      "defectId": 3,
-      "defectCode": "DF003",
-      "defectDescription": "Chiều dài trục ngắn hơn bản vẽ 0.3mm",
-      "processId": 1,
-      "processName": "Tiện Thô Trục Bơm",
-      "detectedDate": "2025-02-05",
-      "note": null,
-      "originCause": "Thao tác reset offset Z",
-      "outflowCause": "Không dùng dưỡng đo",
-      "causePoint": "Tool setting",
-      "originMeasures": "Kiểm bù offset tool",
-      "outflowMeasures": "Kiểm 100% cuối ca",
-      "defectType": "DEFECTIVE_GOODS",
-      "customer": "Nội bộ",
-      "quantity": 8,
-      "conclusion": "Training lại tool setting",
-      "product": null,
-      "attachmentUrls": []
-    },
-    "trainingSampleCode": "M-TI-06",
-    "categoryName": "Lỗi Kích Thước - Chiều Dài",
-    "trainingDescription": "Dùng thước cặp điện tử đo chiều dài tổng. Sai số ±0.3mm mới đạt.",
-    "note": "Đo sau cắt đứt",
-    "attachmentUrls": []
-  }
-]' where id = 1;
-
 
 SET FOREIGN_KEY_CHECKS = 1;
 

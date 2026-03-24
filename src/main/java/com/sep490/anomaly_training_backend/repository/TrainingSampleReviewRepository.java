@@ -17,9 +17,10 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
 
     @Query("SELECT tr FROM TrainingSampleReview tr " +
             "WHERE tr.reviewedBy.id = :userId  " +
+            "AND tr.status IN (com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING, com.sep490.anomaly_training_backend.enums.ReportStatus.REJECTED_BY_SV)"+
             "AND tr.productLine.id = :productLine  " +
-            "AND tr.status != com.sep490.anomaly_training_backend.enums.ReportStatus.APPROVED "+
-            "AND tr.deleteFlag = false")
+            "AND tr.deleteFlag = false " +
+            "ORDER BY tr.startDate DESC")
     List<TrainingSampleReview> findReviewTask(@Param("productLine") Long productLindId, @Param("userId") Long userId);
 
     List<TrainingSampleReview> findByConfigId(Long configId);
@@ -28,7 +29,6 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
 
     /**
      * Tìm tất cả review đã quá hạn chưa được phê duyệt
-     *
      * Điều kiện:
      * - dueDate < ngày hôm nay
      * - result != APPROVED
