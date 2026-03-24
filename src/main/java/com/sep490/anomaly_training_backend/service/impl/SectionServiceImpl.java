@@ -33,11 +33,22 @@ public class SectionServiceImpl implements SectionService {
     @Override
     @Transactional
     public SectionResponse createSection(SectionRequest request) {
-        if (sectionRepository.existByCode(request.getCode())) {
+        if (sectionRepository.existsByName(request.getName())) {
             throw new AppException(ErrorCode.SECTION_NAME_ALREADY_EXISTS);
         }
 
-        Section section = sectionMapper.toEntity(request);
+        Section section = new Section();
+
+        if (request.getName() != null && !request.getName().equals(section.getName())) {
+            section.setName(request.getName());
+        }
+        if (request.getCode() != null && !request.getCode().equals(section.getCode())) {
+            section.setCode(request.getCode());
+        }
+        if (request.getManagerId() != null && (section.getManager() == null || !request.getManagerId().equals(section.getManager().getId()))) {
+            section.setManager(userRepository.findById(request.getManagerId()).orElse(null));
+        }
+
         return sectionMapper.toDTO(sectionRepository.save(section));
     }
 

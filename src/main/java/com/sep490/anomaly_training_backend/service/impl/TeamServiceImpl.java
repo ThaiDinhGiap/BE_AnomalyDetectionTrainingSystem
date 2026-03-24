@@ -32,7 +32,18 @@ public class TeamServiceImpl implements TeamService {
             throw new AppException(ErrorCode.TEAM_NAME_ALREADY_EXISTS);
         }
 
-        Team team = teamMapper.toEntity(request);
+        Team team = new Team();
+
+        if (request.getName() != null && !request.getName().equals(team.getName())) {
+            team.setName(request.getName());
+        }
+        if (request.getCode() != null && !request.getCode().equals(team.getCode())) {
+            team.setCode(request.getCode());
+        }
+        if (request.getTeamLeaderId() != null && (team.getTeamLeader() == null || !request.getTeamLeaderId().equals(team.getTeamLeader().getId()))) {
+            team.setTeamLeader(userRepository.findById(request.getTeamLeaderId()).orElse(null));
+        }
+        
         return teamMapper.toDTO(teamRepository.save(team));
     }
 
@@ -41,7 +52,7 @@ public class TeamServiceImpl implements TeamService {
     public TeamResponse updateTeam(Long id, TeamRequest request) {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
-        
+
         if (request.getName() != null && !request.getName().equals(team.getName())) {
             team.setName(request.getName());
         }

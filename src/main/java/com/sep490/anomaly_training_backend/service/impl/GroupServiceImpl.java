@@ -37,7 +37,18 @@ public class GroupServiceImpl implements GroupService {
             throw new AppException(ErrorCode.GROUP_NAME_ALREADY_EXISTS);
         }
 
-        Group group = groupMapper.toEntity(request);
+        Group group = new Group();
+
+        if (request.getName() != null && !request.getName().equals(group.getName())) {
+            group.setName(request.getName());
+        }
+        if (request.getCode() != null && !request.getCode().equals(group.getCode())) {
+            group.setCode(request.getCode());
+        }
+        if (request.getSupervisorId() != null && (group.getSupervisor() == null || !request.getSupervisorId().equals(group.getSupervisor().getId()))) {
+            group.setSupervisor(userRepository.findById(request.getSectionId()).orElse(null));
+        }
+
         return groupMapper.toDTO(groupRepository.save(group));
     }
 
