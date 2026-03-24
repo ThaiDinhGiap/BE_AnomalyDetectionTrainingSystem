@@ -13,7 +13,6 @@ import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,8 +41,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new AppException(ErrorCode.EMPLOYEE_CODE_ALREADY_LINKED);
         }
 
-        if (request.getTeamId() != null) {
-            boolean isTeamExist = teamRepository.existsById(request.getTeamId());
+        if (request.getTeamIds() != null) {
+            boolean isTeamExist = teamRepository.existsById(request.getTeamIds().get(0));
             if (!isTeamExist) {
                 throw new AppException(ErrorCode.TEAM_NOT_FOUND);
             }
@@ -69,7 +68,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .id(e.getId())
                         .employeeCode(e.getEmployeeCode())
                         .fullName(e.getFullName())
-                        .teamName(e.getTeam() != null ? e.getTeam().getName() : "N/A")
+                        .teamName(e.getTeams() != null ? e.getTeams().get(0).getName() : "N/A")
                         .status(e.getStatus().name())
                         .build())
                 .collect(Collectors.toList());
@@ -87,8 +86,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
         }
 
-        if (request.getTeamId() != null && !request.getTeamId().equals(employee.getTeam().getId())) {
-            boolean isTeamExist = teamRepository.existsById(request.getTeamId());
+        if (request.getTeamIds() != null && !request.getTeamIds().get(0).equals(employee.getTeams().get(0).getId())) {
+            boolean isTeamExist = teamRepository.existsById(request.getTeamIds().get(0));
             if (!isTeamExist) {
                 throw new AppException(ErrorCode.TEAM_NOT_FOUND);
             }
@@ -129,16 +128,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<EmployeeResponse> getEmployeesByTeam(Long teamId) {
-        List<EmployeeResponse> results =  employeeRepository.findByTeamId(teamId).stream()
+        List<EmployeeResponse> results = employeeRepository.findByTeamsId(teamId).stream()
                 .filter(e -> !e.isDeleteFlag())
                 .map(employeeMapper::toDTO)
                 .toList();
-        for (EmployeeResponse employee: results){
+        for (EmployeeResponse employee : results) {
             Integer totalTraining = 0;
             Integer totalFail = 0;
             List<TrainingResultDetail> resultEmployee = trainingResultDetailRepository.findAllByEmployeeIdAndDeleteFlagFalse(employee.getId());
-            for (TrainingResultDetail employeeDetail: resultEmployee ){
-                if (Boolean.FALSE.equals(employeeDetail.getIsPass())){
+            for (TrainingResultDetail employeeDetail : resultEmployee) {
+                if (Boolean.FALSE.equals(employeeDetail.getIsPass())) {
                     totalFail++;
                 }
                 totalTraining++;

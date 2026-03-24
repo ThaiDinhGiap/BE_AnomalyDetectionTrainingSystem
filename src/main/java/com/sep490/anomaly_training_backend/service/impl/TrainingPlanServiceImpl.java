@@ -18,6 +18,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationRe
 import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
 import com.sep490.anomaly_training_backend.dto.scoring.PrioritySnapshotResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
@@ -673,7 +674,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         if (groupId == null) return List.of();
 
-        List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId);
+        List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId, EmployeeStatus.ACTIVE);
         Set<Long> inPlanIds = new java.util.HashSet<>(
                 trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
 
@@ -695,7 +696,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
         if (teamId == null) return List.of();
 
-        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId, EmployeeStatus.ACTIVE);
         Set<Long> inPlanIds = new java.util.HashSet<>(
                 trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
 
@@ -735,7 +736,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                                                                 TrainingPlanGenerationRequest request) {
         TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
 
-        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId());
+        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(request.getTeamId(), EmployeeStatus.ACTIVE);
         PriorityPolicy priorityPolicy = policyRepository
                 .findFirstByEntityTypeAndStatusAndDeleteFlagFalse(PolicyEntityType.EMPLOYEE, PolicyStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.POLICY_NOT_FOUND,
@@ -1092,7 +1093,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     private TrainingPlanResponse toTrainingPlanResponse(TrainingPlan trainingPlan) {
         TrainingPlanResponse response = planMapper.toResponse(trainingPlan);
-        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(trainingPlan.getTeam().getId());
+        List<Employee> teamMembers = employeeRepository.findAllActiveByTeamId(trainingPlan.getTeam().getId(), EmployeeStatus.ACTIVE);
 
         List<TrainingPlanDetailResponse> prefilledDetails = new ArrayList<>();
         if (teamMembers != null) {
@@ -1221,10 +1222,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .employeeCode(emp.getEmployeeCode())
                 .fullName(emp.getFullName())
                 .status(emp.getStatus())
-                .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
-                .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
-                .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                        ? emp.getTeam().getGroup().getName()
+                .teamId(emp.getTeams() != null ? emp.getTeams().get(0).getId() : null)
+                .teamName(emp.getTeams() != null ? emp.getTeams().get(0).getName() : null)
+                .groupName(emp.getTeams() != null && emp.getTeams().get(0).getGroup() != null
+                        ? emp.getTeams().get(0).getGroup().getName()
                         : null)
                 .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
                 .tierName(snapshot != null ? snapshot.getTierName() : null)

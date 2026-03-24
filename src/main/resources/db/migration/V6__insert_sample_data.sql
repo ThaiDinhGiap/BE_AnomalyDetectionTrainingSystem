@@ -128,7 +128,7 @@ VALUES (1, 1),
 -- ============================================================================
 
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
-VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cáo lỗi', 1, 'system'),
+VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cáo lỗi', 1, 'system'),
        (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý chủ đề đào tạo', 2, 'system'),
        (3, 'training_plan', 'Kế hoạch đào tạo', 'Quản lý kế hoạch đào tạo', 3, 'system'),
        (4, 'training_result', 'Kết quả đào tạo', 'Quản lý kết quả đào tạo', 4, 'system'),
@@ -144,21 +144,6 @@ VALUES (1, 'defect_report', 'Báo cáo lỗi sản phẩm', 'Quản lý báo cá
        (14, 'attachment', 'Quản lý File & Ảnh', 'Upload và xóa tệp MinIO', 14, 'system'),
        (15, 'action_item', 'Việc cần làm', 'Quản lý các mục cần xử lý', 15, 'system');
 
--- ============================================================================
--- V10__refactor_permissions_to_manage.sql
--- Refactor permissions: Gộp CRUD thành MANAGE
--- ============================================================================
-
-SET FOREIGN_KEY_CHECKS = 0;
-
--- ============================================================================
--- TRUNCATE ROLE_PERMISSIONS (xóa sạch quyền cũ)
--- ============================================================================
-TRUNCATE TABLE role_permissions;
-
--- ============================================================================
--- THÊM CÁC QUYỀN MANAGE MỚI
--- ============================================================================
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
 VALUES
 -- defect_report (module_id=1)
@@ -202,117 +187,178 @@ VALUES
 -- GÁN QUYỀN: ADMIN (role_id=1) - TẤT CẢ QUYỀN
 -- ============================================================================
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 1, id FROM permissions;
+SELECT 1, id
+FROM permissions;
 
 -- ============================================================================
 -- GÁN QUYỀN: MANAGER (role_id=2)
 -- ============================================================================
-INSERT INTO role_permissions (role_id, permission_id) VALUES
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES
 -- defect_proposal
-(2, 1), (2, 5), (2, 300),
+(2, 1),
+(2, 5),
+(2, 300),
 -- defect list
-(2, 111), (2, 301),
+(2, 111),
+(2, 301),
 -- training sample proposal
-(2, 6), (2, 205), (2, 302),
+(2, 6),
+(2, 205),
+(2, 302),
 -- training sample list
-(2, 100), (2, 303),
+(2, 100),
+(2, 303),
 -- training sample review
-(2, 201), (2, 304), (2, 305),
+(2, 201),
+(2, 304),
+(2, 305),
 -- training plan
-(2, 10), (2, 306), (2, 14),
+(2, 10),
+(2, 306),
+(2, 14),
 -- training result
-(2, 15), (2, 307), (2, 17),
+(2, 15),
+(2, 307),
+(2, 17),
 -- employee
-(2, 18), (2, 308),
+(2, 18),
+(2, 308),
 -- user, role (readonly)
-(2, 22), (2, 27),
+(2, 22),
+(2, 27),
 -- scoring
-(2, 36), (2, 312),
+(2, 36),
+(2, 312),
 -- dashboard
-(2, 40), (2, 41),
+(2, 40),
+(2, 41),
 -- staff org
-(2, 43), (2, 313),
+(2, 43),
+(2, 313),
 -- manufacturing line
-(2, 47), (2, 314), (2, 200),
+(2, 47),
+(2, 314),
+(2, 200),
 -- attachment
-(2, 56), (2, 57), (2, 58),
+(2, 56),
+(2, 57),
+(2, 58),
 -- action item
 (2, 59);
 
 -- ============================================================================
 -- GÁN QUYỀN: SUPERVISOR (role_id=3)
 -- ============================================================================
-INSERT INTO role_permissions (role_id, permission_id) VALUES
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES
 -- defect_proposal
-(3, 1), (3, 5), (3, 300),
+(3, 1),
+(3, 5),
+(3, 300),
 -- defect list
-(3, 111), (3, 301),
+(3, 111),
+(3, 301),
 -- training sample proposal
-(3, 6), (3, 205), (3, 302),
+(3, 6),
+(3, 205),
+(3, 302),
 -- training sample list
-(3, 100), (3, 303),
+(3, 100),
+(3, 303),
 -- training sample review
-(3, 201), (3, 304), (3, 305), (3, 209),
+(3, 201),
+(3, 304),
+(3, 305),
+(3, 209),
 -- training plan
-(3, 10), (3, 306), (3, 14),
+(3, 10),
+(3, 306),
+(3, 14),
 -- training result
-(3, 15), (3, 307),
+(3, 15),
+(3, 307),
 -- employee
-(3, 18), (3, 308),
+(3, 18),
+(3, 308),
 -- scoring (view only)
 (3, 36),
 -- dashboard
 (3, 40),
 -- staff org
-(3, 43), (3, 313),
+(3, 43),
+(3, 313),
 -- manufacturing line
-(3, 47), (3, 314), (3, 200),
+(3, 47),
+(3, 314),
+(3, 200),
 -- attachment
-(3, 56), (3, 57), (3, 58),
+(3, 56),
+(3, 57),
+(3, 58),
 -- action item
 (3, 59);
 
 -- ============================================================================
 -- GÁN QUYỀN: TEAM LEADER (role_id=4)
 -- ============================================================================
-INSERT INTO role_permissions (role_id, permission_id) VALUES
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES
 -- defect_proposal
-(4, 1), (4, 5), (4, 300),
+(4, 1),
+(4, 5),
+(4, 300),
 -- defect list
-(4, 111), (4, 301),
+(4, 111),
+(4, 301),
 -- training sample proposal
-(4, 6), (4, 205), (4, 302),
+(4, 6),
+(4, 205),
+(4, 302),
 -- training sample list
-(4, 100), (4, 303),
+(4, 100),
+(4, 303),
 -- training sample review
-(4, 201), (4, 304), (4, 305),
+(4, 201),
+(4, 304),
+(4, 305),
 -- training plan
-(4, 10), (4, 306), (4, 14),
+(4, 10),
+(4, 306),
+(4, 14),
 -- training result
-(4, 15), (4, 307), (4, 17),
+(4, 15),
+(4, 307),
+(4, 17),
 -- dashboard
 (4, 40),
 -- staff org
-(4, 43), (4, 313),
+(4, 43),
+(4, 313),
 -- manufacturing line
-(4, 47), (4, 314), (4, 200),
+(4, 47),
+(4, 314),
+(4, 200),
 -- attachment
-(4, 56), (4, 57), (4, 58),
+(4, 56),
+(4, 57),
+(4, 58),
 -- action item
 (4, 59);
 
 -- ============================================================================
 -- GÁN QUYỀN: FINAL INSPECTION (role_id=5)
 -- ============================================================================
-INSERT INTO role_permissions (role_id, permission_id) VALUES
-(5, 1), (5, 300),
-(5, 15), (5, 307),
-(5, 18),
-(5, 40),
-(5, 56), (5, 57),
-(5, 59);
-
-SET FOREIGN_KEY_CHECKS = 1;
+INSERT INTO role_permissions (role_id, permission_id)
+VALUES (5, 1),
+       (5, 300),
+       (5, 15),
+       (5, 307),
+       (5, 18),
+       (5, 40),
+       (5, 56),
+       (5, 57),
+       (5, 59);
 
 -- ============================================================================
 -- PART 3: ORGANIZATION STRUCTURE
@@ -347,44 +393,79 @@ VALUES (1, 'T1', 1, 'Tổ Tiện Ca Ngày', 6, 12, 'admin'),
        (5, 'T5', 5, 'Tổ Lắp Ráp Động Cơ', 9, 13, 'admin'),
        (6, 'T6', 6, 'Tổ KCS & Kiểm Cuối', 11, 13, 'admin');
 
-INSERT INTO employees (id, employee_code, full_name, team_id, status, created_by)
+INSERT INTO employees (id, employee_code, full_name, status, created_by)
+VALUES (1, 'NV001', 'Nguyễn Văn An', 'ACTIVE', 'admin'),
+       (2, 'NV002', 'Trần Thị Bình', 'ACTIVE', 'admin'),
+       (3, 'NV003', 'Lê Văn Cường', 'ACTIVE', 'admin'),
+       (4, 'NV004', 'Võ Thị Dung', 'ACTIVE', 'admin'),
+       (5, 'NV005', 'Đặng Văn Em', 'MATERNITY_LEAVE', 'admin'),
+       (6, 'NV006', 'Bùi Văn Phúc', 'ACTIVE', 'admin'),
+       (7, 'NV007', 'Phạm Thị Giỏi', 'ACTIVE', 'admin'),
+       (8, 'NV008', 'Hoàng Văn Hải', 'ACTIVE', 'admin'),
+       (9, 'NV009', 'Ngô Thị Lan', 'ACTIVE', 'admin'),
+       (10, 'NV010', 'Đinh Văn Khánh', 'ACTIVE', 'admin'),
+       (11, 'NV011', 'Trương Thị Lan', 'RESIGNED', 'admin'),
+       (12, 'NV012', 'Lưu Văn Minh', 'ACTIVE', 'admin'),
+       (13, 'NV013', 'Chu Thị Nga', 'ACTIVE', 'admin'),
+       (14, 'NV014', 'Vũ Văn Oanh', 'ACTIVE', 'admin'),
+       (15, 'NV015', 'Tô Thị Phương', 'ACTIVE', 'admin'),
+       (16, 'NV016', 'Mai Văn Quang', 'ACTIVE', 'admin'),
+       (17, 'NV017', 'Hồ Thị Rồng', 'ACTIVE', 'admin'),
+       (18, 'NV018', 'Lương Văn Sơn', 'ACTIVE', 'admin'),
+       (19, 'NV019', 'Kiều Thị Thu', 'ACTIVE', 'admin'),
+       (20, 'NV020', 'Trần Văn Thắng', 'ACTIVE', 'admin'),
+       (21, 'NV021', 'Đỗ Thị Uyên', 'MATERNITY_LEAVE', 'admin'),
+       (22, 'NV022', 'Nguyễn Văn Vinh', 'ACTIVE', 'admin'),
+       (23, 'NV023', 'Phan Thị Xuân', 'ACTIVE', 'admin'),
+       (24, 'NV024', 'Lê Văn Yên', 'ACTIVE', 'admin'),
+       (25, 'NV025', 'Hoàng Thị Yến', 'ACTIVE', 'admin'),
+       (26, 'NV026', 'Trịnh Văn Tùng', 'ACTIVE', 'admin'),
+       (27, 'NV027', 'Vương Thị Hà', 'ACTIVE', 'admin'),
+       (28, 'NV028', 'Mạc Văn Bình', 'ACTIVE', 'admin'),
+       (29, 'NV029', 'Tăng Thị Chi', 'ACTIVE', 'admin'),
+       (30, 'NV030', 'Quách Văn Dương', 'ACTIVE', 'admin');
+
+INSERT INTO employee_teams (employee_id, team_id)
 VALUES
--- Tổ Tiện (team 1) - 6 người
-(1, 'NV001', 'Nguyễn Văn An', 1, 'ACTIVE', 'admin'),
-(2, 'NV002', 'Trần Thị Bình', 1, 'ACTIVE', 'admin'),
-(3, 'NV003', 'Lê Văn Cường', 1, 'ACTIVE', 'admin'),
-(4, 'NV004', 'Võ Thị Dung', 1, 'ACTIVE', 'admin'),
-(5, 'NV005', 'Đặng Văn Em', 1, 'MATERNITY_LEAVE', 'admin'),
-(6, 'NV006', 'Bùi Văn Phúc', 1, 'ACTIVE', 'admin'),
--- Tổ Phay (team 2) - 6 người
-(7, 'NV007', 'Phạm Thị Giỏi', 2, 'ACTIVE', 'admin'),
-(8, 'NV008', 'Hoàng Văn Hải', 2, 'ACTIVE', 'admin'),
-(9, 'NV009', 'Ngô Thị Lan', 2, 'ACTIVE', 'admin'),
-(10, 'NV010', 'Đinh Văn Khánh', 2, 'ACTIVE', 'admin'),
-(11, 'NV011', 'Trương Thị Lan', 2, 'RESIGNED', 'admin'),
-(12, 'NV012', 'Lưu Văn Minh', 2, 'ACTIVE', 'admin'),
--- Tổ Hàn (team 3) - 4 người
-(13, 'NV013', 'Chu Thị Nga', 3, 'ACTIVE', 'admin'),
-(14, 'NV014', 'Vũ Văn Oanh', 3, 'ACTIVE', 'admin'),
-(15, 'NV015', 'Tô Thị Phương', 3, 'ACTIVE', 'admin'),
-(16, 'NV016', 'Mai Văn Quang', 3, 'ACTIVE', 'admin'),
--- Tổ Lắp Ráp Bơm (team 4) - 5 người
-(17, 'NV017', 'Hồ Thị Rồng', 4, 'ACTIVE', 'admin'),
-(18, 'NV018', 'Lương Văn Sơn', 4, 'ACTIVE', 'admin'),
-(19, 'NV019', 'Kiều Thị Thu', 4, 'ACTIVE', 'admin'),
-(20, 'NV020', 'Trần Văn Thắng', 4, 'ACTIVE', 'admin'),
-(21, 'NV021', 'Đỗ Thị Uyên', 4, 'MATERNITY_LEAVE', 'admin'),
--- Tổ Lắp Ráp Động Cơ (team 5) - 5 người
-(22, 'NV022', 'Nguyễn Văn Vinh', 5, 'ACTIVE', 'admin'),
-(23, 'NV023', 'Phan Thị Xuân', 5, 'ACTIVE', 'admin'),
-(24, 'NV024', 'Lê Văn Yên', 5, 'ACTIVE', 'admin'),
-(25, 'NV025', 'Hoàng Thị Yến', 5, 'ACTIVE', 'admin'),
-(26, 'NV026', 'Trịnh Văn Tùng', 5, 'ACTIVE', 'admin'),
--- Tổ KCS (team 6) - 4 người
-(27, 'NV027', 'Vương Thị Hà', 6, 'ACTIVE', 'admin'),
-(28, 'NV028', 'Mạc Văn Bình', 6, 'ACTIVE', 'admin'),
-(29, 'NV029', 'Tăng Thị Chi', 6, 'ACTIVE', 'admin'),
-(30, 'NV030', 'Quách Văn Dương', 6, 'ACTIVE', 'admin');
+-- Tổ 1 (NV001 -> NV006)
+(1, 1),
+(2, 1),
+(3, 1),
+(4, 1),
+(5, 1),
+(6, 1),
+-- Tổ 2 (NV007 -> NV012)
+(7, 2),
+(8, 2),
+(9, 2),
+(10, 2),
+(11, 2),
+(12, 2),
+-- Tổ 3 (NV013 -> NV016)
+(13, 3),
+(14, 3),
+(15, 3),
+(16, 3),
+-- Tổ 4 (NV017 -> NV021)
+(17, 4),
+(18, 4),
+(19, 4),
+(20, 4),
+(21, 4),
+-- Tổ 5 (NV022 -> NV026)
+(22, 5),
+(23, 5),
+(24, 5),
+(25, 5),
+(26, 5),
+-- Tổ 6 (NV027 -> NV030)
+(27, 6),
+(28, 6),
+(29, 6),
+(30, 6);
+
+-- Ví dụ: Nếu nhân viên NV001 tham gia thêm Tổ 2 (Quan hệ nhiều-nhiều)
+-- INSERT INTO employee_teams (employee_id, team_id) VALUES (1, 2);
 
 -- ============================================================================
 -- PART 4: PRODUCTS & PROCESSES

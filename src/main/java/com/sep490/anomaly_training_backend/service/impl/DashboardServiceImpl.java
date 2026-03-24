@@ -1,22 +1,88 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.response.dashboard.*;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.DefectErrorDetail;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.DefectTrendPoint;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.KpiData;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.MngOrgStats;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.MngPendingApprovalItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.MngTrainingProgressPoint;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.ProcessFlowItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.RejectedReportItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SkillCertificateItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.StageDistribution;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvDashboardLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvDefectByOperation;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvDefectHotspot;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvKpiData;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvRecentActivityItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTeamBenchmark;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTodoData;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTodoItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTopTrainingSampleItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTrainingEffectivenessPoint;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvTrainingStatusItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.SvWatchlistItem;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingExecutionPoint;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskData;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskFailed;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskMissed;
+import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskToday;
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
+import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.EmployeeSkill;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResult;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.SectionRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -1389,8 +1455,8 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
 
-        String[] monthNames = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
         List<SvTrainingEffectivenessPoint> points = new ArrayList<>();
 
@@ -1854,7 +1920,7 @@ public class DashboardServiceImpl implements DashboardService {
 
         int totalEmployees = 0;
         for (Long gId : groupIds) {
-            totalEmployees += employeeRepository.findAllActiveByGroupId(gId).size();
+            totalEmployees += employeeRepository.findAllActiveByGroupId(gId, EmployeeStatus.ACTIVE).size();
         }
 
         return MngOrgStats.builder()

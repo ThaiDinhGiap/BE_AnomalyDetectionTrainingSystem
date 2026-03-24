@@ -228,7 +228,6 @@ CREATE TABLE sections
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-
 -- 1.9 GROUPS (Dây chuyền sản xuất)
 CREATE TABLE `groups`
 (
@@ -254,7 +253,7 @@ CREATE TABLE `groups`
   COLLATE = utf8mb4_unicode_ci;
 
 
--- 1.10 TEAMS (Tổ sản xuất)
+-- 1.10 TEAMS (Tổ sản xuất - Giữ nguyên)
 CREATE TABLE teams
 (
     id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -280,14 +279,12 @@ CREATE TABLE teams
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-
--- 1.11 EMPLOYEES (Công nhân)
+-- 1.11 EMPLOYEES (Công nhân - Loại bỏ team_id)
 CREATE TABLE employees
 (
     id            BIGINT PRIMARY KEY AUTO_INCREMENT,
     employee_code VARCHAR(20) NOT NULL UNIQUE,
     full_name     VARCHAR(100),
-    team_id       BIGINT,
     status        ENUM ('ACTIVE', 'MATERNITY_LEAVE', 'RESIGNED') DEFAULT 'ACTIVE',
 
     delete_flag   BOOLEAN     NOT NULL                           DEFAULT FALSE,
@@ -296,8 +293,6 @@ CREATE TABLE employees
     updated_at    TIMESTAMP                                      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by    VARCHAR(255),
 
-    FOREIGN KEY (team_id) REFERENCES teams (id),
-    INDEX idx_employees_team (team_id),
     INDEX idx_employees_status (status),
     INDEX idx_employees_code (employee_code),
     INDEX idx_employees_delete_flag (delete_flag)
@@ -305,6 +300,24 @@ CREATE TABLE employees
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+-- 1.12 EMPLOYEE_TEAMS (Bảng trung gian thể hiện quan hệ Nhiều-Nhiều)
+CREATE TABLE employee_teams
+(
+    employee_id BIGINT NOT NULL,
+    team_id     BIGINT NOT NULL,
+
+    -- Các trường bổ sung nếu cần quản lý lịch sử tham gia
+    joined_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (employee_id, team_id), -- Khóa chính kết hợp đảm bảo không trùng lặp
+    FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE,
+
+    INDEX idx_emp_team_employee (employee_id),
+    INDEX idx_emp_team_team (team_id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
 
 -- 1.12 PRODUCT LINES (Dòng sản phẩm)
 CREATE TABLE product_lines
@@ -629,9 +642,9 @@ CREATE TABLE training_samples
     training_description VARCHAR(255) NOT NULL COMMENT 'Nội dung huấn luyện',
     product_id           BIGINT COMMENT 'Mã sản phẩm áp dụng',
     training_sample_code VARCHAR(20) COMMENT 'Mã mẫu (M1.1.1)',
-    process_order        INT           COMMENT 'Thứ tự công đoạn',
-    category_order       INT           COMMENT 'Thứ tự hạng mục trong công đoạn',
-    content_order        INT           COMMENT 'Thứ tự nội dung trong hạng mục',
+    process_order        INT COMMENT 'Thứ tự công đoạn',
+    category_order       INT COMMENT 'Thứ tự hạng mục trong công đoạn',
+    content_order        INT COMMENT 'Thứ tự nội dung trong hạng mục',
     note                 TEXT,
 
     delete_flag          BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -1322,11 +1335,11 @@ CREATE TABLE training_sample_reviews
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     config_id       BIGINT  NOT NULL,
     product_line_id BIGINT  NOT NULL,
-    start_date     DATE COMMENT 'Năm review (2026)',
+    start_date      DATE COMMENT 'Năm review (2026)',
     review_date     DATE COMMENT 'Ngày xác nhân TL đã thực hiện review',
     due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
-    completed_date  DATE             COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
-    reviewed_by     BIGINT           COMMENT 'TL thực hiện review',
+    completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
+    reviewed_by     BIGINT COMMENT 'TL thực hiện review',
     status          ENUM ('NEED_ASSIGNED', 'PENDING', 'DONE', 'REVISE', 'WAITING_SV',
         'REJECTED_BY_SV', 'APPROVED', 'MISS') DEFAULT 'NEED_ASSIGNED',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
@@ -1359,7 +1372,7 @@ CREATE TABLE training_sample_reviews_history
     review_date               DATE,
     due_date                  DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
     completed_date            DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
-    reviewed_by               BIGINT           COMMENT 'TL thực hiện review',
+    reviewed_by               BIGINT COMMENT 'TL thực hiện review',
     status                    VARCHAR(20),
     sample_snapshot           JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by              BIGINT COMMENT 'SV xác nhận',

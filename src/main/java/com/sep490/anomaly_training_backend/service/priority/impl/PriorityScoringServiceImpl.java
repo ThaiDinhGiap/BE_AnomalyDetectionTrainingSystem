@@ -163,7 +163,7 @@ public class PriorityScoringServiceImpl implements PriorityScoringService {
     public PrioritySnapshot recalculatePriorities(Long policyId, Long teamId) {
         log.info("Recalculating priorities for policy: {}, team: {}", policyId, teamId);
 
-        List<Employee> employees = employeeRepository.findByTeamIdAndDeleteFlagFalse(teamId);
+        List<Employee> employees = employeeRepository.findByTeamsIdAndDeleteFlagFalse(teamId);
         if (employees.isEmpty()) {
             log.warn("No employees found for team: {}", teamId);
         }

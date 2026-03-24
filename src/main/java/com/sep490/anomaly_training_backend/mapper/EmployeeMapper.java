@@ -5,42 +5,64 @@ import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
 import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {TeamMapper.class})
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class EmployeeMapper {
 
     @Autowired
     protected TeamRepository teamRepository;
 
-    // 1. Entity -> DTO
-    @Mapping(target = "teamId", source = "team.id")
-    @Mapping(target = "teamName", source = "team.name")
-    @Mapping(target = "groupName", source = "team.group.name")
-    @Mapping(target = "sectionName", source = "team.group.section.name")
+    @Mapping(target = "teamIds", source = "teams")
+    @Mapping(target = "teamName", expression = "java(joinTeamNames(employee.getTeams()))")
+    @Mapping(target = "groupName", expression = "java(joinGroupNames(employee.getTeams()))")
+    @Mapping(target = "sectionName", ignore = true)
     public abstract EmployeeResponse toDTO(Employee employee);
 
-    // 2. DTO -> Entity (Create)
-    @Mapping(target = "team", source = "teamId", qualifiedByName = "mapTeamById")
-    // Nếu request không gửi status thì để null (Entity sẽ tự set Default ACTIVE)
+    @Mapping(target = "teams", source = "teamIds", qualifiedByName = "mapIdsToTeams")
     public abstract Employee toEntity(EmployeeRequest dto);
 
-    // 3. Update Entity
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "team", source = "teamId", qualifiedByName = "mapTeamById")
+    @Mapping(target = "teams", source = "teamIds", qualifiedByName = "mapIdsToTeams")
     public abstract void updateEntity(@MappingTarget Employee employee, EmployeeRequest dto);
 
-    // --- Helper Method ---
-    @Named("mapTeamById")
-    Team mapTeamById(Long id) {
-        if (id == null) return null;
-        return teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found id: " + id));
+    @Named("mapIdsToTeams")
+    protected List<Team> mapIdsToTeams(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyList();
+        List<Team> teams = teamRepository.findAllById(ids);
+        if (teams.size() != ids.size()) {
+            throw new RuntimeException("Một hoặc nhiều Team ID không tồn tại");
+        }
+        return teams;
     }
-//    protected Instant map(LocalDateTime localDateTime) {
-//        if (localDateTime == null) return null;
-//        // Chuyển LocalDateTime sang Instant dựa trên múi giờ hệ thống (System Default)
-//        return localDateTime.atZone(ZoneId.systemDefault()).toInstant();
-//    }
+
+    protected List<Long> mapTeamsToIds(List<Team> teams) {
+        if (teams == null) return Collections.emptyList();
+        return teams.stream().map(Team::getId).collect(Collectors.toList());
+    }
+
+    protected String joinTeamNames(List<Team> teams) {
+        if (teams == null || teams.isEmpty()) return "";
+        return teams.stream().map(Team::getName).collect(Collectors.joining(", "));
+    }
+
+    protected String joinGroupNames(List<Team> teams) {
+        if (teams == null || teams.isEmpty()) return "";
+        return teams.stream()
+                .map(t -> t.getGroup() != null ? t.getGroup().getName() : "")
+                .distinct()
+                .filter(name -> !name.isEmpty())
+                .collect(Collectors.joining(", "));
+    }
 }

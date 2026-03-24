@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,7 +13,7 @@ public class EmployeeResponse {
     private String fullName;
     private EmployeeStatus status;
 
-    private Long teamId;
+    private List<Long> teamIds;
     private String teamName;
 
     private String groupName;

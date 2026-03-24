@@ -12,7 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -46,11 +47,16 @@ public class Employee extends BaseEntity {
     @Column(name = "full_name", length = 100)
     private String fullName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "employee_teams",
+            joinColumns = @JoinColumn(name = "employee_id"),
+            inverseJoinColumns = @JoinColumn(name = "team_id")
+    )
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private Team team;
+    @Builder.Default
+    private List<Team> teams = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -59,17 +65,13 @@ public class Employee extends BaseEntity {
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @Builder.Default
-    List<EmployeeSkill> skills = new ArrayList<>();
+    private List<EmployeeSkill> skills = new ArrayList<>();
 
     public boolean isOnWatchlist() {
-        if (skills.isEmpty()) {
+        if (skills == null || skills.isEmpty()) {
             return false;
         }
-        for (EmployeeSkill skill : skills) {
-            if (skill.getStatus() == EmployeeSkillStatus.PENDING_REVIEW) {
-                return true;
-            }
-        }
-        return false;
+        return skills.stream()
+                .anyMatch(skill -> skill.getStatus() == EmployeeSkillStatus.PENDING_REVIEW);
     }
 }

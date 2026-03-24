@@ -126,7 +126,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
         // 2. Get employees for the rows, filtering if employeeIds are provided
         List<Employee> employees = (CollectionUtils.isEmpty(employeeIds))
-                ? employeeRepository.findByTeamIdAndDeleteFlagFalse(teamId)
+                ? employeeRepository.findByTeamsIdAndDeleteFlagFalse(teamId)
                 : employeeRepository.findAllById(employeeIds);
         List<Long> finalEmployeeIds = employees.stream().map(Employee::getId).collect(Collectors.toList());
 
@@ -296,8 +296,10 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                         Employee newEmployee = Employee.builder()
                                 .employeeCode(raw.getEmployeeId())
                                 .fullName(raw.getEmployeeFullName())
-                                .team(teamRepository.findByCode(teamCode)
-                                        .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND, "Team not found: " + teamCode)))
+                                .teams(Collections.singletonList(
+                                        teamRepository.findByCode(teamCode)
+                                                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND, "Team not found: " + teamCode))
+                                ))
                                 .build();
                         return employeeRepository.save(newEmployee);
                     });

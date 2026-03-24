@@ -19,6 +19,7 @@ import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessRes
 import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
+import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -358,7 +359,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                                .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
                 }
@@ -936,7 +937,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         if (teamId == null)
             return List.of();
 
-        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId);
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId, EmployeeStatus.ACTIVE);
 
         Set<Long> inResultIds = new java.util.HashSet<>(
                 trainingResultDetailRepository.findEmployeeIdsByTrainingResultId(resultId));
@@ -963,7 +964,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             return List.of();
 
         // 2. Lấy tất cả nhân viên active trong team
-        List<Employee> employees = employeeRepository.findAllActiveByTeamId(teamId);
+        List<Employee> employees = employeeRepository.findAllActiveByTeamId(teamId, EmployeeStatus.ACTIVE);
         if (employees.isEmpty())
             return List.of();
 
@@ -1194,7 +1195,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-            HttpServletRequest request) {
+                              HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.APPROVED);
@@ -1210,7 +1211,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-            HttpServletRequest request) {
+                             HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
@@ -1389,10 +1390,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .employeeCode(emp.getEmployeeCode())
                 .fullName(emp.getFullName())
                 .status(emp.getStatus())
-                .teamId(emp.getTeam() != null ? emp.getTeam().getId() : null)
-                .teamName(emp.getTeam() != null ? emp.getTeam().getName() : null)
-                .groupName(emp.getTeam() != null && emp.getTeam().getGroup() != null
-                        ? emp.getTeam().getGroup().getName()
+                .teamId(emp.getTeams() != null ? emp.getTeams().get(0).getId() : null)
+                .teamName(emp.getTeams() != null ? emp.getTeams().get(0).getName() : null)
+                .groupName(emp.getTeams() != null && emp.getTeams().get(0).getGroup() != null
+                        ? emp.getTeams().get(0).getGroup().getName()
                         : null)
                 .tierOrder(snapshot != null ? snapshot.getTierOrder() : null)
                 .tierName(snapshot != null ? snapshot.getTierName() : null)
