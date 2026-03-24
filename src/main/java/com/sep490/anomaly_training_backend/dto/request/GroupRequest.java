@@ -10,5 +10,5 @@ public class GroupRequest {
 
     private String code;
 
-    private Long supervisorId; // Có thể null
+    private Long supervisorId;
 }

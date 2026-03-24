@@ -174,6 +174,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                     EmployeeResponse employeeResponse = employeeMapper.toDTO(employee);
                     employeeResponse.setTeamName(team.getName());
                     employeeResponse.setGroupName(team.getGroup() != null ? team.getGroup().getName() : "N/A");
+                    employeeResponse.setSectionName(team.getGroup() != null && team.getGroup().getSection() != null ? team.getGroup().getSection().getName() : "N/A");
 
                     User user = userRepository.findByEmployeeCodeAndDeleteFlagFalse(employee.getEmployeeCode()).orElse(null);
                     if (user != null) {
