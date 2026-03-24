@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import lombok.Data;
-import java.time.Instant;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,6 +9,7 @@ import java.util.List;
 public class GroupResponse {
     private Long id;
     private String name;
+    private String code;
 
     private Long sectionId;
     private String sectionName;

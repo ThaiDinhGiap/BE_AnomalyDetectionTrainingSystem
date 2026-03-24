@@ -1,13 +1,14 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import lombok.Data;
-import java.time.Instant;
+
 import java.time.LocalDateTime;
 
 @Data
 public class TeamResponse {
     private Long id;
     private String name;
+    private String code;
 
     private Long groupId;
     private String groupName;
