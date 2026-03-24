@@ -237,6 +237,17 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success("Đã xóa nhân viên thành công"));
     }
 
+    @PutMapping("/teams/{id}/remove-employees")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Remove Employees from Team", description = "Used to remove employees from team")
+    public ResponseEntity<ApiResponse<Void>> removeEmployeesFromTeam(
+            @Parameter(description = "ID của Team") @PathVariable Long id,
+            @RequestBody List<Long> employeeIds
+    ) {
+        employeeService.removeEmployeesFromTeam(id, employeeIds);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Delete (User)")

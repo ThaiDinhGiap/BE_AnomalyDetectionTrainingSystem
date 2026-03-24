@@ -75,6 +75,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    public void removeEmployeesFromTeam(Long teamId, List<Long> employeeId) {
+        List<Employee> employees = employeeRepository.findAllById(employeeId);
+
+        for (Employee employee : employees) {
+            if (employee.getTeams() != null && !employee.getTeams().isEmpty()) {
+                employee.getTeams().removeIf(team -> team.getId().equals(teamId));
+                employeeRepository.save(employee);
+            }
+        }
+    }
+
+    @Override
     @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
         Employee employee = employeeRepository.findById(id)
