@@ -178,7 +178,10 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
             review.setReviewDate(LocalDate.now());
 
             // Step 4: Save review to database
-            review.setStatus(ReportStatus.PENDING);
+            if (review.getStatus().equals(ReportStatus.REJECTED_BY_SV)) {
+                review.setStatus(ReportStatus.PENDING);
+                review.setCurrentVersion(review.getCurrentVersion() + 1);
+            }
             review = trainingSampleReviewRepository.save(review);
 
             // Step 5: Submit for approval
@@ -197,6 +200,9 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     public void approve(Long id, User currentUser, ApproveRequest approveRequest, HttpServletRequest request) {
         TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+        review.setConfirmedBy(currentUser);
+        review.setCompletedDate(LocalDate.now());
+        review = trainingSampleReviewRepository.save(review);
         approvalService.approve(review, currentUser, approveRequest, request);
     }
 
