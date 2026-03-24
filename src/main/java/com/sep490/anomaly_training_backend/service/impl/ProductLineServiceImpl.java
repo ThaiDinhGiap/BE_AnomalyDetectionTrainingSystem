@@ -2,7 +2,11 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.ProductLineImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
+import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
+import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
@@ -11,9 +15,19 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
 import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.model.Team;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
+import com.sep490.anomaly_training_backend.repository.GroupRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.SectionRepository;
+import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
 import com.sep490.anomaly_training_backend.util.helper.ProductLineImportHelper;
@@ -59,7 +73,7 @@ public class ProductLineServiceImpl implements ProductLineService {
             for (ProcessResponse processResponse : response.getProcesses()) {
                 List<EmployeeSkillResponse> skillResponses = employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(processResponse.getId())
                         .stream().map(employeeSkillMapper::toDto).toList();
-                processResponse.setSkillsProcess(skillResponses);
+                processResponse.setEmployeeSkills(skillResponses);
             }
         }
         return responses;
@@ -164,13 +178,13 @@ public class ProductLineServiceImpl implements ProductLineService {
         Role role = user.getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         if (("ROLE_TEAM_LEADER").equals(role.getRoleCode())) {
             return positionTeamLead(user);
-        }
-        else if (("ROLE_SUPERVISOR").equals(role.getRoleCode())){
+        } else if (("ROLE_SUPERVISOR").equals(role.getRoleCode())) {
             return positionSuperVisor(user);
         }
         return positionManager(user);
 
     }
+
     private List<WorkingPosition> positionTeamLead(User user) {
         List<WorkingPosition> resultTeamLead = new ArrayList<>();
         List<Team> teams = teamRepository.findAllByTeamLeaderId(user.getId());
@@ -250,6 +264,7 @@ public class ProductLineServiceImpl implements ProductLineService {
         }
         return resulManager;
     }
+
     /**
      * Process all rows - group by ProductLine, then create/update
      */
@@ -312,10 +327,10 @@ public class ProductLineServiceImpl implements ProductLineService {
      * Find existing ProductLine by code or create new one
      */
     private ProductLine findOrCreateProductLine(String code, String name, List<ImportErrorItem> errors) {
-            ProductLine productLine =  productLineRepository.findByCode(code).orElseGet(ProductLine::new);
-            productLine.setName(name);
-            productLine.setCode(code);
-            return productLineRepository.save(productLine);
+        ProductLine productLine = productLineRepository.findByCode(code).orElseGet(ProductLine::new);
+        productLine.setName(name);
+        productLine.setCode(code);
+        return productLineRepository.save(productLine);
     }
 
     /**
