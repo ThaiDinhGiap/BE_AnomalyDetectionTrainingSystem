@@ -29,14 +29,14 @@ public class UserRoleController {
 
     @Operation(summary = "Get user roles")
     @GetMapping("/{userId}/roles")
-    @PreAuthorize("hasAuthority('user.view')")
+    @PreAuthorize("hasAuthority('user.manage')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getUserRoles(@PathVariable Long userId) {
         return ResponseEntity.ok(ApiResponse.success(userRoleService.getUserRoles(userId)));
     }
 
     @Operation(summary = "Assign roles to user (replace all)")
     @PutMapping("/{userId}/roles")
-    @PreAuthorize("hasAuthority('user.assign_role')")
+    @PreAuthorize("hasAuthority('user.manage')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> assignRoles(
             @PathVariable Long userId,
             @Valid @RequestBody UserRoleRequest request) {

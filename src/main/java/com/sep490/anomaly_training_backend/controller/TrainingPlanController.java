@@ -89,7 +89,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Schedule update logic error")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<TrainingPlanGenerationResponse> updateTrainingPlan(
             @Parameter(description = "Plan ID to update") @PathVariable Long id,
             @Valid @RequestBody TrainingPlanUpdateRequest request) {
@@ -104,7 +104,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Cannot delete approved/submitted plan")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('training_plan.delete')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<String> deletePlan(
             @Parameter(description = "Plan ID to delete") @PathVariable Long id) {
         trainingPlanService.deletePlan(id);
@@ -119,7 +119,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Cannot delete detail from approved/submitted plan")
     })
     @DeleteMapping("/{planId}/details/{detailId}")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<String> deleteDetail(
             @Parameter(description = "Plan ID") @PathVariable Long planId,
             @Parameter(description = "Detail ID to delete") @PathVariable Long detailId) {
@@ -137,7 +137,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid detail data or plan is in pending approval status")
     })
     @PostMapping("/{planId}/details")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<TrainingPlanDetailResponse> addDetail(
             @Parameter(description = "Plan ID") @PathVariable Long planId,
             @Valid @RequestBody TrainingPlanDetailRequest request) {
@@ -153,7 +153,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid data or plan is in pending approval status")
     })
     @PutMapping("/{planId}/details/{detailId}")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<TrainingPlanDetailResponse> updateDetail(
             @Parameter(description = "Plan ID") @PathVariable Long planId,
             @Parameter(description = "Detail ID to update") @PathVariable Long detailId,
@@ -204,7 +204,7 @@ public class TrainingPlanController {
     @Operation(summary = "Submit plan for approval",
             description = "Change plan status from DRAFT to SUBMITTED.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<String> submit(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -216,7 +216,7 @@ public class TrainingPlanController {
     @Operation(summary = "Revise plan (Return to Draft)",
             description = "Move plan from pending approval back to Draft status for editing.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<String> revise(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
@@ -278,7 +278,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Generation failed due to invalid data or system error")
     })
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyAuthority('training_plan.create', 'training_plan.edit')")
+    @PreAuthorize("hasAuthority('training_plan.manage')")
     public ResponseEntity<TrainingPlanGenerationResponse> generatePlan(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody TrainingPlanGenerationRequest request) {

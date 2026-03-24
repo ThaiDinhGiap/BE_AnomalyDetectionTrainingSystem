@@ -130,7 +130,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid data or calculation logic error")
     })
     @PutMapping("/update")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<?> updateTrainingResult(
             @RequestBody UpdateTrainingResultRequest request) {
         try {
@@ -148,7 +148,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/fi-sign")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
         try {
             trainingResultService.signDetailsByFi(requests);
@@ -242,7 +242,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)", description = "Submit the training result. All details must have been filled and signed before submission.")
     @PutMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> submitResult(
             @Parameter(description = "Training Result ID") @PathVariable Long id) {
         trainingResultService.submitResult(id);
@@ -251,7 +251,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Reject a training result detail (Từ chối kết quả)", description = "Reject a specific result detail row with a reason. The employee may need retraining.")
     @PutMapping("/details/{detailId}/reject")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> rejectDetail(
             @Parameter(description = "Detail ID to reject") @PathVariable Long detailId,
             @RequestBody(required = false) java.util.Map<String, String> body) {
@@ -262,7 +262,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Mark detail for retraining (Huấn luyện lại)", description = "Mark a specific result detail as needing retraining and create a new detail row.")
     @PutMapping("/details/{detailId}/retrain")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> retrainDetail(
             @Parameter(description = "Detail ID") @PathVariable Long detailId) {
         trainingResultService.retrainDetail(detailId);
@@ -271,7 +271,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Revise a rejected detail (Chỉnh sửa lại detail bị từ chối)", description = "Chuyển detail bị reject về PENDING và tạo snapshot lịch sử.")
     @PutMapping("/details/{detailId}/revise")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> reviseDetail(
             @Parameter(description = "Detail ID") @PathVariable Long detailId) {
         trainingResultService.reviseDetail(detailId);
@@ -323,7 +323,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Revise training result (chỉnh sửa lại sau khi bị từ chối)", description = "Chuyển trạng thái result về REVISE, các detail bị reject về PENDING, tăng version và tạo snapshot lịch sử.")
     @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_result.edit')")
+    @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> reviseResult(
             @Parameter(description = "Training Result ID") @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

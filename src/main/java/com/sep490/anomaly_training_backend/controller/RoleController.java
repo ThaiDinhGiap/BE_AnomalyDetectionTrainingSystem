@@ -35,21 +35,21 @@ public class RoleController {
 
     @Operation(summary = "Get all roles")
     @GetMapping
-    @PreAuthorize("hasAuthority('role.view')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.getAllRoles()));
     }
 
     @Operation(summary = "Get role details by ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('role.view')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleDetailResponse>> getRoleById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.getRoleById(id)));
     }
 
     @Operation(summary = "Create new role")
     @PostMapping
-    @PreAuthorize("hasAuthority('role.create')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(@Valid @RequestBody RoleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(roleManagementService.createRole(request)));
@@ -57,7 +57,7 @@ public class RoleController {
 
     @Operation(summary = "Update role")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('role.edit')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleResponse>> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleRequest request) {
@@ -66,7 +66,7 @@ public class RoleController {
 
     @Operation(summary = "Soft delete role (non-system roles only)")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('role.delete')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Long id) {
         roleManagementService.deleteRole(id);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -74,7 +74,7 @@ public class RoleController {
 
     @Operation(summary = "Assign permissions to role (replace all)")
     @PutMapping("/{id}/permissions")
-    @PreAuthorize("hasAuthority('role.assign_permission')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleDetailResponse>> assignPermissions(
             @PathVariable Long id,
             @Valid @RequestBody RolePermissionRequest request) {
@@ -83,7 +83,7 @@ public class RoleController {
 
     @Operation(summary = "Get role permissions")
     @GetMapping("/{id}/permissions")
-    @PreAuthorize("hasAuthority('role.view')")
+    @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<List<PermissionResponse>>> getRolePermissions(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(roleManagementService.getRolePermissions(id)));
     }
