@@ -233,7 +233,7 @@ public class StaffOrganizationController {
     @Operation(summary = "delete(Group)")
     public ResponseEntity<Void> removeGroupFromSection(
             @Parameter(description = "ID của Group") @PathVariable Long groupId) {
-        groupService.deleteGroup(groupId);
+        groupService.removeGroupFromSection(groupId);
         return ResponseEntity.noContent().build();
     }
 
