@@ -10,6 +10,7 @@ import com.sep490.anomaly_training_backend.mapper.SectionMapper;
 import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.SectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class SectionServiceImpl implements SectionService {
     private final SectionMapper sectionMapper;
     private final ProductLineRepository productLineRepository;
     private final ProductLineMapper productLineMapper;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -45,7 +47,12 @@ public class SectionServiceImpl implements SectionService {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        sectionMapper.updateEntity(section, request);
+        section.setName(request.getName());
+        section.setCode(request.getCode());
+        section.setManager(userRepository.findById(request.getManagerId()).orElse(null));
+
+        sectionRepository.save(section);
+
         return sectionMapper.toDTO(sectionRepository.save(section));
     }
 

@@ -47,7 +47,13 @@ public class GroupServiceImpl implements GroupService {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
-        groupMapper.updateEntity(group, request);
+
+        group.setName(request.getName());
+        group.setCode(request.getCode());
+        group.setSupervisor(userRepository.findById(request.getSupervisorId()).orElse(null));
+
+        groupRepository.save(group);
+
         return groupMapper.toDTO(groupRepository.save(group));
     }
 

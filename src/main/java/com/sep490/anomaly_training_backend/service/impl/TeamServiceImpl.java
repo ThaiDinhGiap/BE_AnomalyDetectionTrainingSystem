@@ -7,6 +7,7 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class TeamServiceImpl implements TeamService {
 
     private final TeamRepository teamRepository;
     private final TeamMapper teamMapper;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -40,7 +42,12 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
 
-        teamMapper.updateEntity(team, request);
+        team.setName(request.getName());
+        team.setCode(request.getCode());
+        team.setTeamLeader(userRepository.findById(request.getTeamLeaderId()).orElse(null));
+
+        teamRepository.save(team);
+
         return teamMapper.toDTO(teamRepository.save(team));
     }
 
