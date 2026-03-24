@@ -200,6 +200,9 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
     public void approve(Long id, User currentUser, ApproveRequest approveRequest, HttpServletRequest request) {
         TrainingSampleReview review = trainingSampleReviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
+        review.setConfirmedBy(currentUser);
+        review.setCompletedDate(LocalDate.now());
+        review = trainingSampleReviewRepository.save(review);
         approvalService.approve(review, currentUser, approveRequest, request);
     }
 
