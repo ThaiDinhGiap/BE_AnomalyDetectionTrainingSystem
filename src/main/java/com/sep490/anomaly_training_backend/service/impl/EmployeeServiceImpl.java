@@ -10,14 +10,17 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
-import com.sep490.anomaly_training_backend.mapper.TeamMapper;
 import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,9 +39,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeMapper employeeMapper;
     private final TeamRepository teamRepository;
     private final ProcessRepository processRepository;
-    private final TeamMapper teamMapper;
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
+    private final UserRepository userRepository;
 
     private final EmployeeSkillMapper employeeSkillMapper;
     private final ProcessMapper processMapper;
@@ -162,10 +165,24 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<EmployeeResponse> getEmployeesByTeam(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+
         List<EmployeeResponse> results = employeeRepository.findByTeamsId(teamId).stream()
                 .filter(e -> !e.isDeleteFlag())
-                .map(employeeMapper::toDTO)
+                .map(employee -> {
+                    EmployeeResponse employeeResponse = employeeMapper.toDTO(employee);
+                    employeeResponse.setTeamName(team.getName());
+                    employeeResponse.setGroupName(team.getGroup() != null ? team.getGroup().getName() : "N/A");
+
+                    User user = userRepository.findByEmployeeCodeAndDeleteFlagFalse(employee.getEmployeeCode()).orElse(null);
+                    if (user != null) {
+                        employeeResponse.setRoles(user.getRoles().stream().map(Role::getDisplayName).toList());
+                    }
+                    return employeeResponse;
+                })
                 .toList();
+
         for (EmployeeResponse employee : results) {
             Integer totalTraining = 0;
             Integer totalFail = 0;

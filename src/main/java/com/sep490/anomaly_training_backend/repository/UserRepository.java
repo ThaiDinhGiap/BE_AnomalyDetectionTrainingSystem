@@ -43,5 +43,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Kiểm tra nhân viên đã có tài khoản chưa dựa vào employeeCode
     boolean existsByEmployeeCode(String employeeCode);
+
+    Optional<User> findByEmployeeCodeAndDeleteFlagFalse(String employeeCode);
 }
 

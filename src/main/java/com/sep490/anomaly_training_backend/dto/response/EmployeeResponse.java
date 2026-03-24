@@ -12,6 +12,7 @@ public class EmployeeResponse {
     private String employeeCode;
     private String fullName;
     private EmployeeStatus status;
+    private List<String> roles;
 
     private List<Long> teamIds;
     private String teamName;
@@ -22,7 +23,6 @@ public class EmployeeResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    //New fields for skill and training summary
     List<EmployeeSkillResponse> skills;
     Integer totalTraining;
     Integer totalFail;
