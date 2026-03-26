@@ -111,7 +111,16 @@ public class ProductLineServiceImpl implements ProductLineService {
     public ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest) {
         ProductLine productLine = productLineRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
-        // Logic to update the entity is missing in the original code
+
+        if (productLineRequest.getName() != null) {
+            productLine.setName(productLineRequest.getName());
+        }
+        if (productLineRequest.getGroupId() != null) {
+            Group group = groupRepository.findById(productLineRequest.getGroupId())
+                    .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
+            productLine.setGroup(group);
+        }
+
         return productLineMapper.toDto(productLineRepository.save(productLine));
     }
 

@@ -40,13 +40,13 @@ public class ProcessServiceImpl implements ProcessService {
         Process entity = processRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
-        if (!entity.getCode().equals(request.getCode())
+        if (request.getCode() != null && !entity.getCode().equals(request.getCode())
                 && processRepository.existsByCode(request.getCode())) {
             throw new AppException(ErrorCode.PROCESS_CODE_ALREADY_EXISTS);
         }
-        entity.setDescription(request.getDescription());
-        entity.setCode(request.getCode());
-        entity.setName(request.getName());
+
+        processMapper.updateEntity(entity, request);
+
         return processMapper.toDTO(processRepository.save(entity));
     }
 

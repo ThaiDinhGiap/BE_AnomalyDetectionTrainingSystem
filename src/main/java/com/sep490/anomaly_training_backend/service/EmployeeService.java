@@ -25,5 +25,7 @@ public interface EmployeeService {
 
     void removeEmployeesFromTeam(Long teamId, List<Long> employeeId);
 
+    void addEmployeesToTeam(Long teamId, List<Long> employeeIds);
+
     ProcessResponse getEmployeesByProcess(Long processId);
 }
