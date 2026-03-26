@@ -155,11 +155,14 @@ public class ManufacturingLineController {
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
         return null;
     }
-//    @PutMapping("/employee-skills/{id}")
-//    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
-//    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkillByTeamLead(@PathVariable Long id, @RequestBody List<EmployeeSkillRequest> employeeSkillRequestList) {
-//        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequestList)));
-//    }
+
+    @PutMapping("/employee-skills/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
+    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkill(
+            @PathVariable Long id,
+            @RequestBody EmployeeSkillRequest employeeSkillRequest) {
+        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequest)));
+    }
 
     // ====================== DELETE ======================
     @DeleteMapping("/product-lines/{id}")

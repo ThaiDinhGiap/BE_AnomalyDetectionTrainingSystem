@@ -108,6 +108,30 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @Transactional
+    public void addEmployeesToTeam(Long teamId, List<Long> employeeIds) {
+        if (employeeIds == null || employeeIds.isEmpty()) return;
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+
+        List<Employee> employees = employeeRepository.findAllById(employeeIds);
+        if (employees.size() != employeeIds.size()) {
+            throw new AppException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+
+        for (Employee employee : employees) {
+            boolean alreadyInTeam = employee.getTeams().stream()
+                    .anyMatch(t -> t.getId().equals(teamId));
+            if (!alreadyInTeam) {
+                employee.getTeams().add(team);
+            }
+        }
+
+        employeeRepository.saveAll(employees);
+    }
+
+    @Override
     public ProcessResponse getEmployeesByProcess(Long processId) {
         ProcessResponse processResponse = processRepository.findById(processId).map(processMapper::toDTO)
                 .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
