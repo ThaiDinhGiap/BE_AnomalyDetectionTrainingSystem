@@ -441,7 +441,20 @@ VALUES (1, 'NV001', 'Nguyễn Văn An', 'ACTIVE', 'admin'),
        (27, 'NV027', 'Vương Thị Hà', 'ACTIVE', 'admin'),
        (28, 'NV028', 'Mạc Văn Bình', 'ACTIVE', 'admin'),
        (29, 'NV029', 'Tăng Thị Chi', 'ACTIVE', 'admin'),
-       (30, 'NV030', 'Quách Văn Dương', 'ACTIVE', 'admin');
+       (30, 'NV030', 'Quách Văn Dương', 'ACTIVE', 'admin'),
+       (31, 'SYS000', 'Quản Trị Hệ Thống', 'ACTIVE', 'admin'),
+       (32, 'MGR001', 'Nguyễn Văn Quản Lý', 'ACTIVE', 'admin'),
+       (33, 'SV001', 'Trần Thị Giám Sát', 'ACTIVE', 'admin'),
+       (34, 'SV002', 'Lê Văn Giám Sát', 'ACTIVE', 'admin'),
+       (35, 'SV003', 'Phạm Thị Giám Sát', 'ACTIVE', 'admin'),
+       (36, 'TL001', 'Hoàng Văn Trưởng Tổ Tiện', 'ACTIVE', 'admin'),
+       (37, 'TL002', 'Võ Thị Trưởng Tổ Phay', 'ACTIVE', 'admin'),
+       (38, 'TL003', 'Đặng Văn Trưởng Tổ Lắp', 'ACTIVE', 'admin'),
+       (39, 'TL004', 'Bùi Thị Trưởng Tổ ĐC', 'ACTIVE', 'admin'),
+       (40, 'TL005', 'Ngô Văn Trưởng Tổ Hàn', 'ACTIVE', 'admin'),
+       (41, 'TL006', 'Đinh Thị Trưởng KCS', 'ACTIVE', 'admin'),
+       (42, 'FI001', 'Trịnh Văn Kiểm Tra Cuối', 'ACTIVE', 'admin'),
+       (43, 'FI002', 'Lý Thị Kiểm Tra Cuối', 'ACTIVE', 'admin');
 
 INSERT INTO employee_teams (employee_id, team_id)
 VALUES
@@ -452,6 +465,7 @@ VALUES
 (4, 1),
 (5, 1),
 (6, 1),
+(36, 1),
 -- Tổ 2 (NV007 -> NV012)
 (7, 2),
 (8, 2),
@@ -459,28 +473,33 @@ VALUES
 (10, 2),
 (11, 2),
 (12, 2),
+(37, 2),
 -- Tổ 3 (NV013 -> NV016)
 (13, 3),
 (14, 3),
 (15, 3),
 (16, 3),
+(40, 3),
 -- Tổ 4 (NV017 -> NV021)
 (17, 4),
 (18, 4),
 (19, 4),
 (20, 4),
 (21, 4),
+(38, 4),
 -- Tổ 5 (NV022 -> NV026)
 (22, 5),
 (23, 5),
 (24, 5),
 (25, 5),
 (26, 5),
+(39, 5),
 -- Tổ 6 (NV027 -> NV030)
 (27, 6),
 (28, 6),
 (29, 6),
-(30, 6);
+(30, 6),
+(41, 6);
 
 -- Ví dụ: Nếu nhân viên NV001 tham gia thêm Tổ 2 (Quan hệ nhiều-nhiều)
 -- INSERT INTO employee_teams (employee_id, team_id) VALUES (1, 2);
