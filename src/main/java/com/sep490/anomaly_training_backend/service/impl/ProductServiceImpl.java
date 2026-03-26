@@ -105,8 +105,8 @@ public class ProductServiceImpl implements ProductService {
         ProductLine productLine = productLineRepository.findById(productLineId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         return productRepository.findByProductLineIdAndDeleteFlagFalse(productLineId)
-                                .stream()
-                                .map(this::enrichProductResponse).toList();
+                .stream()
+                .map(this::enrichProductResponse).toList();
     }
 
     @Override
@@ -133,26 +133,26 @@ public class ProductServiceImpl implements ProductService {
         product.setCode(productRequest.getCode());
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
-        product =  productRepository.save(product);
+        product = productRepository.save(product);
 
         List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
         if (!originAttachments.isEmpty()) {
             attachmentService.deleteAttachments("PRODUCT", product.getId());
-            List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT", product.getId(), currentUser.getUsername());
+            List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT",
+                    product.getId(), currentUser.getUsername());
         }
 
         if (productRequest.getProcesses().isEmpty()) {
-            throw new AppException(ErrorCode.MISSING_PROCESS, "Sản phẩm phải được thực hiện trên ít nhất 1 công đoạn của dây chuyền đó");
+            throw new AppException(ErrorCode.MISSING_PROCESS,
+                    "Sản phẩm phải được thực hiện trên ít nhất 1 công đoạn của dây chuyền đó");
         }
 
-        List<ProductProcess> existingProductProcesses =
-                productProcessRepository.findByProductId(product.getId());
+        List<ProductProcess> existingProductProcesses = productProcessRepository.findByProductId(product.getId());
 
         Map<Long, ProductProcess> existingProcessMap = existingProductProcesses.stream()
                 .collect(Collectors.toMap(
                         pp -> pp.getProcess().getId(),
-                        Function.identity()
-                ));
+                        Function.identity()));
 
         Set<Long> requestProcessIds = productRequest.getProcesses().stream()
                 .map(ProcessRequest::getId)
@@ -169,7 +169,8 @@ public class ProductServiceImpl implements ProductService {
         for (ProcessRequest processRequest : productRequest.getProcesses()) {
             Process process = processRepository.findById(processRequest.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-            ProductProcess productProcess = productProcessRepository.findByProductIdAndProcessId(product.getId(), process.getId())
+            ProductProcess productProcess = productProcessRepository
+                    .findByProductIdAndProcessId(product.getId(), process.getId())
                     .orElseGet(ProductProcess::new);
             productProcess.setProcess(process);
             productProcess.setProduct(product);
@@ -179,7 +180,6 @@ public class ProductServiceImpl implements ProductService {
         return product;
     }
 
-
     private ProductResponse enrichProductResponse(Product product) {
         ProductResponse productResponse = productMapper.toDto(product);
         List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
@@ -188,7 +188,7 @@ public class ProductServiceImpl implements ProductService {
             urls.add(attachment.getUrl());
         }
         productResponse.setAttachmentUrls(urls);
-        List<ProcessResponse>  processResponses = product.getProductProcesses()
+        List<ProcessResponse> processResponses = product.getProductProcesses()
                 .stream()
                 .filter(pp -> !pp.isDeleteFlag())
                 .map(pp -> {
@@ -225,10 +225,11 @@ public class ProductServiceImpl implements ProductService {
             Product product = findOrCreateProduct(dto);
             // Step 2: Update Product fields
             updateProductFields(product, dto);
-            //Step 3: Apply all processes to product
+            // Step 3: Apply all processes to product
             List<Process> processes = productLine.getProcesses();
             for (Process process : processes) {
-                ProductProcess productProcess = productProcessRepository.findByProductIdAndProcessId(product.getId(), process.getId())
+                ProductProcess productProcess = productProcessRepository
+                        .findByProductIdAndProcessId(product.getId(), process.getId())
                         .orElseGet(ProductProcess::new);
                 productProcess.setProduct(product);
                 productProcess.setProcess(process);
@@ -276,7 +277,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         String fileName = file.getOriginalFilename();
-        if (fileName == null || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
+        if (fileName == null
+                || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
             throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
         }
     }
@@ -307,8 +309,7 @@ public class ProductServiceImpl implements ProductService {
                     file.getOriginalFilename(),
                     ImportType.PRODUCT_IMPORT,
                     ImportStatus.FAIL,
-                    errors
-            );
+                    errors);
         } catch (Exception e) {
             log.error("Error saving import fail history: {}", e.getMessage());
         }
@@ -324,8 +325,7 @@ public class ProductServiceImpl implements ProductService {
                     file.getOriginalFilename(),
                     ImportType.PRODUCT_IMPORT,
                     ImportStatus.PASS,
-                    List.of()
-            );
+                    List.of());
         } catch (Exception e) {
             log.error("Error saving import pass history: {}", e.getMessage());
         }
@@ -377,7 +377,7 @@ public class ProductServiceImpl implements ProductService {
         }
         ProductResponse response = productMapper.toDto(product);
         response.setAttachmentUrls(urls);
-        List<ProcessResponse>  processResponses = product.getProductProcesses()
+        List<ProcessResponse> processResponses = product.getProductProcesses()
                 .stream()
                 .filter(pp -> !pp.isDeleteFlag())
                 .map(pp -> {
@@ -399,7 +399,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        log.info("Fetching all products with pagination: page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+        log.info("Fetching all products with pagination: page={}, size={}", pageable.getPageNumber(),
+                pageable.getPageSize());
         Page<Product> products = productRepository.findByDeleteFlagFalse(pageable);
         return products.map(productMapper::toDto);
     }
