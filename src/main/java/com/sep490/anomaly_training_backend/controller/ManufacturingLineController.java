@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
@@ -105,6 +106,13 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
+    }
+
+    @GetMapping("/product-line-detail/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    @Operation(summary = "Get full detail of a product line", description = "Returns products, processes, and management hierarchy (SV, Section, MNG)")
+    public ResponseEntity<ApiResponse<ProductLineDetailResponse>> getProductLineFullDetail(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineFullDetail(id)));
     }
 
     @PostMapping("/product-lines")
