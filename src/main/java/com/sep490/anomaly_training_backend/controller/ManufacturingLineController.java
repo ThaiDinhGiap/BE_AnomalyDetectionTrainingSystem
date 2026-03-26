@@ -109,7 +109,7 @@ public class ManufacturingLineController {
 
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
-    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
+    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLine(@RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 
