@@ -6,6 +6,7 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -41,7 +42,7 @@ public interface TrainingResultService {
 
     TrainingResultDetailResponse getTrainingResultDetail(Long id);
 
-    List<TrainingResultDetailResponse> getEmployeeTrainingHistory(Long employeeId);
+    EmployeeTrainingHistoryResponse getEmployeeTrainingHistory(Long employeeId);
 
     TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id);
 

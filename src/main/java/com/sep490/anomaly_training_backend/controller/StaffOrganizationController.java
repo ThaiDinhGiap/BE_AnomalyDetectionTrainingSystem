@@ -6,9 +6,22 @@ import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
 import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
 import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
 import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
+import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.*;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
+import com.sep490.anomaly_training_backend.service.TrainingResultService;
+import com.sep490.anomaly_training_backend.service.EmployeeService;
+import com.sep490.anomaly_training_backend.service.GroupService;
+import com.sep490.anomaly_training_backend.service.SectionService;
+import com.sep490.anomaly_training_backend.service.TeamService;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +56,7 @@ public class StaffOrganizationController {
     private final UserService userService;
     private final AuthService authService;
     private final EmployeeSkillService employeeSkillService;
+    private final TrainingResultService trainingResultService;
 
     // ====================== VIEW ======================
 
@@ -117,11 +131,11 @@ public class StaffOrganizationController {
 
     @GetMapping("/employee/{employeeId}/training-history")
     @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of history training", description = "Used to get list employee skills")
-    public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeTrainingHistory(
+    @Operation(summary = "Get list of history training", description = "Used to get list employee training history")
+    public ResponseEntity<ApiResponse<EmployeeTrainingHistoryResponse>> getEmployeeTrainingHistory(
             @PathVariable Long employeeId
     ) {
-        return null;
+        return ResponseEntity.ok(ApiResponse.success(trainingResultService.getEmployeeTrainingHistory(employeeId)));
     }
 
     @GetMapping("/employee/{employeeId}/employee-skill")
