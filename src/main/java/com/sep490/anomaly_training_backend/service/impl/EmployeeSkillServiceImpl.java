@@ -70,21 +70,31 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-
     @Override
     public EmployeeSkillResponse createEmployeeSkill(EmployeeSkillRequest request) {
 
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+        Employee employee;
+        if (request.getEmployeeId() != null) {
+            employee = employeeRepository.findById(request.getEmployeeId())
+                    .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+        } else if (request.getEmployeeCode() != null) {
+            employee = employeeRepository.findByEmployeeCode(request.getEmployeeCode())
+                    .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+        } else {
+            throw new AppException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
 
         Process process = processRepository.findById(request.getProcessId())
                 .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
+        LocalDate certifiedDate = request.getCertifiedDate() != null ? request.getCertifiedDate() : LocalDate.now();
+        LocalDate expiryDate = request.getExpiryDate() != null ? request.getExpiryDate() : certifiedDate.plusYears(2);
+
         EmployeeSkill entity = EmployeeSkill.builder()
                 .employee(employee)
                 .process(process)
-                .certifiedDate(LocalDate.now())
-                .expiryDate(LocalDate.now().plusYears(2))
+                .certifiedDate(certifiedDate)
+                .expiryDate(expiryDate)
                 .build();
 
         EmployeeSkill saved = employeeSkillRepository.save(entity);
@@ -97,15 +107,25 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         EmployeeSkill skill = employeeSkillRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_SKILL_NOT_FOUND));
 
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
-
-        Process process = processRepository.findById(request.getProcessId())
-                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-
-        skill.setEmployee(employee);
-        skill.setProcess(process);
-        skill.setStatus(request.getStatus());
+        if (request.getEmployeeId() != null) {
+            Employee employee = employeeRepository.findById(request.getEmployeeId())
+                    .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+            skill.setEmployee(employee);
+        }
+        if (request.getProcessId() != null) {
+            Process process = processRepository.findById(request.getProcessId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+            skill.setProcess(process);
+        }
+        if (request.getStatus() != null) {
+            skill.setStatus(request.getStatus());
+        }
+        if (request.getCertifiedDate() != null) {
+            skill.setCertifiedDate(request.getCertifiedDate());
+        }
+        if (request.getExpiryDate() != null) {
+            skill.setExpiryDate(request.getExpiryDate());
+        }
         return employeeSkillMapper.toDto(employeeSkillRepository.save(skill));
     }
 
@@ -149,7 +169,6 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
             return dto;
         }).collect(Collectors.toList());
 
-
         // 5. Build the matrix data
         List<EmployeeSkillsDto> employeeSkillsDtos = employees.stream().map(employee -> {
             EmployeeSkillsDto dto = new EmployeeSkillsDto();
@@ -157,12 +176,12 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
             dto.setEmployeeName(employee.getFullName());
             dto.setEmployeeCode(employee.getEmployeeCode());
 
-            List<EmployeeSkill> employeeSkillsList = skillsByEmployee.getOrDefault(employee.getId(), Collections.emptyList());
+            List<EmployeeSkill> employeeSkillsList = skillsByEmployee.getOrDefault(employee.getId(),
+                    Collections.emptyList());
             Map<Long, SkillStatusDto> skillsMap = employeeSkillsList.stream()
                     .collect(Collectors.toMap(
                             skill -> skill.getProcess().getId(),
-                            this::mapToSkillStatusDto
-                    ));
+                            this::mapToSkillStatusDto));
 
             // Fill in missing skills with "NONE" status
             processModels.forEach(process -> {
@@ -235,11 +254,14 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
      * Tất cả data thuộc về 1 Team cố định từ file header
      */
     private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult) {
-        processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getHierarchyMap());
-        processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(), importSkillMatrixResult.getParsedRows());
+        processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
+                importSkillMatrixResult.getHierarchyMap());
+        processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
+                importSkillMatrixResult.getParsedRows());
     }
 
-    private void processHierarchyMap(String teamCode, String groupCode, Map<String, Map<String, Set<String>>> hierarchyMap) {
+    private void processHierarchyMap(String teamCode, String groupCode,
+            Map<String, Map<String, Set<String>>> hierarchyMap) {
         Team team = teamRepository.findByCode(teamCode)
                 .orElse(new Team(teamCode));
         teamRepository.save(team);
@@ -283,13 +305,15 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                             });
 
                     log.info("Processed: Team={}, Group={}, Section={}, ProductLine={}, Process={}",
-                            team.getCode(), group.getCode(), section.getCode(), productLine.getCode(), process.getCode());
+                            team.getCode(), group.getCode(), section.getCode(), productLine.getCode(),
+                            process.getCode());
                 }
             }
         }
     }
 
-    private void processParsedRawData(String teamCode, String groupCode, List<EmployeeSkillCertificationImportDto> parsedResults) {
+    private void processParsedRawData(String teamCode, String groupCode,
+            List<EmployeeSkillCertificationImportDto> parsedResults) {
         for (EmployeeSkillCertificationImportDto raw : parsedResults) {
             Employee employee = employeeRepository.findByEmployeeCode(raw.getEmployeeId())
                     .orElseGet(() -> {
@@ -298,14 +322,15 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                                 .fullName(raw.getEmployeeFullName())
                                 .teams(Collections.singletonList(
                                         teamRepository.findByCode(teamCode)
-                                                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND, "Team not found: " + teamCode))
-                                ))
+                                                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND,
+                                                        "Team not found: " + teamCode))))
                                 .build();
                         return employeeRepository.save(newEmployee);
                     });
 
             Process process = processRepository.findByName(raw.getProcessName())
-                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND, "Process not found: " + raw.getProcessName()));
+                    .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND,
+                            "Process not found: " + raw.getProcessName()));
 
             EmployeeSkill skill = EmployeeSkill.builder()
                     .employee(employee)
