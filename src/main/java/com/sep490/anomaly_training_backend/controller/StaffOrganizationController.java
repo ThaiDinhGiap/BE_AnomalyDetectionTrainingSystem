@@ -277,6 +277,17 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @PutMapping("/teams/{id}/add-employees")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Add Employees to Team", description = "Add existing employees to a team")
+    public ResponseEntity<ApiResponse<Void>> addEmployeesToTeam(
+            @Parameter(description = "ID của Team") @PathVariable Long id,
+            @RequestBody List<Long> employeeIds
+    ) {
+        employeeService.addEmployeesToTeam(id, employeeIds);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
+
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Delete (User)")
