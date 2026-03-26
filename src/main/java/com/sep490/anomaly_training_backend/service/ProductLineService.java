@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.model.User;
@@ -25,4 +26,6 @@ public interface ProductLineService {
     List<ProductLineResponse> importProductLine(User user, MultipartFile productFile) throws BadRequestException;
 
     List<WorkingPosition> getWorkingPosition(User user);
+
+    ProductLineDetailResponse getProductLineFullDetail(Long lineId);
 }
