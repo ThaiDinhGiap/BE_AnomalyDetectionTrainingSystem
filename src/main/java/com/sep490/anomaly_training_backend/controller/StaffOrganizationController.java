@@ -125,6 +125,15 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByProcess(processId)));
     }
 
+    @GetMapping("/employee/{employeeId}/training-history")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of history training", description = "Used to get list employee skills")
+    public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeTrainingHistory(
+            @PathVariable Long employeeId
+    ) {
+        return null;
+    }
+
     // ====================== CREATE ======================
 
     @PostMapping("/sections")

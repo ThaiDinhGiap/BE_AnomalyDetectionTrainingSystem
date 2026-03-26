@@ -567,6 +567,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return response;
     }
 
+    @Override
+    public List<TrainingResultDetailResponse> getEmployeeTrainingHistory(Long employeeId) {
+        List<TrainingResultDetail> resultDetailList = trainingResultDetailRepository.getTrainingHistory(employeeId);
+        List<TrainingResultDetailResponse> responses = new ArrayList<>();
+        return null;
+    }
+
     private static final Set<ReportStatus> SV_VISIBLE_STATUSES = Set.of(
             ReportStatus.WAITING_SV,
             ReportStatus.REJECTED_BY_SV,
@@ -852,7 +859,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * Tạo snapshot cho 1 detail cụ thể (lưu vào training_result_detail_history).
      */
     private void createDetailHistorySnapshot(TrainingResultDetail detail) {
-        // Tạo 1 TrainingResultHistory header tạm cho snapshot
+        // Tạo 1 TrainingResultEmployeeHistory header tạm cho snapshot
         TrainingResult result = detail.getTrainingResult();
         TrainingResultHistory history = TrainingResultHistory.builder()
                 .trainingResult(result)

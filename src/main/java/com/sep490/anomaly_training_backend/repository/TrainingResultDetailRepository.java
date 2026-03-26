@@ -173,4 +173,13 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             @Param("resultId") Long resultId);
 
     List<TrainingResultDetail> findAllByEmployeeIdAndDeleteFlagFalse(Long employeeId);
+
+    @Query("""
+                SELECT t FROM TrainingResultDetail t
+                WHERE t.employee.id = :employeeId
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.APPROVED
+                  AND t.deleteFlag = false
+                ORDER BY t.plannedDate ASC
+            """)
+    List<TrainingResultDetail> getTrainingHistory(@Param("employeeId") Long employeeId);
 }
