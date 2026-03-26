@@ -3,56 +3,52 @@ package com.sep490.anomaly_training_backend.enums;
 public enum NotificationType {
 
     // ============================================
-    // TRAINING PLAN:  TL(PRO) → SV → Manager
+    // TRAINING PLAN:  TL(PRO) → Reviewer → Approver
     // ============================================
-    PLAN_WAITING_SV,              // TL gửi, thông báo SV cần duyệt
-    PLAN_WAITING_MANAGER,         // SV duyệt, thông báo Manager cần duyệt
-    PLAN_APPROVED,                // Manager duyệt, thông báo TL kế hoạch đã được duyệt hoàn tất
-    PLAN_REJECTED_BY_SV,          // SV từ chối, thông báo TL
-    PLAN_REJECTED_BY_MANAGER,     // Manager từ chối, thông báo TL
+    PLAN_PENDING_REVIEW,           // TL gửi, thông báo reviewer cần kiểm duyệt
+    PLAN_PENDING_APPROVAL,         // Reviewer duyệt, thông báo approver cần phê duyệt
+    PLAN_APPROVED,                 // Approver duyệt, thông báo TL kế hoạch đã được duyệt hoàn tất
+    PLAN_REJECTED,                 // Bị từ chối, thông báo TL
 
     // ============================================
-    // TRAINING RESULT: TL(PRO) → TL(FI) → SV → Manager
+    // TRAINING RESULT: TL(PRO) → TL(FI) → Reviewer → Approver
     // ============================================
-    RESULT_WAITING_FI,            // TL(PRO) gửi, thông báo TL(FI) cần xác nhận
-    RESULT_WAITING_SV,            // TL(FI) duyệt, thông báo SV cần duyệt
-    RESULT_WAITING_MANAGER,       // SV duyệt, thông báo Manager cần duyệt
-    RESULT_APPROVED,              // Manager duyệt, thông báo TL(PRO) kết quả đã được duyệt hoàn tất
-    RESULT_REJECTED_BY_FI,        // TL(FI) từ chối, thông báo TL(PRO)
-    RESULT_REJECTED_BY_SV,        // SV từ chối, thông báo TL(PRO)
-    RESULT_REJECTED_BY_MANAGER,   // Manager từ chối, thông báo TL(PRO)
+    RESULT_WAITING_FI,             // TL(PRO) gửi, thông báo TL(FI) cần xác nhận
+    RESULT_PENDING_REVIEW,         // TL(FI) duyệt, thông báo reviewer cần kiểm duyệt
+    RESULT_PENDING_APPROVAL,       // Reviewer duyệt, thông báo approver cần phê duyệt
+    RESULT_APPROVED,               // Approver duyệt, thông báo TL(PRO) kết quả đã được duyệt hoàn tất
+    RESULT_REJECTED_BY_FI,         // TL(FI) từ chối, thông báo TL(PRO)
+    RESULT_REJECTED,               // Bị từ chối, thông báo TL(PRO)
 
     // ============================================
-    // DEFECT REPORT: TL → SV → Manager
+    // DEFECT REPORT: TL → Reviewer → Approver
     // ============================================
-    DEFECT_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
-    DEFECT_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
-    DEFECT_APPROVED,               // Manager duyệt, thông báo TL
-    DEFECT_REJECTED_BY_SV,         // SV từ chối, thông báo TL
-    DEFECT_REJECTED_BY_MANAGER,    // Manager từ chối, thông báo TL
+    DEFECT_PENDING_REVIEW,         // TL gửi, thông báo reviewer cần kiểm duyệt
+    DEFECT_PENDING_APPROVAL,       // Reviewer duyệt, thông báo approver cần phê duyệt
+    DEFECT_APPROVED,               // Approver duyệt, thông báo TL
+    DEFECT_REJECTED,               // Bị từ chối, thông báo TL
 
     // ============================================
-    // TRAINING SAMPLE: TL → SV → Manager
+    // TRAINING SAMPLE: TL → Reviewer → Approver
     // ============================================
-    SAMPLE_WAITING_SV,             // TL gửi, thông báo SV cần duyệt
-    SAMPLE_WAITING_MANAGER,        // SV duyệt, thông báo Manager cần duyệt
-    SAMPLE_APPROVED,               // Manager duyệt, thông báo TL
-    SAMPLE_REJECTED_BY_SV,         // SV từ chối, thông báo TL
-    SAMPLE_REJECTED_BY_MANAGER,
-    SAMPLE_REVIEW_OVERDUE,// Manager từ chối, thông báo TL
+    SAMPLE_PENDING_REVIEW,         // TL gửi, thông báo reviewer cần kiểm duyệt
+    SAMPLE_PENDING_APPROVAL,       // Reviewer duyệt, thông báo approver cần phê duyệt
+    SAMPLE_APPROVED,               // Approver duyệt, thông báo TL
+    SAMPLE_REJECTED,               // Bị từ chối, thông báo TL
+    SAMPLE_REVIEW_OVERDUE,         // Kiểm tra hàng năm quá hạn
 
     // ============================================
     // REMINDERS (Scheduler tự động gửi)
     // ============================================
-    TRAINING_REMINDER_TODAY,      // Nhắc TL:  có lịch kiểm tra hôm nay
-    TRAINING_REMINDER_UPCOMING,   // Nhắc TL: có lịch kiểm tra sắp tới (1 ngày trước)
-    TRAINING_OVERDUE_WARNING,     // Cảnh báo TL: lịch kiểm tra quá hạn chưa ghi nhận
+    TRAINING_REMINDER_TODAY,       // Nhắc TL: có lịch kiểm tra hôm nay
+    TRAINING_REMINDER_UPCOMING,    // Nhắc TL: có lịch kiểm tra sắp tới (1 ngày trước)
+    TRAINING_OVERDUE_WARNING,      // Cảnh báo TL: lịch kiểm tra quá hạn chưa ghi nhận
 
     // ============================================
-    // APPROVAL OVERDUE (Nagging - Use Case 5)
+    // APPROVAL OVERDUE (Nagging)
     // ============================================
-    APPROVAL_OVERDUE_SV,          // Nhắc SV: có phê duyệt tồn đọng
-    APPROVAL_OVERDUE_MANAGER,     // Nhắc Manager: có phê duyệt tồn đọng
+    APPROVAL_OVERDUE_SV,           // Nhắc reviewer: có phê duyệt tồn đọng
+    APPROVAL_OVERDUE_MANAGER,      // Nhắc approver: có phê duyệt tồn đọng
     APPROVAL_OVERDUE_FI,           // Nhắc TL(FI): có xác nhận kết quả tồn đọng
     APPROVAL_NUDGE
 }

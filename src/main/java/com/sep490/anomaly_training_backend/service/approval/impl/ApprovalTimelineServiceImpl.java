@@ -83,7 +83,7 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
             User expectedApprover = null;
             if (log == null && groupId != null) {
                 expectedApprover = approverResolver
-                        .resolve(groupId, flowStep.getApproverRole())
+                        .resolve(groupId, flowStep.getRequiredPermission())
                         .orElse(null);
             }
 
@@ -129,7 +129,8 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
                                        StepState state,
                                        User expectedApprover) {
 
-        String label = resolveStepLabel(flowStep.getApproverRole().name());
+        // Dùng stepLabel từ config thay vì hardcode theo role
+        String label = flowStep.getStepLabel() != null ? flowStep.getStepLabel() : "Step " + flowStep.getStepOrder();
 
         if (log != null) {
             // Đã có action thực → dùng snapshot trong log (không ghi đè bằng org)
@@ -157,25 +158,17 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private String resolveStepLabel(String roleCode) {
-        return switch (roleCode) {
-            case "ROLE_SUPERVISOR" -> "NGƯỜI KIỂM TRA";
-            case "ROLE_MANAGER" -> "NGƯỜI PHÊ DUYỆT";
-            default -> roleCode;
-        };
-    }
-
     private String resolveCurrentStatus(List<ApprovalActionLog> logs, ApprovalActionLog submitLog) {
         if (submitLog == null) return "DRAFT";
         Optional<ApprovalActionLog> latestFlowLog = logs.stream()
                 .filter(l -> l.getStepOrder() > 0)
                 .max(Comparator.comparingInt(ApprovalActionLog::getStepOrder));
-        if (latestFlowLog.isEmpty()) return "WAITING_SV";
+        if (latestFlowLog.isEmpty()) return "PENDING_REVIEW";
         ApprovalActionLog last = latestFlowLog.get();
         return switch (last.getAction()) {
             case APPROVE -> "APPROVED";
-            case REJECT -> "REJECTED_BY_" + last.getPerformedByRole().name().replace("ROLE_", "");
-            default -> "WAITING";
+            case REJECT -> "REJECTED";
+            default -> "PENDING";
         };
     }
 }

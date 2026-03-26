@@ -66,7 +66,7 @@ public class TrainingPlanController {
 
     @Operation(
             summary = "Get rejected/revise training plans",
-            description = "Returns plans with status: REVISE, REJECTED_BY_SV, REJECTED_BY_MANAGER"
+            description = "Returns plans with status: REVISE, REJECTED"
     )
     @GetMapping("/rejected")
     @PreAuthorize("hasAuthority('training_plan.view')")

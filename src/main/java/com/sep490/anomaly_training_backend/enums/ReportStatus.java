@@ -2,10 +2,9 @@ package com.sep490.anomaly_training_backend.enums;
 
 public enum ReportStatus {
     DRAFT,
-    WAITING_SV,
-    REJECTED_BY_SV,
-    WAITING_MANAGER,
-    REJECTED_BY_MANAGER,
+    PENDING_REVIEW,
+    PENDING_APPROVAL,
+    REJECTED,
     APPROVED,
     ON_GOING,
     DONE,

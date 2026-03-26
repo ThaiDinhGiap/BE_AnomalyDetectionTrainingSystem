@@ -186,8 +186,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public List<TrainingPlanGenerationResponse> getRejectedPlans(User currentUser) {
         List<ReportStatus> rejectedStatuses = List.of(
                 ReportStatus.REVISE,
-                ReportStatus.REJECTED_BY_SV,
-                ReportStatus.REJECTED_BY_MANAGER);
+                ReportStatus.REJECTED);
 
         // Reuse scope logic, sau đó filter thêm theo status
         return getAllPlans(currentUser, null)
@@ -285,7 +284,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -499,7 +498,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -541,7 +540,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -583,8 +582,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
-                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -640,8 +638,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         if (plan.getStatus() != ReportStatus.DRAFT
-                && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
-                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+                && plan.getStatus() != ReportStatus.REJECTED) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 

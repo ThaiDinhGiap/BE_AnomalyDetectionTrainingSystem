@@ -173,7 +173,7 @@ public class ApprovalController {
                 .entityVersion(log.getEntityVersion())
                 .stepOrder(log.getStepOrder())
                 .stepName(getStepName(log.getStepOrder()))
-                .requiredRole(log.getRequiredRole())
+                .requiredPermission(log.getRequiredPermission())
                 .action(log.getAction())
                 .performedByUsername(log.getPerformedByUsername())
                 .performedByFullName(log.getPerformedByFullName())
@@ -190,8 +190,6 @@ public class ApprovalController {
         return switch (stepOrder) {
             case -1 -> "Revise";
             case 0 -> "Submit";
-            case 1 -> "Supervisor Review";
-            case 2 -> "Manager Approval";
             default -> "Step " + stepOrder;
         };
     }

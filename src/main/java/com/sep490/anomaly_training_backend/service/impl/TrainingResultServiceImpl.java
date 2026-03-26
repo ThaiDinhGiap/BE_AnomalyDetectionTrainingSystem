@@ -568,8 +568,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     private static final Set<ReportStatus> SV_VISIBLE_STATUSES = Set.of(
-            ReportStatus.WAITING_SV,
-            ReportStatus.REJECTED_BY_SV,
+            ReportStatus.PENDING_REVIEW,
+            ReportStatus.REJECTED,
             ReportStatus.APPROVED);
 
     @Override
@@ -738,7 +738,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(resultId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
-        if (result.getStatus() == ReportStatus.WAITING_SV || result.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (result.getStatus() == ReportStatus.PENDING_REVIEW || result.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
         }
 
@@ -758,7 +758,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
         }
 
-        result.setStatus(ReportStatus.WAITING_SV);
+        result.setStatus(ReportStatus.PENDING_REVIEW);
         trainingResultRepository.save(result);
     }
 
@@ -817,7 +817,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
         detail.setIsPass(false);
-        detail.setStatus(ReportStatus.REJECTED_BY_SV);
+        detail.setStatus(ReportStatus.REJECTED);
 
         if (reason != null && !reason.isBlank()) {
             String existingNote = detail.getNote() != null ? detail.getNote() : "";
@@ -834,8 +834,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
         // Chỉ cho revise khi detail đang bị reject
-        if (detail.getStatus() != ReportStatus.REJECTED_BY_SV
-                && detail.getStatus() != ReportStatus.REJECTED_BY_MANAGER) {
+        if (detail.getStatus() != ReportStatus.REJECTED) {
             throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
         }
 
@@ -1161,7 +1160,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     private void updateResultDetailAfterSubmission(TrainingResult result) {
         trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
-                .forEach(detail -> detail.setStatus(ReportStatus.WAITING_SV));
+                .forEach(detail -> detail.setStatus(ReportStatus.PENDING_REVIEW));
     }
 
     @Override
@@ -1170,7 +1169,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(reportId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
-        if (result.getStatus() == ReportStatus.REJECTED_BY_SV) {
+        if (result.getStatus() == ReportStatus.REJECTED) {
 
             throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
         }
@@ -1184,8 +1183,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         // 3. Chuyển các detail bị reject -> PENDING
         for (TrainingResultDetail detail : result.getDetails()) {
-            if (detail.getStatus() == ReportStatus.REJECTED_BY_SV
-                    || detail.getStatus() == ReportStatus.REJECTED_BY_MANAGER) {
+            if (detail.getStatus() == ReportStatus.REJECTED) {
                 detail.setStatus(ReportStatus.PENDING);
             }
         }
@@ -1215,7 +1213,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
-        detail.setStatus(ReportStatus.REJECTED_BY_SV);
+        detail.setStatus(ReportStatus.REJECTED);
 
         DetailFeedbackRequest detailFeedbackRequest = new DetailFeedbackRequest();
         detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());

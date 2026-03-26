@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,9 +51,8 @@ public class ApprovalActionLog extends BaseEntity {
     @Column(name = "step_order", nullable = false)
     private Integer stepOrder;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "required_role", nullable = false)
-    private UserRole requiredRole;
+    @Column(name = "required_permission", nullable = false, length = 100)
+    private String requiredPermission;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "action", nullable = false)
@@ -71,9 +69,8 @@ public class ApprovalActionLog extends BaseEntity {
     @Column(name = "performed_by_full_name", nullable = false, length = 100)
     private String performedByFullName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "performed_by_role", nullable = false)
-    private UserRole performedByRole;
+    @Column(name = "performed_by_role", nullable = false, length = 100)
+    private String performedByRole;
 
     @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;

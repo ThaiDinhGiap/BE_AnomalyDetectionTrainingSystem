@@ -200,7 +200,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
 
-    @Operation(summary = "Get training result details for Supervisor", description = "Returns only details with status WAITING_SV, REJECTED_BY_SV, or APPROVED.")
+    @Operation(summary = "Get training result details for Supervisor", description = "Returns only details with status PENDING_REVIEW, REJECTED, or APPROVED.")
     @GetMapping("/{id}/verify-view")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetailForVerify(

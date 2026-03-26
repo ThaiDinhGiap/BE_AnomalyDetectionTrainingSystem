@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.UserRole;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,9 +36,15 @@ public class ApprovalFlowStep extends BaseEntity {
     @Column(name = "step_order", nullable = false)
     private Integer stepOrder;
 
+    @Column(name = "required_permission", nullable = false, length = 100)
+    private String requiredPermission;
+
+    @Column(name = "step_label", length = 100)
+    private String stepLabel;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "approver_role", nullable = false)
-    private UserRole approverRole;
+    @Column(name = "pending_status", nullable = false, length = 50)
+    private ReportStatus pendingStatus;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

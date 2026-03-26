@@ -15,5 +15,5 @@ public class SvTodoItem {
     private String title;        // "Kế hoạch đào tạo: ..."
     private String senderName;   // "Nguyễn Văn A (Team Lead)"
     private String waitTime;     // "2 giờ", "3 ngày"
-    private String status;       // WAITING_SV
+    private String status;       // PENDING_REVIEW
 }

@@ -28,7 +28,7 @@ public class NotificationController {
                     Gửi email nhắc người phê duyệt (SV hoặc Manager) ký duyệt tài liệu.
                     Áp dụng cho tất cả loại tài liệu: TRAINING_PLAN, TRAINING_RESULT,
                     DEFECT_PROPOSAL, TRAINING_SAMPLE_PROPOSAL.
-                    Chỉ gửi được khi tài liệu đang ở trạng thái WAITING_SV hoặc WAITING_MANAGER.
+                    Chỉ gửi được khi tài liệu đang ở trạng thái PENDING_REVIEW hoặc PENDING_APPROVAL.
                     """
     )
     @PreAuthorize("isAuthenticated()")
