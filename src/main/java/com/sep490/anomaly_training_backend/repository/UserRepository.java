@@ -45,5 +45,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmployeeCode(String employeeCode);
 
     Optional<User> findByEmployeeCodeAndDeleteFlagFalse(String employeeCode);
+
+    @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.employeeCode = :employeeCode AND u.deleteFlag = false")
+    Optional<User> findByEmployeeCodeWithRoles(@Param("employeeCode") String employeeCode);
 }
 
