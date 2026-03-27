@@ -10,28 +10,15 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeMapper;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
-import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.TeamRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.EmployeeService;
 import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.sep490.anomaly_training_backend.util.SecurityUtils.hasPermission;
@@ -98,13 +85,39 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public void removeEmployeesFromTeam(Long teamId, List<Long> employeeId) {
-        if (employeeId == null || employeeId.isEmpty()) return;
+        if (employeeId == null || employeeId.isEmpty())
+            return;
 
         if (!teamRepository.existsById(teamId)) {
             throw new AppException(ErrorCode.TEAM_NOT_FOUND);
         }
 
         employeeRepository.removeEmployeesFromTeam(teamId, employeeId);
+    }
+
+    @Override
+    @Transactional
+    public void addEmployeesToTeam(Long teamId, List<Long> employeeIds) {
+        if (employeeIds == null || employeeIds.isEmpty())
+            return;
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+
+        List<Employee> employees = employeeRepository.findAllById(employeeIds);
+        if (employees.size() != employeeIds.size()) {
+            throw new AppException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+
+        for (Employee employee : employees) {
+            boolean alreadyInTeam = employee.getTeams().stream()
+                    .anyMatch(t -> t.getId().equals(teamId));
+            if (!alreadyInTeam) {
+                employee.getTeams().add(team);
+            }
+        }
+
+        employeeRepository.saveAll(employees);
     }
 
     @Override
@@ -166,7 +179,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<EmployeeResponse> getAllEmployees() {
         return employeeRepository.findAll().stream()
                 .filter(e -> !e.isDeleteFlag())
-                .map(employeeMapper::toDTO)
+                .map(this::enrichEmployeeData)
                 .collect(toList());
     }
 
@@ -212,10 +225,11 @@ public class EmployeeServiceImpl implements EmployeeService {
             Team firstTeam = employee.getTeams().get(0);
             dto.setGroupName(firstTeam.getGroup() != null ? firstTeam.getGroup().getName() : "N/A");
             dto.setSectionName(firstTeam.getGroup() != null && firstTeam.getGroup().getSection() != null
-                    ? firstTeam.getGroup().getSection().getName() : "N/A");
+                    ? firstTeam.getGroup().getSection().getName()
+                    : "N/A");
         }
 
-        userRepository.findByEmployeeCodeAndDeleteFlagFalse(employee.getEmployeeCode())
+        userRepository.findByEmployeeCodeWithRoles(employee.getEmployeeCode())
                 .ifPresent(user -> dto.setRoles(user.getRoles().stream()
                         .map(Role::getDisplayName).toList()));
 

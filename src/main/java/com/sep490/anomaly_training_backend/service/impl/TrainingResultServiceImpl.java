@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -359,7 +360,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                        .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                                .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
                 }
@@ -565,6 +566,49 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         response.setDetails(detailDtos);
         return response;
+    }
+
+    @Override
+    public EmployeeTrainingHistoryResponse getEmployeeTrainingHistory(Long employeeId) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        List<TrainingResultDetail> details = trainingResultDetailRepository.getTrainingHistory(employeeId);
+
+        List<EmployeeTrainingHistoryResponse.TrainingHistoryItem> items = details.stream()
+                .map(d -> {
+                    TrainingResult result = d.getTrainingResult();
+                    String planTitle = result != null && result.getTitle() != null ? result.getTitle() : "";
+                    String teamLeadName = "";
+                    if (result != null && result.getCreatedBy() != null) {
+                        teamLeadName = userRepository.findByUsername(result.getCreatedBy())
+                                .map(User::getFullName)
+                                .orElse(result.getCreatedBy());
+                    }
+
+                    return EmployeeTrainingHistoryResponse.TrainingHistoryItem.builder()
+                            .detailId(d.getId())
+                            .planTitle(planTitle)
+                            .teamLeadName(teamLeadName)
+                            .actualDate(d.getActualDate())
+                            .timeIn(d.getTimeIn())
+                            .processId(d.getProcess() != null ? d.getProcess().getId() : null)
+                            .processCode(d.getProcess() != null ? d.getProcess().getCode() : null)
+                            .processName(d.getProcess() != null ? d.getProcess().getName() : null)
+                            .trainingTopic(d.getTrainingTopic())
+                            .note(d.getNote())
+                            .isPass(d.getIsPass())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return EmployeeTrainingHistoryResponse.builder()
+                .employeeId(employee.getId())
+                .employeeCode(employee.getEmployeeCode())
+                .fullName(employee.getFullName())
+                .totalRecords(items.size())
+                .histories(items)
+                .build();
     }
 
     private static final Set<ReportStatus> SV_VISIBLE_STATUSES = Set.of(
@@ -851,7 +895,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * Tạo snapshot cho 1 detail cụ thể (lưu vào training_result_detail_history).
      */
     private void createDetailHistorySnapshot(TrainingResultDetail detail) {
-        // Tạo 1 TrainingResultHistory header tạm cho snapshot
+        // Tạo 1 TrainingResultEmployeeHistory header tạm cho snapshot
         TrainingResult result = detail.getTrainingResult();
         TrainingResultHistory history = TrainingResultHistory.builder()
                 .trainingResult(result)
@@ -1193,7 +1237,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-                              HttpServletRequest request) {
+            HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.APPROVED);
@@ -1209,7 +1253,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-                             HttpServletRequest request) {
+            HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();

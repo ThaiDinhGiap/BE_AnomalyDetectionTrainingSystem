@@ -244,8 +244,10 @@ public class TrainingResultController {
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<String> submitResult(
-            @Parameter(description = "Training Result ID") @PathVariable Long id) {
-        trainingResultService.submitResult(id);
+            @Parameter(description = "Training Result ID") @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser,
+            HttpServletRequest request) {
+        trainingResultService.submit(id, currentUser, request);
         return ResponseEntity.ok("Kết quả huấn luyện đã được gửi thành công!");
     }
 

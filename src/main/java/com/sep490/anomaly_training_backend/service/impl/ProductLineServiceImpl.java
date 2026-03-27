@@ -5,6 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
@@ -15,9 +16,12 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.EmployeeSkillMapper;
 import com.sep490.anomaly_training_backend.mapper.ProcessMapper;
 import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
+import com.sep490.anomaly_training_backend.model.Attachment;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.ProductProcess;
 import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.model.Team;
@@ -26,10 +30,12 @@ import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductLineService;
+import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.helper.ProductLineImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.ProductLineImportValidator;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +69,8 @@ public class ProductLineServiceImpl implements ProductLineService {
     private final ProcessMapper processMapper;
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
+    private final ProductProcessRepository productProcessRepository;
+    private final AttachmentService attachmentService;
 
     @Override
     public List<ProductLineResponse> getAllProductLine() {
@@ -71,7 +79,8 @@ public class ProductLineServiceImpl implements ProductLineService {
                 .toList();
         for (ProductLineResponse response : responses) {
             for (ProcessResponse processResponse : response.getProcesses()) {
-                List<EmployeeSkillResponse> skillResponses = employeeSkillRepository.findByProcessIdAndDeleteFlagFalse(processResponse.getId())
+                List<EmployeeSkillResponse> skillResponses = employeeSkillRepository
+                        .findByProcessIdAndDeleteFlagFalse(processResponse.getId())
                         .stream().map(employeeSkillMapper::toDto).toList();
                 processResponse.setEmployeeSkills(skillResponses);
             }
@@ -111,14 +120,22 @@ public class ProductLineServiceImpl implements ProductLineService {
     public ProductLineResponse updateProductLine(Long id, ProductLineRequest productLineRequest) {
         ProductLine productLine = productLineRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
-        // Logic to update the entity is missing in the original code
+
+        if (productLineRequest.getName() != null) {
+            productLine.setName(productLineRequest.getName());
+        }
+        if (productLineRequest.getGroupId() != null) {
+            Group group = groupRepository.findById(productLineRequest.getGroupId())
+                    .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
+            productLine.setGroup(group);
+        }
+
         return productLineMapper.toDto(productLineRepository.save(productLine));
     }
 
     @Override
     public List<ProductLineResponse> getByTeamLeadId(Long teamLeadId) {
-        return productLineRepository.findProductLineByTeamLeadId(teamLeadId).
-                stream()
+        return productLineRepository.findProductLineByTeamLeadId(teamLeadId).stream()
                 .map(productLineMapper::toDto)
                 .toList();
     }
@@ -335,7 +352,8 @@ public class ProductLineServiceImpl implements ProductLineService {
     /**
      * Find existing Process by code within ProductLine or create new one
      */
-    private Process findOrCreateProcess(ProductLine productLine, ProductLineImportDto dto, List<ImportErrorItem> errors) {
+    private Process findOrCreateProcess(ProductLine productLine, ProductLineImportDto dto,
+            List<ImportErrorItem> errors) {
         try {
             // Find existing process by ProductLine + Code
             return processRepository.findByProductLineCodeAndCode(productLine.getCode(), dto.getProcessCode())
@@ -343,9 +361,11 @@ public class ProductLineServiceImpl implements ProductLineService {
                         // Update existing
                         existing.setName(dto.getProcessName());
                         existing.setDescription(dto.getProcessDescription());
-                        if (dto.getProcessClassification() != null && !dto.getProcessClassification().trim().isEmpty()) {
+                        if (dto.getProcessClassification() != null
+                                && !dto.getProcessClassification().trim().isEmpty()) {
                             try {
-                                existing.setClassification(ProcessClassification.valueOf(dto.getProcessClassification()));
+                                existing.setClassification(
+                                        ProcessClassification.valueOf(dto.getProcessClassification()));
                             } catch (IllegalArgumentException e) {
                                 log.warn("Invalid classification {}, keeping existing", dto.getProcessClassification());
                             }
@@ -404,7 +424,8 @@ public class ProductLineServiceImpl implements ProductLineService {
         }
 
         String fileName = file.getOriginalFilename();
-        if (fileName == null || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
+        if (fileName == null
+                || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
             throw new AppException(ErrorCode.INVALID_FILE_FORMAT);
         }
     }
@@ -435,8 +456,7 @@ public class ProductLineServiceImpl implements ProductLineService {
                     file.getOriginalFilename(),
                     ImportType.PRODUCT_LINE_IMPORT,
                     ImportStatus.FAIL,
-                    errors
-            );
+                    errors);
         } catch (Exception e) {
             log.error("Error saving import fail history: {}", e.getMessage());
         }
@@ -452,8 +472,7 @@ public class ProductLineServiceImpl implements ProductLineService {
                     file.getOriginalFilename(),
                     ImportType.PRODUCT_LINE_IMPORT,
                     ImportStatus.PASS,
-                    List.of()
-            );
+                    List.of());
         } catch (Exception e) {
             log.error("Error saving import pass history: {}", e.getMessage());
         }
@@ -479,5 +498,90 @@ public class ProductLineServiceImpl implements ProductLineService {
                 .value(value)
                 .message(message)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductLineDetailResponse getProductLineFullDetail(Long lineId) {
+        ProductLine line = productLineRepository.findById(lineId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
+
+        ProductLineDetailResponse.ProductLineDetailResponseBuilder builder = ProductLineDetailResponse.builder()
+                .lineId(line.getId())
+                .lineCode(line.getCode())
+                .lineName(line.getName());
+
+        // Group → SV
+        Group group = line.getGroup();
+        if (group != null) {
+            builder.groupId(group.getId())
+                    .groupName(group.getName());
+            if (group.getSupervisor() != null) {
+                builder.supervisorId(group.getSupervisor().getId())
+                        .supervisorName(group.getSupervisor().getFullName());
+            }
+            // Section → MNG
+            Section section = group.getSection();
+            if (section != null) {
+                builder.sectionId(section.getId())
+                        .sectionName(section.getName());
+                if (section.getManager() != null) {
+                    builder.managerId(section.getManager().getId())
+                            .managerName(section.getManager().getFullName());
+                }
+            }
+        }
+
+        // Processes of this line
+        List<Process> processes = processRepository.findByProductLineIdAndDeleteFlagFalse(lineId);
+        List<ProductLineDetailResponse.ProcessInfo> processInfos = processes.stream()
+                .map(p -> ProductLineDetailResponse.ProcessInfo.builder()
+                        .processId(p.getId())
+                        .processCode(p.getCode())
+                        .processName(p.getName())
+                        .classification(p.getClassification() != null ? p.getClassification().getValue() : null)
+                        .standardTimeJt(p.getStandardTimeJt())
+                        .build())
+                .toList();
+        builder.processes(processInfos);
+
+        // Products linked to these processes (via product_process)
+        List<Long> processIds = processes.stream().map(Process::getId).toList();
+        Map<Long, List<ProductProcess>> ppByProduct = new java.util.HashMap<>();
+        if (!processIds.isEmpty()) {
+            for (Long pid : processIds) {
+                List<ProductProcess> pps = productProcessRepository.findByProcessId(pid);
+                for (ProductProcess pp : pps) {
+                    ppByProduct.computeIfAbsent(pp.getProduct().getId(), k -> new ArrayList<>()).add(pp);
+                }
+            }
+        }
+
+        List<ProductLineDetailResponse.ProductWithProcesses> productList = ppByProduct.entrySet().stream()
+                .map(entry -> {
+                    Product product = entry.getValue().get(0).getProduct();
+                    List<ProductLineDetailResponse.ProductProcessInfo> ppInfos = entry.getValue().stream()
+                            .map(pp -> ProductLineDetailResponse.ProductProcessInfo.builder()
+                                    .processId(pp.getProcess().getId())
+                                    .processCode(pp.getProcess().getCode())
+                                    .processName(pp.getProcess().getName())
+                                    .standardTimeJt(pp.getStandardTimeJt())
+                                    .build())
+                            .toList();
+                    return ProductLineDetailResponse.ProductWithProcesses.builder()
+                            .productId(product.getId())
+                            .productCode(product.getCode())
+                            .productName(product.getName())
+                            .description(product.getDescription())
+                            .attachmentUrls(
+                                    attachmentService.getAttachmentsByEntity("PRODUCT", product.getId())
+                                            .stream().map(Attachment::getUrl).toList())
+                            .processes(ppInfos)
+                            .build();
+                })
+                .toList();
+        builder.products(productList);
+
+        return builder.build();
     }
 }

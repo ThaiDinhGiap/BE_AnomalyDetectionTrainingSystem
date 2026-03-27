@@ -17,4 +17,6 @@ public interface EmployeeSkillService {
     SkillMatrixResponse getSkillMatrix(Long teamId, Long lineId, List<Long> employeeIds, List<Long> processIds);
 
     void importSkillMatrix(MultipartFile file);
+
+    List<EmployeeSkillResponse> getEmployeeSkillsByEmployeeId(Long employeeId);
 }

@@ -8,6 +8,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
@@ -107,9 +108,16 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
     }
 
+    @GetMapping("/product-line-detail/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    @Operation(summary = "Get full detail of a product line", description = "Returns products, processes, and management hierarchy (SV, Section, MNG)")
+    public ResponseEntity<ApiResponse<ProductLineDetailResponse>> getProductLineFullDetail(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineFullDetail(id)));
+    }
+
     @PostMapping("/product-lines")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
-    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLineByTeamLead(@RequestBody ProductLineRequest productLineRequest) {
+    public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLine(@RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 
@@ -155,11 +163,14 @@ public class ManufacturingLineController {
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
         return null;
     }
-//    @PutMapping("/employee-skills/{id}")
-//    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
-//    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkillByTeamLead(@PathVariable Long id, @RequestBody List<EmployeeSkillRequest> employeeSkillRequestList) {
-//        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequestList)));
-//    }
+
+    @PutMapping("/employee-skills/{id}")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
+    public ResponseEntity<ApiResponse<EmployeeSkillResponse>> updateEmployeeSkill(
+            @PathVariable Long id,
+            @RequestBody EmployeeSkillRequest employeeSkillRequest) {
+        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.updateEmployeeSkillByTeamLead(id, employeeSkillRequest)));
+    }
 
     // ====================== DELETE ======================
     @DeleteMapping("/product-lines/{id}")
