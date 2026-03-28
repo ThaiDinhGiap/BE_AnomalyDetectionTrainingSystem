@@ -17,6 +17,8 @@ public enum ErrorCode {
     //range 3xxx: Auth & Security
     UNAUTHORIZED(3001, "Authentication required. Please login.", HttpStatus.UNAUTHORIZED),
     INVALID_CREDENTIALS(3002, "Invalid username or password.", HttpStatus.UNAUTHORIZED),
+    PASSWORD_MISMATCH(3009, "Password and confirm password do not match.", HttpStatus.BAD_REQUEST),
+    USER_HAS_NO_EMAIL_FOR_RESET(3010, "This account is not associated with an email. Please contact your manager to reset your password.", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(3003, "User not found.", HttpStatus.NOT_FOUND),
     INVALID_REFRESH_TOKEN(3004, "Invalid or expired refresh token.", HttpStatus.UNAUTHORIZED),
     REFRESH_TOKEN_EXPIRED(3005, "Refresh token has expired. Please login again.", HttpStatus.UNAUTHORIZED),

@@ -163,4 +163,34 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Logged out from all devices", null));
     }
 
+    @Operation(
+            summary = "Change Password",
+            description = "Change the password for the currently authenticated user"
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
+
+        log.info("Change password request for user: {}", userDetails.getUsername());
+        authService.changePassword(userDetails.getUsername(), request);
+
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
+    @Operation(
+            summary = "Forgot Password",
+            description = "Send a new temporary password to the user's email if they have one linked."
+    )
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody com.sep490.anomaly_training_backend.dto.request.ForgotPasswordRequest request) {
+
+        log.info("Forgot password request for username: {}", request.getUsername());
+        authService.forgotPassword(request);
+
+        return ResponseEntity.ok(ApiResponse.success("A temporary password has been sent to your email", null));
+    }
+
 }

@@ -17,4 +17,6 @@ public class UserDashboard {
     String username;
     boolean isActive;
     private List<UserRoleDTO> roles;
+    String generatedPassword;
+    Boolean requirePasswordChange;
 }

@@ -212,6 +212,14 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(authService.updateUser(id, request)));
     }
 
+    @PutMapping("/users/{id}/reset-password")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Reset Account Password", description = "Reset user password to an auto-generated one and force password change on next login")
+    public ResponseEntity<ApiResponse<String>> resetUserPassword(
+            @Parameter(description = "ID của User") @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Success", authService.resetUserPassword(id)));
+    }
+
     @PutMapping("/employees/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Employee")

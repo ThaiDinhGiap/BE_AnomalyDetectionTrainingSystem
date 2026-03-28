@@ -117,6 +117,8 @@ cors:
   max-age: 3600
 
 app:
+  security:
+    default-password-prefix: ${SECURITY_DEFAULT_PASSWORD_PREFIX:ADTMS@}
   websockert:
     enabled: ${WEBSOCKET_ENABLED:true}
   rabbitmq:

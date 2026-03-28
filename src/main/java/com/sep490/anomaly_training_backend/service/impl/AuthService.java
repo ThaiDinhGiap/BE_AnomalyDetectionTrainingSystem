@@ -24,6 +24,7 @@ import com.sep490.anomaly_training_backend.service.JwtService;
 import com.sep490.anomaly_training_backend.service.notification.impl.MailDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -52,14 +53,19 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final EmployeeRepository employeeRepository;
     private final MailDispatcher mailDispatcher;
+    
+    @Value("${app.security.default-password-prefix:ADTMS@}")
+    private String defaultPasswordPrefix;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsernameAndDeleteFlagFalse(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-        if (userRepository.existsByEmailAndDeleteFlagFalse(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            if (userRepository.existsByEmailAndDeleteFlagFalse(request.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
 
         User user = User.builder()
@@ -69,6 +75,7 @@ public class AuthService {
                 .fullName(request.getFullName())
                 .oauthProvider(OAuthProvider.LOCAL)
                 .isActive(true)
+                .requirePasswordChange(request.getEmail() == null || request.getEmail().trim().isEmpty())
                 .build();
 
         user = userRepository.save(user);
@@ -91,7 +98,7 @@ public class AuthService {
         }
 
         log.info("User logged in: {}", user.getUsername());
-        return generateAuthResponse(user);
+        return generateAuthResponseWithPasswordCheck(user);
     }
 
     @Transactional
@@ -114,7 +121,7 @@ public class AuthService {
 
         refreshTokenRepository.revokeByToken(refreshTokenStr);
         log.info("Token refreshed for user: {}", user.getUsername());
-        return generateAuthResponse(user);
+        return generateAuthResponseWithPasswordCheck(user);
     }
 
     @Transactional
@@ -161,13 +168,21 @@ public class AuthService {
         );
     }
 
+    private AuthResponse generateAuthResponseWithPasswordCheck(User user) {
+        AuthResponse response = generateAuthResponse(user);
+        response.setRequirePasswordChange(user.getRequirePasswordChange());
+        return response;
+    }
+
     @Transactional
     public UserDashboard createUser(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
         if (userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
             throw new AppException(ErrorCode.EMPLOYEE_CODE_ALREADY_LINKED);
@@ -176,7 +191,7 @@ public class AuthService {
         Employee employee = employeeRepository.findByEmployeeCode(request.getEmployeeCode())
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        String rawPassword = generateRandomPassword();
+        String rawPassword = generateDefaultPassword(request.getEmployeeCode());
         String encodedPassword = passwordEncoder.encode(rawPassword);
 
         User user = User.builder()
@@ -186,6 +201,7 @@ public class AuthService {
                 .fullName(employee.getFullName())
                 .passwordHash(encodedPassword)
                 .oauthProvider(OAuthProvider.LOCAL)
+                .requirePasswordChange(true)
                 .build();
 
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
@@ -198,21 +214,95 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        String subject = "Your Anomaly Training System Account Information";
-        String body = "Hello " + savedUser.getFullName() + ",\n\n"
-                + "Your account on the system has been created successfully.\n"
-                + "Here is your login information:\n"
-                + "- Username: " + savedUser.getUsername() + "\n"
+        if (savedUser.getEmail() != null && !savedUser.getEmail().trim().isEmpty()) {
+            String subject = "Your Anomaly Training System Account Information";
+            String body = "Hello " + savedUser.getFullName() + ",\n\n"
+                    + "Your account on the system has been created successfully.\n"
+                    + "Here is your login information:\n"
+                    + "- Username: " + savedUser.getUsername() + "\n"
+                    + "- Password: " + rawPassword + "\n\n"
+                    + "Please log in and change your password immediately for security.\n\n"
+                    + "Best regards,\nThe System Administration Team.";
+            try {
+                mailDispatcher.send(savedUser.getEmail(), subject, body);
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to {}", savedUser.getEmail(), e);
+            }
+        }
+
+        UserDashboard dashboard = toUserDashboard(savedUser);
+        dashboard.setGeneratedPassword(rawPassword);
+        return dashboard;
+    }
+
+    private String generateDefaultPassword(String employeeCode) {
+        return defaultPasswordPrefix + employeeCode;
+    }
+
+    @Transactional
+    public String resetUserPassword(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String rawPassword = generateDefaultPassword(user.getEmployeeCode());
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setRequirePasswordChange(true);
+        userRepository.save(user);
+        return rawPassword;
+    }
+
+    @Transactional
+    public void changePassword(String username, com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        User user = userRepository.findByUsernameAndDeleteFlagFalse(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setRequirePasswordChange(false);
+        userRepository.save(user);
+
+        // Revoke all existing tokens so user has to log in again with new password
+        refreshTokenRepository.revokeAllByUser(user);
+    }
+
+    @Transactional
+    public void forgotPassword(com.sep490.anomaly_training_backend.dto.request.ForgotPasswordRequest request) {
+        User user = userRepository.findByUsernameAndDeleteFlagFalse(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new AppException(ErrorCode.USER_HAS_NO_EMAIL_FOR_RESET);
+        }
+
+        if (!user.getEmail().equals(request.getEmail())) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        String rawPassword = generateDefaultPassword(user.getEmployeeCode());
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setRequirePasswordChange(true);
+        userRepository.save(user);
+
+        // Revoke tokens
+        refreshTokenRepository.revokeAllByUser(user);
+
+        String subject = "Your Password Has Been Reset";
+        String body = "Hello " + user.getFullName() + ",\n\n"
+                + "Your password has been successfully reset. Here is your new temporary password:\n"
+                + "- Username: " + user.getUsername() + "\n"
                 + "- Password: " + rawPassword + "\n\n"
                 + "Please log in and change your password immediately for security.\n\n"
                 + "Best regards,\nThe System Administration Team.";
-        mailDispatcher.send(savedUser.getEmail(), subject, body);
-
-        return toUserDashboard(savedUser);
-    }
-
-    private String generateRandomPassword() {
-        return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8) + "X@1z";
+        try {
+            mailDispatcher.send(user.getEmail(), subject, body);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}", user.getEmail(), e);
+        }
     }
 
     @Transactional
@@ -220,8 +310,10 @@ public class AuthService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            if (!request.getEmail().equals(user.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
         }
         if (!user.getEmployeeCode().equals(request.getEmployeeCode()) && userRepository.existsByEmployeeCode(request.getEmployeeCode())) {
             throw new AppException(ErrorCode.EMPLOYEE_CODE_ALREADY_LINKED);
@@ -269,6 +361,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .username(user.getUsername())
                 .isActive(user.getIsActive())
+                .requirePasswordChange(user.getRequirePasswordChange())
                 .roles(roleDtoList)
                 .build();
     }
