@@ -183,7 +183,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Get product lines by group",
             description = "Returns list of product lines belonging to a specific group.")
-    @GetMapping("/product-lines-by-group/{groupId}")
+    @GetMapping("/groups/{groupId}/product-lines")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<ProductLineResponse>> getProductLinesByGroup(
             @Parameter(description = "Group ID") @PathVariable Long groupId) {
@@ -192,7 +192,7 @@ public class TrainingPlanController {
 
     @Operation(summary = "Get processes by product line",
             description = "Returns list of processes belonging to a specific product line.")
-    @GetMapping("/processes-by-line/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/processes")
     @PreAuthorize("hasAuthority('training_plan.view')")
     public ResponseEntity<List<ProcessResponse>> getProcessesByProductLine(
             @Parameter(description = "Product Line ID") @PathVariable Long productLineId) {

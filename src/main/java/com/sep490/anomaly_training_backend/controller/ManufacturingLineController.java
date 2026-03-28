@@ -48,7 +48,7 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/manufacturing-line")
+@RequestMapping("/api/v1/manufacturing-lines")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Manufacturing Line Management", description = "API quản lý cấu trúc dữ liệu dây chuyền sản xuất")
@@ -72,43 +72,43 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @GetMapping("/product-lines-detail")
+    @GetMapping("/product-lines/detail")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> getProductLineDetail(@RequestParam Long productLineId) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineDetail(productLineId)));
     }
 
-    @GetMapping("/lines-by-teamlead")
+    @GetMapping("/product-lines/by-team-lead")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> findProductLineByTeamLeadId(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getByTeamLeadId(currentUser.getId())));
     }
 
-    @GetMapping("/processes-by-line/{id}")
+    @GetMapping("/product-lines/{id}/processes")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
     }
 
-    @GetMapping("/product/{id}")
+    @GetMapping("/products/{id}")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProductResponse>> findByProductId(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductById(id)));
     }
 
-    @GetMapping("/product-by-process/{id}")
+    @GetMapping("/processes/{id}/products")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProcess(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProcessId(id)));
     }
 
-    @GetMapping("/product-by-line/{id}")
+    @GetMapping("/product-lines/{id}/products")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
     }
 
-    @GetMapping("/product-line-detail/{id}")
+    @GetMapping("/product-lines/{id}/full-detail")
     @PreAuthorize("hasAuthority('manufacturing_line.view')")
     @Operation(summary = "Get full detail of a product line", description = "Returns products, processes, and management hierarchy (SV, Section, MNG)")
     public ResponseEntity<ApiResponse<ProductLineDetailResponse>> getProductLineFullDetail(@PathVariable("id") Long id) {
@@ -127,13 +127,13 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(processService.createProcess(request)));
     }
 
-    @PostMapping("/product")
+    @PostMapping("/products")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody ProductRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
     }
 
-    @PostMapping("/product/sync")
+    @PostMapping("/products/sync")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@RequestBody List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
@@ -158,7 +158,7 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(processService.updateProcessByAdmin(id, processRequest)));
     }
 
-    @PutMapping("/product")
+    @PutMapping("/products/{id}")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
         return null;
@@ -196,7 +196,7 @@ public class ManufacturingLineController {
 
     // ====================== IMPORT ======================
     @Operation(summary = "Import Product data")
-    @PostMapping("/import-products/{productLineId}")
+    @PostMapping("/product-lines/{productLineId}/products/import")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> importProduct(@RequestPart("file") MultipartFile file,
                                                                             @AuthenticationPrincipal User currentUser,
@@ -206,7 +206,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Import ProductLine data")
-    @PostMapping("/import-product-lines")
+    @PostMapping("/product-lines/import")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> importProductLine(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<ProductLineResponse> data = productLineService.importProductLine(currentUser, file);
@@ -214,7 +214,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Import Training Sample template")
-    @GetMapping("/product/download-template")
+    @GetMapping("/products/template")
     @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadProductTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Product_guideline.xlsx");
@@ -234,7 +234,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Import Training Sample template")
-    @GetMapping("/product-line/download-template")
+    @GetMapping("/product-lines/template")
     @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadProductLineTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/ProductLine_guideline.xlsx");
@@ -254,7 +254,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Import Matrix Skill And Product Line Structure")
-    @PostMapping("/import-matrix-skill")
+    @PostMapping("/employee-skills/import")
     @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<String>> importMatrixSkill(
             @RequestPart("file") MultipartFile file,
@@ -268,7 +268,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Get history import Training Sample")
-    @GetMapping("/product/import-history")
+    @GetMapping("/products/import-history")
     @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_IMPORT");
@@ -276,7 +276,7 @@ public class ManufacturingLineController {
     }
 
     @Operation(summary = "Get history import Training Sample")
-    @GetMapping("/product-line/import-history")
+    @GetMapping("/product-lines/import-history")
     @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyProductLineImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "PRODUCT_LINE_IMPORT");

@@ -24,7 +24,7 @@ public class AttachmentController {
 
     private final AttachmentService attachmentService;
 
-    @PostMapping("/upload")
+    @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Attachment> uploadAttachment(
             @RequestParam("file") MultipartFile file,
@@ -55,7 +55,7 @@ public class AttachmentController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/uploads")
+    @PostMapping("/batch")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Attachment>> uploadAttachments(
             @RequestParam("files") List<MultipartFile> files,

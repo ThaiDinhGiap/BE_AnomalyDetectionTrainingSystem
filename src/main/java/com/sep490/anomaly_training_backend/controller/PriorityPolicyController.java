@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/priority-policies")
+@RequestMapping("/api/v1/priority-policies")
 @RequiredArgsConstructor
 @Tag(name = "Priority Policy Management", description = "API for managing training priority policies")
 public class PriorityPolicyController {

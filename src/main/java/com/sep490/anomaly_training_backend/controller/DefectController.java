@@ -61,7 +61,7 @@ public class DefectController {
     private final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get defects by productLine (Defect Banking)")
-    @GetMapping("/")
+    @GetMapping
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProductLine(@RequestParam("productLineId") Long productLineId) {
         List<DefectResponse> list = defectService.getDefectByProductLine(productLineId);
@@ -69,7 +69,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Get defects by process ")
-    @GetMapping("/process")
+    @GetMapping("/by-process")
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectResponse>>> getDefectByProcess(@RequestParam("processId") Long processId) {
         List<DefectResponse> list = defectService.getDefectByProcess(processId);
@@ -77,7 +77,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Count defect type in product line in each process ")
-    @GetMapping("/count-defect/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/count")
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<List<DefectInProcess>>> countDefectInProcess(@PathVariable("productLineId") Long productLineId) {
         List<DefectInProcess> list = defectService.countDefectInProcess(productLineId);
@@ -85,7 +85,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Get defect coverage in product and its proportion")
-    @GetMapping("/coverage/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/coverage")
     @PreAuthorize("hasAuthority('defect.view')")
     public ResponseEntity<ApiResponse<DefectCoverageResponse>> getCoverageInProductLine(@PathVariable("productLineId") Long productLineId) {
         DefectCoverageResponse result = defectService.getCoverageInProductLine(productLineId);
@@ -101,14 +101,14 @@ public class DefectController {
     }
 
     @Operation(summary = "Validate duplicate defect Description")
-    @GetMapping("/check-exist")
+    @GetMapping("/existence")
     @PreAuthorize("hasAuthority('defect.view')")
     public Boolean checkExistDefectDescription(@RequestParam String defectDescription) {
         return defectService.checkExistDefectDescription(defectDescription);
     }
 
     @Operation(summary = "Get defect proposals by productLine")
-    @GetMapping("/proposal")
+    @GetMapping("/proposals")
     @PreAuthorize("hasAuthority('defect_proposal.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalResponse>>> getDefectProposalByProductLine(
             @RequestParam("productLineId") Long productLineId,
@@ -119,7 +119,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Get defect proposal details")
-    @GetMapping("/detail/{id}")
+    @GetMapping("/proposals/{id}/details")
     @PreAuthorize("hasAuthority('defect_proposal.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalDetailResponse>>> getDefectProposalDetail(@PathVariable Long id) {
         List<DefectProposalDetailResponse> list = defectProposalDetailService.getDefectProposalDetails(id);
@@ -127,7 +127,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Create new defect proposal")
-    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/proposals", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<ApiResponse<Void>> createDefectProposal(
             @ModelAttribute DefectProposalRequest request,
@@ -136,14 +136,14 @@ public class DefectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id) {
         defectProposalService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
@@ -217,7 +217,7 @@ public class DefectController {
     }
 
     @Operation(summary = "Export data (Defect Banking)")
-    @PostMapping("/export/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/export")
     @PreAuthorize("hasAuthority('defect.manage')")
     public ResponseEntity<byte[]> exportDefect(@PathVariable Long productLineId) throws BadRequestException {
         byte[] data = defectService.exportDefect(productLineId);

@@ -54,7 +54,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
     }
 
-    @GetMapping("/group/{sectionId}")
+    @GetMapping("/sections/{sectionId}/groups")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Groups by Section ID", description = "Pass the Section ID to get a list of groups belonging to that section")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(
@@ -62,7 +62,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
     }
 
-    @GetMapping("/team/{groupId}")
+    @GetMapping("/groups/{groupId}/teams")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Teams by Group ID", description = "Pass the Group ID to get a list of teams belonging to that group")
     public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(
@@ -70,7 +70,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
 
-    @GetMapping("/member")
+    @GetMapping("/members")
     @PreAuthorize("hasAuthority('team.manage')")
     @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
@@ -99,7 +99,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
     }
 
-    @GetMapping("/product-line/team-lead/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/team-leads")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
@@ -107,7 +107,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    @GetMapping("/process/{processId}/employeeSkills")
+    @GetMapping("/processes/{processId}/employee-skills")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Employees with skills in process", description = "Used to get list employee skills")
     public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeSkillsByProcess(
@@ -116,7 +116,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByProcess(processId)));
     }
 
-    @GetMapping("/employee/{employeeId}/training-history")
+    @GetMapping("/employees/{employeeId}/training-history")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of history training", description = "Used to get list employee training history")
     public ResponseEntity<ApiResponse<EmployeeTrainingHistoryResponse>> getEmployeeTrainingHistory(
@@ -125,7 +125,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(trainingResultService.getEmployeeTrainingHistory(employeeId)));
     }
 
-    @GetMapping("/employee/{employeeId}/employee-skill")
+    @GetMapping("/employees/{employeeId}/skills")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of history training", description = "Used to get list employee skills")
     public ResponseEntity<ApiResponse<List<EmployeeSkillResponse>>> getEmployeesSkillByEmployee(
@@ -239,7 +239,7 @@ public class StaffOrganizationController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/remove-group-from-section/{groupId}")
+    @DeleteMapping("/groups/{groupId}/section")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "delete(Group)")
     public ResponseEntity<Void> removeGroupFromSection(
@@ -257,7 +257,7 @@ public class StaffOrganizationController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/remove-team-from-group/{teamId}")
+    @DeleteMapping("/teams/{teamId}/group")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "delete (Team)")
     public ResponseEntity<Void> removeTeamFromGroup(
@@ -275,7 +275,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success("Đã xóa nhân viên thành công"));
     }
 
-    @PutMapping("/teams/{id}/remove-employees")
+    @DeleteMapping("/teams/{id}/employees")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Remove Employees from Team", description = "Used to remove employees from team")
     public ResponseEntity<ApiResponse<Void>> removeEmployeesFromTeam(
@@ -286,7 +286,7 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
-    @PutMapping("/teams/{id}/add-employees")
+    @PostMapping("/teams/{id}/employees")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Add Employees to Team", description = "Add existing employees to a team")
     public ResponseEntity<ApiResponse<Void>> addEmployeesToTeam(

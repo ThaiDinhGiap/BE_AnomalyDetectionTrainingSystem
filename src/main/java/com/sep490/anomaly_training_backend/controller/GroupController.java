@@ -23,7 +23,7 @@ public class GroupController {
     private final GroupService groupService;
 
     @Operation(summary = "Get groups by Team Leader ID")
-    @GetMapping("/team-lead/{id}")
+    @GetMapping("/by-team-lead/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getByTeamLead(@PathVariable Long id) {
         List<GroupResponse> results = groupService.getGroupByTeamLead(id);
@@ -31,7 +31,7 @@ public class GroupController {
     }
 
     @Operation(summary = "Get groups by Supervisor ID")
-    @GetMapping("/supervisor/{id}")
+    @GetMapping("/by-supervisor/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<GroupResponse>>> getBySupervisor(@PathVariable Long id) {
         List<GroupResponse> results = groupService.getGroupsBySupervisor(id);
@@ -39,7 +39,7 @@ public class GroupController {
     }
 
     @Operation(summary = "Get groups (Lines) managed by current user")
-    @GetMapping("/my-managed-groups")
+    @GetMapping("/my-managed")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<GroupResponse>> getMyGroups() {
         return ResponseEntity.ok(groupService.getMyManagedGroups());

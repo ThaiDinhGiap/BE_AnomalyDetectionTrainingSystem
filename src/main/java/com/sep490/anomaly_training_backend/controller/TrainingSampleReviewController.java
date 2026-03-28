@@ -31,13 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/review-training-samples")
+@RequestMapping("/api/v1/training-sample-reviews")
 @RequiredArgsConstructor
 @Tag(name = "Training Sample Review Management", description = "API for scheduling the annual review of the training sample list and reporting the results")
 public class TrainingSampleReviewController {
     private final TrainingSampleReviewService trainingSampleReviewService;
 
-    @GetMapping("/policies/product-line/{productLineId}")
+    @GetMapping("/policies/by-product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get review policies by product line", description = "Retrieve a list of review policies by product line")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewPolicyResponse>>> getReviewPoliciesByProductLine(
@@ -47,7 +47,7 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách chính sách rà soát thành công", policies));
     }
 
-    @GetMapping("/task/{productLineId}")
+    @GetMapping("/tasks/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get review policies by product line", description = "Retrieve a list of review policies by product line")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getTask(
@@ -67,7 +67,7 @@ public class TrainingSampleReviewController {
                 .body(ApiResponse.success("Tạo chính sách rà soát thành công", response));
     }
 
-    @GetMapping("/reviews/config/{configId}")
+    @GetMapping("/reviews/by-config/{configId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get reviews by config", description = "Retrieve a list of training sample reviews by configuration")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getReviewsByConfigId(
@@ -76,7 +76,7 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách rà soát thành công", reviews));
     }
 
-    @GetMapping("/reviews/product-line/{productLineId}")
+    @GetMapping("/reviews/by-product-line/{productLineId}")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Get reviews by product line", description = "Lấy danh sách rà soát mẫu huấn luyện theo dây chuyền sản xuất")
     public ResponseEntity<ApiResponse<List<TrainingSampleReviewResponse>>> getReviewsByProductLine(
@@ -94,7 +94,7 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Xóa chính sách rà soát thành công", null));
     }
 
-    @PutMapping("/reviews/{reviewId}/assign-team-lead")
+    @PutMapping("/reviews/{reviewId}/team-lead")
     @PreAuthorize("hasAuthority('training_sample_review.manage')")
     @Operation(summary = "Assign team lead to review", description = "Assign a team lead to perform the training sample review")
     public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> assignTeamLeadToReview(
@@ -105,12 +105,14 @@ public class TrainingSampleReviewController {
         return ResponseEntity.ok(ApiResponse.success("Gán trưởng nhóm thành công", response));
     }
 
-    @PutMapping("/submit")
+    @PutMapping("/reviews/{id}/submit")
     @PreAuthorize("hasAuthority('training_sample_review.perform')")
     @Operation(summary = "Confirm review by team lead", description = "Confirm training sample review results")
-    public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> submit(@RequestBody TrainingSampleReviewRequest reviewRequest,
+    public ResponseEntity<ApiResponse<TrainingSampleReviewResponse>> submit(@PathVariable Long id,
+                                                                            @RequestBody TrainingSampleReviewRequest reviewRequest,
                                                                             @AuthenticationPrincipal User currentUser,
                                                                             HttpServletRequest request) {
+        reviewRequest.setId(id);
         TrainingSampleReviewResponse response = trainingSampleReviewService.submit(reviewRequest, currentUser, request);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận kết quả rà soát thành công", response));
     }

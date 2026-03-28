@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/approvals")
+@RequestMapping("/api/v1/approvals")
 @RequiredArgsConstructor
 @Tag(name = "Approval Management", description = "Manage approval workflow for reports and plans")
 public class ApprovalController {
