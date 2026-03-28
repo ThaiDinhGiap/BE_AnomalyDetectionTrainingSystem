@@ -62,6 +62,9 @@ public class Employee extends BaseEntity {
     @Builder.Default
     private EmployeeStatus status = EmployeeStatus.ACTIVE;
 
+    @Column(name = "join_date")
+    private java.time.LocalDate joinDate;
+
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @Builder.Default

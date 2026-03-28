@@ -729,6 +729,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ── Generate ─────────────────────────────────────────────────────────────
 
     @Override
+    @Transactional
     public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser,
                                                                 TrainingPlanGenerationRequest request) {
         TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
@@ -744,16 +745,22 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
         prioritySnapshotRepository.save(prioritySnapshot);
 
-        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(prioritySnapshot);
+        // Use plan's start year for calendar lookup (not current year)
+        int calendarYear = request.getStartDate().getYear();
+
+        TrainingPlan scheduledPlan = trainingPlanScheduleGenerationService.generateOptimalSchedule(
+                generatedTrainingPlan.getId(),
+                prioritySnapshot.getId(),
+                calendarYear);
+
+        // Reload snapshot with details (lazy-loaded) for proper response mapping
+        PrioritySnapshot reloadedSnapshot = prioritySnapshotRepository.findById(prioritySnapshot.getId())
+                .orElse(prioritySnapshot);
+        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(reloadedSnapshot);
 
         TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
         response.setPrioritySnapshot(prioritySnapshotResponse);
-        response.setTrainingPlan(
-                toTrainingPlanResponse(
-                        trainingPlanScheduleGenerationService.generateOptimalSchedule(
-                                generatedTrainingPlan.getId(),
-                                prioritySnapshot.getId(),
-                                LocalDate.now().getYear())));
+        response.setTrainingPlan(toTrainingPlanResponse(scheduledPlan));
 
         return response;
     }

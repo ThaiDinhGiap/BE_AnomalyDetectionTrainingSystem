@@ -193,6 +193,20 @@ public class PriorityScoringServiceImpl implements PriorityScoringService {
         log.info("Snapshot deleted: {}", snapshotId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PrioritySnapshot> listSnapshotsByPolicy(Long policyId) {
+        return snapshotRepository.findByPolicyIdOrderByCreatedAtDesc(policyId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PrioritySnapshot getSnapshotById(Long snapshotId) {
+        return snapshotRepository.findById(snapshotId)
+                .orElseThrow(() -> new AppException(ErrorCode.SNAPSHOT_NOT_FOUND,
+                        "Snapshot not found: " + snapshotId));
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private Set<String> collectMetricsFromPolicy(PriorityPolicy policy) {
