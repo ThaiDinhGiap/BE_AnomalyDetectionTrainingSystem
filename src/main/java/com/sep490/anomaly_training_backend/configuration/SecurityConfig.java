@@ -60,7 +60,7 @@ public class SecurityConfig {
     private long maxAge;
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/**",
+            "/api/v1/auth/**",
             "/oauth2/**",
             "/login/oauth2/**",
             "/error",
