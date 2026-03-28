@@ -14,11 +14,11 @@ SET @today = CURRENT_DATE;
 INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version, note, min_training_per_day, max_training_per_day, created_by)
 VALUES
 -- Group 1 (Tiện CNC)
-(200, 'TP-SV-W01', 'KH HL T3/2026 - Tổ Tiện Ca Ngày (Chờ SV)',       '2026-03-01', '2026-03-31', 1, 1, 'WAITING_SV', 1, 'Chờ SV phê duyệt.', 1, 3, 'tl_tien01'),
-(210, 'TP-SV-W10', 'KH HL T4/2026 - Tổ Tiện Bơm Chìm (Chờ SV)',     '2026-04-01', '2026-04-30', 1, 6, 'WAITING_SV', 1, 'Chờ SV phê duyệt plan Bơm Chìm.', 1, 3, 'tl_tien01'),
-(211, 'TP-SV-W11', 'KH HL T4/2026 - Tổ Tiện Van V-Series (Chờ SV)',  '2026-04-01', '2026-04-30', 1, 7, 'WAITING_SV', 1, 'Chờ SV phê duyệt plan Van.', 1, 3, 'tl_tien01'),
+(200, 'TP-SV-W01', 'KH HL T3/2026 - Tổ Tiện Ca Ngày (Chờ SV)',       '2026-03-01', '2026-03-31', 1, 1, 'PENDING_REVIEW', 1, 'Chờ SV phê duyệt.', 1, 3, 'tl_tien01'),
+(210, 'TP-SV-W10', 'KH HL T4/2026 - Tổ Tiện Bơm Chìm (Chờ SV)',     '2026-04-01', '2026-04-30', 1, 6, 'PENDING_REVIEW', 1, 'Chờ SV phê duyệt plan Bơm Chìm.', 1, 3, 'tl_tien01'),
+(211, 'TP-SV-W11', 'KH HL T4/2026 - Tổ Tiện Van V-Series (Chờ SV)',  '2026-04-01', '2026-04-30', 1, 7, 'PENDING_REVIEW', 1, 'Chờ SV phê duyệt plan Van.', 1, 3, 'tl_tien01'),
 -- Group 2 (Phay CNC)
-(201, 'TP-SV-W02', 'KH HL T3/2026 - Tổ Phay Ca Ngày (Chờ SV)',       '2026-03-01', '2026-03-31', 2, 2, 'WAITING_SV', 1, 'Chờ SV phê duyệt.', 1, 3, 'tl_phay01');
+(201, 'TP-SV-W02', 'KH HL T3/2026 - Tổ Phay Ca Ngày (Chờ SV)',       '2026-03-01', '2026-03-31', 2, 2, 'PENDING_REVIEW', 1, 'Chờ SV phê duyệt.', 1, 3, 'tl_phay01');
 
 -- Plan details cho plans WAITING_SV
 INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date, status, note, created_by, delete_flag, created_at, updated_at)
@@ -52,11 +52,11 @@ VALUES
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
 VALUES
 -- Group 1 (Tiện CNC) — nhiều result đa dạng status
-(200, 3,   'KQ HL T3/2026 - Tổ Tiện (Chờ MG)',          'TR-SV-W01', 2026, 1, 1, 'WAITING_MANAGER', 1, 'Chờ Manager phê duyệt.', 'tl_tien01'),
-(210, 107, 'KQ HL T3/2026 - Bơm Chìm (Đang thực hiện)', 'TR-SV-W10', 2026, 1, 6, 'ON_GOING',        1, 'Đang nhập kết quả Bơm Chìm.', 'tl_tien01'),
-(211, 108, 'KQ HL T4/2026 - Van (Đang thực hiện)',       'TR-SV-W11', 2026, 1, 7, 'ON_GOING',        1, 'Đang nhập kết quả Van.', 'tl_tien01'),
+(200, 3,   'KQ HL T3/2026 - Tổ Tiện (Chờ MG)',          'TR-SV-W01', 2026, 1, 1, 'PENDING_APPROVAL', 1, 'Chờ Manager phê duyệt.', 'tl_tien01'),
+(210, 107, 'KQ HL T3/2026 - Bơm Chìm (Đang thực hiện)', 'TR-SV-W10', 2026, 1, 6, 'ONGOING',        1, 'Đang nhập kết quả Bơm Chìm.', 'tl_tien01'),
+(211, 108, 'KQ HL T4/2026 - Van (Đang thực hiện)',       'TR-SV-W11', 2026, 1, 7, 'ONGOING',        1, 'Đang nhập kết quả Van.', 'tl_tien01'),
 -- Group 2 (Phay CNC)
-(201, 100, 'KQ HL T4/2026 - Tổ Phay (Chờ MG)',          'TR-SV-W02', 2026, 2, 2, 'WAITING_MANAGER', 1, 'Chờ Manager phê duyệt.', 'tl_phay01');
+(201, 100, 'KQ HL T4/2026 - Tổ Phay (Chờ MG)',          'TR-SV-W02', 2026, 2, 2, 'PENDING_APPROVAL', 1, 'Chờ Manager phê duyệt.', 'tl_phay01');
 
 
 -- ============================================================================
@@ -97,8 +97,8 @@ VALUES
 -- March 2026 (5 đánh giá: đa dạng status — APPROVED/WAITING_SV/PENDING)
 (200, 4, 2, '2026-03-03', '2026-03-03', 'APPROVED', TRUE,  'Mar - NV004 pass', 'tl_tien01', 0, NOW(), NOW()),
 (200, 1, 3, '2026-03-07', '2026-03-07', 'APPROVED', TRUE,  'Mar - NV001 pass', 'tl_tien01', 0, NOW(), NOW()),
-(200, 6, 4, '2026-03-12', '2026-03-12', 'WAITING_SV', TRUE,  'Mar - NV006 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
-(200, 2, 1, '2026-03-18', '2026-03-18', 'WAITING_SV', TRUE,  'Mar - NV002 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
+(200, 6, 4, '2026-03-12', '2026-03-12', 'PENDING_REVIEW', TRUE,  'Mar - NV006 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
+(200, 2, 1, '2026-03-18', '2026-03-18', 'PENDING_REVIEW', TRUE,  'Mar - NV002 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
 (200, 3, 2, '2026-03-25', NULL,         'PENDING',    NULL, 'Mar - NV003 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -113,8 +113,8 @@ VALUES
 (210, 6, 32, '2026-02-20', '2026-02-20', 'APPROVED', TRUE,  'Feb - NV006 pass Bơm Chìm',   'tl_tien01', 0, NOW(), NOW()),
 (210, 1, 33, '2026-03-03', '2026-03-03', 'APPROVED', TRUE,  'Mar - NV001 pass lần 2',       'tl_tien01', 0, NOW(), NOW()),
 (210, 2, 31, '2026-03-10', '2026-03-10', 'APPROVED', TRUE,  'Mar - NV002 pass',             'tl_tien01', 0, NOW(), NOW()),
-(210, 3, 32, '2026-03-15', '2026-03-15', 'REJECTED_BY_SV', FALSE, 'Mar - NV003 SV từ chối', 'tl_tien01', 0, NOW(), NOW()),
-(210, 4, 33, '2026-03-20', '2026-03-20', 'WAITING_SV', TRUE,  'Mar - NV004 chờ SV ký',      'tl_tien01', 0, NOW(), NOW()),
+(210, 3, 32, '2026-03-15', '2026-03-15', 'REJECTED', FALSE, 'Mar - NV003 SV từ chối', 'tl_tien01', 0, NOW(), NOW()),
+(210, 4, 33, '2026-03-20', '2026-03-20', 'PENDING_REVIEW', TRUE,  'Mar - NV004 chờ SV ký',      'tl_tien01', 0, NOW(), NOW()),
 (210, 6, 31, '2026-03-25', NULL,         'PENDING',    NULL, 'Mar - NV006 chưa huấn luyện',  'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -127,7 +127,7 @@ VALUES
 (211, 4, 36, '2026-02-08', '2026-02-08', 'APPROVED', TRUE,  'Feb - NV004 pass Van',     'tl_tien01', 0, NOW(), NOW()),
 (211, 6, 34, '2026-02-18', '2026-02-18', 'APPROVED', TRUE,  'Feb - NV006 pass Van',     'tl_tien01', 0, NOW(), NOW()),
 (211, 1, 35, '2026-03-05', '2026-03-05', 'APPROVED', TRUE,  'Mar - NV001 pass Van',     'tl_tien01', 0, NOW(), NOW()),
-(211, 2, 36, '2026-03-12', '2026-03-12', 'WAITING_SV', TRUE,  'Mar - NV002 chờ SV ký',  'tl_tien01', 0, NOW(), NOW()),
+(211, 2, 36, '2026-03-12', '2026-03-12', 'PENDING_REVIEW', TRUE,  'Mar - NV002 chờ SV ký',  'tl_tien01', 0, NOW(), NOW()),
 (211, 4, 34, '2026-03-18', NULL,         'PENDING',    NULL, 'Mar - NV004 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW()),
 (211, 6, 35, '2026-03-22', NULL,         'PENDING',    NULL, 'Mar - NV006 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
 
@@ -159,8 +159,8 @@ VALUES
 (201, 7,  10, '2026-02-20', '2026-02-20', 'APPROVED', TRUE,  'Feb - NV007 pass', 'tl_phay01', 0, NOW(), NOW()),
 -- March 2026
 (201, 8,  7,  '2026-03-03', '2026-03-03', 'APPROVED', TRUE,  'Mar - NV008 pass', 'tl_phay01', 0, NOW(), NOW()),
-(201, 9,  8,  '2026-03-10', '2026-03-10', 'WAITING_SV', TRUE,  'Mar - NV009 chờ SV ký', 'tl_phay01', 0, NOW(), NOW()),
-(201, 10, 9,  '2026-03-15', '2026-03-15', 'REJECTED_BY_SV', FALSE, 'Mar - NV010 SV từ chối', 'tl_phay01', 0, NOW(), NOW()),
+(201, 9,  8,  '2026-03-10', '2026-03-10', 'PENDING_REVIEW', TRUE,  'Mar - NV009 chờ SV ký', 'tl_phay01', 0, NOW(), NOW()),
+(201, 10, 9,  '2026-03-15', '2026-03-15', 'REJECTED', FALSE, 'Mar - NV010 SV từ chối', 'tl_phay01', 0, NOW(), NOW()),
 (201, 12, 10, '2026-03-20', NULL,         'PENDING',    NULL, 'Mar - NV012 chưa huấn luyện', 'tl_phay01', 0, NOW(), NOW());
 
 
@@ -314,16 +314,16 @@ VALUES
 INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version, note, min_training_per_day, max_training_per_day, created_by)
 VALUES
 -- Section 1 → Group 1 (Tiện CNC)
-(300, 'TP-MNG-W01', 'KH HL T3/2026 - Tiện Trục Bơm (Chờ MNG)',      '2026-03-01', '2026-03-31', 1, 1, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
-(301, 'TP-MNG-W02', 'KH HL T4/2026 - Bơm Chìm S (Chờ MNG)',         '2026-04-01', '2026-04-30', 1, 6, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
+(300, 'TP-MNG-W01', 'KH HL T3/2026 - Tiện Trục Bơm (Chờ MNG)',      '2026-03-01', '2026-03-31', 1, 1, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
+(301, 'TP-MNG-W02', 'KH HL T4/2026 - Bơm Chìm S (Chờ MNG)',         '2026-04-01', '2026-04-30', 1, 6, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_tien01'),
 -- Section 1 → Group 2 (Phay CNC)
-(302, 'TP-MNG-W03', 'KH HL T3/2026 - Phay Vỏ Bơm (Chờ MNG)',        '2026-03-01', '2026-03-31', 2, 2, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_phay01'),
+(302, 'TP-MNG-W03', 'KH HL T3/2026 - Phay Vỏ Bơm (Chờ MNG)',        '2026-03-01', '2026-03-31', 2, 2, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_phay01'),
 -- Section 1 → Group 3 (Hàn)
-(303, 'TP-MNG-W04', 'KH HL T3/2026 - Hàn Thân Bơm (Chờ MNG)',       '2026-03-01', '2026-03-31', 3, 3, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_hanlap01'),
+(303, 'TP-MNG-W04', 'KH HL T3/2026 - Hàn Thân Bơm (Chờ MNG)',       '2026-03-01', '2026-03-31', 3, 3, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_hanlap01'),
 -- Section 2 → Group 4 (Lắp Ráp Bơm)
-(304, 'TP-MNG-W05', 'KH HL T3/2026 - Lắp Ráp Máy Bơm (Chờ MNG)',   '2026-03-01', '2026-03-31', 4, 5, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_laprap01'),
+(304, 'TP-MNG-W05', 'KH HL T3/2026 - Lắp Ráp Máy Bơm (Chờ MNG)',   '2026-03-01', '2026-03-31', 4, 5, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_laprap01'),
 -- Section 2 → Group 5 (Lắp Ráp Động Cơ)
-(305, 'TP-MNG-W06', 'KH HL T3/2026 - Lắp Ráp Động Cơ (Chờ MNG)',   '2026-03-01', '2026-03-31', 5, 4, 'WAITING_MANAGER', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_dongco01');
+(305, 'TP-MNG-W06', 'KH HL T3/2026 - Lắp Ráp Động Cơ (Chờ MNG)',   '2026-03-01', '2026-03-31', 5, 4, 'PENDING_APPROVAL', 1, 'SV đã duyệt, chờ Manager.', 1, 3, 'tl_dongco01');
 
 
 -- ============================================================================
@@ -332,11 +332,11 @@ VALUES
 
 INSERT INTO defect_proposals (id, form_code, status, product_line_id, current_version, created_by, delete_flag, created_at, updated_at)
 VALUES
-    (100, 'DP-MNG-001', 'WAITING_MANAGER', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
-    (101, 'DP-MNG-002', 'WAITING_MANAGER', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 30 HOUR), DATE_SUB(NOW(), INTERVAL 30 HOUR)),
-    (102, 'DP-MNG-003', 'WAITING_MANAGER', 3, 1, 'tl_hanlap01', 0, DATE_SUB(NOW(), INTERVAL 5 HOUR), DATE_SUB(NOW(), INTERVAL 5 HOUR)),
-    (103, 'DP-MNG-004', 'WAITING_MANAGER', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 48 HOUR), DATE_SUB(NOW(), INTERVAL 48 HOUR)),
-    (104, 'DP-MNG-005', 'WAITING_MANAGER', 4, 1, 'tl_dongco01', 0, DATE_SUB(NOW(), INTERVAL 10 HOUR), DATE_SUB(NOW(), INTERVAL 10 HOUR));
+    (100, 'DP-MNG-001', 'PENDING_APPROVAL', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 2 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+    (101, 'DP-MNG-002', 'PENDING_APPROVAL', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 30 HOUR), DATE_SUB(NOW(), INTERVAL 30 HOUR)),
+    (102, 'DP-MNG-003', 'PENDING_APPROVAL', 3, 1, 'tl_hanlap01', 0, DATE_SUB(NOW(), INTERVAL 5 HOUR), DATE_SUB(NOW(), INTERVAL 5 HOUR)),
+    (103, 'DP-MNG-004', 'PENDING_APPROVAL', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 48 HOUR), DATE_SUB(NOW(), INTERVAL 48 HOUR)),
+    (104, 'DP-MNG-005', 'PENDING_APPROVAL', 4, 1, 'tl_dongco01', 0, DATE_SUB(NOW(), INTERVAL 10 HOUR), DATE_SUB(NOW(), INTERVAL 10 HOUR));
 
 
 -- ============================================================================
@@ -345,9 +345,9 @@ VALUES
 
 INSERT INTO training_sample_proposals (id, form_code, status, product_line_id, current_version, created_by, delete_flag, created_at, updated_at)
 VALUES
-    (100, 'TSP-MNG-001', 'WAITING_MANAGER', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR)),
-    (101, 'TSP-MNG-002', 'WAITING_MANAGER', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 26 HOUR), DATE_SUB(NOW(), INTERVAL 26 HOUR)),
-    (102, 'TSP-MNG-003', 'WAITING_MANAGER', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 6 HOUR), DATE_SUB(NOW(), INTERVAL 6 HOUR));
+    (100, 'TSP-MNG-001', 'PENDING_APPROVAL', 1, 1, 'tl_tien01', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+    (101, 'TSP-MNG-002', 'PENDING_APPROVAL', 2, 1, 'tl_phay01', 0, DATE_SUB(NOW(), INTERVAL 26 HOUR), DATE_SUB(NOW(), INTERVAL 26 HOUR)),
+    (102, 'TSP-MNG-003', 'PENDING_APPROVAL', 5, 1, 'tl_laprap01', 0, DATE_SUB(NOW(), INTERVAL 6 HOUR), DATE_SUB(NOW(), INTERVAL 6 HOUR));
 
 
 -- ============================================================================
@@ -363,7 +363,7 @@ VALUES
 -- Group 4 (Lắp Bơm, line 5)
 (301, NULL, 'KQ HL T3/2026 - Lắp Ráp Bơm B', 'TR-MNG-02', 2026, 4, 5, 'APPROVED', 1, 'Đã hoàn thành.', 'tl_laprap01'),
 -- Group 5 (Lắp ĐC, line 4)
-(302, NULL, 'KQ HL T3/2026 - Lắp Ráp ĐC E',  'TR-MNG-03', 2026, 5, 4, 'ON_GOING', 1, 'Đang thực hiện.', 'tl_dongco01'),
+(302, NULL, 'KQ HL T3/2026 - Lắp Ráp ĐC E',  'TR-MNG-03', 2026, 5, 4, 'ONGOING', 1, 'Đang thực hiện.', 'tl_dongco01'),
 -- Group 3 (Hàn W200, line 9)
 (303, NULL, 'KQ HL T2/2026 - Hàn W200',       'TR-MNG-04', 2026, 3, 9, 'APPROVED', 1, 'Đã hoàn thành.', 'tl_hanlap01');
 

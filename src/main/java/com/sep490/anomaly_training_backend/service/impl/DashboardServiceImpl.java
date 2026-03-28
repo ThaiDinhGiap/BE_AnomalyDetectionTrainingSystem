@@ -129,8 +129,8 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         List<Long> approvedPlanIds = plans.stream()
-                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE))
+                .filter(p -> (p.getStatus() == ReportStatus.COMPLETED || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED))
                 .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
@@ -369,7 +369,7 @@ public class DashboardServiceImpl implements DashboardService {
             plans = trainingPlanRepository.findByCreatedByAndDeleteFlagFalse(currentUser);
         }
         List<Long> activePlanIds = plans.stream()
-                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING))
+                .filter(p -> (p.getStatus() == ReportStatus.COMPLETED || p.getStatus() == ReportStatus.ONGOING))
                 .map(TrainingPlan::getId)
                 .toList();
 
@@ -924,9 +924,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<TrainingPlan> approvedPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         for (TrainingPlan plan : approvedPlans) {
@@ -1020,9 +1020,9 @@ public class DashboardServiceImpl implements DashboardService {
             List<TrainingPlan> teamPlans = trainingPlanRepository.findByTeamIdAndDeleteFlagFalse(team.getId())
                     .stream()
                     .filter(p -> lineIds.contains(p.getLine().getId()))
-                    .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                            || p.getStatus() == ReportStatus.ON_GOING
-                            || p.getStatus() == ReportStatus.DONE)
+                    .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                            || p.getStatus() == ReportStatus.ONGOING
+                            || p.getStatus() == ReportStatus.COMPLETED)
                     .toList();
 
             int planTotal = 0;
@@ -1394,9 +1394,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<TrainingPlan> plans = trainingPlanRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         for (TrainingPlan plan : plans) {
@@ -2265,9 +2265,9 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingPlan> plans = trainingPlanRepository.findAll().stream()
                 .filter(p -> !p.isDeleteFlag())
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         List<TrainingPlanDetail> allDetails = new ArrayList<>();

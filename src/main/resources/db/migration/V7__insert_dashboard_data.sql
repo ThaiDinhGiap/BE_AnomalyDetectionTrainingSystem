@@ -278,20 +278,20 @@ VALUES
 
 -- 1. Rejected Training Plan for tl_tien01
 INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status, current_version, note, min_training_per_day, max_training_per_day, created_by)
-VALUES (901, 'TP-REJ-TIEN-01', 'Kế hoạch đào tạo tháng 3 - Bị từ chối', '2026-03-01', '2026-03-31', 1, 1, 'REJECTED_BY_MANAGER', 1, 'Thiếu thông tin nhân viên G54.', 1, 3, 'tl_tien01');
+VALUES (901, 'TP-REJ-TIEN-01', 'Kế hoạch đào tạo tháng 3 - Bị từ chối', '2026-03-01', '2026-03-31', 1, 1, 'REJECTED', 1, 'Thiếu thông tin nhân viên G54.', 1, 3, 'tl_tien01');
 
 -- 2. Rejected Training Result for tl_tien01
 -- Note: status REJECTED_BY_MANAGER since REJECTED_BY_SV is not in the results enum
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, line_id, team_id, status, current_version, note, created_by)
-VALUES (901, 1, 'Kết quả đào tạo T1/2026 - Bị từ chối', 'TR-REJ-TIEN-01', 2026, 1, 1, 'REJECTED_BY_MANAGER', 1, 'Hình ảnh minh chứng không rõ ràng.', 'tl_tien01');
+VALUES (901, 1, 'Kết quả đào tạo T1/2026 - Bị từ chối', 'TR-REJ-TIEN-01', 2026, 1, 1, 'REJECTED', 1, 'Hình ảnh minh chứng không rõ ràng.', 'tl_tien01');
 
 -- 3. Rejected Defect Proposal for tl_tien01
 INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, delete_flag, created_by)
-VALUES (901, 1, 'REJECTED_BY_MANAGER', 1, 'DEF-REJ-TIEN-01', FALSE, 'tl_tien01');
+VALUES (901, 1, 'REJECTED', 1, 'DEF-REJ-TIEN-01', FALSE, 'tl_tien01');
 
 -- 4. Rejected Training Sample Proposal for tl_tien01
 INSERT INTO training_sample_proposals (id, product_line_id, status, current_version, form_code, delete_flag, created_by)
-VALUES (901, 1, 'REJECTED_BY_SV', 1, 'SAM-REJ-TIEN-01', FALSE, 'tl_tien01');
+VALUES (901, 1, 'REJECTED', 1, 'SAM-REJ-TIEN-01', FALSE, 'tl_tien01');
 
 -- ============================================================================
 -- 6. THÊM DỮ LIỆU TRAINING PLAN + RESULT LIÊN KẾT ĐẦY ĐỦ (T4/2026)
@@ -405,12 +405,12 @@ VALUES
 -- ── 6C. TRAINING RESULTS (6 headers liên kết về 6 plans trên) ───────────────
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
 VALUES
-(100, 100, 'Kết quả HLV T4/2026 – Tổ Phay',    'TR-RES-PH-004',  2026, 2, 2, 'ON_GOING',        1, 'Đang nhập kết quả T4.',            'tl_phay01'),
-(101, 101, 'Kết quả HLV T2/2026 – Tổ Hàn',      'TR-RES-HA-001',  2026, 3, 3, 'WAITING_MANAGER',      1, 'Chờ MG duyệt kết quả T2 Hàn.',     'tl_hanlap01'),
-(102, 102, 'Kết quả HLV T4/2026 – Tổ Hàn',      'TR-RES-HA-004',  2026, 3, 3, 'ON_GOING',        1, 'T4 Hàn đang nhập liệu.',           'tl_hanlap01'),
-(103, 103, 'Kết quả HLV T4/2026 – Tổ Lắp Bơm',  'TR-RES-LB-004',  2026, 4, 5, 'ON_GOING',        1, 'Đang nhập kết quả T4 lắp bơm.',    'tl_laprap01'),
-(104, 104, 'Kết quả HLV T4/2026 – Tổ Động Cơ',   'TR-RES-DC-004',  2026, 5, 4, 'WAITING_MANAGER', 1, 'Chờ MG duyệt kết quả T4 ĐC.',     'tl_dongco01'),
-(105, 105, 'Kết quả HLV T4/2026 – Tổ KCS',      'TR-RES-KCS-004', 2026, 6, 5, 'ON_GOING',        1, 'Đang nhập kết quả T4 KCS.',        'tl_kcs01');
+(100, 100, 'Kết quả HLV T4/2026 – Tổ Phay',    'TR-RES-PH-004',  2026, 2, 2, 'ONGOING',        1, 'Đang nhập kết quả T4.',            'tl_phay01'),
+(101, 101, 'Kết quả HLV T2/2026 – Tổ Hàn',      'TR-RES-HA-001',  2026, 3, 3, 'PENDING_APPROVAL',      1, 'Chờ MG duyệt kết quả T2 Hàn.',     'tl_hanlap01'),
+(102, 102, 'Kết quả HLV T4/2026 – Tổ Hàn',      'TR-RES-HA-004',  2026, 3, 3, 'ONGOING',        1, 'T4 Hàn đang nhập liệu.',           'tl_hanlap01'),
+(103, 103, 'Kết quả HLV T4/2026 – Tổ Lắp Bơm',  'TR-RES-LB-004',  2026, 4, 5, 'ONGOING',        1, 'Đang nhập kết quả T4 lắp bơm.',    'tl_laprap01'),
+(104, 104, 'Kết quả HLV T4/2026 – Tổ Động Cơ',   'TR-RES-DC-004',  2026, 5, 4, 'PENDING_APPROVAL', 1, 'Chờ MG duyệt kết quả T4 ĐC.',     'tl_dongco01'),
+(105, 105, 'Kết quả HLV T4/2026 – Tổ KCS',      'TR-RES-KCS-004', 2026, 6, 5, 'ONGOING',        1, 'Đang nhập kết quả T4 KCS.',        'tl_kcs01');
 
 -- ── 6D. TRAINING RESULT DETAILS ─────────────────────────────────────────────
 -- Quy tắc: 1 batch_id = 1 result_detail.
@@ -498,7 +498,7 @@ VALUES
 -- Result 106 (Tiện T4)
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
 VALUES
-(106, 106, 'Kết quả HLV T4/2026 – Tổ Tiện', 'TR-RES-TI-004', 2026, 1, 1, 'ON_GOING', 1, 'Đang nhập kết quả T4 Tiện.', 'tl_tien01');
+(106, 106, 'Kết quả HLV T4/2026 – Tổ Tiện', 'TR-RES-TI-004', 2026, 1, 1, 'ONGOING', 1, 'Đang nhập kết quả T4 Tiện.', 'tl_tien01');
 
 -- Result 106 details: 5 batch_ids → mix status: APPROVED / WAITING_SV / PENDING / NEED_SIGN / REJECTED_BY_SV
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id, planned_date, actual_date, status, is_pass, note, created_by, delete_flag, created_at, updated_at)
@@ -506,13 +506,13 @@ VALUES
 -- NV001: đã test xong, đã duyệt
 (106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv001' AND status = 'DONE'), 1, 1, '2026-04-02', '2026-04-02', 'APPROVED', TRUE, 'NV001 đạt T4 Tiện', 'tl_tien01', 0, NOW(), NOW()),
 -- NV002: đã test xong, chờ SV ký
-(106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv002' AND status = 'DONE'), 2, 2, '2026-04-03', '2026-04-03', 'WAITING_SV', TRUE, 'NV002 đã test, chờ SV ký duyệt', 'tl_tien01', 0, NOW(), NOW()),
+(106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv002' AND status = 'DONE'), 2, 2, '2026-04-03', '2026-04-03', 'PENDING_REVIEW', TRUE, 'NV002 đã test, chờ SV ký duyệt', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: chờ huấn luyện
 (106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv003' AND status = 'PENDING'), 3, 3, '2026-04-14', NULL, 'PENDING', NULL, 'NV003 chờ HLV ngày mới', 'tl_tien01', 0, NOW(), NOW()),
 -- NV004: đã test, cần TL ký (NEED_SIGN)
 (106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv004' AND status = 'PENDING'), 4, 4, '2026-04-09', '2026-04-09', 'REVISE', TRUE, 'NV004 đã test, cần TL ký xác nhận', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: SV từ chối, cần test lại
-(106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv006' AND status = 'PENDING'), 6, 5, '2026-04-10', '2026-04-10', 'REJECTED_BY_SV', FALSE, 'NV006 bị SV từ chối – kết quả không đạt', 'tl_tien01', 0, NOW(), NOW());
+(106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv006' AND status = 'PENDING'), 6, 5, '2026-04-10', '2026-04-10', 'REJECTED', FALSE, 'NV006 bị SV từ chối – kết quả không đạt', 'tl_tien01', 0, NOW(), NOW());
 
 
 -- ============================================================================
@@ -705,7 +705,7 @@ VALUES
 -- Result 107 (Bơm Chìm T3)
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
 VALUES
-(107, 107, 'Kết quả HLV T3/2026 – Dòng Bơm Chìm', 'TR-RES-S-003', 2026, 1, 6, 'WAITING_MANAGER', 1, 'Chờ MG duyệt T3 Bơm Chìm.', 'tl_tien01');
+(107, 107, 'Kết quả HLV T3/2026 – Dòng Bơm Chìm', 'TR-RES-S-003', 2026, 1, 6, 'PENDING_APPROVAL', 1, 'Chờ MG duyệt T3 Bơm Chìm.', 'tl_tien01');
 
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id, planned_date, actual_date, status, is_pass, note, created_by, delete_flag, created_at, updated_at)
 VALUES
@@ -714,11 +714,11 @@ VALUES
 -- NV002: chờ huấn luyện
 (107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv002' AND status = 'PENDING'), 2, 32, '2026-03-13', NULL, 'PENDING', NULL, 'NV002 chờ HLV ngày mới', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: đã test, chờ SV ký
-(107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv003' AND status = 'DONE'), 3, 33, '2026-03-07', '2026-03-07', 'WAITING_SV', TRUE, 'NV003 chờ SV ký duyệt', 'tl_tien01', 0, NOW(), NOW()),
+(107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv003' AND status = 'DONE'), 3, 33, '2026-03-07', '2026-03-07', 'PENDING_REVIEW', TRUE, 'NV003 chờ SV ký duyệt', 'tl_tien01', 0, NOW(), NOW()),
 -- NV004: đã test xong (DONE) chưa ký
 (107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv004' AND status = 'PENDING'), 4, 31, '2026-03-24', '2026-03-24', 'DONE', TRUE, 'NV004 đã test xong, chưa ký', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: SV từ chối
-(107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv006' AND status = 'PENDING'), 6, 32, '2026-03-12', '2026-03-12', 'REJECTED_BY_SV', FALSE, 'NV006 bị SV từ chối – cần test lại', 'tl_tien01', 0, NOW(), NOW());
+(107, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-s3-nv006' AND status = 'PENDING'), 6, 32, '2026-03-12', '2026-03-12', 'REJECTED', FALSE, 'NV006 bị SV từ chối – cần test lại', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║ Plan 108: Tổ Tiện – Dòng Van V-Series T4 │ team=1, line=7         ║
@@ -745,7 +745,7 @@ VALUES
 -- Result 108 (Van V-Series T4)
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id, status, current_version, note, created_by)
 VALUES
-(108, 108, 'Kết quả HLV T4/2026 – Dòng Van V-Series', 'TR-RES-V-004', 2026, 1, 7, 'ON_GOING', 1, 'Đang nhập kết quả T4 Van.', 'tl_tien01');
+(108, 108, 'Kết quả HLV T4/2026 – Dòng Van V-Series', 'TR-RES-V-004', 2026, 1, 7, 'ONGOING', 1, 'Đang nhập kết quả T4 Van.', 'tl_tien01');
 
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id, planned_date, actual_date, status, is_pass, note, created_by, delete_flag, created_at, updated_at)
 VALUES
@@ -754,11 +754,11 @@ VALUES
 -- NV002: đã test, cần TL ký
 (108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv002' AND status = 'DONE'), 2, 35, '2026-04-03', '2026-04-03', 'REVISE', TRUE, 'NV002 đã test Van, cần TL ký', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: SV từ chối
-(108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv003' AND status = 'DONE'), 3, 36, '2026-04-04', '2026-04-04', 'REJECTED_BY_SV', FALSE, 'NV003 bị SV từ chối Van T4', 'tl_tien01', 0, NOW(), NOW()),
+(108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv003' AND status = 'DONE'), 3, 36, '2026-04-04', '2026-04-04', 'REJECTED', FALSE, 'NV003 bị SV từ chối Van T4', 'tl_tien01', 0, NOW(), NOW()),
 -- NV004: chờ huấn luyện
 (108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv004' AND status = 'PENDING'), 4, 34, '2026-04-14', NULL, 'PENDING', NULL, 'NV004 chờ HLV ngày mới', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: chờ SV ký
-(108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv006' AND status = 'DONE'), 6, 35, '2026-04-06', '2026-04-06', 'WAITING_SV', TRUE, 'NV006 chờ SV ký Van T4', 'tl_tien01', 0, NOW(), NOW());
+(108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv006' AND status = 'DONE'), 6, 35, '2026-04-06', '2026-04-06', 'PENDING_REVIEW', TRUE, 'NV006 chờ SV ký Van T4', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║ Plan 109: Tổ Tiện – Dòng Trục Khuỷu T2 │ team=1, line=8          ║

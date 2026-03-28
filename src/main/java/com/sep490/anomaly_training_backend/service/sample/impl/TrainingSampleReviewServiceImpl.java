@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service.sample.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleReviewConfigRequest;
@@ -24,10 +25,9 @@ import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicy
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.scheduler.TrainingSampleReviewScheduler;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
-import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -135,7 +135,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         User user = userRepository.findById(request.getTeamLeadId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         review.setReviewedBy(user);
-        review.setStatus(ReportStatus.PENDING);
+        review.setStatus(ReportStatus.PENDING_REVIEW);
         return trainingSampleReviewMapper.toDto(trainingSampleReviewRepository.save(review));
     }
 
@@ -164,7 +164,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         try {
             // Step 1: Fetch training sample data by product line
             List<TrainingSampleResponse> trainingSamples
-                = trainingSampleService.getTrainingSampleByProductLine(productLineId);
+                    = trainingSampleService.getTrainingSampleByProductLine(productLineId);
 
             if (trainingSamples == null || trainingSamples.isEmpty()) {
                 trainingSamples = new ArrayList<>();
@@ -179,7 +179,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
 
             // Step 4: Save review to database
             if (review.getStatus().equals(ReportStatus.REJECTED)) {
-                review.setStatus(ReportStatus.PENDING);
+                review.setStatus(ReportStatus.PENDING_REVIEW);
                 review.setCurrentVersion(review.getCurrentVersion() + 1);
             }
             review = trainingSampleReviewRepository.save(review);

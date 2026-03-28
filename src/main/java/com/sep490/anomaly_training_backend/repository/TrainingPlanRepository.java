@@ -24,7 +24,7 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
             SELECT pl
             FROM TrainingPlan pl
             WHERE pl.line.id = :lineId
-              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND pl.deleteFlag = false
             """)
     List<TrainingPlan> findByLineIdAndDeleteFlagFalseForSupervisorAndManager(Long lineId);
@@ -32,7 +32,7 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     @Query("""
             SELECT pl
             FROM TrainingPlan pl
-            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND pl.deleteFlag = false
             """)
     List<TrainingPlan> findByDeleteFlagFalseForSupervisorAndManager();

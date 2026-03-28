@@ -23,6 +23,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     Page<TrainingResultDetail> findByTrainingResultId(Long trainingResultId, Pageable pageable);
 
     List<TrainingResultDetail> findByTrainingResultId(Long trainingResultId);
+
     @Query("SELECT count(d) FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.actualDate IS NOT NULL " +
             "AND (:createdBy IS NULL OR r.createdBy = :createdBy) " +
@@ -164,7 +165,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Query("""
                 SELECT t FROM TrainingResultDetail t
                 WHERE t.trainingResult.id = :resultId
-                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW
                   AND t.isPass IS NOT NULL
                   AND t.deleteFlag = false
                 ORDER BY t.plannedDate ASC
@@ -177,7 +178,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Query("""
                 SELECT t FROM TrainingResultDetail t
                 WHERE t.employee.id = :employeeId
-                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.APPROVED
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED
                   AND t.deleteFlag = false
                 ORDER BY t.plannedDate ASC
             """)

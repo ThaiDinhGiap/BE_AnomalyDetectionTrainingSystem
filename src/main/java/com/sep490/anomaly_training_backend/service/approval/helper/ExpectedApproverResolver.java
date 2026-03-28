@@ -5,6 +5,7 @@ import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -14,6 +15,7 @@ public class ExpectedApproverResolver {
 
     private final GroupRepository groupRepository;
 
+    @Transactional(readOnly = true)
     public Optional<User> resolve(Long groupId, String requiredPermission) {
         if (groupId == null) return Optional.empty();
         return groupRepository.findByIdAndDeleteFlagFalse(groupId)

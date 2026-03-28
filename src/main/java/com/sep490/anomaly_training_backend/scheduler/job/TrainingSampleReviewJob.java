@@ -4,7 +4,6 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewConfigRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ import java.time.LocalDate;
 @DisallowConcurrentExecution
 @RequiredArgsConstructor
 public class TrainingSampleReviewJob implements Job {
-    private final TrainingSampleReviewConfigRepository  trainingSampleReviewConfigRepository;
+    private final TrainingSampleReviewConfigRepository trainingSampleReviewConfigRepository;
     private final TrainingSampleReviewRepository trainingSampleReviewRepository;
 
     @Override
@@ -52,7 +51,7 @@ public class TrainingSampleReviewJob implements Job {
                     .productLine(productLine)
                     .startDate(LocalDate.now())
                     .dueDate(LocalDate.now().plusDays(config.getDueDays()))
-                    .status(ReportStatus.NEED_ASSIGNED)
+                    .status(ReportStatus.UNASSIGNED)
                     .build();
 
             TrainingSampleReview savedReview = trainingSampleReviewRepository.save(review);

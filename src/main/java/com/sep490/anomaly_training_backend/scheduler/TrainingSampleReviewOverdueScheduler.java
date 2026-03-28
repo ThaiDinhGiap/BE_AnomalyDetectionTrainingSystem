@@ -51,7 +51,7 @@ public class TrainingSampleReviewOverdueScheduler {
         Map<Long, List<TrainingSampleReview>> byReviewer = new HashMap<>();
 
         for (TrainingSampleReview review : overdueReviews) {
-            review.setStatus(ReportStatus.MISS);
+            review.setStatus(ReportStatus.MISSED);
             trainingReviewRepository.save(review);
 
             byReviewer.computeIfAbsent(review.getReviewedBy().getId(), k -> new ArrayList<>())

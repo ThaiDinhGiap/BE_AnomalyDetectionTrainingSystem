@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingSampleReviewResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,10 +23,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.checkerframework.checker.units.qual.A;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Entity for training_sample_reviews table - Each review log with JSON snapshot
@@ -80,7 +77,7 @@ public class TrainingSampleReview extends BaseEntity implements Approvable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    ReportStatus status = ReportStatus.NEED_ASSIGNED;
+    ReportStatus status = ReportStatus.UNASSIGNED;
 
     @Column(name = "sample_snapshot", columnDefinition = "json")
     String sampleSnapshot;

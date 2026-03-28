@@ -185,7 +185,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public List<TrainingPlanGenerationResponse> getRejectedPlans(User currentUser) {
         List<ReportStatus> rejectedStatuses = List.of(
-                ReportStatus.REVISE,
+                ReportStatus.REVISING,
                 ReportStatus.REJECTED);
 
         // Reuse scope logic, sau đó filter thêm theo status
@@ -203,7 +203,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * - Loại trừ DRAFT và REVISE (manager không cần thấy bản nháp của TL)
      */
     private List<TrainingPlanGenerationResponse> fetchBySection(User currentUser, Long lineId) {
-        List<ReportStatus> excludedStatuses = List.of(ReportStatus.DRAFT, ReportStatus.REVISE);
+        List<ReportStatus> excludedStatuses = List.of(ReportStatus.DRAFT, ReportStatus.REVISING);
         List<TrainingPlan> plans = lineId != null
                 ? trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(
                 currentUser.getId(), lineId, excludedStatuses)
@@ -288,7 +288,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-        boolean isApproved = ReportStatus.APPROVED.equals(plan.getStatus());
+        boolean isApproved = ReportStatus.COMPLETED.equals(plan.getStatus());
 
         updateHeaderIfPresent(plan, request);
 
@@ -524,7 +524,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         trainingPlanRepository.save(plan);
 
-        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
+        if (ReportStatus.COMPLETED.equals(plan.getStatus())) {
             regenerateResultDetails(plan);
         }
 
@@ -795,7 +795,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
-        if (report.getStatus() == ReportStatus.APPROVED) {
+        if (report.getStatus() == ReportStatus.COMPLETED) {
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);
@@ -926,7 +926,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 newResultDetail.setEmployee(planDetail.getEmployee());
                 newResultDetail.setPlannedDate(planDetail.getPlannedDate());
                 newResultDetail.setBatchId(planDetail.getBatchId());
-                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
+                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW);
                 result.getDetails().add(newResultDetail);
             }
         }

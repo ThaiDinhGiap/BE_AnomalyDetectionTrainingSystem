@@ -48,7 +48,7 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
             SELECT t
             FROM TrainingSampleProposal t
             WHERE t.productLine.id = :productLineId
-              AND t.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND t.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND t.deleteFlag = false ORDER BY t.createdAt DESC
             """)
     List<TrainingSampleProposal> findByProductLineForSupervisorAndManagerOrderByCreatedAtDesc(@Param("productLineId") Long productLineId);

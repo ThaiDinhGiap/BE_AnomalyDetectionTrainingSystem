@@ -5,11 +5,13 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.event.ApprovalEvent;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.BaseEntity;
 import com.sep490.anomaly_training_backend.model.RejectReason;
 import com.sep490.anomaly_training_backend.model.RequiredAction;
 import com.sep490.anomaly_training_backend.model.Role;
@@ -24,6 +26,7 @@ import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final RejectReasonRepository rejectReasonRepo;
     private final RequiredActionRepository requiredActionRepo;
     private final ApprovalHandlerRegistry handlerRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -50,18 +54,19 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (entity == null) {
             return;
         }
-        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT ) {
-            if (entity.getStatus() != ReportStatus.ON_GOING) {
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            if (entity.getStatus() != ReportStatus.ONGOING) {
                 throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Result can only be submitted when in ONGOING status");
             }
 
             logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
             log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 
+            publishEvent(ApprovalAction.SUBMIT, entity, currentUser);
             return;
         }
 
-        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE) && (entity.getStatus() != ReportStatus.PENDING)) {
+        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISING) && (entity.getStatus() != ReportStatus.PENDING_REVIEW)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }
         entity.clearRejectFeedback();
@@ -70,6 +75,8 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+        publishEvent(ApprovalAction.SUBMIT, entity, currentUser);
     }
 
     @Override
@@ -80,10 +87,12 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
-        entity.setStatus(ReportStatus.REVISE);
+        entity.setStatus(ReportStatus.REVISING);
 
         logAction(entity, ApprovalAction.REVISE, -1, "REVISE", currentUser, null, null, null, request);
         log.info("Revised {} id={} newVersion={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+        publishEvent(ApprovalAction.REVISE, entity, currentUser);
     }
 
     @Override
@@ -96,6 +105,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
             entity.setCurrentVersion(entity.getCurrentVersion() + 1);
+            publishEvent(ApprovalAction.APPROVE, entity, currentUser);
             return;
         }
 
@@ -105,7 +115,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             entity.setStatus(nextStep.getPendingStatus());
             log.info("Approved {} id={} version={} by {} -> next status: {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), nextStep.getPendingStatus());
         } else {
-            entity.setStatus(ReportStatus.APPROVED);
+            entity.setStatus(ReportStatus.COMPLETED);
             try {
                 ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
                 handler.applyApproval(entity);
@@ -115,6 +125,8 @@ public class ApprovalServiceImpl implements ApprovalService {
 
             log.info("Final approval for {} id={} version={} by {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
         }
+
+        publishEvent(ApprovalAction.APPROVE, entity, currentUser);
     }
 
     @Override
@@ -142,11 +154,14 @@ public class ApprovalServiceImpl implements ApprovalService {
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
 
         if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            publishEvent(ApprovalAction.REJECT, entity, currentUser);
             return;
         }
 
         entity.setStatus(ReportStatus.REJECTED);
         log.info("Rejected {} id={} version={} by {} reasons={} requiredAction={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), req.getRejectReasonIds(), req.getRequiredActionId());
+
+        publishEvent(ApprovalAction.REJECT, entity, currentUser);
     }
 
     @Override
@@ -228,5 +243,34 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (request == null) return null;
         String ip = request.getHeader("X-Forwarded-For");
         return ip != null ? ip.split(",")[0].trim() : request.getRemoteAddr();
+    }
+
+    /**
+     * Publish ApprovalEvent cho notification listener xử lý async.
+     */
+    private void publishEvent(ApprovalAction action, Approvable entity, User performedBy) {
+        try {
+            String createdByUsername = (entity instanceof BaseEntity base)
+                    ? base.getCreatedBy()
+                    : null;
+
+            log.info("[ApprovalEvent] Publishing {} for {} id={} performedBy={}",
+                    action, entity.getEntityType(), entity.getId(), performedBy.getUsername());
+            eventPublisher.publishEvent(new ApprovalEvent(
+                    this,
+                    action,
+                    entity.getEntityType(),
+                    entity.getId(),
+                    entity.getGroupId(),
+                    entity.getEntityLabel(),
+                    performedBy,
+                    entity.getStatus(),
+                    createdByUsername
+            ));
+        } catch (Exception e) {
+            // Không để event publishing lỗi ảnh hưởng approval flow
+            log.error("[ApprovalEvent] Failed to publish {} for {} id={}: {}",
+                    action, entity.getEntityType(), entity.getId(), e.getMessage());
+        }
     }
 }

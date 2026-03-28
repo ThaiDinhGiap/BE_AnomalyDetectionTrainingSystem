@@ -3,10 +3,10 @@ package com.sep490.anomaly_training_backend.repository;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.jpa.repository.Modifying;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -89,7 +89,7 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
             SELECT pl
             FROM TrainingResult pl
             WHERE pl.line.id = :lineId
-              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND pl.deleteFlag = false
             """)
     List<TrainingResult> findByLineIdAndDeleteFlagFalseForSupervisorAndManager(
@@ -98,7 +98,7 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     @Query("""
             SELECT pl
             FROM TrainingResult pl
-            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+            WHERE pl.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND pl.deleteFlag = false
             """)
     List<TrainingResult> findByDeleteFlagFalseForSupervisorAndManager();

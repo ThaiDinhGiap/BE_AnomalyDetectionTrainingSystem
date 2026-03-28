@@ -114,7 +114,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (!ReportStatus.APPROVED.equals(plan.getStatus())) {
+        if (!ReportStatus.COMPLETED.equals(plan.getStatus())) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -125,7 +125,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         result.setLine(plan.getLine());
         result.setYear(plan.getStartDate().getYear());
         result.setTitle("Báo cáo kết quả - " + plan.getTitle());
-        result.setStatus(ReportStatus.ON_GOING);
+        result.setStatus(ReportStatus.ONGOING);
         result.setCurrentVersion(1);
 
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
@@ -139,7 +139,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 resultDetail.setEmployee(planDetail.getEmployee());
                 resultDetail.setPlannedDate(planDetail.getPlannedDate());
                 resultDetail.setBatchId(planDetail.getBatchId());
-                resultDetail.setStatus(ReportStatus.PENDING);
+                resultDetail.setStatus(ReportStatus.PENDING_REVIEW);
                 resultDetails.add(resultDetail);
             }
         }
@@ -317,7 +317,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 if (detail.getIsPass() != null && detail.getActualDate() == null) {
                     LocalDate today = LocalDate.now();
                     detail.setActualDate(today);
-                    detail.setStatus(ReportStatus.DONE);
+                    detail.setStatus(ReportStatus.COMPLETED);
 
                     if (detail.getTrainingPlanDetail() != null
                             && detail.getTrainingPlanDetail().getActualDate() == null) {
@@ -353,14 +353,14 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             if (detail.getPlannedDate() != null
                     && detail.getPlannedDate().isBefore(today)
                     && detail.getIsPass() == null
-                    && detail.getStatus() != ReportStatus.MISS) {
+                    && detail.getStatus() != ReportStatus.MISSED) {
 
-                detail.setStatus(ReportStatus.MISS);
+                detail.setStatus(ReportStatus.MISSED);
                 hasChanges = true;
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                                .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
                 }
@@ -426,7 +426,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 results = trainingResultRepository.findAllByGroupIds(groupIds);
             }
         } else {
-            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISE);
+            List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISING);
 
             if (currentUser.hasRole("ROLE_MANAGER")) {
                 if (lineId != null) {
@@ -614,7 +614,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private static final Set<ReportStatus> SV_VISIBLE_STATUSES = Set.of(
             ReportStatus.PENDING_REVIEW,
             ReportStatus.REJECTED,
-            ReportStatus.APPROVED);
+            ReportStatus.COMPLETED);
 
     @Override
     @Transactional
@@ -886,7 +886,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         createDetailHistorySnapshot(detail);
 
         // Chuyển status về PENDING để TL có thể sửa lại
-        detail.setStatus(ReportStatus.PENDING);
+        detail.setStatus(ReportStatus.PENDING_REVIEW);
 
         detailRepository.save(detail);
     }
@@ -963,7 +963,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .cycleTimeStandard(originalDetail.getCycleTimeStandard())
                 .plannedDate(java.time.LocalDate.now())
                 .batchId(originalDetail.getBatchId())
-                .status(ReportStatus.PENDING)
+                .status(ReportStatus.PENDING_REVIEW)
                 .isRetrained(true)
                 .note("[Huấn luyện lại] từ detail #" + detailId)
                 .build();
@@ -1222,13 +1222,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         createResultHistorySnapshot(result);
 
         // 2. Chuyển trạng thái result -> REVISE, tăng version
-        result.setStatus(ReportStatus.REVISE);
+        result.setStatus(ReportStatus.REVISING);
         result.setCurrentVersion(result.getCurrentVersion() + 1);
 
         // 3. Chuyển các detail bị reject -> PENDING
         for (TrainingResultDetail detail : result.getDetails()) {
             if (detail.getStatus() == ReportStatus.REJECTED) {
-                detail.setStatus(ReportStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING_REVIEW);
             }
         }
 
@@ -1237,10 +1237,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-            HttpServletRequest request) {
+                              HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
-        detail.setStatus(ReportStatus.APPROVED);
+        detail.setStatus(ReportStatus.COMPLETED);
         trainingResultDetailRepository.save(detail);
     }
 
@@ -1253,7 +1253,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-            HttpServletRequest request) {
+                             HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
