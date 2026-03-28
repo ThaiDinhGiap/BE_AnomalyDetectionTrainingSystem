@@ -61,47 +61,11 @@ public class StaffOrganizationController {
     private final TrainingResultService trainingResultService;
 
     // For Admin
-
-    // For TL/SV/MG
-
-    // ====================== VIEW ======================
-
     @GetMapping("/sections")
     @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Sections/Departments", description = "Returns a list of all departments in the system")
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
-    }
-
-    @GetMapping("/sections/{sectionId}/groups")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Groups by Section ID", description = "Pass the Section ID to get a list of groups belonging to that section")
-    public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(
-            @Parameter(description = "ID của Section (Phòng/Ban)") @PathVariable Long sectionId) {
-        return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
-    }
-
-    @GetMapping("/groups/{groupId}/teams")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Teams by Group ID", description = "Pass the Group ID to get a list of teams belonging to that group")
-    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(
-            @Parameter(description = "ID của Group (Nhóm)") @PathVariable Long groupId) {
-        return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
-    }
-
-    @GetMapping("/members")
-    @PreAuthorize("hasAuthority('team.manage')")
-    @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
-    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesUnderManagement(currentUser)));
-    }
-
-    @GetMapping("/users")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Accounts (Users)", description = "Returns a list of all user accounts in the system (Dashboard format)")
-    public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
-        return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
     }
 
     @GetMapping("/employees")
@@ -111,95 +75,11 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
     }
 
-    @GetMapping("/employees/no-account")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Employees without accounts", description = "Used to display dropdown list when creating a new User")
-    public ResponseEntity<ApiResponse<List<EmployeeNoAccountDTO>>> getEmployeesWithoutAccount() {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
-    }
-
-    @GetMapping("/product-lines/{productLineId}/team-leads")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
-        List<UserResponse> result = userService.getTeamLeadInProductLine(productLineId);
-        return ResponseEntity.ok(ApiResponse.success(result));
-    }
-
-    @GetMapping("/processes/{processId}/employee-skills")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of Employees with skills in process", description = "Used to get list employee skills")
-    public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeSkillsByProcess(
-            @PathVariable Long processId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByProcess(processId)));
-    }
-
-    @GetMapping("/employees/{employeeId}/training-history")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of history training", description = "Used to get list employee training history")
-    public ResponseEntity<ApiResponse<EmployeeTrainingHistoryResponse>> getEmployeeTrainingHistory(
-            @PathVariable Long employeeId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(trainingResultService.getEmployeeTrainingHistory(employeeId)));
-    }
-
-    @GetMapping("/employees/{employeeId}/skills")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
-    @Operation(summary = "Get list of history training", description = "Used to get list employee skills")
-    public ResponseEntity<ApiResponse<List<EmployeeSkillResponse>>> getEmployeesSkillByEmployee(
-            @PathVariable Long employeeId
-    ) {
-        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.getEmployeeSkillsByEmployeeId(employeeId)));
-    }
-
-    // ====================== CREATE ======================
-
     @PostMapping("/sections")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Create new Section/Department")
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@RequestBody SectionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(sectionService.createSection(request)));
-    }
-
-    @PostMapping("/groups")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Create new Group")
-    public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
-    }
-
-    @PostMapping("/teams")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Create new Team")
-    public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
-    }
-
-    @PostMapping("/employees")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Create new Employee", description = "Must fill in all required fields correctly")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
-            @Valid @RequestBody EmployeeRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
-    }
-
-    @PostMapping("/users")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Create new Account (User)", description = "Will automatically send an email with a random password to the employee's email address")
-    public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(authService.createUser(request)));
-    }
-
-    // ====================== UPDATE ======================
-
-    @PutMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Update Account", description = "Allows updating Email, permissions (Roles) and active status (isActive)")
-    public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
-            @Parameter(description = "ID của User") @PathVariable Long id,
-            @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(authService.updateUser(id, request)));
     }
 
     @PutMapping("/sections/{id}")
@@ -211,6 +91,13 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(sectionService.updateSection(id, request)));
     }
 
+    @PostMapping("/groups")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Create new Group")
+    public ResponseEntity<ApiResponse<GroupResponse>> createGroup(@RequestBody GroupRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(groupService.createGroup(request)));
+    }
+
     @PutMapping("/groups/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Update Group")
@@ -218,6 +105,13 @@ public class StaffOrganizationController {
             @Parameter(description = "ID của Group") @PathVariable Long id,
             @RequestBody GroupRequest request) {
         return ResponseEntity.ok(ApiResponse.success(groupService.updateGroup(id, request)));
+    }
+
+    @PostMapping("/teams")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Create new Team")
+    public ResponseEntity<ApiResponse<TeamResponse>> createTeam(@RequestBody TeamRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(teamService.createTeam(request)));
     }
 
     @PutMapping("/teams/{id}")
@@ -228,17 +122,6 @@ public class StaffOrganizationController {
             @RequestBody TeamRequest request) {
         return ResponseEntity.ok(ApiResponse.success(teamService.updateTeam(id, request)));
     }
-
-    @PutMapping("/employees/{id}")
-    @PreAuthorize("hasAuthority('staff_organization.manage')")
-    @Operation(summary = "Update Employee")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
-            @Parameter(description = "ID của Employee") @PathVariable Long id,
-            @Valid @RequestBody EmployeeRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.updateEmployee(id, request)));
-    }
-
-    // ====================== DELETE ======================
 
     @DeleteMapping("/sections/{id}")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
@@ -305,6 +188,39 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @PostMapping("/employees")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Create new Employee", description = "Must fill in all required fields correctly")
+    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
+            @Valid @RequestBody EmployeeRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.createEmployee(request)));
+    }
+
+    @PostMapping("/users")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Create new Account (User)", description = "Will automatically send an email with a random password to the employee's email address")
+    public ResponseEntity<ApiResponse<UserDashboard>> createUser(@RequestBody UserCreateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.createUser(request)));
+    }
+
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Update Account", description = "Allows updating Email, permissions (Roles) and active status (isActive)")
+    public ResponseEntity<ApiResponse<UserDashboard>> updateUser(
+            @Parameter(description = "ID của User") @PathVariable Long id,
+            @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.updateUser(id, request)));
+    }
+
+    @PutMapping("/employees/{id}")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
+    @Operation(summary = "Update Employee")
+    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
+            @Parameter(description = "ID của Employee") @PathVariable Long id,
+            @Valid @RequestBody EmployeeRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.updateEmployee(id, request)));
+    }
+
     @PostMapping("/teams/{id}/employees")
     @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Add Employees to Team", description = "Add existing employees to a team")
@@ -323,5 +239,82 @@ public class StaffOrganizationController {
             @Parameter(description = "ID của User") @PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Accounts (Users)", description = "Returns a list of all user accounts in the system (Dashboard format)")
+    public ResponseEntity<ApiResponse<List<UserDashboard>>> getUsers() {
+        return ResponseEntity.ok(ApiResponse.success(userService.getAllUserDashboard()));
+    }
+
+    @GetMapping("/employees/no-account")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Employees without accounts", description = "Used to display dropdown list when creating a new User")
+    public ResponseEntity<ApiResponse<List<EmployeeNoAccountDTO>>> getEmployeesWithoutAccount() {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
+    }
+
+
+    // For TL/SV/MG
+    @GetMapping("/members")
+    @PreAuthorize("hasAuthority('team.manage')")
+    @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesUnderManagement(currentUser)));
+    }
+
+    @GetMapping("/product-lines/{productLineId}/team-leads")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
+        List<UserResponse> result = userService.getTeamLeadInProductLine(productLineId);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/processes/{processId}/employee-skills")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Employees with skills in process", description = "Used to get list employee skills")
+    public ResponseEntity<ApiResponse<ProcessResponse>> getEmployeeSkillsByProcess(
+            @PathVariable Long processId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesByProcess(processId)));
+    }
+
+    @GetMapping("/employees/{employeeId}/training-history")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of history training", description = "Used to get list employee training history")
+    public ResponseEntity<ApiResponse<EmployeeTrainingHistoryResponse>> getEmployeeTrainingHistory(
+            @PathVariable Long employeeId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(trainingResultService.getEmployeeTrainingHistory(employeeId)));
+    }
+
+    @GetMapping("/employees/{employeeId}/skills")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of history training", description = "Used to get list employee skills")
+    public ResponseEntity<ApiResponse<List<EmployeeSkillResponse>>> getEmployeesSkillByEmployee(
+            @PathVariable Long employeeId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(employeeSkillService.getEmployeeSkillsByEmployeeId(employeeId)));
+    }
+
+
+    // Unknow
+    @GetMapping("/sections/{sectionId}/groups")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Groups by Section ID", description = "Pass the Section ID to get a list of groups belonging to that section")
+    public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(
+            @Parameter(description = "ID của Section (Phòng/Ban)") @PathVariable Long sectionId) {
+        return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
+    }
+
+    @GetMapping("/groups/{groupId}/teams")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @Operation(summary = "Get list of Teams by Group ID", description = "Pass the Group ID to get a list of teams belonging to that group")
+    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(
+            @Parameter(description = "ID của Group (Nhóm)") @PathVariable Long groupId) {
+        return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
 }
