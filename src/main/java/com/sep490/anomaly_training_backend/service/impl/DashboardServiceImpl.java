@@ -30,7 +30,6 @@ import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskTo
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.Employee;
@@ -46,6 +45,7 @@ import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.TrainingSample;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
@@ -62,6 +62,7 @@ import com.sep490.anomaly_training_backend.repository.TrainingResultDetailReposi
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
@@ -97,6 +98,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final DefectRepository defectRepository;
     private final DefectProposalRepository defectProposalRepository;
     private final TrainingSampleProposalRepository trainingSampleProposalRepository;
+    private final TrainingSampleReviewRepository trainingSampleReviewRepository;
     private final ProcessRepository processRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final TrainingSampleRepository trainingSampleRepository;
@@ -1257,7 +1259,14 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(r -> lineIds.contains(r.getLine().getId()))
                 .filter(r -> r.getStatus() == ReportStatus.PENDING_REVIEW)
                 .count();
-        int totalPending = (int) (pendingPlans + pendingResults);
+        long pendingDefectProposals = lineIds.isEmpty() ? 0
+                : defectProposalRepository.findPendingByLineIds(lineIds).size();
+        long pendingSampleProposals = lineIds.isEmpty() ? 0
+                : trainingSampleProposalRepository.findPendingByLineIds(lineIds).size();
+        long pendingSampleReviews = lineIds.isEmpty() ? 0
+                : trainingSampleReviewRepository.findPendingByLineIds(lineIds).size();
+        int totalPending = (int) (pendingPlans + pendingResults
+                + pendingDefectProposals + pendingSampleProposals + pendingSampleReviews);
 
         return SvKpiData.builder()
                 .passRate(passRateStr)
@@ -1454,8 +1463,8 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<Defect> allDefects = defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
 
-        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        String[] monthNames = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
         List<SvTrainingEffectivenessPoint> points = new ArrayList<>();
 
@@ -1802,7 +1811,8 @@ public class DashboardServiceImpl implements DashboardService {
         return result;
     }
 
-    // ======================== SV-16. Training Samples by Process ========================
+    // ======================== SV-16. Training Samples by Process
+    // ========================
 
     @Override
     public List<StageDistribution> getSvSampleByProcess(Long groupId, Long lineId) {
@@ -2016,10 +2026,12 @@ public class DashboardServiceImpl implements DashboardService {
         return days + " ngày trước";
     }
 
-    // ======================== MNG-3. Training Progress Chart ========================
+    // ======================== MNG-3. Training Progress Chart
+    // ========================
 
     @Override
-    public List<MngTrainingProgressPoint> getMngTrainingProgress(Long sectionId, Long lineId, Integer month, Integer year) {
+    public List<MngTrainingProgressPoint> getMngTrainingProgress(Long sectionId, Long lineId, Integer month,
+            Integer year) {
         LocalDate today = LocalDate.now();
         int targetYear = year != null ? year : today.getYear();
         int targetMonth = month != null ? month : today.getMonthValue();
@@ -2115,11 +2127,13 @@ public class DashboardServiceImpl implements DashboardService {
                 if (d.getActualDate() != null && d.getIsPass() != null) {
                     if (!d.getActualDate().isBefore(monthStart) && !d.getActualDate().isAfter(monthEnd)) {
                         currentEvaluated++;
-                        if (Boolean.TRUE.equals(d.getIsPass())) currentPassed++;
+                        if (Boolean.TRUE.equals(d.getIsPass()))
+                            currentPassed++;
                     }
                     if (!d.getActualDate().isBefore(prevMonthStart) && !d.getActualDate().isAfter(prevMonthEnd)) {
                         prevEvaluated++;
-                        if (Boolean.TRUE.equals(d.getIsPass())) prevPassed++;
+                        if (Boolean.TRUE.equals(d.getIsPass()))
+                            prevPassed++;
                     }
                 }
             }
@@ -2158,13 +2172,15 @@ public class DashboardServiceImpl implements DashboardService {
         for (Team team : teams) {
             if (team.getEmployees() != null) {
                 for (Employee emp : team.getEmployees()) {
-                    if (emp.isDeleteFlag()) continue;
+                    if (emp.isDeleteFlag())
+                        continue;
                     totalEmployees++;
                     List<EmployeeSkill> skills = employeeSkillRepository
                             .findByEmployeeIdAndDeleteFlagFalse(emp.getId());
                     boolean hasValid = skills.stream()
                             .anyMatch(s -> s.getStatus() == EmployeeSkillStatus.VALID);
-                    if (hasValid) employeesWithValidSkill++;
+                    if (hasValid)
+                        employeesWithValidSkill++;
                 }
             }
         }
@@ -2195,7 +2211,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    // ======================== MNG-5. Training Effectiveness ========================
+    // ======================== MNG-5. Training Effectiveness
+    // ========================
 
     @Override
     public List<SvTrainingEffectivenessPoint> getMngTrainingEffectiveness(Long sectionId, Long lineId, Integer months) {
@@ -2216,8 +2233,8 @@ public class DashboardServiceImpl implements DashboardService {
         List<Defect> allDefects = lineIds.isEmpty() ? List.of()
                 : defectRepository.findAllByProductLineIdsAndDeleteFlagFalse(lineIds);
 
-        String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        String[] monthNames = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
         List<SvTrainingEffectivenessPoint> points = new ArrayList<>();
 
@@ -2251,7 +2268,8 @@ public class DashboardServiceImpl implements DashboardService {
     // ======================== MNG-6. Training Execution ========================
 
     @Override
-    public List<TrainingExecutionPoint> getMngTrainingExecution(Long sectionId, Long lineId, Integer year, Integer month) {
+    public List<TrainingExecutionPoint> getMngTrainingExecution(Long sectionId, Long lineId, Integer year,
+            Integer month) {
         List<Long> lineIds = resolveMngLineIds(sectionId, lineId);
         LocalDate today = LocalDate.now();
         int targetYear = year != null ? year : today.getYear();
@@ -2435,7 +2453,8 @@ public class DashboardServiceImpl implements DashboardService {
         return result;
     }
 
-    // ======================== MNG-10. Training Samples by Process ========================
+    // ======================== MNG-10. Training Samples by Process
+    // ========================
 
     @Override
     public List<StageDistribution> getMngSampleByProcess(Long sectionId, Long lineId) {

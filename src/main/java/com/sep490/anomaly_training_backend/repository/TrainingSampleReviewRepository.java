@@ -39,5 +39,11 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
     List<TrainingSampleReview> findOverdueReviews();
 
     List<TrainingSampleReview> findByDeleteFlagFalse();
+
+    @Query("SELECT tr FROM TrainingSampleReview tr " +
+            "WHERE tr.productLine.id IN :lineIds " +
+            "AND tr.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW " +
+            "AND tr.deleteFlag = false")
+    List<TrainingSampleReview> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
 }
 
