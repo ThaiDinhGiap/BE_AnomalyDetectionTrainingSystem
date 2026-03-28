@@ -73,7 +73,7 @@ public class ManufacturingLineController {
     }
 
     @PostMapping("/product-lines")
-    @PreAuthorize("hasAuthority('manufacturing_line.view')")
+    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> createProductLine(@RequestBody ProductLineRequest productLineRequest) {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
@@ -282,7 +282,7 @@ public class ManufacturingLineController {
     }
 
     @PutMapping("/products/{id}")
-    @PreAuthorize("hasAuthority('manufacturing_line.manage')")
+    @PreAuthorize("hasAuthority('manufacturing_line.view')")
     public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
         return null;
     }

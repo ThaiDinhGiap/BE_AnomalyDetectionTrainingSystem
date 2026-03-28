@@ -62,14 +62,14 @@ public class StaffOrganizationController {
 
     // For Admin
     @GetMapping("/sections")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Get list of Sections/Departments", description = "Returns a list of all departments in the system")
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         return ResponseEntity.ok(ApiResponse.success(sectionService.getAllSections()));
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAuthority('staff_organization.view')")
+    @PreAuthorize("hasAuthority('staff_organization.manage')")
     @Operation(summary = "Get list of Employees", description = "Returns a list of all employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
@@ -258,7 +258,7 @@ public class StaffOrganizationController {
 
     // For TL/SV/MG
     @GetMapping("/members")
-    @PreAuthorize("hasAuthority('team.manage')")
+    @PreAuthorize("hasAuthority('staff_organization.view')")
     @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
             @AuthenticationPrincipal User currentUser) {

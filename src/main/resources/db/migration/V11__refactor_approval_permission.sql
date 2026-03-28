@@ -15,8 +15,8 @@ VALUES (14, 'review_approve', 'Kiểm tra và Phê duyệt', 'Kiểm tra và ph�
 -- 2. Insert new permissions
 -- ============================================================================
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
-VALUES (39, 'approval.review', 'Kiểm duyệt báo cáo', 14, 'review', 1, TRUE, 'system'),
-       (40, 'approval.approve', 'Phê duyệt báo cáo', 14, 'approve', 2, TRUE, 'system');
+VALUES (39, 'APPROVAL_REVIEW', 'Kiểm duyệt báo cáo', 14, 'review', 1, TRUE, 'system'),
+       (40, 'APPROVAL_APPROVE', 'Phê duyệt báo cáo', 14, 'approve', 2, TRUE, 'system');
 
 -- ============================================================================
 -- 3. Assign permissions to existing roles
