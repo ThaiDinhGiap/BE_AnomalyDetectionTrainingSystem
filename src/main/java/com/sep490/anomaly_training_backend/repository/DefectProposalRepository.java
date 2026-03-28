@@ -55,4 +55,12 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
             @Param("userId") Long userId);
 
     List<DefectProposal> findByStatusAndDeleteFlagFalse(ReportStatus status);
+
+    @Query("""
+            SELECT d FROM DefectProposal d
+            WHERE d.productLine.id IN :lineIds
+              AND d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW
+              AND d.deleteFlag = false
+            """)
+    List<DefectProposal> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
 }

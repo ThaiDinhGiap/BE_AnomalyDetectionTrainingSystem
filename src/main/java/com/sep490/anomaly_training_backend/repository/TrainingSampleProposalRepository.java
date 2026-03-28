@@ -54,4 +54,12 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
     List<TrainingSampleProposal> findByProductLineForSupervisorAndManagerOrderByCreatedAtDesc(@Param("productLineId") Long productLineId);
 
     List<TrainingSampleProposal> findByStatusAndDeleteFlagFalse(ReportStatus status);
+
+    @Query("""
+            SELECT t FROM TrainingSampleProposal t
+            WHERE t.productLine.id IN :lineIds
+              AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW
+              AND t.deleteFlag = false
+            """)
+    List<TrainingSampleProposal> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
 }
