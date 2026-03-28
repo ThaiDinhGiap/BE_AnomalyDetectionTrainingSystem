@@ -493,7 +493,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             dto.setId(entity.getId());
             dto.setTitle(entity.getTitle());
             dto.setCreatedAt(entity.getCreatedAt());
-            dto.setApprovedAt(entity.getUpdatedAt());
 
             if (entity.getLine() != null) {
                 dto.setLineId(entity.getLine().getId());
