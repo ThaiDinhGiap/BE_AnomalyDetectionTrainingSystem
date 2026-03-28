@@ -79,8 +79,8 @@ public class DefectProposalServiceImpl implements DefectProposalService {
 
     @Override
     @Transactional
-    public void createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser) {
-        createProposal(reportRequest, currentUser);
+    public DefectProposalResponse createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser) {
+        return defectProposalMapper.toResponse(createProposal(reportRequest, currentUser), userRepository);
     }
 
     @Override
@@ -314,7 +314,7 @@ public class DefectProposalServiceImpl implements DefectProposalService {
         if (request.getDefectDescription() == null || request.getDefectDescription().isBlank()) {
             throw new AppException(ErrorCode.MISSING_DEFECT_DESCRIPTION);
         }
-        if(request.getProductId()  == null) throw new AppException(ErrorCode.MISSING_PRODUCT_ID);
+        if (request.getProductId() == null) throw new AppException(ErrorCode.MISSING_PRODUCT_ID);
         if (request.getDetectedDate() == null) throw new AppException(ErrorCode.MISSING_DETECTED_DATE);
 
         DefectProposalDetail entity = new DefectProposalDetail();

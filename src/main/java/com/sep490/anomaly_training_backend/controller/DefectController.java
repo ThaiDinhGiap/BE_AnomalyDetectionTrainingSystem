@@ -129,11 +129,11 @@ public class DefectController {
     @Operation(summary = "Create new defect proposal")
     @PostMapping(value = "/proposals", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('defect_proposal.manage')")
-    public ResponseEntity<ApiResponse<Void>> createDefectProposal(
+    public ResponseEntity<ApiResponse<DefectProposalResponse>> createDefectProposal(
             @ModelAttribute DefectProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
-        defectProposalService.createDefectProposalDraft(request, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(defectProposalService.createDefectProposalDraft(request, currentUser)));
     }
 
     @DeleteMapping("/proposals/{id}")

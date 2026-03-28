@@ -113,11 +113,11 @@ public class TrainingSampleController {
     @Operation(summary = "Create new training sample proposal")
     @PostMapping("/proposals")
     @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
-    public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(
+    public ResponseEntity<ApiResponse<TrainingSampleProposalResponse>> createTrainingSampleProposal(
             @ModelAttribute("request") TrainingSampleProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
-        trainingSampleProposalService.createTrainingSampleProposal(request, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(trainingSampleProposalService.createTrainingSampleProposal(request, currentUser)));
     }
 
     @DeleteMapping("/proposals/{id}")

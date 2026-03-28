@@ -12,8 +12,15 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.Process;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.DefectRepository;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
@@ -27,12 +34,17 @@ import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +81,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
     }
 
     @Override
-    public void createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest, User currentUser) {
+    public TrainingSampleProposalResponse createTrainingSampleProposal(TrainingSampleProposalRequest proposalRequest, User currentUser) {
         ProductLine productLine = productLineRepository.findById(proposalRequest.getProductLineId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         TrainingSampleProposal proposal = new TrainingSampleProposal();
@@ -77,6 +89,7 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         proposal.setStatus(ReportStatus.DRAFT);
         proposal = trainingSampleProposalRepository.save(proposal);
         createDetail(proposalRequest.getListDetail(), proposal, currentUser);
+        return trainingSampleProposalMapper.toResponse(proposal, userRepository);
     }
 
     @Override
@@ -241,23 +254,23 @@ public class TrainingSampleProposalServiceImpl implements TrainingSampleProposal
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-          TrainingSample validateEntity = trainingSampleRepository.checkExist(detailRequest.getProcessId(),
-                                                                              detailRequest.getCategoryName(),
-                                                                              detailRequest.getTrainingDescription(),
-                                                                              detailRequest.getProductId(),
-                                                                              detailRequest.getTrainingSampleCode())
-                                                                              .orElse(null);
-          if (!detailRequest.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != detailRequest.getTrainingSampleId()) {
-              throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
-                      "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
-                      validateEntity.getTrainingCode(),
-                      validateEntity.getProcess().getCode(),
-                      detailRequest.getCategoryName(),
-                      detailRequest.getTrainingDescription(),
-                      validateEntity.getProduct().getCode(),
-                      detailRequest.getTrainingSampleCode()
-              ));
-          }
+            TrainingSample validateEntity = trainingSampleRepository.checkExist(detailRequest.getProcessId(),
+                            detailRequest.getCategoryName(),
+                            detailRequest.getTrainingDescription(),
+                            detailRequest.getProductId(),
+                            detailRequest.getTrainingSampleCode())
+                    .orElse(null);
+            if (!detailRequest.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != detailRequest.getTrainingSampleId()) {
+                throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
+                        "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
+                        validateEntity.getTrainingCode(),
+                        validateEntity.getProcess().getCode(),
+                        detailRequest.getCategoryName(),
+                        detailRequest.getTrainingDescription(),
+                        validateEntity.getProduct().getCode(),
+                        detailRequest.getTrainingSampleCode()
+                ));
+            }
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
 
             // Handle trainingSample - can be null

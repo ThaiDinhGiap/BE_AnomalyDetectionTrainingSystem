@@ -15,7 +15,7 @@ import java.util.List;
 public interface DefectProposalService {
     List<DefectProposalResponse> getDefectProposalByProductLine(Long id, String username);
 
-    void createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser);
+    DefectProposalResponse createDefectProposalDraft(DefectProposalRequest reportRequest, User currentUser);
 
     void deleteDefectProposal(Long id);
 
