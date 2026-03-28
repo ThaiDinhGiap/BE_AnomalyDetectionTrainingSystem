@@ -30,13 +30,9 @@ import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
-import com.sep490.anomaly_training_backend.service.TrainingPlanService;
-import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,10 +57,6 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final RequiredActionRepository requiredActionRepo;
     private final ApprovalHandlerRegistry handlerRegistry;
     private final ApplicationEventPublisher eventPublisher;
-    private final DefectProposalDetailService defectProposalDetailService;
-    private final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
-    private final TrainingPlanService trainingPlanService;
-    private final TrainingResultService trainingResultService;
 
     private final DefectProposalDetailRepository defectProposalDetailRepository;
     private final TrainingSampleProposalDetailRepository trainingSampleProposalDetailRepository;
