@@ -195,7 +195,7 @@ public class NotificationServiceImpl implements NotificationService {
         Map<String, Object> baseVars = buildEntityVars(
                 ApprovalEntityType.DEFECT_PROPOSAL,
                 proposal.getFormCode(),
-                "Báo cáo lỗi – " + proposal.getFormCode(),
+                "Đề xuất chỉnh sửa danh sách lỗi quá khứ – " + proposal.getFormCode(),
                 proposal.getProductLine() != null ? proposal.getProductLine().getName() : "—",
                 String.valueOf(proposal.getStatus()),
                 resolveSubmittedAt(ApprovalEntityType.DEFECT_PROPOSAL, proposal.getId())
@@ -204,7 +204,7 @@ public class NotificationServiceImpl implements NotificationService {
         dispatchNudgeEmails(
                 resolveApprovers(String.valueOf(proposal.getStatus())),
                 sender, baseVars,
-                "[Nhắc ký] Báo cáo lỗi: " + proposal.getFormCode(),
+                "[Nhắc ký] Đề xuất chỉnh sửa danh sách lỗi quá khứ: " + proposal.getFormCode(),
                 ApprovalEntityType.DEFECT_PROPOSAL, proposal.getId()
         );
     }
