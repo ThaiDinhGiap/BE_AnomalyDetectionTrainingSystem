@@ -64,5 +64,19 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
             "ORDER BY es.expiryDate ASC, es.id ASC")
     List<EmployeeSkill> findAvailableSkillsForEmployee(Long employeeId);
 
+    /**
+     * Batch load available skills (non-REVOKED) for multiple employees.
+     * Eager fetch process to avoid N+1.
+     */
+    @Query("""
+                SELECT es FROM EmployeeSkill es
+                LEFT JOIN FETCH es.process
+                WHERE es.employee.id IN :employeeIds
+                  AND es.deleteFlag = false
+                  AND es.status != 'REVOKED'
+                ORDER BY es.employee.id, es.expiryDate ASC, es.id ASC
+            """)
+    List<EmployeeSkill> findAvailableSkillsByEmployeeIds(@Param("employeeIds") List<Long> employeeIds);
+
     long countByEmployeeIdAndStatusNotAndDeleteFlagFalse(Long employee_id, EmployeeSkillStatus status);
 }

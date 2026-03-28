@@ -119,4 +119,17 @@ public class MetricClassificationServiceImpl implements MetricClassificationServ
                     "Cannot compare non-numeric values");
         }
     }
+
+    @Override
+    public String getSourceMetricName(String classificationName) {
+        List<MetricClassification> rules = classificationRepository
+                .findByClassificationNameAndIsActiveTrueOrderByPriority(classificationName);
+
+        if (rules.isEmpty()) {
+            throw new AppException(ErrorCode.CLASSIFICATION_NOT_FOUND,
+                    "Classification rules not found: " + classificationName);
+        }
+
+        return rules.get(0).getMetricSource();
+    }
 }

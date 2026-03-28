@@ -38,4 +38,6 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
             "AND tr.status != com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED")
     List<TrainingSampleReview> findOverdueReviews();
 
+    List<TrainingSampleReview> findByDeleteFlagFalse();
 }
+

@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service.priority.impl;
 
 import com.sep490.anomaly_training_backend.dto.ScheduleSummary;
-import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.FactoryDayType;
 import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -125,28 +124,31 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
     }
 
     /**
-     * Load available skills per employee (filter REVOKED)
+     * Load available skills per employee (batch query, filter REVOKED)
      */
     private Map<Long, List<EmployeeSkill>> loadAvailableSkillsPerEmployee(List<PrioritySnapshotDetail> priorityDetails) {
-        Map<Long, List<EmployeeSkill>> result = new HashMap<>();
+        // Collect all employee IDs
+        List<Long> employeeIds = priorityDetails.stream()
+                .map(p -> p.getEmployee().getId())
+                .toList();
 
-        for (PrioritySnapshotDetail priority : priorityDetails) {
-            Long employeeId = priority.getEmployee().getId();
+        // Single batch query — replaces N individual queries
+        List<EmployeeSkill> allSkills = employeeSkillRepository.findAvailableSkillsByEmployeeIds(employeeIds);
 
-            List<EmployeeSkill> skills = employeeSkillRepository.findByEmployeeIdAndDeleteFlagFalse(employeeId)
-                    .stream()
-                    .filter(skill -> skill.getStatus() != EmployeeSkillStatus.REVOKED)
-                    .sorted(Comparator
-                            .comparing((EmployeeSkill s) -> s.getExpiryDate() != null ? s.getExpiryDate() : LocalDate.MAX)
-                            .thenComparing(EmployeeSkill::getId))
-                    .collect(Collectors.toList());
+        // Group by employee ID (already sorted by expiryDate, id in the query)
+        Map<Long, List<EmployeeSkill>> result = allSkills.stream()
+                .collect(Collectors.groupingBy(
+                        skill -> skill.getEmployee().getId(),
+                        Collectors.toList()
+                ));
 
-            result.put(employeeId, skills);
-
-            log.debug("Employee {}: {} available skills (excluded REVOKED)",
-                    priority.getEmployee().getEmployeeCode(),
-                    skills.size());
+        // Ensure all employees have an entry (even if empty)
+        for (Long empId : employeeIds) {
+            result.putIfAbsent(empId, List.of());
         }
+
+        log.info("Batch loaded skills for {} employees in 1 query (total: {} skills)",
+                employeeIds.size(), allSkills.size());
 
         return result;
     }
@@ -189,11 +191,12 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
             log.info("\n--- PASS {} (Daily Capacity: {}) ---", dayCapacity - minCapacity + 1, dayCapacity);
 
             int passDetails = 0;
-            int dayIndex = 0;
-            int employeeIndex = 0;
             boolean hasAllocatedInPass = false;
 
-            while (dayIndex < totalDays && employeeIndex < priorityDetails.size()) {
+            // Track employees via round-robin across days
+            int employeeStartIndex = 0;
+
+            for (int dayIndex = 0; dayIndex < totalDays && totalSkills.get() > 0; dayIndex++) {
                 FactoryCalendarEntry calendarDay = availableDays.get(dayIndex);
                 LocalDate workDate = calendarDay.getWorkDate();
 
@@ -205,15 +208,13 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
 
                 log.debug("  Day {}: {} (slots: {})", dayIndex + 1, workDate, slotsToday);
 
-                // Allocate for this day
+                // Allocate for this day: try every employee starting from round-robin position
                 int allocated = 0;
-                int tempEmployeeIndex = employeeIndex;
+                int tried = 0;
+                int emplIdx = employeeStartIndex;
 
-                while (allocated < slotsToday && totalSkills.get() > 0) {
-                    if (tempEmployeeIndex == priorityDetails.size()) {
-                        tempEmployeeIndex = 0;
-                    }
-                    PrioritySnapshotDetail priority = priorityDetails.get(tempEmployeeIndex);
+                while (allocated < slotsToday && tried < priorityDetails.size() && totalSkills.get() > 0) {
+                    PrioritySnapshotDetail priority = priorityDetails.get(emplIdx);
                     Employee employee = priority.getEmployee();
                     Long empId = employee.getId();
 
@@ -235,7 +236,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                                 .build();
 
                         allDetails.add(detail);
-                        employeeSkillIndex.put(empId, skillIdx + 1);  // Move to next skill
+                        employeeSkillIndex.put(empId, skillIdx + 1);
                         allocated++;
                         passDetails++;
                         totalSkills.decrementAndGet();
@@ -248,17 +249,19 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                                 availableSkills.size());
                     }
 
-                    tempEmployeeIndex++;
+                    emplIdx = (emplIdx + 1) % priorityDetails.size();
+                    tried++;
                 }
 
-                // Move to next day
-                dayIndex++;
-                employeeIndex = (employeeIndex + 1) % priorityDetails.size();  // Round-robin
+                // Advance round-robin start for next day only if we allocated
+                if (allocated > 0) {
+                    employeeStartIndex = emplIdx;
+                }
             }
 
             log.info("PASS {} allocated: {} details", dayCapacity - minCapacity + 1, passDetails);
 
-            // Stopping condition: không allocate được gì trong pass này hoặc allocate hết skill
+            // Stopping condition: không allocate được gì trong pass này
             if (!hasAllocatedInPass) {
                 log.info("No allocations in pass {} — stopping", dayCapacity - minCapacity + 1);
                 break;
