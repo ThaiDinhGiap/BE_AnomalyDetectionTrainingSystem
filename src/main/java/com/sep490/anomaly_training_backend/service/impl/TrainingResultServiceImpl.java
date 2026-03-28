@@ -887,6 +887,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         // Chuyển status về PENDING để TL có thể sửa lại
         detail.setStatus(ReportStatus.PENDING_REVIEW);
 
+        // Xóa kết quả pass/fail vì detail sẽ được nhập lại từ đầu
+        detail.setIsPass(null);
+
         detailRepository.save(detail);
     }
 
