@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
 import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -52,13 +53,13 @@ public class AccountController {
     )
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
+    public ResponseEntity<ApiResponse<AuthResponse>> changePassword(
             @AuthenticationPrincipal User userDetails,
             @Valid @RequestBody com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
 
         log.info("Change password request for user: {}", userDetails.getUsername());
-        authService.changePassword(userDetails.getUsername(), request);
+        AuthResponse authResponse = authService.changePassword(userDetails.getUsername(), request);
 
-        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", authResponse));
     }
 }

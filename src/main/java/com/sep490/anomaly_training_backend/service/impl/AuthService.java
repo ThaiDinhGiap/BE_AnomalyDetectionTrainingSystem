@@ -254,7 +254,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(String username, com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
+    public AuthResponse changePassword(String username, com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH);
         }
@@ -269,8 +269,11 @@ public class AuthService {
         user.setRequirePasswordChange(false);
         userRepository.save(user);
 
-        // Revoke all existing tokens so user has to log in again with new password
+        // Revoke all existing tokens
         refreshTokenRepository.revokeAllByUser(user);
+
+        // Issue new tokens so user doesn't have to re-login
+        return generateAuthResponse(user);
     }
 
     @Transactional
