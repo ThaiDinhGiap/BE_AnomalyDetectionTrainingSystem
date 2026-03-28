@@ -5,7 +5,6 @@ import com.sep490.anomaly_training_backend.dto.request.RefreshTokenRequest;
 import com.sep490.anomaly_training_backend.dto.request.RegisterRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -162,22 +161,6 @@ public class AuthController {
         authService.logoutAll(userDetails.getUsername());
 
         return ResponseEntity.ok(ApiResponse.success("Logged out from all devices", null));
-    }
-
-    @Operation(
-            summary = "Change Password",
-            description = "Change the password for the currently authenticated user"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
-            @AuthenticationPrincipal User userDetails,
-            @Valid @RequestBody com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
-
-        log.info("Change password request for user: {}", userDetails.getUsername());
-        authService.changePassword(userDetails.getUsername(), request);
-
-        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
     }
 
     @Operation(
