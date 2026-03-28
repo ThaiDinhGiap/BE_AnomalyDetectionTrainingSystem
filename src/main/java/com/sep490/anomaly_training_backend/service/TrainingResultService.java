@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
@@ -78,8 +77,6 @@ public interface TrainingResultService {
     void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser, HttpServletRequest request);
 
     void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request);
-
-    void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser);
 
     boolean canApprove(Long reportId, User currentUser);
 }

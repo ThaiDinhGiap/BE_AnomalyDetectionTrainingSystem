@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
@@ -13,14 +14,22 @@ import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.BaseEntity;
+import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.RejectReason;
 import com.sep490.anomaly_training_backend.model.RequiredAction;
 import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
+import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
 import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
 import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
@@ -56,6 +65,11 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
     private final TrainingPlanService trainingPlanService;
     private final TrainingResultService trainingResultService;
+
+    private final DefectProposalDetailRepository defectProposalDetailRepository;
+    private final TrainingSampleProposalDetailRepository trainingSampleProposalDetailRepository;
+    private final TrainingPlanDetailRepository trainingPlanDetailRepository;
+    private final TrainingResultDetailRepository trainingResultDetailRepository;
 
     @Override
     @Transactional
@@ -281,17 +295,93 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
     }
 
-    // ==================== REJECT DETAIL FEEDBACK (merged from RejectDetailService) ====================
-
     @Override
+    @Transactional
     public void saveFeedback(ApprovalEntityType entityType, Long detailId, DetailFeedbackRequest request, User currentUser) {
         switch (entityType) {
-            case DEFECT_PROPOSAL -> defectProposalDetailService.saveFeedback(detailId, request, currentUser);
-            case TRAINING_SAMPLE_PROPOSAL ->
-                    trainingSampleProposalDetailService.saveFeedback(detailId, request, currentUser);
-            case TRAINING_PLAN -> trainingPlanService.saveFeedback(detailId, request, currentUser);
-            case TRAINING_RESULT -> trainingResultService.saveFeedback(detailId, request, currentUser);
+            case DEFECT_PROPOSAL -> doSaveFeedback(
+                    detailId, request, currentUser,
+                    defectProposalDetailRepository::findByIdAndDeleteFlagFalse,
+                    DefectProposalDetail::setRejectFeedback,
+                    defectProposalDetailRepository::save);
+            case TRAINING_SAMPLE_PROPOSAL -> doSaveFeedback(
+                    detailId, request, currentUser,
+                    trainingSampleProposalDetailRepository::findByIdAndDeleteFlagFalse,
+                    TrainingSampleProposalDetail::setRejectFeedback,
+                    trainingSampleProposalDetailRepository::save);
+            case TRAINING_PLAN -> doSaveFeedback(
+                    detailId, request, currentUser,
+                    trainingPlanDetailRepository::findByIdAndDeleteFlagFalse,
+                    TrainingPlanDetail::setRejectFeedback,
+                    trainingPlanDetailRepository::save);
+            case TRAINING_RESULT -> doSaveFeedback(
+                    detailId, request, currentUser,
+                    trainingResultDetailRepository::findById,
+                    TrainingResultDetail::setRejectFeedback,
+                    trainingResultDetailRepository::save);
             default -> throw new IllegalArgumentException("Unsupported entity type: " + entityType);
         }
+    }
+
+    /**
+     * Generic feedback handler — chỉ cần truyền vào cách load, set feedback, và save entity.
+     */
+    private <T> void doSaveFeedback(
+            Long detailId,
+            DetailFeedbackRequest request,
+            User currentUser,
+            java.util.function.Function<Long, java.util.Optional<T>> loader,
+            java.util.function.BiConsumer<T, RejectFeedbackJson> feedbackSetter,
+            java.util.function.Consumer<T> saver) {
+
+        T detail = loader.apply(detailId)
+                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
+
+        if (isEmptyFeedback(request)) {
+            feedbackSetter.accept(detail, null);
+            saver.accept(detail);
+            return;
+        }
+
+        feedbackSetter.accept(detail, buildFeedbackJson(request, currentUser));
+        saver.accept(detail);
+        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
+    }
+
+    private RejectFeedbackJson buildFeedbackJson(DetailFeedbackRequest request, User currentUser) {
+        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
+        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
+            reasonSnapshots = rejectReasonRepo.findAllById(request.getRejectReasonIds()).stream()
+                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
+                            .id(r.getId())
+                            .category(r.getCategoryName())
+                            .label(r.getReasonName())
+                            .build())
+                    .toList();
+        }
+
+        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
+        if (request.getRequiredActionId() != null) {
+            actionSnapshot = requiredActionRepo.findById(request.getRequiredActionId())
+                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
+                            .id(a.getId())
+                            .label(a.getActionName())
+                            .build())
+                    .orElse(null);
+        }
+
+        return RejectFeedbackJson.builder()
+                .savedAt(Instant.now())
+                .savedBy(currentUser.getFullName())
+                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
+                .requiredAction(actionSnapshot)
+                .comment(request.getComment())
+                .build();
+    }
+
+    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
+                && r.getRequiredActionId() == null
+                && (r.getComment() == null || r.getComment().isBlank());
     }
 }

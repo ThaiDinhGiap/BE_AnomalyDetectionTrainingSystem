@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
-import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
@@ -69,7 +68,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -1265,8 +1263,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());
         detailFeedbackRequest.setRequiredActionId(req.getRequiredActionId());
         detailFeedbackRequest.setComment(req.getComment());
-
-        saveFeedback(detailId, detailFeedbackRequest, currentUser);
     }
 
     @Override
@@ -1274,62 +1270,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult report = getReportById(reportId);
         approvalService.reject(report, currentUser, req, request);
         trainingResultRepository.save(report);
-    }
-
-    @Override
-    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
-
-        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
-
-        // Tất cả null/empty → xoá feedback
-        if (isEmptyFeedback(request)) {
-            detail.setRejectFeedback(null);
-            trainingResultDetailRepository.save(detail);
-            return;
-        }
-
-        // Batch load reasons + action
-        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
-        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
-            reasonSnapshots = rejectReasonRepository
-                    .findAllById(request.getRejectReasonIds())
-                    .stream()
-                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
-                            .id(r.getId())
-                            .category(r.getCategoryName())
-                            .label(r.getReasonName())
-                            .build())
-                    .toList();
-        }
-
-        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
-        if (request.getRequiredActionId() != null) {
-            actionSnapshot = requiredActionRepository
-                    .findById(request.getRequiredActionId())
-                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
-                            .id(a.getId())
-                            .label(a.getActionName())
-                            .build())
-                    .orElse(null);
-        }
-
-        detail.setRejectFeedback(RejectFeedbackJson.builder()
-                .savedAt(Instant.now())
-                .savedBy(currentUser.getFullName())
-                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
-                .requiredAction(actionSnapshot)
-                .comment(request.getComment())
-                .build());
-
-        trainingResultDetailRepository.save(detail);
-        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
-    }
-
-    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
-        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
-                && r.getRequiredActionId() == null
-                && (r.getComment() == null || r.getComment().isBlank());
     }
 
     @Override

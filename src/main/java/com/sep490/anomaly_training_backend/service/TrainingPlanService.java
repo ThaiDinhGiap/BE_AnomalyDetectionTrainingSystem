@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
@@ -69,8 +68,6 @@ public interface TrainingPlanService {
     void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request);
 
     ResponseEntity<Boolean> canApprove(Long reportId, User currentUser);
-
-    void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser);
 
     void clearFeedback(Long proposalId);
 }

@@ -1,8 +1,6 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
-import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
@@ -21,7 +19,6 @@ import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -77,7 +74,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -831,54 +827,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     @Override
     @Transactional
-    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
-        TrainingPlanDetail detail = trainingPlanDetailRepository.findByIdAndDeleteFlagFalse(detailId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
-
-        if (isEmptyFeedback(request)) {
-            detail.setRejectFeedback(null);
-            trainingPlanDetailRepository.save(detail);
-            return;
-        }
-
-        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
-        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
-            reasonSnapshots = rejectReasonRepository
-                    .findAllById(request.getRejectReasonIds())
-                    .stream()
-                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
-                            .id(r.getId())
-                            .category(r.getCategoryName())
-                            .label(r.getReasonName())
-                            .build())
-                    .toList();
-        }
-
-        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
-        if (request.getRequiredActionId() != null) {
-            actionSnapshot = requiredActionRepository
-                    .findById(request.getRequiredActionId())
-                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
-                            .id(a.getId())
-                            .label(a.getActionName())
-                            .build())
-                    .orElse(null);
-        }
-
-        detail.setRejectFeedback(RejectFeedbackJson.builder()
-                .savedAt(Instant.now())
-                .savedBy(currentUser.getFullName())
-                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
-                .requiredAction(actionSnapshot)
-                .comment(request.getComment())
-                .build());
-
-        trainingPlanDetailRepository.save(detail);
-        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
-    }
-
-    @Override
-    @Transactional
     public void clearFeedback(Long proposalId) {
         List<TrainingPlanDetail> details = trainingPlanDetailRepository
                 .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
@@ -888,13 +836,6 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
-
-    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
-        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
-                && r.getRequiredActionId() == null
-                && (r.getComment() == null || r.getComment().isBlank());
-    }
-
     private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {
         Long productLineId = plan.getLine() != null ? plan.getLine().getId() : null;
         if (productLineId == null || detailResponse.getEmployeeId() == null) return;
