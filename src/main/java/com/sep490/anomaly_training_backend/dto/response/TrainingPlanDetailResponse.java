@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -19,7 +19,7 @@ public class TrainingPlanDetailResponse {
     private LocalDate plannedDate;
     private LocalDate actualDate;
 
-    private TrainingPlanDetailStatus status;
+    private ReportStatus status;
     private String note;
     private List<ProcessInfo> employeeProcesses;
 

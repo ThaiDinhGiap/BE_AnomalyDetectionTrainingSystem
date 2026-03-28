@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -66,7 +66,7 @@ public class TrainingPlanDetail extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    TrainingPlanDetailStatus status = TrainingPlanDetailStatus.PENDING;
+    ReportStatus status = ReportStatus.PENDING_REVIEW;
 
     /**
      * Mã nhóm để phân biệt các lần thêm khác nhau của cùng 1 employee.

@@ -30,38 +30,38 @@ INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, targ
                                    status, note, created_by, delete_flag, created_at, updated_at)
 VALUES
 -- Plan 200 (Tổ Tiện, line 1)
-(200, 1, 'sv-wait-200-nv001', '2026-03-01', '2026-03-10', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
+(200, 1, 'sv-wait-200-nv001', '2026-03-01', '2026-03-10', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
  NOW()),
-(200, 2, 'sv-wait-200-nv002', '2026-03-01', '2026-03-11', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
+(200, 2, 'sv-wait-200-nv002', '2026-03-01', '2026-03-11', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
  NOW()),
-(200, 3, 'sv-wait-200-nv003', '2026-03-01', '2026-03-12', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
+(200, 3, 'sv-wait-200-nv003', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
  NOW()),
-(200, 4, 'sv-wait-200-nv004', '2026-03-01', '2026-03-14', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
+(200, 4, 'sv-wait-200-nv004', '2026-03-01', '2026-03-14', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
  NOW()),
-(200, 6, 'sv-wait-200-nv006', '2026-03-01', '2026-03-15', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
+(200, 6, 'sv-wait-200-nv006', '2026-03-01', '2026-03-15', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_tien01', 0, NOW(),
  NOW()),
 -- Plan 210 (Tổ Tiện, Bơm Chìm line 6)
-(210, 1, 'sv-wait-210-nv001', '2026-04-01', '2026-04-07', NULL, 'PENDING', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
+(210, 1, 'sv-wait-210-nv001', '2026-04-01', '2026-04-07', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
  NOW(), NOW()),
-(210, 2, 'sv-wait-210-nv002', '2026-04-01', '2026-04-08', NULL, 'PENDING', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
+(210, 2, 'sv-wait-210-nv002', '2026-04-01', '2026-04-08', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
  NOW(), NOW()),
-(210, 3, 'sv-wait-210-nv003', '2026-04-01', '2026-04-09', NULL, 'PENDING', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
+(210, 3, 'sv-wait-210-nv003', '2026-04-01', '2026-04-09', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt Bơm Chìm', 'tl_tien01', 0,
  NOW(), NOW()),
 -- Plan 211 (Tổ Tiện, Van V-Series line 7)
-(211, 4, 'sv-wait-211-nv004', '2026-04-01', '2026-04-10', NULL, 'PENDING', 'Chờ SV duyệt Van', 'tl_tien01', 0, NOW(),
+(211, 4, 'sv-wait-211-nv004', '2026-04-01', '2026-04-10', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt Van', 'tl_tien01', 0, NOW(),
  NOW()),
-(211, 6, 'sv-wait-211-nv006', '2026-04-01', '2026-04-11', NULL, 'PENDING', 'Chờ SV duyệt Van', 'tl_tien01', 0, NOW(),
+(211, 6, 'sv-wait-211-nv006', '2026-04-01', '2026-04-11', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt Van', 'tl_tien01', 0, NOW(),
  NOW()),
 -- Plan 201 (Tổ Phay, line 2)
-(201, 7, 'sv-wait-201-nv007', '2026-03-01', '2026-03-15', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
+(201, 7, 'sv-wait-201-nv007', '2026-03-01', '2026-03-15', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
  NOW()),
-(201, 8, 'sv-wait-201-nv008', '2026-03-01', '2026-03-16', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
+(201, 8, 'sv-wait-201-nv008', '2026-03-01', '2026-03-16', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
  NOW()),
-(201, 9, 'sv-wait-201-nv009', '2026-03-01', '2026-03-17', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
+(201, 9, 'sv-wait-201-nv009', '2026-03-01', '2026-03-17', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
  NOW()),
-(201, 10, 'sv-wait-201-nv010', '2026-03-01', '2026-03-18', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
+(201, 10, 'sv-wait-201-nv010', '2026-03-01', '2026-03-18', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
  NOW()),
-(201, 12, 'sv-wait-201-nv012', '2026-03-01', '2026-03-19', NULL, 'PENDING', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
+(201, 12, 'sv-wait-201-nv012', '2026-03-01', '2026-03-19', NULL, 'PENDING_REVIEW', 'Chờ SV duyệt', 'tl_phay01', 0, NOW(),
  NOW());
 
 
@@ -126,7 +126,7 @@ VALUES
 (200, 1, 3, '2026-03-07', '2026-03-07', 'COMPLETED', TRUE, 'Mar - NV001 pass', 'tl_tien01', 0, NOW(), NOW()),
 (200, 6, 4, '2026-03-12', '2026-03-12', 'PENDING_REVIEW', TRUE, 'Mar - NV006 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
 (200, 2, 1, '2026-03-18', '2026-03-18', 'PENDING_REVIEW', TRUE, 'Mar - NV002 chờ SV ký', 'tl_tien01', 0, NOW(), NOW()),
-(200, 3, 2, '2026-03-25', NULL, 'PENDING', NULL, 'Mar - NV003 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
+(200, 3, 2, '2026-03-25', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV003 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║ Result 210 (Bơm Chìm, team 1, line 6) — 10 result details          ║
@@ -150,7 +150,7 @@ VALUES (210, 1, 31, '2026-01-15', '2026-01-15', 'COMPLETED', TRUE, 'Jan - NV001 
         NOW()),
        (210, 4, 33, '2026-03-20', '2026-03-20', 'PENDING_REVIEW', TRUE, 'Mar - NV004 chờ SV ký', 'tl_tien01', 0, NOW(),
         NOW()),
-       (210, 6, 31, '2026-03-25', NULL, 'PENDING', NULL, 'Mar - NV006 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
+       (210, 6, 31, '2026-03-25', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV006 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║ Result 211 (Van V-Series, team 1, line 7) — 8 result details        ║
@@ -169,8 +169,8 @@ VALUES (211, 1, 34, '2026-01-10', '2026-01-10', 'COMPLETED', TRUE, 'Jan - NV001 
         NOW()),
        (211, 2, 36, '2026-03-12', '2026-03-12', 'PENDING_REVIEW', TRUE, 'Mar - NV002 chờ SV ký', 'tl_tien01', 0, NOW(),
         NOW()),
-       (211, 4, 34, '2026-03-18', NULL, 'PENDING', NULL, 'Mar - NV004 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW()),
-       (211, 6, 35, '2026-03-22', NULL, 'PENDING', NULL, 'Mar - NV006 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
+       (211, 4, 34, '2026-03-18', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV004 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW()),
+       (211, 6, 35, '2026-03-22', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV006 chưa huấn luyện', 'tl_tien01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
 -- ║ Result 201 (Tổ Phay, team 2, line 2) — 20 result details           ║
@@ -203,7 +203,7 @@ VALUES
 (201, 8, 7, '2026-03-03', '2026-03-03', 'COMPLETED', TRUE, 'Mar - NV008 pass', 'tl_phay01', 0, NOW(), NOW()),
 (201, 9, 8, '2026-03-10', '2026-03-10', 'PENDING_REVIEW', TRUE, 'Mar - NV009 chờ SV ký', 'tl_phay01', 0, NOW(), NOW()),
 (201, 10, 9, '2026-03-15', '2026-03-15', 'REJECTED', FALSE, 'Mar - NV010 SV từ chối', 'tl_phay01', 0, NOW(), NOW()),
-(201, 12, 10, '2026-03-20', NULL, 'PENDING', NULL, 'Mar - NV012 chưa huấn luyện', 'tl_phay01', 0, NOW(), NOW());
+(201, 12, 10, '2026-03-20', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV012 chưa huấn luyện', 'tl_phay01', 0, NOW(), NOW());
 
 
 -- ============================================================================
@@ -481,7 +481,7 @@ VALUES
 (300, 14, NULL, '2026-03-10', '2026-03-10', 'COMPLETED', TRUE, 'Mar - NV014 pass', 'tl_hanlap01', 0, NOW(), NOW()),
 (300, 15, NULL, '2026-03-15', '2026-03-15', 'COMPLETED', TRUE, 'Mar - NV015 pass lần 2', 'tl_hanlap01', 0, NOW(),
  NOW()),
-(300, 16, NULL, '2026-03-20', NULL, 'PENDING', NULL, 'Mar - NV016 chưa HL', 'tl_hanlap01', 0, NOW(), NOW()),
+(300, 16, NULL, '2026-03-20', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV016 chưa HL', 'tl_hanlap01', 0, NOW(), NOW()),
 
 -- Result 301 (Lắp Bơm, line 5) — 8 details
 (301, 17, NULL, '2026-02-03', '2026-02-03', 'COMPLETED', TRUE, 'Feb - NV017 pass Lắp BCT', 'tl_laprap01', 0, NOW(),
@@ -494,7 +494,7 @@ VALUES
 (301, 18, NULL, '2026-03-08', '2026-03-08', 'COMPLETED', TRUE, 'Mar - NV018 pass lần 2', 'tl_laprap01', 0, NOW(),
  NOW()),
 (301, 19, NULL, '2026-03-15', '2026-03-15', 'COMPLETED', FALSE, 'Mar - NV019 fail', 'tl_laprap01', 0, NOW(), NOW()),
-(301, 20, NULL, '2026-03-22', NULL, 'PENDING', NULL, 'Mar - NV020 chưa HL', 'tl_laprap01', 0, NOW(), NOW()),
+(301, 20, NULL, '2026-03-22', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV020 chưa HL', 'tl_laprap01', 0, NOW(), NOW()),
 
 -- Result 302 (Lắp ĐC, line 4) — 8 details
 (302, 22, NULL, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Feb - NV022 pass Lắp Piston', 'tl_dongco01', 0, NOW(),
@@ -508,7 +508,7 @@ VALUES
 (302, 23, NULL, '2026-03-10', '2026-03-10', 'COMPLETED', TRUE, 'Mar - NV023 pass', 'tl_dongco01', 0, NOW(), NOW()),
 (302, 24, NULL, '2026-03-18', '2026-03-18', 'COMPLETED', FALSE, 'Mar - NV024 fail lần 2', 'tl_dongco01', 0, NOW(),
  NOW()),
-(302, 26, NULL, '2026-03-22', NULL, 'PENDING', NULL, 'Mar - NV026 chưa HL', 'tl_dongco01', 0, NOW(), NOW()),
+(302, 26, NULL, '2026-03-22', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV026 chưa HL', 'tl_dongco01', 0, NOW(), NOW()),
 
 -- Result 303 (Hàn W200, line 9) — 6 details
 (303, 13, 37, '2026-02-10', '2026-02-10', 'COMPLETED', TRUE, 'Feb - NV013 pass Hàn W200', 'tl_hanlap01', 0, NOW(),
@@ -519,7 +519,7 @@ VALUES
 (303, 16, 38, '2026-03-12', '2026-03-12', 'COMPLETED', FALSE, 'Mar - NV016 fail TIG W200', 'tl_hanlap01', 0, NOW(),
  NOW()),
 (303, 13, 37, '2026-03-18', '2026-03-18', 'COMPLETED', TRUE, 'Mar - NV013 pass lần 2', 'tl_hanlap01', 0, NOW(), NOW()),
-(303, 14, 38, '2026-03-25', NULL, 'PENDING', NULL, 'Mar - NV014 chưa HL', 'tl_hanlap01', 0, NOW(), NOW());
+(303, 14, 38, '2026-03-25', NULL, 'PENDING_REVIEW', NULL, 'Mar - NV014 chưa HL', 'tl_hanlap01', 0, NOW(), NOW());
 
 
 -- ============================================================================

@@ -323,7 +323,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                             && detail.getTrainingPlanDetail().getActualDate() == null) {
                         detail.getTrainingPlanDetail().setActualDate(today);
                         detail.getTrainingPlanDetail().setStatus(
-                                com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.DONE);
+                                com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED);
                     }
                 }
 
@@ -360,9 +360,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                        .getStatus() != com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
-                            com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus.MISS);
+                            com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
             }
         }

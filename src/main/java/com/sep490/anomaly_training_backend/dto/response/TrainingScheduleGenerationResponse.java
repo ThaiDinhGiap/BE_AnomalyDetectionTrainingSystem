@@ -1,7 +1,7 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,7 +53,7 @@ public class TrainingScheduleGenerationResponse {
     /**
      * Count by status
      */
-    private Map<TrainingPlanDetailStatus, Long> countByStatus;
+    private Map<ReportStatus, Long> countByStatus;
 
     /**
      * Generation timestamp

@@ -2,7 +2,7 @@ package com.sep490.anomaly_training_backend.service.priority.impl;
 
 import com.sep490.anomaly_training_backend.dto.ScheduleSummary;
 import com.sep490.anomaly_training_backend.enums.FactoryDayType;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Employee;
@@ -230,7 +230,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                                 .employee(employee)
                                 .targetMonth(workDate.withDayOfMonth(1))
                                 .plannedDate(workDate)
-                                .status(TrainingPlanDetailStatus.PENDING)
+                                .status(ReportStatus.PENDING_REVIEW)
                                 .batchId(generateBatchId(trainingPlan, workDate))
                                 .note(buildDetailNote(priority, skill))
                                 .build();
@@ -341,7 +341,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                         Collectors.counting()
                 ));
 
-        Map<TrainingPlanDetailStatus, Long> countByStatus = details.stream()
+        Map<ReportStatus, Long> countByStatus = details.stream()
                 .collect(Collectors.groupingBy(
                         TrainingPlanDetail::getStatus,
                         Collectors.counting()

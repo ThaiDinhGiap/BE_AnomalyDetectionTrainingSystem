@@ -835,7 +835,7 @@ CREATE TABLE training_plan_details
     target_month     DATE COMMENT 'Tháng thực hiện',
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
-    status           ENUM ('PENDING', 'DONE', 'MISS') DEFAULT 'PENDING',
+    status           VARCHAR(30) DEFAULT 'PENDING_REVIEW',
     note             TEXT,
 
     reject_feedback  JSON,
@@ -995,7 +995,7 @@ CREATE TABLE training_result_details
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
-    status                  VARCHAR(30)      DEFAULT 'PENDING',
+    status                  VARCHAR(30)      DEFAULT 'PENDING_REVIEW',
 
     -- Kết quả
     detection_time          INT COMMENT 'Thời gian phát hiện (giây)',

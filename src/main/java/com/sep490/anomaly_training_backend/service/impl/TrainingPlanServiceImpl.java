@@ -22,7 +22,7 @@ import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
@@ -373,7 +373,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, action.getNote(), schedule);
-                detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING_REVIEW);
                 detail.setBatchId(batchId);
                 plan.getDetails().add(detail);
             }
@@ -413,7 +413,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, note, schedule);
-                detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING_REVIEW);
                 detail.setBatchId(action.getBatchId());
                 plan.getDetails().add(detail);
             }
@@ -433,7 +433,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
-        if (isApproved && detail.getStatus() == TrainingPlanDetailStatus.DONE) {
+        if (isApproved && detail.getStatus() == ReportStatus.COMPLETED) {
             throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
         }
 
@@ -481,10 +481,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         if (isApproved) {
-            if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
+            if (detail.getStatus() == ReportStatus.COMPLETED) {
                 throw new AppException(ErrorCode.CANNOT_DELETE_COMPLETED_DETAIL);
             }
-            detail.setStatus(TrainingPlanDetailStatus.MISS);
+            detail.setStatus(ReportStatus.MISSED);
             detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
         } else {
             trainingResultDetailRepository.deleteByTrainingPlanDetailId(detail.getId());
@@ -510,7 +510,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             for (ScheduleRequest schedule : request.getSchedules()) {
                 if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                     TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
-                    detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                    detail.setStatus(ReportStatus.PENDING_REVIEW);
                     detail.setBatchId(batchId);
                     plan.getDetails().add(detail);
                     addedDetails.add(detail);
@@ -647,7 +647,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .findFirst()
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
 
-        if (detailToRemove.getStatus() != TrainingPlanDetailStatus.PENDING) {
+        if (detailToRemove.getStatus() != ReportStatus.PENDING_REVIEW) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 

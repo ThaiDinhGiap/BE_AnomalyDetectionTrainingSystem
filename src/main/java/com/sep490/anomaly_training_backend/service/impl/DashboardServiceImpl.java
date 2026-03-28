@@ -30,7 +30,7 @@ import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskTo
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.Employee;
@@ -148,7 +148,7 @@ public class DashboardServiceImpl implements DashboardService {
                             !d.getPlannedDate().isBefore(monthStart) &&
                             !d.getPlannedDate().isAfter(monthEnd)) {
                         planTotal++;
-                        if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                        if (d.getStatus() == ReportStatus.COMPLETED) {
                             planDone++;
                         }
                     }
@@ -192,7 +192,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
                 if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
-                        && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                        && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                     todayMiss++;
                 }
             }
@@ -430,7 +430,7 @@ public class DashboardServiceImpl implements DashboardService {
             Long resultId = planId != null ? resultIdByPlanId.get(planId) : null; // Lấy resultId từ Map
 
             // Today's tasks
-            if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+            if (today.equals(d.getPlannedDate()) && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                 todayList.add(TrainingTaskToday.builder()
                         .id(d.getId())
                         .planId(planId)
@@ -444,7 +444,7 @@ public class DashboardServiceImpl implements DashboardService {
 
             // Missed (past & still PENDING)
             if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
-                    && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                    && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                 missedList.add(TrainingTaskMissed.builder()
                         .id(d.getId())
                         .planId(planId)
@@ -620,7 +620,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Missed: planned on this date but not done (only count if date has passed)
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }
@@ -934,7 +934,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
             totalPlanned += details.size();
             for (TrainingPlanDetail d : details) {
-                if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                if (d.getStatus() == ReportStatus.COMPLETED) {
                     totalParticipated++;
                 }
             }
@@ -1036,7 +1036,7 @@ public class DashboardServiceImpl implements DashboardService {
                             && !d.getPlannedDate().isBefore(monthStart)
                             && !d.getPlannedDate().isAfter(monthEnd)) {
                         planTotal++;
-                        if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                        if (d.getStatus() == ReportStatus.COMPLETED) {
                             planDone++;
                         }
                     }
@@ -1408,14 +1408,14 @@ public class DashboardServiceImpl implements DashboardService {
 
                 // In current week range
                 if (!d.getPlannedDate().isBefore(weekStart) && !d.getPlannedDate().isAfter(weekEnd)) {
-                    if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                    if (d.getStatus() == ReportStatus.COMPLETED) {
                         completed++;
                     } else {
                         scheduled++;
                     }
                 }
                 // Overdue: pending and planned date before today
-                if (d.getStatus() == TrainingPlanDetailStatus.PENDING
+                if (d.getStatus() == ReportStatus.PENDING_REVIEW
                         && d.getPlannedDate().isBefore(today)) {
                     overdue++;
                 }
@@ -1666,7 +1666,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Missed: planned on this date but not done (only count if date has passed)
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }
@@ -2294,13 +2294,13 @@ public class DashboardServiceImpl implements DashboardService {
             cumulativePlan += (int) plannedOnDate;
 
             long doneOnDate = allDetails.stream()
-                    .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() == TrainingPlanDetailStatus.DONE)
+                    .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() == ReportStatus.COMPLETED)
                     .count();
             cumulativeActual += (int) doneOnDate;
 
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }
