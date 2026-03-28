@@ -4,12 +4,14 @@ import com.sep490.anomaly_training_backend.dto.request.ProductLineImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
+import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -22,7 +24,6 @@ import com.sep490.anomaly_training_backend.model.Process;
 import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.Role;
 import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.User;
@@ -49,8 +50,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -197,13 +202,134 @@ public class ProductLineServiceImpl implements ProductLineService {
 
     @Override
     public List<WorkingPosition> getWorkingPosition(User user) {
-        Role role = user.getRoles().stream().findFirst().orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-        if (("ROLE_TEAM_LEADER").equals(role.getRoleCode())) {
+        if (user.hasPermission("team.manage")) {
             return positionTeamLead(user);
-        } else if (("ROLE_SUPERVISOR").equals(role.getRoleCode())) {
+        } else if ((user.hasPermission("group.manage"))) {
             return positionSuperVisor(user);
+        } else if ((user.hasPermission("group.admin"))) {
+            return positionManager(user);
         }
-        return positionManager(user);
+
+        return null;
+    }
+
+    // ==================== CASCADING ORG HIERARCHY ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrgDropdownItem> getOrgHierarchy(User user, OrgHierarchyLevel level, Long sectionId, Long groupId) {
+        return switch (level) {
+            case SECTION -> getSectionsForUser(user);
+            case GROUP -> getGroupsForUser(user, sectionId);
+            case TEAM -> getTeamsForUser(user, groupId);
+            case PRODUCT_LINE -> getProductLinesForUser(user, groupId);
+        };
+    }
+
+    private List<OrgDropdownItem> getSectionsForUser(User user) {
+        Set<Section> sections = new LinkedHashSet<>();
+
+        if (user.hasPermission("group.admin")) {
+            sections.addAll(sectionRepository.findByManagerId(user.getId()));
+        }
+        if (user.hasPermission("group.manage")) {
+            groupRepository.findBySupervisorId(user.getId()).stream()
+                    .map(Group::getSection)
+                    .filter(Objects::nonNull)
+                    .forEach(sections::add);
+        }
+        if (user.hasPermission("team.manage")) {
+            teamRepository.findAllByTeamLeaderId(user.getId()).stream()
+                    .map(Team::getGroup)
+                    .filter(Objects::nonNull)
+                    .map(Group::getSection)
+                    .filter(Objects::nonNull)
+                    .forEach(sections::add);
+        }
+
+        return sections.stream()
+                .map(s ->
+                        OrgDropdownItem.builder()
+                                .id(s.getId())
+                                .name(s.getName())
+                                .code(s.getCode())
+                                .fullName(s.getManager().getFullName())
+                                .employeeCode(s.getManager().getEmployeeCode())
+                                .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<OrgDropdownItem> getGroupsForUser(User user, Long sectionId) {
+        if (sectionId == null) return List.of();
+
+        List<Group> allGroups = groupRepository.findBySectionIdAndDeleteFlagFalse(sectionId);
+
+        Set<Long> allowedGroupIds = new LinkedHashSet<>();
+
+        if (user.hasPermission("group.admin")) {
+            sectionRepository.findByManagerId(user.getId()).stream()
+                    .filter(s -> s.getId().equals(sectionId))
+                    .findFirst()
+                    .ifPresent(s -> allGroups.forEach(g -> allowedGroupIds.add(g.getId())));
+        }
+        if (user.hasPermission("group.manage")) {
+            groupRepository.findBySupervisorId(user.getId()).stream()
+                    .filter(g -> g.getSection() != null && g.getSection().getId().equals(sectionId))
+                    .forEach(g -> allowedGroupIds.add(g.getId()));
+        }
+        if (user.hasPermission("team.manage")) {
+            teamRepository.findAllByTeamLeaderId(user.getId()).stream()
+                    .map(Team::getGroup)
+                    .filter(g -> g != null && g.getSection() != null && g.getSection().getId().equals(sectionId))
+                    .forEach(g -> allowedGroupIds.add(g.getId()));
+        }
+
+        return allGroups.stream()
+                .filter(g -> allowedGroupIds.contains(g.getId()))
+                .map(g ->
+                        OrgDropdownItem.builder()
+                                .id(g.getId())
+                                .name(g.getName())
+                                .code(g.getCode())
+                                .fullName(g.getSupervisor().getFullName())
+                                .employeeCode(g.getSupervisor().getEmployeeCode())
+                                .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<OrgDropdownItem> getTeamsForUser(User user, Long groupId) {
+        if (groupId == null) return List.of();
+
+        List<Team> allTeams = teamRepository.findByGroupId(groupId);
+
+        Set<Long> allowedTeamIds = new LinkedHashSet<>();
+
+        if (user.hasPermission("group.admin") || user.hasPermission("group.manage")) {
+            allTeams.forEach(t -> allowedTeamIds.add(t.getId()));
+        }
+        if (user.hasPermission("team.manage")) {
+            teamRepository.findAllByTeamLeaderId(user.getId()).stream()
+                    .filter(t -> t.getGroup() != null && t.getGroup().getId().equals(groupId))
+                    .forEach(t -> allowedTeamIds.add(t.getId()));
+        }
+
+        return allTeams.stream()
+                .filter(t -> allowedTeamIds.contains(t.getId()))
+                .map(t -> OrgDropdownItem.builder().id(t.getId()).name(t.getName()).code(t.getCode()).build())
+                .collect(Collectors.toList());
+    }
+
+    private List<OrgDropdownItem> getProductLinesForUser(User user, Long groupId) {
+        if (groupId == null) return List.of();
+
+        return productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId).stream()
+                .map(pl ->
+                        OrgDropdownItem.builder()
+                                .id(pl.getId())
+                                .name(pl.getName())
+                                .code(pl.getCode())
+                                .build())
+                .collect(Collectors.toList());
     }
 
     private List<WorkingPosition> positionTeamLead(User user) {
@@ -216,7 +342,6 @@ public class ProductLineServiceImpl implements ProductLineService {
                 WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
-                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
                 workingPosition.setSupervisorId(group.getSupervisor().getId());
@@ -248,7 +373,6 @@ public class ProductLineServiceImpl implements ProductLineService {
                 WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
-                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setGroupId(group.getId());
                 workingPosition.setGroupName(group.getName());
                 workingPosition.setSupervisorId(group.getSupervisor().getId());
@@ -274,7 +398,6 @@ public class ProductLineServiceImpl implements ProductLineService {
                 WorkingPosition workingPosition = new WorkingPosition();
                 workingPosition.setProductLineId(pl.getId());
                 workingPosition.setProductLineName(pl.getName());
-                workingPosition.setProcesses(pl.getProcesses().stream().map(processMapper::toDTO).toList());
                 workingPosition.setSectionId(section.getId());
                 workingPosition.setSectionName(section.getName());
                 workingPosition.setManagerId(section.getManager().getId());
@@ -358,7 +481,7 @@ public class ProductLineServiceImpl implements ProductLineService {
      * Find existing Process by code within ProductLine or create new one
      */
     private Process findOrCreateProcess(ProductLine productLine, ProductLineImportDto dto,
-            List<ImportErrorItem> errors) {
+                                        List<ImportErrorItem> errors) {
         try {
             // Find existing process by ProductLine + Code
             return processRepository.findByProductLineCodeAndCode(productLine.getCode(), dto.getProcessCode())

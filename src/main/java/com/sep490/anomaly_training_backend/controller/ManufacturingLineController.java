@@ -11,7 +11,9 @@ import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
+import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
+import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
@@ -168,6 +170,22 @@ public class ManufacturingLineController {
     public ResponseEntity<ApiResponse<List<WorkingPosition>>> getWorkingPosition(@AuthenticationPrincipal User user) {
         List<WorkingPosition> result = productLineService.getWorkingPosition(user);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    @GetMapping("/user/org-hierarchy")
+    @PreAuthorize("hasAuthority('line_structure.view')")
+    @Operation(
+            summary = "Cascading org dropdown",
+            description = "Load dropdown items theo level. " +
+                    "SECTION → GROUP(sectionId) → TEAM(groupId) → PRODUCT_LINE(groupId)"
+    )
+    public ResponseEntity<ApiResponse<List<OrgDropdownItem>>> getOrgHierarchy(
+            @AuthenticationPrincipal User user,
+            @RequestParam OrgHierarchyLevel level,
+            @RequestParam(required = false) Long sectionId,
+            @RequestParam(required = false) Long groupId) {
+        List<OrgDropdownItem> items = productLineService.getOrgHierarchy(user, level, sectionId, groupId);
+        return ResponseEntity.ok(ApiResponse.success(items));
     }
 
     @GetMapping("/product-lines/detail")

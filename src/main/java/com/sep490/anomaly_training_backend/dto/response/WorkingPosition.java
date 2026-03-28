@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -30,5 +28,4 @@ public class WorkingPosition {
     String finalInspectionCode;
     Long productLineId;
     String productLineName;
-    List<ProcessResponse> processes;
 }

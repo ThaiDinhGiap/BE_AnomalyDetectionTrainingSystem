@@ -412,7 +412,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
 
-        List<TrainingResult> results;
+        List<TrainingResult> results = new ArrayList<>();
 
         if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
             List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
@@ -428,14 +428,14 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         } else {
             List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISING);
 
-            if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (currentUser.hasPermission("section.manage")) {
                 if (lineId != null) {
                     results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId,
                             excludedStatuses);
                 } else {
                     results = trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses);
                 }
-            } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            } else if (currentUser.hasPermission("group.manage")) {
                 List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository
                         .findBySupervisorId(currentUser.getId());
                 if (groups.isEmpty()) {
@@ -449,7 +449,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 } else {
                     results = trainingResultRepository.findAllByGroupIds(groupIds);
                 }
-            } else {
+            } else if (currentUser.hasPermission("team.manage")) {
                 if (lineId != null) {
                     results = trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId);
                 } else {
