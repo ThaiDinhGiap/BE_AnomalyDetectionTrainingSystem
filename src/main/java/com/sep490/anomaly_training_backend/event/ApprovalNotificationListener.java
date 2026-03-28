@@ -174,8 +174,8 @@ public class ApprovalNotificationListener {
         return switch (type) {
             case TRAINING_PLAN -> "Kế hoạch huấn luyện";
             case TRAINING_RESULT -> "Kết quả huấn luyện";
-            case DEFECT_PROPOSAL -> "Báo cáo lỗi";
-            case TRAINING_SAMPLE_PROPOSAL -> "Chủ đề đào tạo";
+            case DEFECT_PROPOSAL -> "Đề xuất chỉnh sửa lỗi quá khứ";
+            case TRAINING_SAMPLE_PROPOSAL -> "Đề xuất chỉnh sửa mẫu huấn luyện";
             case TRAINING_SAMPLE_REVIEW -> "Kiểm tra hàng năm";
         };
     }

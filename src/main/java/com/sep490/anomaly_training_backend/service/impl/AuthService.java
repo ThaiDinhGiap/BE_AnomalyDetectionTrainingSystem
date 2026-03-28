@@ -37,6 +37,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -217,16 +218,16 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         if (savedUser.getEmail() != null && !savedUser.getEmail().trim().isEmpty()) {
-            String subject = "Your Anomaly Training System Account Information";
-            String body = "Hello " + savedUser.getFullName() + ",\n\n"
-                    + "Your account on the system has been created successfully.\n"
-                    + "Here is your login information:\n"
-                    + "- Username: " + savedUser.getUsername() + "\n"
-                    + "- Password: " + rawPassword + "\n\n"
-                    + "Please log in and change your password immediately for security.\n\n"
-                    + "Best regards,\nThe System Administration Team.";
             try {
-                mailDispatcher.send(savedUser.getEmail(), subject, body);
+                mailDispatcher.sendWithFile(
+                        savedUser.getEmail(),
+                        "Thông tin tài khoản Anomaly Training System",
+                        "email/welcome-account",
+                        Map.of(
+                                "fullName", savedUser.getFullName(),
+                                "username", savedUser.getUsername(),
+                                "password", rawPassword
+                        ));
             } catch (Exception e) {
                 log.error("Failed to send welcome email to {}", savedUser.getEmail(), e);
             }
@@ -293,15 +294,16 @@ public class AuthService {
         // Revoke tokens
         refreshTokenRepository.revokeAllByUser(user);
 
-        String subject = "Your Password Has Been Reset";
-        String body = "Hello " + user.getFullName() + ",\n\n"
-                + "Your password has been successfully reset. Here is your new temporary password:\n"
-                + "- Username: " + user.getUsername() + "\n"
-                + "- Password: " + rawPassword + "\n\n"
-                + "Please log in and change your password immediately for security.\n\n"
-                + "Best regards,\nThe System Administration Team.";
         try {
-            mailDispatcher.send(user.getEmail(), subject, body);
+            mailDispatcher.sendWithFile(
+                    user.getEmail(),
+                    "Mật khẩu của bạn đã được đặt lại",
+                    "email/password-reset",
+                    Map.of(
+                            "fullName", user.getFullName(),
+                            "username", user.getUsername(),
+                            "password", rawPassword
+                    ));
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}", user.getEmail(), e);
         }

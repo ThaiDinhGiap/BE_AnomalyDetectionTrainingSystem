@@ -216,7 +216,7 @@ public class NotificationServiceImpl implements NotificationService {
         Map<String, Object> baseVars = buildEntityVars(
                 ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL,
                 proposal.getFormCode(),
-                "Chủ đề đào tạo – " + proposal.getFormCode(),
+                "Đề xuất chỉnh sửa danh sách mẫu huấn luyện – " + proposal.getFormCode(),
                 proposal.getProductLine() != null ? proposal.getProductLine().getName() : "—",
                 String.valueOf(proposal.getStatus()),
                 resolveSubmittedAt(ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL, proposal.getId())
@@ -225,7 +225,7 @@ public class NotificationServiceImpl implements NotificationService {
         dispatchNudgeEmails(
                 resolveApprovers(String.valueOf(proposal.getStatus())),
                 sender, baseVars,
-                "[Nhắc ký] Chủ đề đào tạo: " + proposal.getFormCode(),
+                "[Nhắc ký] Đề xuất chỉnh sửa danh sách mẫu huấn luyện: " + proposal.getFormCode(),
                 ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL, proposal.getId()
         );
     }
@@ -236,7 +236,7 @@ public class NotificationServiceImpl implements NotificationService {
                                      Map<String, Object> baseVars, String subject,
                                      ApprovalEntityType entityType, Long entityId) {
         if (approvers.isEmpty()) {
-            log.warn("[NudgeMail] Không tìm thấy approver cho {} id={}", entityType, entityId);
+            log.warn("[NudgeMail] Không tìm thấy người kiểm tra/xác nhận cho {} id={}", entityType, entityId);
             return;
         }
 
@@ -373,8 +373,8 @@ public class NotificationServiceImpl implements NotificationService {
         return switch (type) {
             case TRAINING_PLAN -> "Kế hoạch huấn luyện";
             case TRAINING_RESULT -> "Kết quả huấn luyện";
-            case DEFECT_PROPOSAL -> "Báo cáo lỗi";
-            case TRAINING_SAMPLE_PROPOSAL -> "Chủ đề đào tạo";
+            case DEFECT_PROPOSAL -> "Đề xuất chỉnh sửa danh sách lỗi quá khứ";
+            case TRAINING_SAMPLE_PROPOSAL -> "Đề xuất chỉnh sửa danh sách mẫu huấn luyện";
             case TRAINING_SAMPLE_REVIEW -> "Kiểm tra hàng năm";
         };
     }

@@ -5,6 +5,7 @@ import com.sep490.anomaly_training_backend.dto.request.RefreshTokenRequest;
 import com.sep490.anomaly_training_backend.dto.request.RegisterRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.AuthResponse;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -170,7 +171,7 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal User userDetails,
             @Valid @RequestBody com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
 
         log.info("Change password request for user: {}", userDetails.getUsername());
