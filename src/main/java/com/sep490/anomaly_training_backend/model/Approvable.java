@@ -26,4 +26,12 @@ public interface Approvable {
     String computeContentHash();
 
     void clearRejectFeedback();
+
+    /**
+     * Label hiển thị cho notification (title hoặc formCode).
+     * Entity cụ thể nên override để trả tên rõ ràng hơn.
+     */
+    default String getEntityLabel() {
+        return getEntityType().name() + "#" + getId();
+    }
 }

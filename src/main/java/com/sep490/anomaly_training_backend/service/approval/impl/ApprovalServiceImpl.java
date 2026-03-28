@@ -5,12 +5,13 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.UserRole;
+import com.sep490.anomaly_training_backend.event.ApprovalEvent;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Approvable;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.BaseEntity;
 import com.sep490.anomaly_training_backend.model.RejectReason;
 import com.sep490.anomaly_training_backend.model.RequiredAction;
 import com.sep490.anomaly_training_backend.model.Role;
@@ -25,6 +26,7 @@ import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final RejectReasonRepository rejectReasonRepo;
     private final RequiredActionRepository requiredActionRepo;
     private final ApprovalHandlerRegistry handlerRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -51,41 +54,45 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (entity == null) {
             return;
         }
-        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT ) {
-            if (entity.getStatus() != ReportStatus.ON_GOING) {
+        if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            if (entity.getStatus() != ReportStatus.ONGOING) {
                 throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Result can only be submitted when in ONGOING status");
             }
 
-            logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.ROLE_TEAM_LEADER, currentUser, null, null, null, request);
+            logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
             log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 
+            publishEvent(ApprovalAction.SUBMIT, entity, currentUser);
             return;
         }
 
-        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISE) && (entity.getStatus() != ReportStatus.PENDING)) {
+        if ((entity.getStatus() != ReportStatus.DRAFT) && (entity.getStatus() != ReportStatus.REVISING) && (entity.getStatus() != ReportStatus.PENDING_REVIEW)) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be submitted when in DRAFT/REVISE status");
         }
         entity.clearRejectFeedback();
         ApprovalFlowStep firstStep = getFirstStep(entity.getEntityType());
-        ReportStatus pendingStatus = mapRoleToPendingStatus(firstStep.getApproverRole());
-        entity.setStatus(pendingStatus);
+        entity.setStatus(firstStep.getPendingStatus());
 
-        logAction(entity, ApprovalAction.SUBMIT, 0, UserRole.ROLE_TEAM_LEADER, currentUser, null, null, null, request);
+        logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+        publishEvent(ApprovalAction.SUBMIT, entity, currentUser);
     }
 
     @Override
     @Transactional
     public void revise(Approvable entity, User currentUser, HttpServletRequest request) {
-        if (!isRejectedStatus(entity.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be revised when in a rejected status. Current status: " + entity.getStatus());
+        if (entity.getStatus() != ReportStatus.REJECTED) {
+            throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity can only be revised when in REJECTED status. Current status: " + entity.getStatus());
         }
 
         entity.setCurrentVersion(entity.getCurrentVersion() + 1);
-        entity.setStatus(ReportStatus.REVISE);
+        entity.setStatus(ReportStatus.REVISING);
 
-        logAction(entity, ApprovalAction.REVISE, -1, UserRole.ROLE_TEAM_LEADER, currentUser, null, null, null, request);
+        logAction(entity, ApprovalAction.REVISE, -1, "REVISE", currentUser, null, null, null, request);
         log.info("Revised {} id={} newVersion={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
+
+        publishEvent(ApprovalAction.REVISE, entity, currentUser);
     }
 
     @Override
@@ -94,21 +101,21 @@ public class ApprovalServiceImpl implements ApprovalService {
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
 
-        logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), null, null, request);
+        logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), null, null, request);
 
         if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
             entity.setCurrentVersion(entity.getCurrentVersion() + 1);
+            publishEvent(ApprovalAction.APPROVE, entity, currentUser);
             return;
         }
 
         ApprovalFlowStep nextStep = getNextStep(entity.getEntityType(), currentStep.getStepOrder());
 
         if (nextStep != null) {
-            ReportStatus nextPendingStatus = mapRoleToPendingStatus(nextStep.getApproverRole());
-            entity.setStatus(nextPendingStatus);
-            log.info("Approved {} id={} version={} by {} -> next status: {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), nextPendingStatus);
+            entity.setStatus(nextStep.getPendingStatus());
+            log.info("Approved {} id={} version={} by {} -> next status: {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), nextStep.getPendingStatus());
         } else {
-            entity.setStatus(ReportStatus.APPROVED);
+            entity.setStatus(ReportStatus.COMPLETED);
             try {
                 ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
                 handler.applyApproval(entity);
@@ -118,6 +125,8 @@ public class ApprovalServiceImpl implements ApprovalService {
 
             log.info("Final approval for {} id={} version={} by {}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
         }
+
+        publishEvent(ApprovalAction.APPROVE, entity, currentUser);
     }
 
     @Override
@@ -142,14 +151,17 @@ public class ApprovalServiceImpl implements ApprovalService {
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
 
-        logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getApproverRole(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
+        logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
 
         if (entity.getEntityType() == ApprovalEntityType.TRAINING_RESULT) {
+            publishEvent(ApprovalAction.REJECT, entity, currentUser);
             return;
         }
 
-        entity.setStatus(mapRoleToRejectedStatus(currentStep.getApproverRole()));
+        entity.setStatus(ReportStatus.REJECTED);
         log.info("Rejected {} id={} version={} by {} reasons={} requiredAction={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername(), req.getRejectReasonIds(), req.getRequiredActionId());
+
+        publishEvent(ApprovalAction.REJECT, entity, currentUser);
     }
 
     @Override
@@ -182,12 +194,9 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     private ApprovalFlowStep getCurrentStep(Approvable entity) {
         ReportStatus status = entity.getStatus();
-        if (!isWaitingStatus(status)) {
-            throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Entity is not in a pending approval status: " + status);
-        }
-        UserRole requiredRole = mapStatusToRole(status);
-        return flowStepRepo.findByEntityTypeAndApproverRoleAndIsActiveTrue(entity.getEntityType(), requiredRole)
-                .orElseThrow(() -> new AppException(ErrorCode.APPROVAL_STEP_NOT_FOUND));
+        return flowStepRepo.findByEntityTypeAndPendingStatusAndIsActiveTrue(entity.getEntityType(), status)
+                .orElseThrow(() -> new AppException(ErrorCode.APPROVAL_STEP_NOT_FOUND,
+                        "No approval step found for entity type " + entity.getEntityType() + " with status " + status));
     }
 
     private ApprovalFlowStep getNextStep(ApprovalEntityType entityType, int currentStepOrder) {
@@ -199,26 +208,26 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     private void validateApprover(Approvable entity, User currentUser, ApprovalFlowStep step) {
-        if (!currentUser.hasRole(step.getApproverRole().name())) {
-            throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION, "Insufficient role to approve at this step. Required role: " + step.getApproverRole());
+        if (!currentUser.hasPermission(step.getRequiredPermission())) {
+            throw new AppException(ErrorCode.INSUFFICIENT_PERMISSION, "Insufficient permission to approve at this step. Required: " + step.getRequiredPermission());
         }
-        if (!routeService.isValidApprover(entity.getGroupId(), step.getApproverRole(), currentUser.getId())) {
+        if (!routeService.isValidApprover(entity.getGroupId(), step.getRequiredPermission(), currentUser.getId())) {
             throw new AppException(ErrorCode.NOT_DESIGNATED_APPROVER);
         }
     }
 
-    private void logAction(Approvable entity, ApprovalAction action, int stepOrder, UserRole requiredRole, User performer, String comment, Set<RejectReason> rejectReasons, Set<RequiredAction> requiredActions, HttpServletRequest request) {
+    private void logAction(Approvable entity, ApprovalAction action, int stepOrder, String requiredPermission, User performer, String comment, Set<RejectReason> rejectReasons, Set<RequiredAction> requiredActions, HttpServletRequest request) {
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(entity.getEntityType())
                 .entityId(entity.getId())
                 .entityVersion(entity.getCurrentVersion())
                 .stepOrder(stepOrder)
-                .requiredRole(requiredRole)
+                .requiredPermission(requiredPermission)
                 .action(action)
                 .performedByUser(performer)
                 .performedByUsername(performer.getUsername())
                 .performedByFullName(performer.getFullName())
-                .performedByRole(UserRole.valueOf(performer.getRoles().stream().findFirst().map(Role::getRoleCode).orElse("UNKNOWN")))
+                .performedByRole(performer.getRoles().stream().findFirst().map(Role::getRoleCode).orElse("UNKNOWN"))
                 .comment(comment)
                 .performedAt(Instant.now())
                 .ipAddress(getClientIp(request))
@@ -230,42 +239,38 @@ public class ApprovalServiceImpl implements ApprovalService {
         actionRepo.save(logEntry);
     }
 
-    private ReportStatus mapRoleToPendingStatus(UserRole role) {
-        return switch (role) {
-            case ROLE_SUPERVISOR -> ReportStatus.WAITING_SV;
-            case ROLE_MANAGER -> ReportStatus.WAITING_MANAGER;
-            default -> throw new AppException(ErrorCode.UNSUPPORTED_APPROVER_ROLE);
-        };
-    }
-
-    private ReportStatus mapRoleToRejectedStatus(UserRole role) {
-        return switch (role) {
-            case ROLE_SUPERVISOR -> ReportStatus.REJECTED_BY_SV;
-            case ROLE_MANAGER -> ReportStatus.REJECTED_BY_MANAGER;
-            default -> throw new AppException(ErrorCode.UNSUPPORTED_APPROVER_ROLE);
-        };
-    }
-
-    private UserRole mapStatusToRole(ReportStatus status) {
-        return switch (status) {
-            case WAITING_SV -> UserRole.ROLE_SUPERVISOR;
-            case WAITING_MANAGER -> UserRole.ROLE_MANAGER;
-            default ->
-                    throw new AppException(ErrorCode.INVALID_ENTITY_STATUS, "Invalid status for approve/reject operation: " + status);
-        };
-    }
-
-    private boolean isWaitingStatus(ReportStatus status) {
-        return status == ReportStatus.WAITING_SV || status == ReportStatus.WAITING_MANAGER;
-    }
-
-    private boolean isRejectedStatus(ReportStatus status) {
-        return status == ReportStatus.REJECTED_BY_SV || status == ReportStatus.REJECTED_BY_MANAGER;
-    }
-
     private String getClientIp(HttpServletRequest request) {
         if (request == null) return null;
         String ip = request.getHeader("X-Forwarded-For");
         return ip != null ? ip.split(",")[0].trim() : request.getRemoteAddr();
+    }
+
+    /**
+     * Publish ApprovalEvent cho notification listener xử lý async.
+     */
+    private void publishEvent(ApprovalAction action, Approvable entity, User performedBy) {
+        try {
+            String createdByUsername = (entity instanceof BaseEntity base)
+                    ? base.getCreatedBy()
+                    : null;
+
+            log.info("[ApprovalEvent] Publishing {} for {} id={} performedBy={}",
+                    action, entity.getEntityType(), entity.getId(), performedBy.getUsername());
+            eventPublisher.publishEvent(new ApprovalEvent(
+                    this,
+                    action,
+                    entity.getEntityType(),
+                    entity.getId(),
+                    entity.getGroupId(),
+                    entity.getEntityLabel(),
+                    performedBy,
+                    entity.getStatus(),
+                    createdByUsername
+            ));
+        } catch (Exception e) {
+            // Không để event publishing lỗi ảnh hưởng approval flow
+            log.error("[ApprovalEvent] Failed to publish {} for {} id={}: {}",
+                    action, entity.getEntityType(), entity.getId(), e.getMessage());
+        }
     }
 }

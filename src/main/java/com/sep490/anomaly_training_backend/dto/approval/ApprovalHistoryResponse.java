@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.approval;
 
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
-import com.sep490.anomaly_training_backend.enums.UserRole;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,11 +14,11 @@ public class ApprovalHistoryResponse {
     private Integer entityVersion;
     private Integer stepOrder;
     private String stepName;
-    private UserRole requiredRole;
+    private String requiredPermission;
     private ApprovalAction action;
     private String performedByUsername;
     private String performedByFullName;
-    private UserRole performedByRole;
+    private String performedByRole;
     private String comment;
     private Set<RejectReasonResponse> rejectReasons;
     private Set<RequiredActionResponse> requiredActions;

@@ -51,7 +51,7 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "full_name", nullable = false, length = 100)
     String fullName;
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(length = 100, unique = true)
     String email;
 
     @Column(name = "employee_code", nullable = false, unique = true, length = 20)
@@ -68,6 +68,10 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "is_active")
     @Builder.Default
     Boolean isActive = true;
+
+    @Column(name = "require_password_change", nullable = false)
+    @Builder.Default
+    Boolean requirePasswordChange = false;
 
     @ManyToMany
     @JoinTable(

@@ -111,7 +111,7 @@ public class TrainingResultDetail extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ReportStatus status = ReportStatus.PENDING;
+    ReportStatus status = ReportStatus.PENDING_REVIEW;
 
     @Column(name = "detection_time")
     Integer detectionTime;

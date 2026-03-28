@@ -17,7 +17,7 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
             SELECT d
             FROM DefectProposal d
             WHERE d.productLine.id = :productLineId
-              AND d.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISE)
+              AND d.status NOT IN (com.sep490.anomaly_training_backend.enums.ReportStatus.DRAFT, com.sep490.anomaly_training_backend.enums.ReportStatus.REVISING)
               AND d.deleteFlag = false ORDER BY d.createdAt DESC
             """)
     List<DefectProposal> findByProductLineForSupervisorAndManagerOrderByCreatedAtDesc(@Param("productLineId") Long productLineId);

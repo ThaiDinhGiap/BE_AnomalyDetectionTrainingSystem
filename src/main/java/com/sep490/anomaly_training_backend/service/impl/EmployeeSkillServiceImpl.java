@@ -228,6 +228,14 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         }
     }
 
+    @Override
+    public List<EmployeeSkillResponse> getEmployeeSkillsByEmployeeId(Long employeeId) {
+        return employeeSkillRepository.findByEmployeeIdAndDeleteFlagFalse(employeeId)
+                .stream()
+                .map(employeeSkillMapper::toDto)
+                .toList();
+    }
+
     private ImportSkillMatrixResult parseExcelFileWithHierarchy(
             MultipartFile file,
             List<ImportErrorItem> errors) {

@@ -22,7 +22,7 @@ import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
@@ -185,9 +185,8 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     @Override
     public List<TrainingPlanGenerationResponse> getRejectedPlans(User currentUser) {
         List<ReportStatus> rejectedStatuses = List.of(
-                ReportStatus.REVISE,
-                ReportStatus.REJECTED_BY_SV,
-                ReportStatus.REJECTED_BY_MANAGER);
+                ReportStatus.REVISING,
+                ReportStatus.REJECTED);
 
         // Reuse scope logic, sau đó filter thêm theo status
         return getAllPlans(currentUser, null)
@@ -204,7 +203,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
      * - Loại trừ DRAFT và REVISE (manager không cần thấy bản nháp của TL)
      */
     private List<TrainingPlanGenerationResponse> fetchBySection(User currentUser, Long lineId) {
-        List<ReportStatus> excludedStatuses = List.of(ReportStatus.DRAFT, ReportStatus.REVISE);
+        List<ReportStatus> excludedStatuses = List.of(ReportStatus.DRAFT, ReportStatus.REVISING);
         List<TrainingPlan> plans = lineId != null
                 ? trainingPlanRepository.findAllByManagerAndLineIdAndDeleteFlagFalse(
                 currentUser.getId(), lineId, excludedStatuses)
@@ -285,11 +284,11 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
-        boolean isApproved = ReportStatus.APPROVED.equals(plan.getStatus());
+        boolean isApproved = ReportStatus.COMPLETED.equals(plan.getStatus());
 
         updateHeaderIfPresent(plan, request);
 
@@ -374,7 +373,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, action.getNote(), schedule);
-                detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING_REVIEW);
                 detail.setBatchId(batchId);
                 plan.getDetails().add(detail);
             }
@@ -414,7 +413,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, note, schedule);
-                detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                detail.setStatus(ReportStatus.PENDING_REVIEW);
                 detail.setBatchId(action.getBatchId());
                 plan.getDetails().add(detail);
             }
@@ -434,7 +433,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
-        if (isApproved && detail.getStatus() == TrainingPlanDetailStatus.DONE) {
+        if (isApproved && detail.getStatus() == ReportStatus.COMPLETED) {
             throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
         }
 
@@ -482,10 +481,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         }
 
         if (isApproved) {
-            if (detail.getStatus() == TrainingPlanDetailStatus.DONE) {
+            if (detail.getStatus() == ReportStatus.COMPLETED) {
                 throw new AppException(ErrorCode.CANNOT_DELETE_COMPLETED_DETAIL);
             }
-            detail.setStatus(TrainingPlanDetailStatus.MISS);
+            detail.setStatus(ReportStatus.MISSED);
             detail.setNote("[Đã hủy] " + (detail.getNote() != null ? detail.getNote() : ""));
         } else {
             trainingResultDetailRepository.deleteByTrainingPlanDetailId(detail.getId());
@@ -499,7 +498,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -511,7 +510,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             for (ScheduleRequest schedule : request.getSchedules()) {
                 if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                     TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
-                    detail.setStatus(TrainingPlanDetailStatus.PENDING);
+                    detail.setStatus(ReportStatus.PENDING_REVIEW);
                     detail.setBatchId(batchId);
                     plan.getDetails().add(detail);
                     addedDetails.add(detail);
@@ -525,7 +524,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
         trainingPlanRepository.save(plan);
 
-        if (ReportStatus.APPROVED.equals(plan.getStatus())) {
+        if (ReportStatus.COMPLETED.equals(plan.getStatus())) {
             regenerateResultDetails(plan);
         }
 
@@ -541,7 +540,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findByIdWithDetails(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() == ReportStatus.WAITING_SV || plan.getStatus() == ReportStatus.WAITING_MANAGER) {
+        if (plan.getStatus() == ReportStatus.PENDING_REVIEW || plan.getStatus() == ReportStatus.PENDING_APPROVAL) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -583,8 +582,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
-                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+        if (plan.getStatus() != ReportStatus.DRAFT && plan.getStatus() != ReportStatus.REJECTED) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -640,8 +638,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
         if (plan.getStatus() != ReportStatus.DRAFT
-                && plan.getStatus() != ReportStatus.REJECTED_BY_MANAGER
-                && plan.getStatus() != ReportStatus.REJECTED_BY_SV) {
+                && plan.getStatus() != ReportStatus.REJECTED) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -650,7 +647,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 .findFirst()
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND));
 
-        if (detailToRemove.getStatus() != TrainingPlanDetailStatus.PENDING) {
+        if (detailToRemove.getStatus() != ReportStatus.PENDING_REVIEW) {
             throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
         }
 
@@ -732,6 +729,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     // ── Generate ─────────────────────────────────────────────────────────────
 
     @Override
+    @Transactional
     public TrainingPlanGenerationResponse generateTrainingPlans(User currentUser,
                                                                 TrainingPlanGenerationRequest request) {
         TrainingPlan generatedTrainingPlan = generateTrainingPlan(request);
@@ -747,16 +745,22 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         prioritySnapshot.setTrainingPlan(generatedTrainingPlan);
         prioritySnapshotRepository.save(prioritySnapshot);
 
-        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(prioritySnapshot);
+        // Use plan's start year for calendar lookup (not current year)
+        int calendarYear = request.getStartDate().getYear();
+
+        TrainingPlan scheduledPlan = trainingPlanScheduleGenerationService.generateOptimalSchedule(
+                generatedTrainingPlan.getId(),
+                prioritySnapshot.getId(),
+                calendarYear);
+
+        // Reload snapshot with details (lazy-loaded) for proper response mapping
+        PrioritySnapshot reloadedSnapshot = prioritySnapshotRepository.findById(prioritySnapshot.getId())
+                .orElse(prioritySnapshot);
+        PrioritySnapshotResponse prioritySnapshotResponse = prioritySnapshotMapper.toResponse(reloadedSnapshot);
 
         TrainingPlanGenerationResponse response = new TrainingPlanGenerationResponse();
         response.setPrioritySnapshot(prioritySnapshotResponse);
-        response.setTrainingPlan(
-                toTrainingPlanResponse(
-                        trainingPlanScheduleGenerationService.generateOptimalSchedule(
-                                generatedTrainingPlan.getId(),
-                                prioritySnapshot.getId(),
-                                LocalDate.now().getYear())));
+        response.setTrainingPlan(toTrainingPlanResponse(scheduledPlan));
 
         return response;
     }
@@ -798,7 +802,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     public void approve(Long reportId, User currentUser, ApproveRequest req, HttpServletRequest request) {
         TrainingPlan report = getReportById(reportId);
         approvalService.approve(report, currentUser, req, request);
-        if (report.getStatus() == ReportStatus.APPROVED) {
+        if (report.getStatus() == ReportStatus.COMPLETED) {
             trainingResultService.generateTrainingResult(reportId);
         }
         trainingPlanRepository.save(report);
@@ -929,7 +933,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 newResultDetail.setEmployee(planDetail.getEmployee());
                 newResultDetail.setPlannedDate(planDetail.getPlannedDate());
                 newResultDetail.setBatchId(planDetail.getBatchId());
-                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING);
+                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW);
                 result.getDetails().add(newResultDetail);
             }
         }

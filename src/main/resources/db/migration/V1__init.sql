@@ -491,9 +491,7 @@ CREATE TABLE defect_proposals
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
-    status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
-                                     DEFAULT 'DRAFT',
+    status          VARCHAR(30)      DEFAULT 'DRAFT',
     current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
 
@@ -672,9 +670,7 @@ CREATE TABLE training_sample_proposals
 (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_line_id BIGINT  NOT NULL,
-    status          ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
-                                     DEFAULT 'DRAFT',
+    status          VARCHAR(30)      DEFAULT 'DRAFT',
     current_version INT              DEFAULT 1,
     form_code       VARCHAR(255),
 
@@ -804,9 +800,7 @@ CREATE TABLE training_plans
     end_date             DATE,
     team_id              BIGINT,
     line_id              BIGINT COMMENT 'Dây chuyền áp dụng',
-    status               ENUM ('DRAFT', 'WAITING_SV', 'REJECTED_BY_SV',
-        'WAITING_MANAGER', 'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
-                                          DEFAULT 'DRAFT',
+    status               VARCHAR(30)      DEFAULT 'DRAFT',
     current_version      INT              DEFAULT 1,
     note                 TEXT,
 
@@ -841,7 +835,7 @@ CREATE TABLE training_plan_details
     target_month     DATE COMMENT 'Tháng thực hiện',
     planned_date     DATE COMMENT 'Ngày dự kiến',
     actual_date      DATE COMMENT 'Ngày thực hiện',
-    status           ENUM ('PENDING', 'DONE', 'MISS') DEFAULT 'PENDING',
+    status           VARCHAR(30) DEFAULT 'PENDING_REVIEW',
     note             TEXT,
 
     reject_feedback  JSON,
@@ -954,9 +948,7 @@ CREATE TABLE training_results
     year             INT     NOT NULL,
     team_id          BIGINT  NOT NULL,
     line_id          BIGINT COMMENT 'Dây chuyền áp dụng',
-    status           ENUM ('ON_GOING', 'DONE', 'WAITING_MANAGER',
-        'REJECTED_BY_MANAGER', 'APPROVED', 'REVISE')
-                                      DEFAULT 'ON_GOING',
+    status           VARCHAR(30)      DEFAULT 'ONGOING',
     current_version  INT              DEFAULT 1,
     note             TEXT,
 
@@ -1003,9 +995,7 @@ CREATE TABLE training_result_details
     time_in                 TIME COMMENT 'Giờ đưa mẫu vào',
     time_start_op           TIME COMMENT 'Giờ bắt đầu thao tác',
     time_out                TIME COMMENT 'Giờ lấy mẫu ra',
-    status                  ENUM ('PENDING', 'DONE', 'REVISE', 'WAITING_SV',
-        'REJECTED_BY_SV', 'APPROVED', 'MISS')
-                                                 DEFAULT 'PENDING',
+    status                  VARCHAR(30)      DEFAULT 'PENDING_REVIEW',
 
     -- Kết quả
     detection_time          INT COMMENT 'Thời gian phát hiện (giây)',
@@ -1340,8 +1330,7 @@ CREATE TABLE training_sample_reviews
     due_date        DATE    NOT NULL COMMENT 'Hạn chót phải hoàn thành',
     completed_date  DATE COMMENT 'Ngày thực tế hoàn thành (NULL = chưa xong)',
     reviewed_by     BIGINT COMMENT 'TL thực hiện review',
-    status          ENUM ('NEED_ASSIGNED', 'PENDING', 'DONE', 'REVISE', 'WAITING_SV',
-        'REJECTED_BY_SV', 'APPROVED', 'MISS') DEFAULT 'NEED_ASSIGNED',
+    status          VARCHAR(30)              DEFAULT 'UNASSIGNED',
     sample_snapshot JSON COMMENT 'Snapshot toàn bộ training_samples tại thời điểm review',
     confirmed_by    BIGINT COMMENT 'SV xác nhận',
     current_version INT                       DEFAULT 1,
@@ -1423,17 +1412,19 @@ CREATE TABLE training_sample_review_policies
 
 CREATE TABLE approval_flow_steps
 (
-    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    entity_type   VARCHAR(50)                              NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
-    step_order    INT                                      NOT NULL,
-    approver_role ENUM ('ROLE_SUPERVISOR', 'ROLE_MANAGER') NOT NULL,
-    is_active     BOOLEAN                                  NOT NULL DEFAULT TRUE,
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    entity_type         VARCHAR(50)  NOT NULL COMMENT 'e.g. DEFECT_PROPOSAL, TRAINING_PLAN',
+    step_order          INT          NOT NULL,
+    required_permission VARCHAR(100) NOT NULL COMMENT 'e.g. APPROVAL_REVIEW, APPROVAL_APPROVE',
+    step_label          VARCHAR(100) NULL COMMENT 'e.g. NGƯỜI KIỂM TRA, NGƯỜI PHÊ DUYỆT',
+    pending_status      VARCHAR(50)  NOT NULL COMMENT 'Status entity chuyển sang khi đến step này',
+    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
 
-    delete_flag   BOOLEAN                                  NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMP                                         DEFAULT CURRENT_TIMESTAMP,
-    created_by    VARCHAR(255),
-    updated_at    TIMESTAMP                                         DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by    VARCHAR(255),
+    delete_flag         BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    created_by          VARCHAR(255),
+    updated_at          TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by          VARCHAR(255),
 
     UNIQUE KEY uk_approval_flow_steps_entity_order (entity_type, step_order),
     INDEX idx_approval_flow_steps_entity_active (entity_type, is_active),
@@ -1445,49 +1436,45 @@ CREATE TABLE approval_flow_steps
 CREATE TABLE approval_actions
 (
     id                     BIGINT PRIMARY KEY AUTO_INCREMENT,
-    entity_type            VARCHAR(50)                                                                                         NOT NULL COMMENT 'e.g. DEFECT_REPORT, TRAINING_TOPIC_REPORT, TRAINING_PLAN',
-    entity_id              BIGINT                                                                                              NOT NULL,
+    entity_type            VARCHAR(50)  NOT NULL COMMENT 'e.g. DEFECT_PROPOSAL, TRAINING_PLAN',
+    entity_id              BIGINT       NOT NULL,
 
-    entity_version         INT                                                                                                 NOT NULL,
+    entity_version         INT          NOT NULL,
 
     -- Step order convention:
     --   -1 = REVISE (TL)
     --    0 = SUBMIT (TL)
     --    1 = SV approve/reject
     --    2 = MG approve/reject
-    step_order             INT                                                                                                 NOT NULL,
-    required_role          ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
-    action                 ENUM ('REVISE', 'SUBMIT', 'APPROVE', 'REJECT')                                                      NOT NULL,
+    step_order             INT          NOT NULL,
+    required_permission    VARCHAR(100) NOT NULL COMMENT 'e.g. APPROVAL_REVIEW, APPROVAL_APPROVE, SUBMIT',
+    action                 VARCHAR(20)  NOT NULL COMMENT 'REVISE, SUBMIT, APPROVE, REJECT',
 
-    performed_by_user_id   BIGINT                                                                                              NOT NULL,
-    performed_by_username  VARCHAR(50)                                                                                         NOT NULL,
-    performed_by_full_name VARCHAR(100)                                                                                        NOT NULL,
-    performed_by_role      ENUM ('ROLE_TEAM_LEADER', 'ROLE_SUPERVISOR', 'ROLE_MANAGER', 'ROLE_FINAL_INSPECTION', 'ROLE_ADMIN') NOT NULL,
+    performed_by_user_id   BIGINT       NOT NULL,
+    performed_by_username  VARCHAR(50)  NOT NULL,
+    performed_by_full_name VARCHAR(100) NOT NULL,
+    performed_by_role      VARCHAR(100) NOT NULL,
 
     comment                TEXT,
 
-    performed_at           TIMESTAMP                                                                                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    performed_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- Audit environment
     ip_address             VARCHAR(45),
     user_agent             TEXT,
     device_info            VARCHAR(255),
-    content_hash           VARCHAR(64) COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
+    content_hash           VARCHAR(64)  COMMENT 'SHA-256 hex of entity snapshot (header + details + version)',
 
     -- BaseEntity fields
-    delete_flag            BOOLEAN                                                                                             NOT NULL DEFAULT FALSE,
-    created_at             TIMESTAMP                                                                                                    DEFAULT CURRENT_TIMESTAMP,
+    delete_flag            BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at             TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
     created_by             VARCHAR(255),
-    updated_at             TIMESTAMP                                                                                                    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP             DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by             VARCHAR(255),
 
     CONSTRAINT fk_approval_actions_user
         FOREIGN KEY (performed_by_user_id) REFERENCES users (id) ON DELETE RESTRICT,
 
-    -- Ensures:
-    --   - Only one SUBMIT per entity_version (step_order=0)
-    --   - Only one REVISE record per entity_version (step_order=-1) (optional but fine)
-    --   - Only one decision per step per version (step_order=1,2)
     UNIQUE KEY uk_approval_actions_entity_version_step (entity_type, entity_id, entity_version, step_order),
 
     INDEX idx_approval_actions_entity (entity_type, entity_id),

@@ -49,4 +49,14 @@ public interface PriorityScoringService {
      * Delete snapshot
      */
     void deleteSnapshot(Long snapshotId);
+
+    /**
+     * List all snapshots for a policy
+     */
+    List<PrioritySnapshot> listSnapshotsByPolicy(Long policyId);
+
+    /**
+     * Get snapshot by ID with details
+     */
+    PrioritySnapshot getSnapshotById(Long snapshotId);
 }

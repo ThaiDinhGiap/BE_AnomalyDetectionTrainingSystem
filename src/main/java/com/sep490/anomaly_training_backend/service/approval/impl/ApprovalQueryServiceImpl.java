@@ -5,8 +5,10 @@ import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
+import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
+import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
@@ -32,27 +34,31 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     private final TrainingSampleProposalRepository trainingSampleProposalRepository;
     private final TrainingPlanRepository planRepo;
     private final ApprovalActionRepository actionRepo;
+    private final ApprovalFlowStepRepository flowStepRepo;
 
     @Override
     public List<PendingApprovalResponse> getPendingApprovals(User currentUser, ApprovalEntityType entityType) {
         List<PendingApprovalResponse> result = new ArrayList<>();
 
-        ReportStatus targetStatus = getTargetStatusForUser(currentUser);
+        // Tìm tất cả pending status mà user có permission tương ứng
+        List<ReportStatus> targetStatuses = getTargetStatusesForUser(currentUser);
 
-        if (targetStatus == null) {
+        if (targetStatuses.isEmpty()) {
             return result;
         }
 
-        if (entityType == null || entityType == ApprovalEntityType.DEFECT_PROPOSAL) {
-            result.addAll(getPendingDefectProposals(currentUser, targetStatus));
-        }
+        for (ReportStatus targetStatus : targetStatuses) {
+            if (entityType == null || entityType == ApprovalEntityType.DEFECT_PROPOSAL) {
+                result.addAll(getPendingDefectProposals(currentUser, targetStatus));
+            }
 
-        if (entityType == null || entityType == ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL) {
-            result.addAll(getPendingSampleProposals(currentUser, targetStatus));
-        }
+            if (entityType == null || entityType == ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL) {
+                result.addAll(getPendingSampleProposals(currentUser, targetStatus));
+            }
 
-        if (entityType == null || entityType == ApprovalEntityType.TRAINING_PLAN) {
-            result.addAll(getPendingPlans(currentUser, targetStatus));
+            if (entityType == null || entityType == ApprovalEntityType.TRAINING_PLAN) {
+                result.addAll(getPendingPlans(currentUser, targetStatus));
+            }
         }
 
         return result;
@@ -75,17 +81,19 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
 
     // ==================== PRIVATE HELPERS ====================
 
-    private ReportStatus getTargetStatusForUser(User user) {
-
-        if (user.hasRole("SUPERVISOR")) {
-            return ReportStatus.WAITING_SV;
-        }
-
-        if (user.hasRole("MANAGER")) {
-            return ReportStatus.WAITING_MANAGER;
-        }
-
-        return null;
+    /**
+     * Tìm tất cả pending status mà user hiện tại có permission để xử lý.
+     * Dựa vào approval_flow_steps, kiểm tra user có permission nào, trả về danh sách pendingStatus tương ứng.
+     */
+    private List<ReportStatus> getTargetStatusesForUser(User user) {
+        // Lấy tất cả flow steps active, lọc theo permission user có
+        List<ApprovalFlowStep> allSteps = flowStepRepo.findAll();
+        return allSteps.stream()
+                .filter(ApprovalFlowStep::getIsActive)
+                .filter(step -> user.hasPermission(step.getRequiredPermission()))
+                .map(ApprovalFlowStep::getPendingStatus)
+                .distinct()
+                .toList();
     }
 
     private List<PendingApprovalResponse> getPendingDefectProposals(User currentUser, ReportStatus status) {
@@ -167,7 +175,7 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
                 .entityVersion(log.getEntityVersion())
                 .stepOrder(log.getStepOrder())
                 .stepName(getStepName(log.getStepOrder()))
-                .requiredRole(log.getRequiredRole())
+                .requiredPermission(log.getRequiredPermission())
                 .action(log.getAction())
                 .performedByUsername(log.getPerformedByUsername())
                 .performedByFullName(log.getPerformedByFullName())
@@ -184,8 +192,6 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
         return switch (stepOrder) {
             case -1 -> "Revise";
             case 0 -> "Submit";
-            case 1 -> "Supervisor Review";
-            case 2 -> "Manager Approval";
             default -> "Step " + stepOrder;
         };
     }

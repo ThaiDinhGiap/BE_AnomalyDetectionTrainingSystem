@@ -15,6 +15,8 @@ public class AuthResponse {
     private String refreshToken;
     private String tokenType;
     private Long expiresIn;
+    private Boolean requirePasswordChange;
+    private String generatedPassword;
     private UserResponse user;
 
     public static AuthResponse of(String accessToken, String refreshToken, Long expiresIn, UserResponse user) {

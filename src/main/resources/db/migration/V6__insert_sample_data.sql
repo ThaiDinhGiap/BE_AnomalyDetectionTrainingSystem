@@ -126,17 +126,20 @@ VALUES (1, 1),
 -- PART 1: MODULES (giữ nguyên, thêm dashboard)
 -- ============================================================================
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
-VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề xuất và danh sách lỗi', 1, 'system'),
-       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý mẫu HL và rà soát hàng năm', 2, 'system'),
-       (3, 'training_plan', 'Kế hoạch huấn luyện', 'Quản lý kế hoạch đào tạo', 3, 'system'),
-       (4, 'training_result', 'Kết quả huấn luyện', 'Quản lý kết quả đào tạo', 4, 'system'),
-       (5, 'employee', 'Nhân viên', 'Quản lý thông tin nhân viên', 5, 'system'),
-       (6, 'user', 'Tài khoản người dùng', 'Quản lý tài khoản hệ thống', 6, 'system'),
-       (7, 'role', 'Chức vụ & Quyền hạn', 'Quản lý vai trò và phân quyền', 7, 'system'),
-       (9, 'scoring', 'Chấm điểm ưu tiên', 'Quản lý chính sách chấm điểm', 9, 'system'),
-       (10, 'manage', 'Phạm vi quản lý', 'Xem dashboard theo từng cấp', 10, 'system'),
-       (12, 'staff_organization', 'Tổ chức nhân sự', 'Quản lý cấu trúc nhân sự công ty', 12, 'system'),
-       (13, 'manufacturing_line', 'Tổ chức nhà máy', 'Quản lý cấu trúc dây chuyền', 13, 'system');
+VALUES (1,  'defect_proposal',  'Báo cáo lỗi sản phẩm',    'Quản lý đề xuất và danh sách lỗi',       1,  'system'),
+       (2,  'training_sample',  'Nội dung huấn luyện',      'Quản lý mẫu HL và rà soát hàng năm',     2,  'system'),
+       (3,  'training_plan',    'Kế hoạch huấn luyện',      'Quản lý kế hoạch đào tạo',                3,  'system'),
+       (4,  'training_result',  'Kết quả huấn luyện',       'Quản lý kết quả đào tạo',                 4,  'system'),
+       (5,  'employee',         'Quản lý nhân viên',        'Quản lý hồ sơ nhân viên',                 5,  'system'),
+       (6,  'user',             'Quản lý tài khoản',        'Quản lý tài khoản hệ thống',              6,  'system'),
+       (7,  'role',             'Quản lý phân quyền',       'Quản lý vai trò và phân quyền',           7,  'system'),
+       (9,  'scoring',          'Quản lý chính sách',       'Quản lý chính sách chấm điểm ưu tiên',   9,  'system'),
+       (10, 'manage',           'Phạm vi quản lý',          'Xem dashboard theo từng cấp',             10, 'system'),
+       (11, 'staff_structure',  'Cấu trúc nhân sự',         'Quản lý Section/Group/Team',              11, 'system'),
+       (12, 'line_structure',   'Cấu trúc dây chuyền',      'Quản lý ProductLine/Process',             12, 'system'),
+       (13, 'product',          'Quản lý sản phẩm',         'Quản lý danh mục sản phẩm',              13, 'system'),
+       (14, 'employee_skill',   'Kỹ năng nhân viên',        'Quản lý và đánh giá kỹ năng nhân viên',  14, 'system'),
+       (15, 'review_approve',   'Kiểm tra và Phê duyệt',    'Kiểm tra và phê duyệt các đề xuất',      15, 'system');
 
 
 -- ============================================================================
@@ -150,98 +153,78 @@ VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề 
 INSERT INTO permissions (id, permission_code, display_name, module_id, action, sort_order, is_system, created_by)
 VALUES
 -- ── defect_proposal module (1) ──────────────────────────────────────────────
--- DefectController: GET / /process /count-defect /coverage /{id} /check-exist
-(1, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 1, TRUE, 'system'),
--- DefectController: import /export /download-template /import-history
-(2, 'defect.manage', 'Quản lý danh sách lỗi quá khứ', 1, 'manage', 2, TRUE, 'system'),
--- DefectController: GET /proposal /detail/{id}
-(3, 'defect_proposal.view', 'Xem đề xuất lỗi', 1, 'view', 3, TRUE, 'system'),
--- DefectController: create update delete revise submit
-(4, 'defect_proposal.manage', 'Quản lý đề xuất lỗi', 1, 'manage', 4, TRUE, 'system'),
--- DefectController: approve reject
-(5, 'defect_proposal.approve', 'Phê duyệt đề xuất lỗi', 1, 'approve', 5, TRUE, 'system'),
+(1,  'defect.view',                     'Xem danh sách lỗi quá khứ',           1, 'view',    1, TRUE, 'system'),
+(2,  'defect.manage',                   'Quản lý danh sách lỗi quá khứ',       1, 'manage',  2, TRUE, 'system'),
+(3,  'defect_proposal.view',            'Xem đề xuất lỗi',                     1, 'view',    3, TRUE, 'system'),
+(4,  'defect_proposal.manage',          'Quản lý đề xuất lỗi',                 1, 'manage',  4, TRUE, 'system'),
+(5,  'defect_proposal.approve',         'Phê duyệt đề xuất lỗi',              1, 'approve', 5, TRUE, 'system'),
 
 -- ── training_sample module (2) ──────────────────────────────────────────────
--- TrainingSampleController: GET / /category /process /{id}
-(6, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 1, TRUE, 'system'),
--- TrainingSampleController: import /download-template /import-history
--- ManufacturingLineController: product/download-template product/import-history product-line/download-template product-line/import-history
-(7, 'training_sample.manage', 'Quản lý danh sách mẫu huấn luyện', 2, 'manage', 2, TRUE, 'system'),
--- TrainingSampleController: GET /proposal /detail/{id} /category/{id}
-(8, 'training_sample_proposal.view', 'Xem đề xuất mẫu huấn luyện', 2, 'view', 3, TRUE, 'system'),
--- TrainingSampleController: create update delete revise submit
-(9, 'training_sample_proposal.manage', 'Quản lý đề xuất mẫu huấn luyện', 2, 'manage', 4, TRUE, 'system'),
--- TrainingSampleController: approve reject
-(10, 'training_sample_proposal.approve', 'Phê duyệt đề xuất mẫu huấn luyện', 2, 'approve', 5, TRUE, 'system'),
--- TrainingSampleReviewController: GET /policies /task /reviews
-(11, 'training_sample_review.view', 'Xem rà soát mẫu huấn luyện', 2, 'view', 6, TRUE, 'system'),
--- TrainingSampleReviewController: create/delete policy, assign-team-lead (SV)
-(12, 'training_sample_review.manage', 'Quản lý lịch rà soát mẫu HL', 2, 'manage', 7, TRUE, 'system'),
--- TrainingSampleReviewController: submit (TL thực hiện)
-(13, 'training_sample_review.perform', 'Thực hiện rà soát mẫu huấn luyện', 2, 'perform', 8, TRUE, 'system'),
--- TrainingSampleReviewController: approve reject (SV)
-(14, 'training_sample_review.approve', 'Phê duyệt rà soát mẫu huấn luyện', 2, 'approve', 9, TRUE, 'system'),
+(6,  'training_sample.view',            'Xem danh sách mẫu huấn luyện',        2, 'view',    1, TRUE, 'system'),
+(7,  'training_sample.manage',          'Quản lý danh sách mẫu huấn luyện',    2, 'manage',  2, TRUE, 'system'),
+(8,  'training_sample_proposal.view',   'Xem đề xuất mẫu huấn luyện',          2, 'view',    3, TRUE, 'system'),
+(9,  'training_sample_proposal.manage', 'Quản lý đề xuất mẫu huấn luyện',      2, 'manage',  4, TRUE, 'system'),
+(10, 'training_sample_proposal.approve','Phê duyệt đề xuất mẫu huấn luyện',    2, 'approve', 5, TRUE, 'system'),
+(11, 'training_sample_review.view',     'Xem rà soát mẫu huấn luyện',          2, 'view',    6, TRUE, 'system'),
+(12, 'training_sample_review.manage',   'Quản lý lịch rà soát mẫu HL',         2, 'manage',  7, TRUE, 'system'),
+(13, 'training_sample_review.perform',  'Thực hiện rà soát mẫu huấn luyện',    2, 'perform', 8, TRUE, 'system'),
+(14, 'training_sample_review.approve',  'Phê duyệt rà soát mẫu huấn luyện',   2, 'approve', 9, TRUE, 'system'),
 
 -- ── training_plan module (3) ────────────────────────────────────────────────
--- TrainingPlanController: GET /{id} /list /rejected /employees /product-lines /processes /{id}/permission
-(15, 'training_plan.view', 'Xem kế hoạch huấn luyện', 3, 'view', 1, TRUE, 'system'),
--- TrainingPlanController: update delete add/update details submit revise generate
-(16, 'training_plan.manage', 'Quản lý kế hoạch huấn luyện', 3, 'manage', 2, TRUE, 'system'),
--- TrainingPlanController: approve reject
-(17, 'training_plan.approve', 'Phê duyệt kế hoạch huấn luyện', 3, 'approve', 3, TRUE, 'system'),
+(15, 'training_plan.view',              'Xem kế hoạch huấn luyện',             3, 'view',    1, TRUE, 'system'),
+(16, 'training_plan.manage',            'Quản lý kế hoạch huấn luyện',         3, 'manage',  2, TRUE, 'system'),
+(17, 'training_plan.approve',           'Phê duyệt kế hoạch huấn luyện',       3, 'approve', 3, TRUE, 'system'),
 
 -- ── training_result module (4) ──────────────────────────────────────────────
--- TrainingResultController: GET list detail kpi employees products processes
--- ActionItemsController: pending-signatures failed-trainings expiring-skills
-(18, 'training_result.view', 'Xem kết quả huấn luyện', 4, 'view', 1, TRUE, 'system'),
--- TrainingResultController: update fi-sign submit reject-detail retrain revise-detail revise
-(19, 'training_result.manage', 'Quản lý kết quả huấn luyện', 4, 'manage', 2, TRUE, 'system'),
--- TrainingResultController: approve/{detailId} reject/{detailId}
-(20, 'training_result.approve', 'Phê duyệt kết quả huấn luyện', 4, 'approve', 3, TRUE, 'system'),
+(18, 'training_result.view',            'Xem kết quả huấn luyện',              4, 'view',    1, TRUE, 'system'),
+(19, 'training_result.manage',          'Quản lý kết quả huấn luyện',          4, 'manage',  2, TRUE, 'system'),
+(20, 'training_result.approve',         'Phê duyệt kết quả huấn luyện',        4, 'approve', 3, TRUE, 'system'),
 
 -- ── employee module (5) ─────────────────────────────────────────────────────
--- TrainingResultController: GET /skills/matrix
-(21, 'employee.view', 'Xem thông tin nhân viên & kỹ năng', 5, 'view', 1, TRUE, 'system'),
--- (employee.manage dùng trong staff_organization, không dùng ở controller riêng)
-(22, 'employee.manage', 'Quản lý nhân viên', 5, 'manage', 2, TRUE, 'system'),
+(21, 'employee.view',                   'Xem thông tin nhân viên',              5, 'view',    1, TRUE, 'system'),
+(22, 'employee.manage',                 'Quản lý nhân viên',                    5, 'manage',  2, TRUE, 'system'),
 
 -- ── user module (6) ─────────────────────────────────────────────────────────
--- PermissionController: GET /users/{userId}
-(23, 'user.view', 'Xem tài khoản người dùng', 6, 'view', 1, TRUE, 'system'),
--- UserRoleController: GET /{userId}/roles PUT /{userId}/roles
-(24, 'user.manage', 'Quản lý tài khoản người dùng', 6, 'manage', 2, TRUE, 'system'),
+(23, 'user.view',                       'Xem tài khoản người dùng',             6, 'view',    1, TRUE, 'system'),
+(24, 'user.manage',                     'Quản lý tài khoản người dùng',         6, 'manage',  2, TRUE, 'system'),
 
 -- ── role module (7) ─────────────────────────────────────────────────────────
--- PermissionController: GET /modules
-(25, 'role.view', 'Xem Chức vụ & Quyền hạn', 7, 'view', 1, TRUE, 'system'),
--- RoleController: CRUD roles, assign permissions
-(26, 'role.manage', 'Quản lý Chức vụ & Quyền hạn', 7, 'manage', 2, TRUE, 'system'),
+(25, 'role.view',                       'Xem Chức vụ & Quyền hạn',             7, 'view',    1, TRUE, 'system'),
+(26, 'role.manage',                     'Quản lý Chức vụ & Quyền hạn',         7, 'manage',  2, TRUE, 'system'),
 
 -- ── scoring module (9) ──────────────────────────────────────────────────────
--- PriorityPolicyController: GET /{id} GET / GET /metrics
-(27, 'scoring.view', 'Xem chính sách chấm điểm ưu tiên', 9, 'view', 1, TRUE, 'system'),
--- PriorityPolicyController: create update activate archive delete
-(28, 'scoring.manage', 'Quản lý chính sách chấm điểm ưu tiên', 9, 'manage', 2, TRUE, 'system'),
+(27, 'scoring.view',                    'Xem chính sách chấm điểm ưu tiên',    9, 'view',    1, TRUE, 'system'),
+(28, 'scoring.manage',                  'Quản lý chính sách chấm điểm ưu tiên',9, 'manage',  2, TRUE, 'system'),
 
--- ── dashboard module (10) ───────────────────────────────────────────────────
--- DashboardController: /kpi /rejected-reports /training-tasks /heatmap /execution /process-flow /skill-certificates /defect-*  /sample-*
-(29, 'team.manage', 'Xem dashboard cấp tổ', 10, 'view', 1, TRUE, 'system'),
--- DashboardController: /sv/*
-(30, 'group.manage', 'Xem dashboard cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
--- DashboardController: /mng/*
-(31, 'section.manage', 'Xem dashboard cấp xưởng', 10, 'view', 3, TRUE, 'system'),
+-- ── dashboard / manage module (10) ──────────────────────────────────────────
+(29, 'team.manage',                     'Xem dashboard cấp tổ',                10, 'view',   1, TRUE, 'system'),
+(30, 'group.manage',                    'Xem dashboard cấp dây chuyền',        10, 'view',   2, TRUE, 'system'),
+(31, 'section.manage',                  'Xem dashboard cấp xưởng',             10, 'view',   3, TRUE, 'system'),
 
--- ── staff_organization module (12) ──────────────────────────────────────────
--- StaffOrganizationController: GET sections groups teams employees users
-(32, 'staff_organization.view', 'Xem cấu trúc nhân sự', 12, 'view', 1, TRUE, 'system'),
--- StaffOrganizationController: create update delete sections/groups/teams/employees/users
-(33, 'staff_organization.manage', 'Quản lý cấu trúc nhân sự', 12, 'manage', 2, TRUE, 'system'),
+-- ── staff_structure module (11) ─────────────────────────────────────────────
+-- StaffOrganizationController: Section/Group/Team CRUD + hierarchy views
+(32, 'staff_structure.view',            'Xem cấu trúc nhân sự',                11, 'view',   1, TRUE, 'system'),
+(33, 'staff_structure.manage',          'Quản lý cấu trúc nhân sự',            11, 'manage', 2, TRUE, 'system'),
 
--- ── manufacturing_line module (13) ──────────────────────────────────────────
--- ManufacturingLineController: GET product-lines working-positions processes products
-(34, 'manufacturing_line.view', 'Xem cấu trúc dây chuyền sản xuất', 13, 'view', 1, TRUE, 'system'),
--- ManufacturingLineController: create/update/delete processes products skills import-products import-product-lines import-matrix-skill
-(35, 'manufacturing_line.manage', 'Quản lý cấu trúc dây chuyền sản xuất', 13, 'manage', 2, TRUE, 'system');
+-- ── line_structure module (12) ──────────────────────────────────────────────
+-- ManufacturingLineController: ProductLine/Process CRUD + views
+(34, 'line_structure.view',             'Xem cấu trúc dây chuyền sản xuất',    12, 'view',   1, TRUE, 'system'),
+(35, 'line_structure.manage',           'Quản lý cấu trúc dây chuyền sản xuất',12, 'manage', 2, TRUE, 'system'),
+
+-- ── product module (13) ─────────────────────────────────────────────────────
+-- ManufacturingLineController: Product CRUD + import/sync
+(36, 'product.view',                    'Xem danh mục sản phẩm',               13, 'view',   1, TRUE, 'system'),
+(37, 'product.manage',                  'Quản lý danh mục sản phẩm',           13, 'manage', 2, TRUE, 'system'),
+
+-- ── employee_skill module (14) ──────────────────────────────────────────────
+-- ManufacturingLineController: EmployeeSkill CRUD + import matrix
+(38, 'employee_skill.view',             'Xem kỹ năng nhân viên',               14, 'view',   1, TRUE, 'system'),
+(39, 'employee_skill.manage',           'Quản lý kỹ năng nhân viên',           14, 'manage', 2, TRUE, 'system'),
+
+-- ── review_approve module (15) ──────────────────────────────────────────────
+-- ApprovalFlowSteps: permission-based approval routing
+(40, 'review_approve.review',           'Kiểm duyệt báo cáo',                 15, 'review',  1, TRUE, 'system'),
+(41, 'review_approve.approve',          'Phê duyệt báo cáo',                  15, 'approve', 2, TRUE, 'system');
 
 
 -- ============================================================================
@@ -255,8 +238,6 @@ FROM permissions;
 
 
 -- ── MANAGER (role_id=2) ──────────────────────────────────────────────────────
--- Xem mọi thứ + approve + manage nhân viên + manage scoring
--- KHÔNG có manage defect/sample/plan/result (chỉ approve)
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 -- Defect
@@ -277,26 +258,30 @@ VALUES
 -- Employee
 (2, 21), -- employee.view
 (2, 22), -- employee.manage
--- User/Role (readonly)
+-- User/Role
 (2, 23), -- user.view
 (2, 25), -- role.view
 -- Scoring
 (2, 27), -- scoring.view
 (2, 28), -- scoring.manage
 -- Dashboard
-(2, 29), -- dashboard.team
-(2, 30), -- dashboard.group
-(2, 31), -- dashboard.section
--- Staff Org (readonly)
-(2, 32), -- staff_organization.view
--- Manufacturing (readonly)
-(2, 34);
--- manufacturing_line.view
+(2, 29), -- team.manage (dashboard TL)
+(2, 30), -- group.manage (dashboard SV)
+(2, 31), -- section.manage (dashboard MNG)
+-- Staff Structure
+(2, 32), -- staff_structure.view
+-- Line Structure
+(2, 34), -- line_structure.view
+-- Product
+(2, 36), -- product.view
+-- Employee Skill
+(2, 38), -- employee_skill.view
+(2, 39), -- employee_skill.manage
+-- Approval
+(2, 41); -- review_approve.approve
 
 
 -- ── SUPERVISOR (role_id=3) ───────────────────────────────────────────────────
--- Xem mọi thứ + approve plan/defect/sample + manage review + xem dashboard team+group
--- KHÔNG có manage plan/result/defect/sample (chỉ approve)
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 -- Defect
@@ -308,75 +293,80 @@ VALUES
 (3, 8),  -- training_sample_proposal.view
 (3, 10), -- training_sample_proposal.approve
 (3, 11), -- training_sample_review.view
-(3, 12), -- training_sample_review.manage  ← SV tạo/xóa policy, gán TL
-(3, 14), -- training_sample_review.approve ← SV approve review
+(3, 12), -- training_sample_review.manage
+(3, 14), -- training_sample_review.approve
 -- Training Plan
 (3, 15), -- training_plan.view
 (3, 17), -- training_plan.approve
 -- Training Result
 (3, 18), -- training_result.view
-(3, 20), -- training_result.approve        ← SV approve từng detail
+(3, 20), -- training_result.approve
 -- Employee
 (3, 21), -- employee.view
 -- Scoring
 (3, 27), -- scoring.view
 -- Dashboard
-(3, 29), -- dashboard.team
-(3, 30), -- dashboard.group
--- Staff Org (readonly)
-(3, 32), -- staff_organization.view
--- Manufacturing (readonly)
-(3, 34);
--- manufacturing_line.view
+(3, 29), -- team.manage (dashboard TL)
+(3, 30), -- group.manage (dashboard SV)
+-- Staff Structure
+(3, 32), -- staff_structure.view
+-- Line Structure
+(3, 34), -- line_structure.view
+-- Product
+(3, 36), -- product.view
+-- Employee Skill
+(3, 38), -- employee_skill.view
+(3, 39), -- employee_skill.manage
+-- Approval
+(3, 40); -- review_approve.review
 
 
 -- ── TEAM_LEADER (role_id=4) ──────────────────────────────────────────────────
--- Người thực hiện chính: lập kế hoạch, ghi kết quả, submit, import
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 -- Defect
 (4, 1),  -- defect.view
-(4, 2),  -- defect.manage                  ← import/export defect banking
+(4, 2),  -- defect.manage
 (4, 3),  -- defect_proposal.view
-(4, 4),  -- defect_proposal.manage         ← create/edit/delete/submit/revise
+(4, 4),  -- defect_proposal.manage
 -- Training Sample
 (4, 6),  -- training_sample.view
-(4, 7),  -- training_sample.manage         ← import sample, download template
+(4, 7),  -- training_sample.manage
 (4, 8),  -- training_sample_proposal.view
-(4, 9),  -- training_sample_proposal.manage ← create/edit/delete/submit/revise
+(4, 9),  -- training_sample_proposal.manage
 (4, 11), -- training_sample_review.view
-(4, 13), -- training_sample_review.perform  ← TL submit review
+(4, 13), -- training_sample_review.perform
 -- Training Plan
 (4, 15), -- training_plan.view
-(4, 16), -- training_plan.manage            ← create/edit/delete/submit/revise/generate
+(4, 16), -- training_plan.manage
 -- Training Result
 (4, 18), -- training_result.view
-(4, 19), -- training_result.manage          ← update/fi-sign/submit/revise/reject-detail/retrain
+(4, 19), -- training_result.manage
 -- Employee
-(4, 21), -- employee.view                   ← xem skill matrix
+(4, 21), -- employee.view
 -- Scoring
-(4, 27), -- scoring.view                    ← xem policy để generate plan
+(4, 27), -- scoring.view
 -- Dashboard
-(4, 29), -- dashboard.team
--- Manufacturing
-(4, 34);
--- manufacturing_line.view         ← xem processes, products (dùng trong form)
+(4, 29), -- team.manage (dashboard TL)
+-- Staff Structure
+(4, 32), -- staff_structure.view
+-- Line Structure
+(4, 34), -- line_structure.view
+-- Product
+(4, 36), -- product.view
+-- Employee Skill
+(4, 38), -- employee_skill.view
+(4, 39); -- employee_skill.manage
 
 
 -- ── FINAL_INSPECTION (role_id=5) ─────────────────────────────────────────────
--- FI chỉ ký kết quả huấn luyện + xem defect/dashboard
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
--- Defect (FI cần xem để hiểu context lỗi)
 (5, 1),  -- defect.view
--- Training Result
 (5, 18), -- training_result.view
-(5, 19), -- training_result.manage  ← fi-sign endpoint dùng training_result.manage
--- Employee
+(5, 19), -- training_result.manage
 (5, 21), -- employee.view
--- Dashboard
-(5, 29);
--- dashboard.team
+(5, 29); -- team.manage (dashboard TL)
 
 -- ============================================================================
 -- PART 3: ORGANIZATION STRUCTURE
@@ -441,7 +431,20 @@ VALUES (1, 'NV001', 'Nguyễn Văn An', 'ACTIVE', 'admin'),
        (27, 'NV027', 'Vương Thị Hà', 'ACTIVE', 'admin'),
        (28, 'NV028', 'Mạc Văn Bình', 'ACTIVE', 'admin'),
        (29, 'NV029', 'Tăng Thị Chi', 'ACTIVE', 'admin'),
-       (30, 'NV030', 'Quách Văn Dương', 'ACTIVE', 'admin');
+       (30, 'NV030', 'Quách Văn Dương', 'ACTIVE', 'admin'),
+       (31, 'SYS000', 'Quản Trị Hệ Thống', 'ACTIVE', 'admin'),
+       (32, 'MGR001', 'Nguyễn Văn Quản Lý', 'ACTIVE', 'admin'),
+       (33, 'SV001', 'Trần Thị Giám Sát', 'ACTIVE', 'admin'),
+       (34, 'SV002', 'Lê Văn Giám Sát', 'ACTIVE', 'admin'),
+       (35, 'SV003', 'Phạm Thị Giám Sát', 'ACTIVE', 'admin'),
+       (36, 'TL001', 'Hoàng Văn Trưởng Tổ Tiện', 'ACTIVE', 'admin'),
+       (37, 'TL002', 'Võ Thị Trưởng Tổ Phay', 'ACTIVE', 'admin'),
+       (38, 'TL003', 'Đặng Văn Trưởng Tổ Lắp', 'ACTIVE', 'admin'),
+       (39, 'TL004', 'Bùi Thị Trưởng Tổ ĐC', 'ACTIVE', 'admin'),
+       (40, 'TL005', 'Ngô Văn Trưởng Tổ Hàn', 'ACTIVE', 'admin'),
+       (41, 'TL006', 'Đinh Thị Trưởng KCS', 'ACTIVE', 'admin'),
+       (42, 'FI001', 'Trịnh Văn Kiểm Tra Cuối', 'ACTIVE', 'admin'),
+       (43, 'FI002', 'Lý Thị Kiểm Tra Cuối', 'ACTIVE', 'admin');
 
 INSERT INTO employee_teams (employee_id, team_id)
 VALUES
@@ -452,6 +455,7 @@ VALUES
 (4, 1),
 (5, 1),
 (6, 1),
+(36, 1),
 -- Tổ 2 (NV007 -> NV012)
 (7, 2),
 (8, 2),
@@ -459,28 +463,33 @@ VALUES
 (10, 2),
 (11, 2),
 (12, 2),
+(37, 2),
 -- Tổ 3 (NV013 -> NV016)
 (13, 3),
 (14, 3),
 (15, 3),
 (16, 3),
+(40, 3),
 -- Tổ 4 (NV017 -> NV021)
 (17, 4),
 (18, 4),
 (19, 4),
 (20, 4),
 (21, 4),
+(38, 4),
 -- Tổ 5 (NV022 -> NV026)
 (22, 5),
 (23, 5),
 (24, 5),
 (25, 5),
 (26, 5),
+(39, 5),
 -- Tổ 6 (NV027 -> NV030)
 (27, 6),
 (28, 6),
 (29, 6),
-(30, 6);
+(30, 6),
+(41, 6);
 
 -- Ví dụ: Nếu nhân viên NV001 tham gia thêm Tổ 2 (Quan hệ nhiều-nhiều)
 -- INSERT INTO employee_teams (employee_id, team_id) VALUES (1, 2);
@@ -776,13 +785,13 @@ VALUES
 -- ============================================================================
 
 INSERT INTO defect_proposals (id, product_line_id, status, current_version, form_code, created_by)
-VALUES (1, 1, 'APPROVED', 2, 'DEF-2025-001', 'tl_tien01'),
-       (2, 2, 'APPROVED', 1, 'DEF-2025-002', 'tl_phay01'),
-       (3, 3, 'WAITING_SV', 1, 'DEF-2025-003', 'tl_hanlap01'),
-       (4, 4, 'REJECTED_BY_SV', 1, 'DEF-2025-004', 'tl_dongco01'),
-       (5, 5, 'WAITING_MANAGER', 1, 'DEF-2025-005', 'tl_laprap01'),
-       (6, 1, 'APPROVED', 1, 'DEF-2026-001', 'tl_tien01'),
-       (7, 4, 'WAITING_SV', 1, 'DEF-2026-002', 'tl_dongco01'),
+VALUES (1, 1, 'COMPLETED', 2, 'DEF-2025-001', 'tl_tien01'),
+       (2, 2, 'COMPLETED', 1, 'DEF-2025-002', 'tl_phay01'),
+       (3, 3, 'PENDING_REVIEW', 1, 'DEF-2025-003', 'tl_hanlap01'),
+       (4, 4, 'REJECTED', 1, 'DEF-2025-004', 'tl_dongco01'),
+       (5, 5, 'PENDING_APPROVAL', 1, 'DEF-2025-005', 'tl_laprap01'),
+       (6, 1, 'COMPLETED', 1, 'DEF-2026-001', 'tl_tien01'),
+       (7, 4, 'PENDING_REVIEW', 1, 'DEF-2026-002', 'tl_dongco01'),
        (8, 5, 'DRAFT', 1, 'DEF-2026-003', 'tl_laprap01');
 
 INSERT INTO defect_proposal_details
@@ -896,33 +905,36 @@ VALUES
 
 INSERT INTO training_plans (id, form_code, title, start_date, end_date, team_id, line_id, status,
                             current_version, note, min_training_per_day, max_training_per_day, created_by)
-VALUES (1, 'TP-TI-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Tiện Ca Ngày', '2026-01-05', '2026-01-31', 1, 1, 'APPROVED', 1,
+VALUES (1, 'TP-TI-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Tiện Ca Ngày', '2026-01-05', '2026-01-31', 1, 1, 'COMPLETED', 1,
         'Tháng 1 đã hoàn thành toàn bộ.', 1, 3, 'tl_tien01'),
-       (2, 'TP-TI-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Tiện Ca Ngày', '2026-02-03', '2026-02-28', 1, 1, 'APPROVED', 1,
+       (2, 'TP-TI-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Tiện Ca Ngày', '2026-02-03', '2026-02-28', 1, 1, 'COMPLETED', 1,
         'Tháng 2 đã hoàn thành.', 1, 3, 'tl_tien01'),
-       (3, 'TP-TI-2026-003', 'Kế hoạch HLV T3/2026 - Tổ Tiện Ca Ngày', '2026-03-03', '2026-03-31', 1, 1, 'APPROVED', 2,
+       (3, 'TP-TI-2026-003', 'Kế hoạch HLV T3/2026 - Tổ Tiện Ca Ngày', '2026-03-03', '2026-03-31', 1, 1, 'COMPLETED', 2,
         'Phiên bản 2 sau khi bổ sung NV004.', 1, 3, 'tl_tien01'),
        (4, 'TP-TI-2026-004', 'Kế hoạch HLV T4/2026 - Tổ Tiện Ca Ngày', '2026-04-01', '2026-04-30', 1, 1, 'DRAFT', 1,
         'Đang soạn thảo.', 1, 3, 'tl_tien01'),
-       (5, 'TP-PH-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Phay Ca Ngày', '2026-01-05', '2026-01-31', 2, 2, 'APPROVED', 1,
+       (5, 'TP-PH-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Phay Ca Ngày', '2026-01-05', '2026-01-31', 2, 2, 'COMPLETED', 1,
         'Tháng 1 đã hoàn thành.', 1, 3, 'tl_phay01'),
-       (6, 'TP-PH-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Phay Ca Ngày', '2026-02-03', '2026-02-28', 2, 2, 'APPROVED', 1,
+       (6, 'TP-PH-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Phay Ca Ngày', '2026-02-03', '2026-02-28', 2, 2, 'COMPLETED', 1,
         'Tháng 2 đã hoàn thành.', 1, 3, 'tl_phay01'),
-       (7, 'TP-PH-2026-003', 'Kế hoạch HLV T3/2026 - Tổ Phay Ca Ngày', '2026-03-03', '2026-03-31', 2, 2, 'WAITING_SV',
+       (7, 'TP-PH-2026-003', 'Kế hoạch HLV T3/2026 - Tổ Phay Ca Ngày', '2026-03-03', '2026-03-31', 2, 2,
+        'PENDING_REVIEW',
         1, 'Chờ giám sát Lê duyệt.', 1, 3, 'tl_phay01'),
        (8, 'TP-HA-2026-001', 'Kế hoạch HLV T3/2026 - Tổ Hàn & Nhiệt', '2026-03-03', '2026-03-31', 3, 3,
-        'REJECTED_BY_SV', 1, 'Bị trả vì thiếu NV016 trong lịch.', 1, 3, 'tl_hanlap01'),
-       (9, 'TP-B-2026-001', 'Kế hoạch HLV T2/2026 - Tổ Lắp Ráp Bơm', '2026-02-03', '2026-02-28', 4, 5, 'APPROVED', 1,
+        'REJECTED', 1, 'Bị trả vì thiếu NV016 trong lịch.', 1, 3, 'tl_hanlap01'),
+       (9, 'TP-B-2026-001', 'Kế hoạch HLV T2/2026 - Tổ Lắp Ráp Bơm', '2026-02-03', '2026-02-28', 4, 5, 'COMPLETED', 1,
         'Tháng 2 lắp ráp bơm hoàn tất.', 1, 3, 'tl_laprap01'),
        (10, 'TP-B-2026-002', 'Kế hoạch HLV T3/2026 - Tổ Lắp Ráp Bơm', '2026-03-03', '2026-03-31', 4, 5,
-        'WAITING_MANAGER', 1, 'Đã qua SV, chờ MG duyệt cuối.', 1, 3, 'tl_laprap01'),
-       (11, 'TP-DC-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Lắp Ráp Động Cơ', '2026-01-05', '2026-01-31', 5, 4, 'APPROVED',
+        'PENDING_APPROVAL', 1, 'Đã qua SV, chờ MG duyệt cuối.', 1, 3, 'tl_laprap01'),
+       (11, 'TP-DC-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Lắp Ráp Động Cơ', '2026-01-05', '2026-01-31', 5, 4,
+        'COMPLETED',
         1, 'Tháng 1 hoàn tất.', 1, 2, 'tl_dongco01'),
-       (12, 'TP-DC-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Lắp Ráp Động Cơ', '2026-02-03', '2026-02-28', 5, 4, 'APPROVED',
+       (12, 'TP-DC-2026-002', 'Kế hoạch HLV T2/2026 - Tổ Lắp Ráp Động Cơ', '2026-02-03', '2026-02-28', 5, 4,
+        'COMPLETED',
         1, 'Tháng 2 hoàn tất.', 1, 2, 'tl_dongco01'),
        (13, 'TP-DC-2026-003', 'Kế hoạch HLV T3/2026 - Tổ Lắp Ráp Động Cơ', '2026-03-03', '2026-03-31', 5, 4,
-        'WAITING_SV', 1, 'Chờ SV Phạm duyệt.', 1, 2, 'tl_dongco01'),
-       (14, 'TP-KCS-2026-001', 'Kế hoạch HLV T2/2026 - Tổ KCS', '2026-02-03', '2026-02-28', 6, 5, 'APPROVED', 1,
+        'PENDING_REVIEW', 1, 'Chờ SV Phạm duyệt.', 1, 2, 'tl_dongco01'),
+       (14, 'TP-KCS-2026-001', 'Kế hoạch HLV T2/2026 - Tổ KCS', '2026-02-03', '2026-02-28', 6, 5, 'COMPLETED', 1,
         'Tổ KCS tháng 2.', 1, 2, 'tl_kcs01'),
        (15, 'TP-KCS-2026-002', 'Kế hoạch HLV T3/2026 - Tổ KCS', '2026-03-03', '2026-03-31', 6, 5, 'DRAFT', 1,
         'Đang soạn thảo.', 1, 2, 'tl_kcs01');
@@ -931,162 +943,162 @@ VALUES (1, 'TP-TI-2026-001', 'Kế hoạch HLV T1/2026 - Tổ Tiện Ca Ngày', 
 INSERT INTO training_plan_details (id, training_plan_id, employee_id, batch_id, target_month,
                                    planned_date, actual_date, status, note, created_by)
 VALUES
--- Plan 1: Tổ Tiện T1/2026 (APPROVED, T1)
-(1, 1, 1, 'bp1-nv001-a', '2026-01-01', '2026-01-07', '2026-01-07', 'DONE', 'NV001 - TS0001 đạt', 'tl_tien01'),
-(2, 1, 2, 'bp1-nv002-a', '2026-01-01', '2026-01-08', '2026-01-08', 'DONE', 'NV002 - TS0001 đạt', 'tl_tien01'),
-(3, 1, 3, 'bp1-nv003-a', '2026-01-01', '2026-01-09', '2026-01-09', 'DONE', 'NV003 - TS0002 đạt', 'tl_tien01'),
-(4, 1, 4, 'bp1-nv004-a', '2026-01-01', '2026-01-10', NULL, 'MISS', 'NV004 nghỉ ốm', 'tl_tien01'),
-(5, 1, 6, 'bp1-nv006-a', '2026-01-01', '2026-01-14', '2026-01-14', 'DONE', 'NV006 - TS0003 đạt', 'tl_tien01'),
--- Plan 2: Tổ Tiện T2/2026 (APPROVED, T2)
-(6, 2, 1, 'bp2-nv001-a', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV001 đạt lần 2', 'tl_tien01'),
-(7, 2, 2, 'bp2-nv002-a', '2026-02-01', '2026-02-06', '2026-02-06', 'DONE', 'NV002 đạt lần 2', 'tl_tien01'),
-(8, 2, 3, 'bp2-nv003-a', '2026-02-01', '2026-02-10', '2026-02-10', 'DONE', 'NV003 đạt', 'tl_tien01'),
-(9, 2, 4, 'bp2-nv004-a', '2026-02-01', '2026-02-12', '2026-02-12', 'DONE', 'NV004 bổ sung T2', 'tl_tien01'),
-(10, 2, 6, 'bp2-nv006-a', '2026-02-01', '2026-02-18', '2026-02-18', 'DONE', 'NV006 đạt', 'tl_tien01'),
--- Plan 3: Tổ Tiện T3/2026 (APPROVED, T3)
-(11, 3, 1, 'bp3-nv001-a', '2026-03-01', '2026-03-05', '2026-03-05', 'DONE', 'NV001 lần 3', 'tl_tien01'),
-(12, 3, 2, 'bp3-nv002-a', '2026-03-01', '2026-03-06', '2026-03-06', 'DONE', 'NV002 lần 3', 'tl_tien01'),
-(13, 3, 3, 'bp3-nv003-a', '2026-03-01', '2026-03-11', NULL, 'PENDING', 'NV003 - chưa làm', 'tl_tien01'),
-(14, 3, 4, 'bp3-nv004-a', '2026-03-01', '2026-03-12', NULL, 'PENDING', 'NV004 lần bổ sung', 'tl_tien01'),
-(15, 3, 6, 'bp3-nv006-a', '2026-03-01', '2026-03-07', '2026-03-07', 'DONE', 'NV006 đạt', 'tl_tien01'),
--- Plan 5: Tổ Phay T1/2026 (APPROVED)
-(16, 5, 7, 'bp5-nv007-a', '2026-01-01', '2026-01-07', '2026-01-07', 'DONE', 'NV007 - TS0007 đạt', 'tl_phay01'),
-(17, 5, 8, 'bp5-nv008-a', '2026-01-01', '2026-01-08', '2026-01-08', 'DONE', 'NV008 - TS0007 đạt', 'tl_phay01'),
-(18, 5, 9, 'bp5-nv009-a', '2026-01-01', '2026-01-09', '2026-01-09', 'DONE', 'NV009 đạt', 'tl_phay01'),
-(19, 5, 10, 'bp5-nv010-a', '2026-01-01', '2026-01-14', NULL, 'MISS', 'NV010 nghỉ phép', 'tl_phay01'),
-(20, 5, 12, 'bp5-nv012-a', '2026-01-01', '2026-01-15', '2026-01-15', 'DONE', 'NV012 đạt', 'tl_phay01'),
--- Plan 6: Tổ Phay T2/2026 (APPROVED)
-(21, 6, 7, 'bp6-nv007-a', '2026-02-01', '2026-02-04', '2026-02-04', 'DONE', 'NV007 lần 2', 'tl_phay01'),
-(22, 6, 8, 'bp6-nv008-a', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV008 lần 2', 'tl_phay01'),
-(23, 6, 9, 'bp6-nv009-a', '2026-02-01', '2026-02-11', '2026-02-11', 'DONE', 'NV009 lần 2', 'tl_phay01'),
-(24, 6, 10, 'bp6-nv010-a', '2026-02-01', '2026-02-18', '2026-02-18', 'DONE', 'NV010 bổ sung T2', 'tl_phay01'),
-(25, 6, 12, 'bp6-nv012-a', '2026-02-01', '2026-02-20', '2026-02-20', 'DONE', 'NV012 lần 2', 'tl_phay01'),
--- Plan 7: Tổ Phay T3/2026 (WAITING_SV)
-(26, 7, 7, 'bp7-nv007-a', '2026-03-01', '2026-03-06', NULL, 'PENDING', 'Chờ duyệt kế hoạch', 'tl_phay01'),
-(27, 7, 8, 'bp7-nv008-a', '2026-03-01', '2026-03-07', NULL, 'PENDING', 'Chờ duyệt kế hoạch', 'tl_phay01'),
-(28, 7, 9, 'bp7-nv009-a', '2026-03-01', '2026-03-12', NULL, 'PENDING', 'Chờ duyệt kế hoạch', 'tl_phay01'),
-(29, 7, 10, 'bp7-nv010-a', '2026-03-01', '2026-03-13', NULL, 'PENDING', 'Chờ duyệt kế hoạch', 'tl_phay01'),
-(30, 7, 12, 'bp7-nv012-a', '2026-03-01', '2026-03-14', NULL, 'PENDING', 'Chờ duyệt kế hoạch', 'tl_phay01'),
--- Plan 9: Tổ Lắp Ráp Bơm T2/2026 (APPROVED)
-(31, 9, 17, 'bp9-nv017-a', '2026-02-01', '2026-02-04', '2026-02-04', 'DONE', 'NV017 - TS0023 đạt', 'tl_laprap01'),
-(32, 9, 18, 'bp9-nv018-a', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV018 đạt', 'tl_laprap01'),
-(33, 9, 19, 'bp9-nv019-a', '2026-02-01', '2026-02-06', '2026-02-06', 'DONE', 'NV019 đạt', 'tl_laprap01'),
-(34, 9, 20, 'bp9-nv020-a', '2026-02-01', '2026-02-11', '2026-02-11', 'DONE', 'NV020 đạt', 'tl_laprap01'),
--- Plan 10: Tổ Lắp Ráp Bơm T3/2026 (WAITING_MANAGER)
-(35, 10, 17, 'bp10-nv017-a', '2026-03-01', '2026-03-05', NULL, 'PENDING', 'Chờ MG duyệt', 'tl_laprap01'),
-(36, 10, 18, 'bp10-nv018-a', '2026-03-01', '2026-03-06', NULL, 'PENDING', 'Chờ MG duyệt', 'tl_laprap01'),
-(37, 10, 19, 'bp10-nv019-a', '2026-03-01', '2026-03-07', NULL, 'PENDING', 'Chờ MG duyệt', 'tl_laprap01'),
-(38, 10, 20, 'bp10-nv020-a', '2026-03-01', '2026-03-10', NULL, 'PENDING', 'Chờ MG duyệt', 'tl_laprap01'),
--- Plan 11: Tổ Động Cơ T1/2026 (APPROVED)
-(39, 11, 22, 'bp11-nv022-a', '2026-01-01', '2026-01-07', '2026-01-07', 'DONE', 'NV022 - TS0018 đạt', 'tl_dongco01'),
-(40, 11, 23, 'bp11-nv023-a', '2026-01-01', '2026-01-08', '2026-01-08', 'DONE', 'NV023 đạt', 'tl_dongco01'),
-(41, 11, 24, 'bp11-nv024-a', '2026-01-01', '2026-01-09', '2026-01-09', 'DONE', 'NV024 đạt', 'tl_dongco01'),
-(42, 11, 25, 'bp11-nv025-a', '2026-01-01', '2026-01-10', '2026-01-10', 'DONE', 'NV025 đạt', 'tl_dongco01'),
-(43, 11, 26, 'bp11-nv026-a', '2026-01-01', '2026-01-14', NULL, 'MISS', 'NV026 vắng không lý do', 'tl_dongco01'),
--- Plan 12: Tổ Động Cơ T2/2026 (APPROVED)
-(44, 12, 22, 'bp12-nv022-a', '2026-02-01', '2026-02-04', '2026-02-04', 'DONE', 'NV022 lần 2', 'tl_dongco01'),
-(45, 12, 23, 'bp12-nv023-a', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV023 lần 2', 'tl_dongco01'),
-(46, 12, 24, 'bp12-nv024-a', '2026-02-01', '2026-02-11', '2026-02-11', 'DONE', 'NV024 lần 2', 'tl_dongco01'),
-(47, 12, 25, 'bp12-nv025-a', '2026-02-01', '2026-02-12', '2026-02-12', 'DONE', 'NV025 lần 2', 'tl_dongco01'),
-(48, 12, 26, 'bp12-nv026-a', '2026-02-01', '2026-02-18', '2026-02-18', 'DONE', 'NV026 bổ sung T2', 'tl_dongco01'),
--- Plan 14: Tổ KCS T2/2026 (APPROVED)
-(49, 14, 27, 'bp14-nv027-a', '2026-02-01', '2026-02-04', '2026-02-04', 'DONE', 'NV027 đạt', 'tl_kcs01'),
-(50, 14, 28, 'bp14-nv028-a', '2026-02-01', '2026-02-05', '2026-02-05', 'DONE', 'NV028 đạt', 'tl_kcs01'),
-(51, 14, 29, 'bp14-nv029-a', '2026-02-01', '2026-02-06', '2026-02-06', 'DONE', 'NV029 đạt', 'tl_kcs01'),
-(52, 14, 30, 'bp14-nv030-a', '2026-02-01', '2026-02-11', '2026-02-11', 'DONE', 'NV030 đạt', 'tl_kcs01'),
+-- Plan 1: Tổ Tiện T1/2026 (COMPLETED, T1)
+(1, 1, 1, 'bp1-nv001-a', '2026-01-01', '2026-01-07', '2026-01-07', 'COMPLETED', 'NV001 - TS0001 đạt', 'tl_tien01'),
+(2, 1, 2, 'bp1-nv002-a', '2026-01-01', '2026-01-08', '2026-01-08', 'COMPLETED', 'NV002 - TS0001 đạt', 'tl_tien01'),
+(3, 1, 3, 'bp1-nv003-a', '2026-01-01', '2026-01-09', '2026-01-09', 'COMPLETED', 'NV003 - TS0002 đạt', 'tl_tien01'),
+(4, 1, 4, 'bp1-nv004-a', '2026-01-01', '2026-01-10', NULL, 'MISSED', 'NV004 nghỉ ốm', 'tl_tien01'),
+(5, 1, 6, 'bp1-nv006-a', '2026-01-01', '2026-01-14', '2026-01-14', 'COMPLETED', 'NV006 - TS0003 đạt', 'tl_tien01'),
+-- Plan 2: Tổ Tiện T2/2026 (COMPLETED, T2)
+(6, 2, 1, 'bp2-nv001-a', '2026-02-01', '2026-02-05', '2026-02-05', 'COMPLETED', 'NV001 đạt lần 2', 'tl_tien01'),
+(7, 2, 2, 'bp2-nv002-a', '2026-02-01', '2026-02-06', '2026-02-06', 'COMPLETED', 'NV002 đạt lần 2', 'tl_tien01'),
+(8, 2, 3, 'bp2-nv003-a', '2026-02-01', '2026-02-10', '2026-02-10', 'COMPLETED', 'NV003 đạt', 'tl_tien01'),
+(9, 2, 4, 'bp2-nv004-a', '2026-02-01', '2026-02-12', '2026-02-12', 'COMPLETED', 'NV004 bổ sung T2', 'tl_tien01'),
+(10, 2, 6, 'bp2-nv006-a', '2026-02-01', '2026-02-18', '2026-02-18', 'COMPLETED', 'NV006 đạt', 'tl_tien01'),
+-- Plan 3: Tổ Tiện T3/2026 (COMPLETED, T3)
+(11, 3, 1, 'bp3-nv001-a', '2026-03-01', '2026-03-05', '2026-03-05', 'COMPLETED', 'NV001 lần 3', 'tl_tien01'),
+(12, 3, 2, 'bp3-nv002-a', '2026-03-01', '2026-03-06', '2026-03-06', 'COMPLETED', 'NV002 lần 3', 'tl_tien01'),
+(13, 3, 3, 'bp3-nv003-a', '2026-03-01', '2026-03-11', NULL, 'PENDING_REVIEW', 'NV003 - chưa làm', 'tl_tien01'),
+(14, 3, 4, 'bp3-nv004-a', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'NV004 lần bổ sung', 'tl_tien01'),
+(15, 3, 6, 'bp3-nv006-a', '2026-03-01', '2026-03-07', '2026-03-07', 'COMPLETED', 'NV006 đạt', 'tl_tien01'),
+-- Plan 5: Tổ Phay T1/2026 (COMPLETED)
+(16, 5, 7, 'bp5-nv007-a', '2026-01-01', '2026-01-07', '2026-01-07', 'COMPLETED', 'NV007 - TS0007 đạt', 'tl_phay01'),
+(17, 5, 8, 'bp5-nv008-a', '2026-01-01', '2026-01-08', '2026-01-08', 'COMPLETED', 'NV008 - TS0007 đạt', 'tl_phay01'),
+(18, 5, 9, 'bp5-nv009-a', '2026-01-01', '2026-01-09', '2026-01-09', 'COMPLETED', 'NV009 đạt', 'tl_phay01'),
+(19, 5, 10, 'bp5-nv010-a', '2026-01-01', '2026-01-14', NULL, 'MISSED', 'NV010 nghỉ phép', 'tl_phay01'),
+(20, 5, 12, 'bp5-nv012-a', '2026-01-01', '2026-01-15', '2026-01-15', 'COMPLETED', 'NV012 đạt', 'tl_phay01'),
+-- Plan 6: Tổ Phay T2/2026 (COMPLETED)
+(21, 6, 7, 'bp6-nv007-a', '2026-02-01', '2026-02-04', '2026-02-04', 'COMPLETED', 'NV007 lần 2', 'tl_phay01'),
+(22, 6, 8, 'bp6-nv008-a', '2026-02-01', '2026-02-05', '2026-02-05', 'COMPLETED', 'NV008 lần 2', 'tl_phay01'),
+(23, 6, 9, 'bp6-nv009-a', '2026-02-01', '2026-02-11', '2026-02-11', 'COMPLETED', 'NV009 lần 2', 'tl_phay01'),
+(24, 6, 10, 'bp6-nv010-a', '2026-02-01', '2026-02-18', '2026-02-18', 'COMPLETED', 'NV010 bổ sung T2', 'tl_phay01'),
+(25, 6, 12, 'bp6-nv012-a', '2026-02-01', '2026-02-20', '2026-02-20', 'COMPLETED', 'NV012 lần 2', 'tl_phay01'),
+-- Plan 7: Tổ Phay T3/2026 (PENDING_REVIEW)
+(26, 7, 7, 'bp7-nv007-a', '2026-03-01', '2026-03-06', NULL, 'PENDING_REVIEW', 'Chờ duyệt kế hoạch', 'tl_phay01'),
+(27, 7, 8, 'bp7-nv008-a', '2026-03-01', '2026-03-07', NULL, 'PENDING_REVIEW', 'Chờ duyệt kế hoạch', 'tl_phay01'),
+(28, 7, 9, 'bp7-nv009-a', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'Chờ duyệt kế hoạch', 'tl_phay01'),
+(29, 7, 10, 'bp7-nv010-a', '2026-03-01', '2026-03-13', NULL, 'PENDING_REVIEW', 'Chờ duyệt kế hoạch', 'tl_phay01'),
+(30, 7, 12, 'bp7-nv012-a', '2026-03-01', '2026-03-14', NULL, 'PENDING_REVIEW', 'Chờ duyệt kế hoạch', 'tl_phay01'),
+-- Plan 9: Tổ Lắp Ráp Bơm T2/2026 (COMPLETED)
+(31, 9, 17, 'bp9-nv017-a', '2026-02-01', '2026-02-04', '2026-02-04', 'COMPLETED', 'NV017 - TS0023 đạt', 'tl_laprap01'),
+(32, 9, 18, 'bp9-nv018-a', '2026-02-01', '2026-02-05', '2026-02-05', 'COMPLETED', 'NV018 đạt', 'tl_laprap01'),
+(33, 9, 19, 'bp9-nv019-a', '2026-02-01', '2026-02-06', '2026-02-06', 'COMPLETED', 'NV019 đạt', 'tl_laprap01'),
+(34, 9, 20, 'bp9-nv020-a', '2026-02-01', '2026-02-11', '2026-02-11', 'COMPLETED', 'NV020 đạt', 'tl_laprap01'),
+-- Plan 10: Tổ Lắp Ráp Bơm T3/2026 (PENDING_APPROVAL)
+(35, 10, 17, 'bp10-nv017-a', '2026-03-01', '2026-03-05', NULL, 'PENDING_REVIEW', 'Chờ MG duyệt', 'tl_laprap01'),
+(36, 10, 18, 'bp10-nv018-a', '2026-03-01', '2026-03-06', NULL, 'PENDING_REVIEW', 'Chờ MG duyệt', 'tl_laprap01'),
+(37, 10, 19, 'bp10-nv019-a', '2026-03-01', '2026-03-07', NULL, 'PENDING_REVIEW', 'Chờ MG duyệt', 'tl_laprap01'),
+(38, 10, 20, 'bp10-nv020-a', '2026-03-01', '2026-03-10', NULL, 'PENDING_REVIEW', 'Chờ MG duyệt', 'tl_laprap01'),
+-- Plan 11: Tổ Động Cơ T1/2026 (COMPLETED)
+(39, 11, 22, 'bp11-nv022-a', '2026-01-01', '2026-01-07', '2026-01-07', 'COMPLETED', 'NV022 - TS0018 đạt', 'tl_dongco01'),
+(40, 11, 23, 'bp11-nv023-a', '2026-01-01', '2026-01-08', '2026-01-08', 'COMPLETED', 'NV023 đạt', 'tl_dongco01'),
+(41, 11, 24, 'bp11-nv024-a', '2026-01-01', '2026-01-09', '2026-01-09', 'COMPLETED', 'NV024 đạt', 'tl_dongco01'),
+(42, 11, 25, 'bp11-nv025-a', '2026-01-01', '2026-01-10', '2026-01-10', 'COMPLETED', 'NV025 đạt', 'tl_dongco01'),
+(43, 11, 26, 'bp11-nv026-a', '2026-01-01', '2026-01-14', NULL, 'MISSED', 'NV026 vắng không lý do', 'tl_dongco01'),
+-- Plan 12: Tổ Động Cơ T2/2026 (COMPLETED)
+(44, 12, 22, 'bp12-nv022-a', '2026-02-01', '2026-02-04', '2026-02-04', 'COMPLETED', 'NV022 lần 2', 'tl_dongco01'),
+(45, 12, 23, 'bp12-nv023-a', '2026-02-01', '2026-02-05', '2026-02-05', 'COMPLETED', 'NV023 lần 2', 'tl_dongco01'),
+(46, 12, 24, 'bp12-nv024-a', '2026-02-01', '2026-02-11', '2026-02-11', 'COMPLETED', 'NV024 lần 2', 'tl_dongco01'),
+(47, 12, 25, 'bp12-nv025-a', '2026-02-01', '2026-02-12', '2026-02-12', 'COMPLETED', 'NV025 lần 2', 'tl_dongco01'),
+(48, 12, 26, 'bp12-nv026-a', '2026-02-01', '2026-02-18', '2026-02-18', 'COMPLETED', 'NV026 bổ sung T2', 'tl_dongco01'),
+-- Plan 14: Tổ KCS T2/2026 (COMPLETED)
+(49, 14, 27, 'bp14-nv027-a', '2026-02-01', '2026-02-04', '2026-02-04', 'COMPLETED', 'NV027 đạt', 'tl_kcs01'),
+(50, 14, 28, 'bp14-nv028-a', '2026-02-01', '2026-02-05', '2026-02-05', 'COMPLETED', 'NV028 đạt', 'tl_kcs01'),
+(51, 14, 29, 'bp14-nv029-a', '2026-02-01', '2026-02-06', '2026-02-06', 'COMPLETED', 'NV029 đạt', 'tl_kcs01'),
+(52, 14, 30, 'bp14-nv030-a', '2026-02-01', '2026-02-11', '2026-02-11', 'COMPLETED', 'NV030 đạt', 'tl_kcs01'),
 -- Plan 8: Tổ Hàn (REJECTED_BY_SV)
-(53, 8, 13, 'bp8-nv013-a', '2026-03-01', '2026-03-05', NULL, 'PENDING', 'Kế hoạch bị trả', 'tl_hanlap01'),
-(54, 8, 14, 'bp8-nv014-a', '2026-03-01', '2026-03-06', NULL, 'PENDING', 'Kế hoạch bị trả', 'tl_hanlap01'),
-(55, 8, 15, 'bp8-nv015-a', '2026-03-01', '2026-03-07', NULL, 'PENDING', 'Kế hoạch bị trả', 'tl_hanlap01'),
-(56, 8, 16, 'bp8-nv016-a', '2026-03-01', '2026-03-10', NULL, 'PENDING', 'NV016 thiếu trong lịch', 'tl_hanlap01'),
--- Plan 13: Tổ Động Cơ T3 (WAITING_SV)
-(57, 13, 22, 'bp13-nv022-a', '2026-03-01', '2026-03-05', NULL, 'PENDING', 'Chờ SV', 'tl_dongco01'),
-(58, 13, 23, 'bp13-nv023-a', '2026-03-01', '2026-03-06', NULL, 'PENDING', 'Chờ SV', 'tl_dongco01'),
-(59, 13, 24, 'bp13-nv024-a', '2026-03-01', '2026-03-12', NULL, 'PENDING', 'Chờ SV', 'tl_dongco01'),
-(60, 13, 26, 'bp13-nv026-a', '2026-03-01', '2026-03-13', NULL, 'PENDING', 'Chờ SV', 'tl_dongco01');
+(53, 8, 13, 'bp8-nv013-a', '2026-03-01', '2026-03-05', NULL, 'PENDING_REVIEW', 'Kế hoạch bị trả', 'tl_hanlap01'),
+(54, 8, 14, 'bp8-nv014-a', '2026-03-01', '2026-03-06', NULL, 'PENDING_REVIEW', 'Kế hoạch bị trả', 'tl_hanlap01'),
+(55, 8, 15, 'bp8-nv015-a', '2026-03-01', '2026-03-07', NULL, 'PENDING_REVIEW', 'Kế hoạch bị trả', 'tl_hanlap01'),
+(56, 8, 16, 'bp8-nv016-a', '2026-03-01', '2026-03-10', NULL, 'PENDING_REVIEW', 'NV016 thiếu trong lịch', 'tl_hanlap01'),
+-- Plan 13: Tổ Động Cơ T3 (PENDING_REVIEW)
+(57, 13, 22, 'bp13-nv022-a', '2026-03-01', '2026-03-05', NULL, 'PENDING_REVIEW', 'Chờ SV', 'tl_dongco01'),
+(58, 13, 23, 'bp13-nv023-a', '2026-03-01', '2026-03-06', NULL, 'PENDING_REVIEW', 'Chờ SV', 'tl_dongco01'),
+(59, 13, 24, 'bp13-nv024-a', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'Chờ SV', 'tl_dongco01'),
+(60, 13, 26, 'bp13-nv026-a', '2026-03-01', '2026-03-13', NULL, 'PENDING_REVIEW', 'Chờ SV', 'tl_dongco01');
 
 -- ============================================================================
--- PART 9: TRAINING RESULTS (cho các plan APPROVED đã có DONE details)
+-- PART 9: TRAINING RESULTS (cho các plan COMPLETED đã có DONE details)
 -- ============================================================================
 
 -- training_results schema: id, training_plan_id, title, form_code, year(NOT NULL),
---   team_id, line_id, status(ON_GOING|DONE|WAITING_MANAGER|REJECTED_BY_MANAGER|APPROVED),
+--   team_id, line_id, status(ONGOING|DONE|PENDING_APPROVAL|REJECTED|COMPLETED),
 --   current_version, note, created_by
 INSERT INTO training_results (id, training_plan_id, title, form_code, year, team_id, line_id,
                               status, current_version, note, created_by)
-VALUES (1, 1, 'Kết quả HLV T1/2026 – Tổ Tiện', 'TR-RES-TI-001', 2026, 1, 1, 'APPROVED', 1,
+VALUES (1, 1, 'Kết quả HLV T1/2026 – Tổ Tiện', 'TR-RES-TI-001', 2026, 1, 1, 'COMPLETED', 1,
         'Tổ Tiện T1/2026 hoàn thành. 4/5 nhân viên đạt.', 'tl_tien01'),
-       (2, 2, 'Kết quả HLV T2/2026 – Tổ Tiện', 'TR-RES-TI-002', 2026, 1, 1, 'APPROVED', 1,
+       (2, 2, 'Kết quả HLV T2/2026 – Tổ Tiện', 'TR-RES-TI-002', 2026, 1, 1, 'COMPLETED', 1,
         'Tổ Tiện T2/2026 hoàn thành. 5/5 đạt.', 'tl_tien01'),
-       (3, 5, 'Kết quả HLV T1/2026 – Tổ Phay', 'TR-RES-PH-001', 2026, 2, 2, 'APPROVED', 1,
+       (3, 5, 'Kết quả HLV T1/2026 – Tổ Phay', 'TR-RES-PH-001', 2026, 2, 2, 'COMPLETED', 1,
         'Tổ Phay T1/2026 hoàn thành. 4/5 đạt.', 'tl_phay01'),
-       (4, 6, 'Kết quả HLV T2/2026 – Tổ Phay', 'TR-RES-PH-002', 2026, 2, 2, 'APPROVED', 1,
+       (4, 6, 'Kết quả HLV T2/2026 – Tổ Phay', 'TR-RES-PH-002', 2026, 2, 2, 'COMPLETED', 1,
         'Tổ Phay T2/2026 hoàn thành. 5/5 đạt.', 'tl_phay01'),
-       (5, 9, 'Kết quả HLV T2/2026 – Tổ Lắp Bơm', 'TR-RES-B-001', 2026, 4, 5, 'APPROVED', 1,
+       (5, 9, 'Kết quả HLV T2/2026 – Tổ Lắp Bơm', 'TR-RES-B-001', 2026, 4, 5, 'COMPLETED', 1,
         'Tổ Lắp Ráp Bơm T2/2026 hoàn thành. 4/4 đạt.', 'tl_laprap01'),
-       (6, 11, 'Kết quả HLV T1/2026 – Tổ Động Cơ', 'TR-RES-DC-001', 2026, 5, 4, 'APPROVED', 1,
+       (6, 11, 'Kết quả HLV T1/2026 – Tổ Động Cơ', 'TR-RES-DC-001', 2026, 5, 4, 'COMPLETED', 1,
         'Tổ ĐC T1/2026. 4/5 đạt (NV026 MISS).', 'tl_dongco01'),
-       (7, 12, 'Kết quả HLV T2/2026 – Tổ Động Cơ', 'TR-RES-DC-002', 2026, 5, 4, 'APPROVED', 1,
+       (7, 12, 'Kết quả HLV T2/2026 – Tổ Động Cơ', 'TR-RES-DC-002', 2026, 5, 4, 'COMPLETED', 1,
         'Tổ ĐC T2/2026 hoàn thành. 5/5 đạt.', 'tl_dongco01'),
-       (8, 14, 'Kết quả HLV T2/2026 – Tổ KCS', 'TR-RES-KCS-001', 2026, 6, 5, 'APPROVED', 1,
+       (8, 14, 'Kết quả HLV T2/2026 – Tổ KCS', 'TR-RES-KCS-001', 2026, 6, 5, 'COMPLETED', 1,
         'Tổ KCS T2/2026 hoàn thành. 4/4 đạt.', 'tl_kcs01'),
-       (9, 3, 'Kết quả HLV T3/2026 – Tổ Tiện', 'TR-RES-TI-003', 2026, 1, 1, 'WAITING_MANAGER', 1,
+       (9, 3, 'Kết quả HLV T3/2026 – Tổ Tiện', 'TR-RES-TI-003', 2026, 1, 1, 'PENDING_APPROVAL', 1,
         'Tổ Tiện T3/2026 đã nộp, chờ Manager duyệt.', 'tl_tien01');
 
 -- training_result_details schema: id, training_result_id, training_plan_detail_id,
 --   employee_id, process_id, training_sample_id, planned_date(NOT NULL), actual_date,
---   status(PENDING|DONE|NEED_SIGN|WAITING_SV|REJECTED_BY_SV|APPROVED), is_pass, note, created_by
+--   status(PENDING|DONE|NEED_SIGN|PENDING_REVIEW|REJECTED_BY_SV|COMPLETED), is_pass, note, created_by
 -- NOTE: không có cột 'score'
 INSERT INTO training_result_details (id, training_result_id, training_plan_detail_id, employee_id,
                                      training_sample_id, planned_date, actual_date, status, is_pass, note, created_by)
 VALUES
 -- Result 1: Tổ Tiện T1
-(1, 1, 1, 1, 1, '2026-01-07', '2026-01-07', 'APPROVED', TRUE, 'Đạt yêu cầu', 'tl_tien01'),
-(2, 1, 2, 2, 1, '2026-01-08', '2026-01-08', 'APPROVED', TRUE, 'Đạt yêu cầu', 'tl_tien01'),
-(3, 1, 3, 3, 2, '2026-01-09', '2026-01-09', 'APPROVED', TRUE, 'Xuất sắc', 'tl_tien01'),
-(4, 1, 5, 6, 3, '2026-01-14', '2026-01-14', 'APPROVED', TRUE, 'Đạt', 'tl_tien01'),
+(1, 1, 1, 1, 1, '2026-01-07', '2026-01-07', 'COMPLETED', TRUE, 'Đạt yêu cầu', 'tl_tien01'),
+(2, 1, 2, 2, 1, '2026-01-08', '2026-01-08', 'COMPLETED', TRUE, 'Đạt yêu cầu', 'tl_tien01'),
+(3, 1, 3, 3, 2, '2026-01-09', '2026-01-09', 'COMPLETED', TRUE, 'Xuất sắc', 'tl_tien01'),
+(4, 1, 5, 6, 3, '2026-01-14', '2026-01-14', 'COMPLETED', TRUE, 'Đạt', 'tl_tien01'),
 -- Result 2: Tổ Tiện T2
-(5, 2, 6, 1, 4, '2026-02-05', '2026-02-05', 'APPROVED', TRUE, 'Đạt', 'tl_tien01'),
-(6, 2, 7, 2, 4, '2026-02-06', '2026-02-06', 'APPROVED', TRUE, 'Đạt', 'tl_tien01'),
-(7, 2, 8, 3, 5, '2026-02-10', '2026-02-10', 'APPROVED', TRUE, 'Đạt', 'tl_tien01'),
-(8, 2, 9, 4, 1, '2026-02-12', '2026-02-12', 'APPROVED', TRUE, 'Đạt bổ sung', 'tl_tien01'),
-(9, 2, 10, 6, 6, '2026-02-18', '2026-02-18', 'APPROVED', TRUE, 'Đạt', 'tl_tien01'),
+(5, 2, 6, 1, 4, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Đạt', 'tl_tien01'),
+(6, 2, 7, 2, 4, '2026-02-06', '2026-02-06', 'COMPLETED', TRUE, 'Đạt', 'tl_tien01'),
+(7, 2, 8, 3, 5, '2026-02-10', '2026-02-10', 'COMPLETED', TRUE, 'Đạt', 'tl_tien01'),
+(8, 2, 9, 4, 1, '2026-02-12', '2026-02-12', 'COMPLETED', TRUE, 'Đạt bổ sung', 'tl_tien01'),
+(9, 2, 10, 6, 6, '2026-02-18', '2026-02-18', 'COMPLETED', TRUE, 'Đạt', 'tl_tien01'),
 -- Result 3: Tổ Phay T1
-(10, 3, 16, 7, 7, '2026-01-07', '2026-01-07', 'APPROVED', TRUE, 'Xuất sắc', 'tl_phay01'),
-(11, 3, 17, 8, 7, '2026-01-08', '2026-01-08', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
-(12, 3, 18, 9, 8, '2026-01-09', '2026-01-09', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
-(13, 3, 20, 12, 9, '2026-01-15', '2026-01-15', 'APPROVED', FALSE, 'Chưa đạt – tái huấn luyện', 'tl_phay01'),
+(10, 3, 16, 7, 7, '2026-01-07', '2026-01-07', 'COMPLETED', TRUE, 'Xuất sắc', 'tl_phay01'),
+(11, 3, 17, 8, 7, '2026-01-08', '2026-01-08', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
+(12, 3, 18, 9, 8, '2026-01-09', '2026-01-09', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
+(13, 3, 20, 12, 9, '2026-01-15', '2026-01-15', 'COMPLETED', FALSE, 'Chưa đạt – tái huấn luyện', 'tl_phay01'),
 -- Result 4: Tổ Phay T2
-(14, 4, 21, 7, 10, '2026-02-04', '2026-02-04', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
-(15, 4, 22, 8, 11, '2026-02-05', '2026-02-05', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
-(16, 4, 23, 9, 12, '2026-02-11', '2026-02-11', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
-(17, 4, 24, 10, 7, '2026-02-18', '2026-02-18', 'APPROVED', TRUE, 'Bổ sung T2 đạt', 'tl_phay01'),
-(18, 4, 25, 12, 8, '2026-02-20', '2026-02-20', 'APPROVED', TRUE, 'Đạt', 'tl_phay01'),
+(14, 4, 21, 7, 10, '2026-02-04', '2026-02-04', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
+(15, 4, 22, 8, 11, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
+(16, 4, 23, 9, 12, '2026-02-11', '2026-02-11', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
+(17, 4, 24, 10, 7, '2026-02-18', '2026-02-18', 'COMPLETED', TRUE, 'Bổ sung T2 đạt', 'tl_phay01'),
+(18, 4, 25, 12, 8, '2026-02-20', '2026-02-20', 'COMPLETED', TRUE, 'Đạt', 'tl_phay01'),
 -- Result 5: Tổ Lắp Ráp Bơm T2
-(19, 5, 31, 17, 23, '2026-02-04', '2026-02-04', 'APPROVED', TRUE, 'Đạt', 'tl_laprap01'),
-(20, 5, 32, 18, 24, '2026-02-05', '2026-02-05', 'APPROVED', TRUE, 'Đạt', 'tl_laprap01'),
-(21, 5, 33, 19, 25, '2026-02-06', '2026-02-06', 'APPROVED', TRUE, 'Đạt', 'tl_laprap01'),
-(22, 5, 34, 20, 23, '2026-02-11', '2026-02-11', 'APPROVED', TRUE, 'Đạt', 'tl_laprap01'),
+(19, 5, 31, 17, 23, '2026-02-04', '2026-02-04', 'COMPLETED', TRUE, 'Đạt', 'tl_laprap01'),
+(20, 5, 32, 18, 24, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Đạt', 'tl_laprap01'),
+(21, 5, 33, 19, 25, '2026-02-06', '2026-02-06', 'COMPLETED', TRUE, 'Đạt', 'tl_laprap01'),
+(22, 5, 34, 20, 23, '2026-02-11', '2026-02-11', 'COMPLETED', TRUE, 'Đạt', 'tl_laprap01'),
 -- Result 6: Tổ ĐC T1
-(23, 6, 39, 22, 18, '2026-01-07', '2026-01-07', 'APPROVED', TRUE, 'Xuất sắc', 'tl_dongco01'),
-(24, 6, 40, 23, 19, '2026-01-08', '2026-01-08', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(25, 6, 41, 24, 20, '2026-01-09', '2026-01-09', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(26, 6, 42, 25, 21, '2026-01-10', '2026-01-10', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
+(23, 6, 39, 22, 18, '2026-01-07', '2026-01-07', 'COMPLETED', TRUE, 'Xuất sắc', 'tl_dongco01'),
+(24, 6, 40, 23, 19, '2026-01-08', '2026-01-08', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(25, 6, 41, 24, 20, '2026-01-09', '2026-01-09', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(26, 6, 42, 25, 21, '2026-01-10', '2026-01-10', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
 -- Result 7: Tổ ĐC T2
-(27, 7, 44, 22, 22, '2026-02-04', '2026-02-04', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(28, 7, 45, 23, 18, '2026-02-05', '2026-02-05', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(29, 7, 46, 24, 19, '2026-02-11', '2026-02-11', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(30, 7, 47, 25, 20, '2026-02-12', '2026-02-12', 'APPROVED', TRUE, 'Đạt', 'tl_dongco01'),
-(31, 7, 48, 26, 21, '2026-02-18', '2026-02-18', 'APPROVED', FALSE, 'Chưa đạt – NV026 tái đào tạo', 'tl_dongco01'),
+(27, 7, 44, 22, 22, '2026-02-04', '2026-02-04', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(28, 7, 45, 23, 18, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(29, 7, 46, 24, 19, '2026-02-11', '2026-02-11', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(30, 7, 47, 25, 20, '2026-02-12', '2026-02-12', 'COMPLETED', TRUE, 'Đạt', 'tl_dongco01'),
+(31, 7, 48, 26, 21, '2026-02-18', '2026-02-18', 'COMPLETED', FALSE, 'Chưa đạt – NV026 tái đào tạo', 'tl_dongco01'),
 -- Result 8: Tổ KCS T2
-(32, 8, 49, 27, 25, '2026-02-04', '2026-02-04', 'APPROVED', TRUE, 'Đạt', 'tl_kcs01'),
-(33, 8, 50, 28, 26, '2026-02-05', '2026-02-05', 'APPROVED', TRUE, 'Đạt', 'tl_kcs01'),
-(34, 8, 51, 29, 27, '2026-02-06', '2026-02-06', 'APPROVED', TRUE, 'Xuất sắc', 'tl_kcs01'),
-(35, 8, 52, 30, 28, '2026-02-11', '2026-02-11', 'APPROVED', TRUE, 'Đạt', 'tl_kcs01'),
--- Result 9: Tổ Tiện T3 (WAITING_MANAGER – partial)
-(36, 9, 11, 1, 2, '2026-03-05', '2026-03-05', 'DONE', TRUE, 'Đạt T3', 'tl_tien01'),
-(37, 9, 12, 2, 4, '2026-03-06', '2026-03-06', 'DONE', TRUE, 'Đạt T3', 'tl_tien01'),
-(38, 9, 15, 6, 5, '2026-03-07', '2026-03-07', 'DONE', TRUE, 'Đạt T3', 'tl_tien01');
+(32, 8, 49, 27, 25, '2026-02-04', '2026-02-04', 'COMPLETED', TRUE, 'Đạt', 'tl_kcs01'),
+(33, 8, 50, 28, 26, '2026-02-05', '2026-02-05', 'COMPLETED', TRUE, 'Đạt', 'tl_kcs01'),
+(34, 8, 51, 29, 27, '2026-02-06', '2026-02-06', 'COMPLETED', TRUE, 'Xuất sắc', 'tl_kcs01'),
+(35, 8, 52, 30, 28, '2026-02-11', '2026-02-11', 'COMPLETED', TRUE, 'Đạt', 'tl_kcs01'),
+-- Result 9: Tổ Tiện T3 (PENDING_APPROVAL – partial)
+(36, 9, 11, 1, 2, '2026-03-05', '2026-03-05', 'COMPLETED', TRUE, 'Đạt T3', 'tl_tien01'),
+(37, 9, 12, 2, 4, '2026-03-06', '2026-03-06', 'COMPLETED', TRUE, 'Đạt T3', 'tl_tien01'),
+(38, 9, 15, 6, 5, '2026-03-07', '2026-03-07', 'COMPLETED', TRUE, 'Đạt T3', 'tl_tien01');
 
 -- ============================================================================
 -- PRIORITY SYSTEM – EMPLOYEE ENTITY ONLY
@@ -1304,56 +1316,56 @@ VALUES
 -- ============================================================================
 
 INSERT INTO approval_actions (entity_type, entity_id, entity_version, step_order,
-                              required_role, action, performed_by_user_id, performed_by_username,
+                              required_permission, action, performed_by_user_id, performed_by_username,
                               performed_by_full_name, performed_by_role, comment, performed_at, created_by)
 VALUES
--- Defect Proposal 1: APPROVED (TL submit → SV approve → MG approve)
-('DEFECT_REPORT', 1, 1, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
+-- Defect Proposal 1: COMPLETED (TL submit → SV approve → MG approve)
+('DEFECT_PROPOSAL', 1, 1, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Đề xuất báo cáo lỗi Line Tiện T1/2025', '2025-01-20 08:30:00', 'system'),
-('DEFECT_REPORT', 1, 1, 1, 'ROLE_SUPERVISOR', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 1, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
  'Xác nhận lỗi đúng thực tế, đề xuất đào tạo ngay', '2025-01-21 10:00:00', 'system'),
-('DEFECT_REPORT', 1, 2, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
+('DEFECT_PROPOSAL', 1, 2, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Nộp lại sau khi bổ sung thêm lỗi DF003', '2025-01-25 09:00:00', 'system'),
-('DEFECT_REPORT', 1, 2, 1, 'ROLE_SUPERVISOR', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 1, 2, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
  'Duyệt lần 2', '2025-01-26 11:00:00', 'system'),
-('DEFECT_REPORT', 1, 2, 2, 'ROLE_MANAGER', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
+('DEFECT_PROPOSAL', 1, 2, 2, 'APPROVAL_APPROVE', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
  'Phê duyệt toàn bộ báo cáo lỗi Line Tiện', '2025-01-27 14:00:00', 'system'),
 -- Defect Proposal 4: REJECTED
-('DEFECT_REPORT', 4, 1, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 9, 'tl_dongco01', 'Bùi Thị Trưởng Tổ ĐC', 'ROLE_TEAM_LEADER',
+('DEFECT_PROPOSAL', 4, 1, 0, 'SUBMIT', 'SUBMIT', 9, 'tl_dongco01', 'Bùi Thị Trưởng Tổ ĐC', 'ROLE_TEAM_LEADER',
  'Báo cáo lỗi ĐC tháng 1', '2025-01-28 08:00:00', 'system'),
-('DEFECT_REPORT', 4, 1, 1, 'ROLE_SUPERVISOR', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 4, 1, 1, 'APPROVAL_REVIEW', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
  'Thiếu ảnh minh chứng piston lắp sai. Cần bổ sung.', '2025-01-29 09:30:00', 'system'),
--- Training Plan 1: APPROVED (T1/2026 Tiện)
-('TRAINING_PLAN', 1, 1, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
+-- Training Plan 1: COMPLETED (T1/2026 Tiện)
+('TRAINING_PLAN', 1, 1, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Kế hoạch đào tạo T1/2026 Tổ Tiện', '2025-12-28 15:00:00', 'system'),
-('TRAINING_PLAN', 1, 1, 1, 'ROLE_SUPERVISOR', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 1, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
  'OK, lịch phù hợp sản xuất', '2025-12-29 10:00:00', 'system'),
-('TRAINING_PLAN', 1, 1, 2, 'ROLE_MANAGER', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
+('TRAINING_PLAN', 1, 1, 2, 'APPROVAL_APPROVE', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
  'Phê duyệt. Thực hiện đúng lịch.', '2025-12-30 14:00:00', 'system'),
 -- Training Plan 8: REJECTED
-('TRAINING_PLAN', 8, 1, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 10, 'tl_hanlap01', 'Ngô Văn Trưởng Tổ Hàn', 'ROLE_TEAM_LEADER',
+('TRAINING_PLAN', 8, 1, 0, 'SUBMIT', 'SUBMIT', 10, 'tl_hanlap01', 'Ngô Văn Trưởng Tổ Hàn', 'ROLE_TEAM_LEADER',
  'KH Tổ Hàn T3/2026', '2026-02-20 09:00:00', 'system'),
-('TRAINING_PLAN', 8, 1, 1, 'ROLE_SUPERVISOR', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 8, 1, 1, 'APPROVAL_REVIEW', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
  'Thiếu NV016 trong lịch. Bổ sung và nộp lại.', '2026-02-22 11:00:00', 'system'),
--- Training Plan 10: WAITING_MANAGER
-('TRAINING_PLAN', 10, 1, 0, 'ROLE_TEAM_LEADER', 'SUBMIT', 8, 'tl_laprap01', 'Đặng Văn Trưởng Tổ Lắp',
+-- Training Plan 10: PENDING_APPROVAL
+('TRAINING_PLAN', 10, 1, 0, 'SUBMIT', 'SUBMIT', 8, 'tl_laprap01', 'Đặng Văn Trưởng Tổ Lắp',
  'ROLE_TEAM_LEADER', 'KH Bơm T3/2026', '2026-02-25 08:00:00', 'system'),
-('TRAINING_PLAN', 10, 1, 1, 'ROLE_SUPERVISOR', 'APPROVE', 5, 'pham.giamsat3', 'Phạm Thị Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 10, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 5, 'pham.giamsat3', 'Phạm Thị Giám Sát', 'ROLE_SUPERVISOR',
  'Đã kiểm, lịch phù hợp', '2026-02-26 10:00:00', 'system');
 
 -- ============================================================================
 -- PART 12: APPROVAL FLOW STEPS
 -- ============================================================================
 
-INSERT INTO approval_flow_steps (entity_type, step_order, approver_role, is_active, created_by)
-VALUES ('DEFECT_PROPOSAL', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('DEFECT_PROPOSAL', 2, 'ROLE_MANAGER', TRUE, 'system'),
-       ('TRAINING_SAMPLE_PROPOSAL', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('TRAINING_SAMPLE_PROPOSAL', 2, 'ROLE_MANAGER', TRUE, 'system'),
-       ('TRAINING_PLAN', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('TRAINING_PLAN', 2, 'ROLE_MANAGER', TRUE, 'system'),
-       ('TRAINING_RESULT', 1, 'ROLE_SUPERVISOR', TRUE, 'system'),
-       ('TRAINING_SAMPLE_REVIEW', 1, 'ROLE_SUPERVISOR', TRUE, 'system');
+INSERT INTO approval_flow_steps (entity_type, step_order, required_permission, step_label, pending_status, is_active, created_by)
+VALUES ('DEFECT_PROPOSAL', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('DEFECT_PROPOSAL', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_PLAN', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_PLAN', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_RESULT', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_SAMPLE_REVIEW', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system');
 
 -- ============================================================================
 -- PART 13: IMPORT HISTORIES
@@ -1505,27 +1517,27 @@ VALUES
 --  delete_flag, created_at, created_by, updated_at, updated_by)
 -- VALUES
 -- -- 1. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 1: Đang chờ thực hiện
--- (1, 1, '2026-03-01','2026-03-01', '2026-03-31', NULL, 1, 'PENDING', '{
+-- (1, 1, '2026-03-01','2026-03-01', '2026-03-31', NULL, 1, 'PENDING_REVIEW', '{
 --   "total_samples": 50
 -- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 --
 -- -- 2. Thuộc Config 1 (Ngày 1/3/2026) - Dây chuyền 2: Đã làm xong, không có thay đổi, Sếp (ID=2) đã duyệt
--- (1, 2, '2026-03-01','2026-03-01', '2026-03-31', '2026-03-10', 1, 'APPROVED', '{
+-- (1, 2, '2026-03-01','2026-03-01', '2026-03-31', '2026-03-10', 1, 'COMPLETED', '{
 --   "total_samples": 45
 -- }', 2, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 --
 -- -- 3. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 1: Đợt rà soát tháng 5, mới lên lịch chờ làm
--- (2, 1, '2026-03-01','2026-03-01', '2026-06-01', NULL, 1, 'PENDING', '{
+-- (2, 1, '2026-03-01','2026-03-01', '2026-06-01', NULL, 1, 'PENDING_REVIEW', '{
 --   "total_samples": 50
 -- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 --
 -- -- 4. Thuộc Config 2 (Ngày 2/5/2026) - Dây chuyền 2: Đề xuất thay đổi, đang chờ Sếp duyệt (confirmed_by = NULL)
--- (2, 2, '2026-03-01','2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED_BY_SV', '{
+-- (2, 2, '2026-03-01','2026-03-01', '2026-06-01', '2026-05-15', 1, 'REJECTED', '{
 --   "total_samples": 45
 -- }', NULL, 0, CURRENT_TIMESTAMP, 'admin', CURRENT_TIMESTAMP, 'admin'),
 --
 -- -- 5. Thuộc Config 4 (Ngày 1/9/2025) - Dây chuyền 1: Của năm ngoái (chính sách 2), đã bị quá hạn
--- (4, 1, '2026-03-01','2026-03-01', '2025-10-01', NULL, 1, 'MISS', '{
+-- (4, 1, '2026-03-01','2026-03-01', '2025-10-01', NULL, 1, 'MISSED', '{
 --   "total_samples": 50
 -- }', NULL, 0, '2025-09-01 08:00:00', 'admin', CURRENT_TIMESTAMP, 'admin');
 

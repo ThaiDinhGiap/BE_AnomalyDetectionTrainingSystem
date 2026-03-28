@@ -15,6 +15,6 @@ public class TrainingPlanApprovalHandler implements ApprovalHandler {
     @Override
     public void applyApproval(Approvable entity) {
         // For training plan, we simply set the status to APPROVED
-        entity.setStatus(ReportStatus.APPROVED);
+        entity.setStatus(ReportStatus.COMPLETED);
     }
 }

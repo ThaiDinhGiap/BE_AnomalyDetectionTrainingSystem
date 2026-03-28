@@ -6,17 +6,20 @@ import com.sep490.anomaly_training_backend.enums.InAppNotificationType;
 import com.sep490.anomaly_training_backend.enums.NotificationChannel;
 import com.sep490.anomaly_training_backend.enums.NotificationType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.InAppNotificationService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.notification.NotificationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +49,8 @@ public class ApprovalOverdueScheduler {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final InAppNotificationService inAppService;
+    private final ApprovalFlowStepRepository flowStepRepository;
+    private final ApprovalRouteService approvalRouteService;
 
     @Value("${app.scheduler.approval-overdue-hours:24}")
     private int overdueHours;
@@ -57,80 +62,100 @@ public class ApprovalOverdueScheduler {
         LocalDateTime threshold = LocalDateTime.now().minusHours(overdueHours);
 
         try {
-            checkSupervisorOverdueApprovals(threshold);
-            checkManagerOverdueApprovals(threshold);
+            // Lấy tất cả approval flow steps active, xử lý generic
+            List<ApprovalFlowStep> activeSteps = flowStepRepository.findAll().stream()
+                    .filter(ApprovalFlowStep::getIsActive)
+                    .toList();
+
+            // Lấy danh sách các pending status cần kiểm tra
+            List<ReportStatus> pendingStatuses = activeSteps.stream()
+                    .map(ApprovalFlowStep::getPendingStatus)
+                    .distinct()
+                    .toList();
+
+            for (ReportStatus pendingStatus : pendingStatuses) {
+                checkOverdueApprovals(threshold, pendingStatus, activeSteps);
+            }
+
             log.info("=== Completed Approval Overdue Check Job ===");
         } catch (Exception e) {
             log.error("Error in Approval Overdue Check Job", e);
         }
     }
 
-    private void checkSupervisorOverdueApprovals(LocalDateTime threshold) {
-        Map<Long, PendingApprovalSummary> pendingBySv = new HashMap<>();
+    private void checkOverdueApprovals(LocalDateTime threshold, ReportStatus pendingStatus, List<ApprovalFlowStep> activeSteps) {
+        Map<Long, PendingApprovalSummary> pendingByApprover = new HashMap<>();
+
+        // Tìm step tương ứng để resolve approver
+        String requiredPermission = activeSteps.stream()
+                .filter(s -> s.getPendingStatus() == pendingStatus)
+                .findFirst()
+                .map(ApprovalFlowStep::getRequiredPermission)
+                .orElse(null);
+
+        if (requiredPermission == null) return;
 
         trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_SV, threshold)
-                .forEach(plan -> pendingBySv
-                        .computeIfAbsent(plan.getTeam().getGroup().getSupervisor().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addTrainingPlan(plan));
+                .findByStatusAndUpdatedAtBefore(pendingStatus, threshold)
+                .forEach(plan -> {
+                    try {
+                        Long approverId = approvalRouteService.getApproverIdForStep(
+                                plan.getTeam().getGroup().getId(), requiredPermission);
+                        pendingByApprover
+                                .computeIfAbsent(approverId, k -> new PendingApprovalSummary())
+                                .addTrainingPlan(plan);
+                    } catch (Exception e) {
+                        log.warn("Could not resolve approver for plan {}: {}", plan.getId(), e.getMessage());
+                    }
+                });
 
         defectProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .findByStatusAndDeleteFlagFalse(pendingStatus).stream()
                 .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
-                .forEach(r -> pendingBySv
-                        .computeIfAbsent(r.getProductLine().getGroup().getSupervisor().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addDefectProposal(r));
+                .forEach(r -> {
+                    try {
+                        Long approverId = approvalRouteService.getApproverIdForStep(
+                                r.getProductLine().getGroup().getId(), requiredPermission);
+                        pendingByApprover
+                                .computeIfAbsent(approverId, k -> new PendingApprovalSummary())
+                                .addDefectProposal(r);
+                    } catch (Exception e) {
+                        log.warn("Could not resolve approver for defect {}: {}", r.getId(), e.getMessage());
+                    }
+                });
 
         trainingSampleProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .findByStatusAndDeleteFlagFalse(pendingStatus).stream()
                 .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
-                .forEach(r -> pendingBySv
-                        .computeIfAbsent(r.getProductLine().getGroup().getSupervisor().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addTrainingSampleProposal(r));
+                .forEach(r -> {
+                    try {
+                        Long approverId = approvalRouteService.getApproverIdForStep(
+                                r.getProductLine().getGroup().getId(), requiredPermission);
+                        pendingByApprover
+                                .computeIfAbsent(approverId, k -> new PendingApprovalSummary())
+                                .addTrainingSampleProposal(r);
+                    } catch (Exception e) {
+                        log.warn("Could not resolve approver for sample {}: {}", r.getId(), e.getMessage());
+                    }
+                });
 
         trainingResultRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_SV).stream()
+                .findByStatusAndDeleteFlagFalse(pendingStatus).stream()
                 .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
-                .forEach(r -> pendingBySv
-                        .computeIfAbsent(r.getTeam().getGroup().getSupervisor().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addTrainingResult(r));
+                .forEach(r -> {
+                    try {
+                        Long approverId = approvalRouteService.getApproverIdForStep(
+                                r.getTeam().getGroup().getId(), requiredPermission);
+                        pendingByApprover
+                                .computeIfAbsent(approverId, k -> new PendingApprovalSummary())
+                                .addTrainingResult(r);
+                    } catch (Exception e) {
+                        log.warn("Could not resolve approver for result {}: {}", r.getId(), e.getMessage());
+                    }
+                });
 
-        pendingBySv.forEach((svId, summary) ->
-                notify(svId, summary, NotificationType.APPROVAL_OVERDUE_SV, "Supervisor"));
-    }
-
-    private void checkManagerOverdueApprovals(LocalDateTime threshold) {
-        Map<Long, PendingApprovalSummary> pendingByManager = new HashMap<>();
-
-        trainingPlanRepository
-                .findByStatusAndUpdatedAtBefore(ReportStatus.WAITING_MANAGER, threshold)
-                .forEach(plan -> pendingByManager
-                        .computeIfAbsent(plan.getTeam().getGroup().getSection().getManager().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addTrainingPlan(plan));
-
-        defectProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
-                .filter(p -> p.getUpdatedAt() != null && p.getUpdatedAt().isBefore(threshold))
-                .forEach(p -> pendingByManager
-                        .computeIfAbsent(p.getProductLine().getGroup().getSection().getManager().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addDefectProposal(p));
-
-        trainingSampleProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
-                .filter(p -> p.getUpdatedAt() != null && p.getUpdatedAt().isBefore(threshold))
-                .forEach(p -> pendingByManager
-                        .computeIfAbsent(p.getProductLine().getGroup().getSection().getManager().getId(),
-                                k -> new PendingApprovalSummary())
-                        .addTrainingSampleProposal(p));
-
-        pendingByManager.forEach((managerId, summary) ->
-                notify(managerId, summary, NotificationType.APPROVAL_OVERDUE_MANAGER, "Manager"));
+        pendingByApprover.forEach((approverId, summary) ->
+                notify(approverId, summary, NotificationType.APPROVAL_OVERDUE_SV, "Approver"));
     }
 
     private void notify(Long userId, PendingApprovalSummary summary,

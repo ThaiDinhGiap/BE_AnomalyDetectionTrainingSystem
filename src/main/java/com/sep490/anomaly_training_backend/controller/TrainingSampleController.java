@@ -69,7 +69,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Get training samples group by Category")
-    @GetMapping("/category")
+    @GetMapping("/by-category")
     @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByCategory(@RequestParam("id") Long id) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByCategory(id);
@@ -77,7 +77,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Get training samples group by process")
-    @GetMapping("/process")
+    @GetMapping("/by-process")
     @PreAuthorize("hasAuthority('training_sample.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleResponse>>> getTrainingSampleByProcess(@RequestParam("id") Long id) {
         List<TrainingSampleResponse> list = trainingSampleService.getTrainingSampleByProcess(id);
@@ -85,7 +85,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Get training sample proposals by productLine")
-    @GetMapping("/proposal")
+    @GetMapping("/proposals")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingSampleProposalByProductLine(
             @RequestParam("productLineId") Long productLineId,
@@ -95,7 +95,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Get training sample proposal details")
-    @GetMapping("/detail/{id}")
+    @GetMapping("/proposals/{id}/details")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingSampleProposalDetail(@PathVariable Long id) {
         List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
@@ -103,7 +103,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Get training sample category")
-    @GetMapping("/category/{productLineId}")
+    @GetMapping("/product-lines/{productLineId}/categories")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     public ResponseEntity<ApiResponse<CategorySample>> getCategory(@PathVariable("productLineId") Long productLineId) {
         CategorySample list = trainingSampleService.getCategory(productLineId);
@@ -111,7 +111,7 @@ public class TrainingSampleController {
     }
 
     @Operation(summary = "Create new training sample proposal")
-    @PostMapping("/create")
+    @PostMapping("/proposals")
     @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<ApiResponse<Void>> createTrainingSampleProposal(
             @ModelAttribute("request") TrainingSampleProposalRequest request,
@@ -120,14 +120,14 @@ public class TrainingSampleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<Void> deleteTrainingSampleProposal(@PathVariable("id") Long id) {
         trainingSampleProposalService.deleteTrainingSampleProposal(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<TrainingSampleProposalUpdateResponse> updateTrainingProposal(
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,

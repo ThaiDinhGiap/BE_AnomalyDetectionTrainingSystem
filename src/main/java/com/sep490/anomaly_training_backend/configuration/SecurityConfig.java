@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.configuration;
 import com.sep490.anomaly_training_backend.security.JwtAuthenticationFilter;
 import com.sep490.anomaly_training_backend.security.OAuth2AuthenticationFailureHandler;
 import com.sep490.anomaly_training_backend.security.OAuth2AuthenticationSuccessHandler;
+import com.sep490.anomaly_training_backend.security.RequirePasswordChangeFilter;
 import com.sep490.anomaly_training_backend.service.impl.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RequirePasswordChangeFilter requirePasswordChangeFilter;
     private final UserDetailsService userDetailsService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
@@ -60,7 +62,7 @@ public class SecurityConfig {
     private long maxAge;
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/**",
+            "/api/v1/auth/**",
             "/oauth2/**",
             "/login/oauth2/**",
             "/error",
@@ -81,6 +83,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(requirePasswordChangeFilter, JwtAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))

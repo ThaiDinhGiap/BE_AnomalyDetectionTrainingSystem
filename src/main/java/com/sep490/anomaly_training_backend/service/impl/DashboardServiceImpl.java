@@ -30,7 +30,7 @@ import com.sep490.anomaly_training_backend.dto.response.dashboard.TrainingTaskTo
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.Employee;
@@ -129,8 +129,8 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         List<Long> approvedPlanIds = plans.stream()
-                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE))
+                .filter(p -> (p.getStatus() == ReportStatus.COMPLETED || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED))
                 .filter(p -> currentUser.equals(p.getCreatedBy()))
                 .map(TrainingPlan::getId)
                 .toList();
@@ -148,7 +148,7 @@ public class DashboardServiceImpl implements DashboardService {
                             !d.getPlannedDate().isBefore(monthStart) &&
                             !d.getPlannedDate().isAfter(monthEnd)) {
                         planTotal++;
-                        if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                        if (d.getStatus() == ReportStatus.COMPLETED) {
                             planDone++;
                         }
                     }
@@ -192,7 +192,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .findByTrainingPlanIdAndDeleteFlagFalse(planId);
             for (TrainingPlanDetail d : details) {
                 if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
-                        && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                        && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                     todayMiss++;
                 }
             }
@@ -267,8 +267,7 @@ public class DashboardServiceImpl implements DashboardService {
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         List<ReportStatus> rejectedStatuses = List.of(
-                ReportStatus.REJECTED_BY_SV,
-                ReportStatus.REJECTED_BY_MANAGER);
+                ReportStatus.REJECTED);
 
         // Rejected Training Plans
         if (type == null || type == 1) {
@@ -370,7 +369,7 @@ public class DashboardServiceImpl implements DashboardService {
             plans = trainingPlanRepository.findByCreatedByAndDeleteFlagFalse(currentUser);
         }
         List<Long> activePlanIds = plans.stream()
-                .filter(p -> (p.getStatus() == ReportStatus.APPROVED || p.getStatus() == ReportStatus.ON_GOING))
+                .filter(p -> (p.getStatus() == ReportStatus.COMPLETED || p.getStatus() == ReportStatus.ONGOING))
                 .map(TrainingPlan::getId)
                 .toList();
 
@@ -431,7 +430,7 @@ public class DashboardServiceImpl implements DashboardService {
             Long resultId = planId != null ? resultIdByPlanId.get(planId) : null; // Lấy resultId từ Map
 
             // Today's tasks
-            if (today.equals(d.getPlannedDate()) && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+            if (today.equals(d.getPlannedDate()) && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                 todayList.add(TrainingTaskToday.builder()
                         .id(d.getId())
                         .planId(planId)
@@ -445,7 +444,7 @@ public class DashboardServiceImpl implements DashboardService {
 
             // Missed (past & still PENDING)
             if (d.getPlannedDate() != null && d.getPlannedDate().isBefore(today)
-                    && d.getStatus() == TrainingPlanDetailStatus.PENDING) {
+                    && d.getStatus() == ReportStatus.PENDING_REVIEW) {
                 missedList.add(TrainingTaskMissed.builder()
                         .id(d.getId())
                         .planId(planId)
@@ -621,7 +620,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Missed: planned on this date but not done (only count if date has passed)
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }
@@ -925,9 +924,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<TrainingPlan> approvedPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         for (TrainingPlan plan : approvedPlans) {
@@ -935,7 +934,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .findByTrainingPlanIdAndDeleteFlagFalse(plan.getId());
             totalPlanned += details.size();
             for (TrainingPlanDetail d : details) {
-                if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                if (d.getStatus() == ReportStatus.COMPLETED) {
                     totalParticipated++;
                 }
             }
@@ -944,10 +943,10 @@ public class DashboardServiceImpl implements DashboardService {
                 ? Math.round((double) totalParticipated / totalPlanned * 1000.0) / 10.0 + "%"
                 : "0%";
 
-        // --- Pending Approval: plans/results with status WAITING_SV ---
+        // --- Pending Approval: plans/results with status PENDING_REVIEW ---
         List<TrainingPlan> waitingPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
+                .filter(p -> p.getStatus() == ReportStatus.PENDING_REVIEW)
                 .toList();
 
         for (TrainingPlan plan : waitingPlans) {
@@ -957,13 +956,13 @@ public class DashboardServiceImpl implements DashboardService {
                     .title("Kế hoạch đào tạo: " + (plan.getTitle() != null ? plan.getTitle() : "#" + plan.getId()))
                     .senderName(plan.getCreatedBy() != null ? plan.getCreatedBy() : "N/A")
                     .waitTime(formatWaitTime(plan.getUpdatedAt()))
-                    .status("WAITING_SV")
+                    .status("PENDING_REVIEW")
                     .build());
         }
 
         List<TrainingResult> waitingResults = trainingResultRepository.findByGroupIds(groupIds).stream()
                 .filter(r -> lineIds.contains(r.getLine().getId()))
-                .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
+                .filter(r -> r.getStatus() == ReportStatus.PENDING_REVIEW)
                 .toList();
 
         for (TrainingResult result : waitingResults) {
@@ -973,7 +972,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .title("Báo cáo kết quả: " + (result.getTitle() != null ? result.getTitle() : "#" + result.getId()))
                     .senderName(result.getCreatedBy() != null ? result.getCreatedBy() : "N/A")
                     .waitTime(formatWaitTime(result.getUpdatedAt()))
-                    .status("WAITING_SV")
+                    .status("PENDING_REVIEW")
                     .build());
         }
 
@@ -1021,9 +1020,9 @@ public class DashboardServiceImpl implements DashboardService {
             List<TrainingPlan> teamPlans = trainingPlanRepository.findByTeamIdAndDeleteFlagFalse(team.getId())
                     .stream()
                     .filter(p -> lineIds.contains(p.getLine().getId()))
-                    .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                            || p.getStatus() == ReportStatus.ON_GOING
-                            || p.getStatus() == ReportStatus.DONE)
+                    .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                            || p.getStatus() == ReportStatus.ONGOING
+                            || p.getStatus() == ReportStatus.COMPLETED)
                     .toList();
 
             int planTotal = 0;
@@ -1037,7 +1036,7 @@ public class DashboardServiceImpl implements DashboardService {
                             && !d.getPlannedDate().isBefore(monthStart)
                             && !d.getPlannedDate().isAfter(monthEnd)) {
                         planTotal++;
-                        if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                        if (d.getStatus() == ReportStatus.COMPLETED) {
                             planDone++;
                         }
                     }
@@ -1252,11 +1251,11 @@ public class DashboardServiceImpl implements DashboardService {
         // --- 4. Pending Approval Count ---
         long pendingPlans = trainingPlanRepository.findByGroupIds(groupIds).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.WAITING_SV)
+                .filter(p -> p.getStatus() == ReportStatus.PENDING_REVIEW)
                 .count();
         long pendingResults = trainingResultRepository.findByGroupIds(groupIds).stream()
                 .filter(r -> lineIds.contains(r.getLine().getId()))
-                .filter(r -> r.getStatus() == ReportStatus.WAITING_SV)
+                .filter(r -> r.getStatus() == ReportStatus.PENDING_REVIEW)
                 .count();
         int totalPending = (int) (pendingPlans + pendingResults);
 
@@ -1395,9 +1394,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         List<TrainingPlan> plans = trainingPlanRepository.findByGroupIds(resolveSvGroupIds(groupId)).stream()
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         for (TrainingPlan plan : plans) {
@@ -1409,14 +1408,14 @@ public class DashboardServiceImpl implements DashboardService {
 
                 // In current week range
                 if (!d.getPlannedDate().isBefore(weekStart) && !d.getPlannedDate().isAfter(weekEnd)) {
-                    if (d.getStatus() == TrainingPlanDetailStatus.DONE) {
+                    if (d.getStatus() == ReportStatus.COMPLETED) {
                         completed++;
                     } else {
                         scheduled++;
                     }
                 }
                 // Overdue: pending and planned date before today
-                if (d.getStatus() == TrainingPlanDetailStatus.PENDING
+                if (d.getStatus() == ReportStatus.PENDING_REVIEW
                         && d.getPlannedDate().isBefore(today)) {
                     overdue++;
                 }
@@ -1667,7 +1666,7 @@ public class DashboardServiceImpl implements DashboardService {
             // Missed: planned on this date but not done (only count if date has passed)
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(date) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }
@@ -1940,10 +1939,10 @@ public class DashboardServiceImpl implements DashboardService {
         List<MngPendingApprovalItem> items = new ArrayList<>();
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
-        // 1. Training Plans with WAITING_MANAGER
+        // 1. Training Plans with PENDING_APPROVAL
         List<TrainingPlan> waitingPlans = trainingPlanRepository.findAll().stream()
                 .filter(p -> !p.isDeleteFlag())
-                .filter(p -> p.getStatus() == ReportStatus.WAITING_MANAGER)
+                .filter(p -> p.getStatus() == ReportStatus.PENDING_APPROVAL)
                 .filter(p -> mngLineIds.contains(p.getLine().getId()))
                 .toList();
 
@@ -1961,9 +1960,9 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        // 2. Defect Proposals with WAITING_MANAGER
+        // 2. Defect Proposals with PENDING_APPROVAL
         List<DefectProposal> waitingDefects = defectProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .findByStatusAndDeleteFlagFalse(ReportStatus.PENDING_APPROVAL).stream()
                 .filter(d -> mngLineIds.contains(d.getProductLine().getId()))
                 .toList();
 
@@ -1981,9 +1980,9 @@ public class DashboardServiceImpl implements DashboardService {
                     .build());
         }
 
-        // 3. Training Sample Proposals with WAITING_MANAGER
+        // 3. Training Sample Proposals with PENDING_APPROVAL
         List<TrainingSampleProposal> waitingSamples = trainingSampleProposalRepository
-                .findByStatusAndDeleteFlagFalse(ReportStatus.WAITING_MANAGER).stream()
+                .findByStatusAndDeleteFlagFalse(ReportStatus.PENDING_APPROVAL).stream()
                 .filter(s -> mngLineIds.contains(s.getProductLine().getId()))
                 .toList();
 
@@ -2173,14 +2172,14 @@ public class DashboardServiceImpl implements DashboardService {
                 ? Math.round((double) employeesWithValidSkill / totalEmployees * 1000.0) / 10.0
                 : 0;
 
-        // --- 4. Pending Approval Count (WAITING_MANAGER) ---
+        // --- 4. Pending Approval Count (PENDING_APPROVAL) ---
         long pendingPlans = trainingPlanRepository.findAll().stream()
                 .filter(p -> !p.isDeleteFlag())
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.WAITING_MANAGER)
+                .filter(p -> p.getStatus() == ReportStatus.PENDING_APPROVAL)
                 .count();
         long pendingResults = allResults.stream()
-                .filter(r -> r.getStatus() == ReportStatus.WAITING_MANAGER)
+                .filter(r -> r.getStatus() == ReportStatus.PENDING_APPROVAL)
                 .count();
         int totalPending = (int) (pendingPlans + pendingResults);
 
@@ -2266,9 +2265,9 @@ public class DashboardServiceImpl implements DashboardService {
         List<TrainingPlan> plans = trainingPlanRepository.findAll().stream()
                 .filter(p -> !p.isDeleteFlag())
                 .filter(p -> lineIds.contains(p.getLine().getId()))
-                .filter(p -> p.getStatus() == ReportStatus.APPROVED
-                        || p.getStatus() == ReportStatus.ON_GOING
-                        || p.getStatus() == ReportStatus.DONE)
+                .filter(p -> p.getStatus() == ReportStatus.COMPLETED
+                        || p.getStatus() == ReportStatus.ONGOING
+                        || p.getStatus() == ReportStatus.COMPLETED)
                 .toList();
 
         List<TrainingPlanDetail> allDetails = new ArrayList<>();
@@ -2295,13 +2294,13 @@ public class DashboardServiceImpl implements DashboardService {
             cumulativePlan += (int) plannedOnDate;
 
             long doneOnDate = allDetails.stream()
-                    .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() == TrainingPlanDetailStatus.DONE)
+                    .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() == ReportStatus.COMPLETED)
                     .count();
             cumulativeActual += (int) doneOnDate;
 
             if (!date.isAfter(today)) {
                 long missedOnDate = allDetails.stream()
-                        .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() != TrainingPlanDetailStatus.DONE)
+                        .filter(d -> d.getPlannedDate().equals(currentDate) && d.getStatus() != ReportStatus.COMPLETED)
                         .count();
                 cumulativeMissed += (int) missedOnDate;
             }

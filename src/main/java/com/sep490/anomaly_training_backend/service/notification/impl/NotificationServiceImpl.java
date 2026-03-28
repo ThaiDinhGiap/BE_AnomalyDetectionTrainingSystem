@@ -279,9 +279,9 @@ public class NotificationServiceImpl implements NotificationService {
         vars.put("submittedAt", submittedAt);
         vars.put("waitingHours", Duration.between(submittedAt, LocalDateTime.now()).toHours());
 
-        boolean waitingSv = entityStatus != null && entityStatus.contains("WAITING_SV");
-        vars.put("currentStatusLabel", waitingSv ? "Chờ Giám sát duyệt" : "Chờ Quản lý duyệt");
-        vars.put("statusCssClass", waitingSv ? "status-waiting-sv" : "status-waiting-mg");
+        boolean pendingReview = entityStatus != null && entityStatus.contains("PENDING_REVIEW");
+        vars.put("currentStatusLabel", pendingReview ? "Chờ kiểm duyệt" : "Chờ phê duyệt");
+        vars.put("statusCssClass", pendingReview ? "status-pending-review" : "status-pending-approval");
         vars.put("slaDeadlineDays", SLA_DEADLINE_DAYS);
         vars.put("hasSenderMessage", false);
         vars.put("senderMessage", "");
@@ -323,8 +323,8 @@ public class NotificationServiceImpl implements NotificationService {
         if (entityStatus == null) return List.of();
         return userRepository.findAllUsersWithRoles().stream()
                 .filter(user ->
-                        (entityStatus.contains("WAITING_SV") && user.hasRole("ROLE_SUPERVISOR"))
-                                || (entityStatus.contains("WAITING_MANAGER") && user.hasRole("ROLE_MANAGER")))
+                        (entityStatus.contains("PENDING_REVIEW") && user.hasPermission("APPROVAL_REVIEW"))
+                                || (entityStatus.contains("PENDING_APPROVAL") && user.hasPermission("APPROVAL_APPROVE")))
                 .toList();
     }
 
@@ -342,7 +342,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void validateWaitingStatus(String status, ApprovalEntityType entityType, Long entityId) {
         if (status == null
-                || (!status.contains("WAITING_SV") && !status.contains("WAITING_MANAGER"))) {
+                || (!status.contains("PENDING_REVIEW") && !status.contains("PENDING_APPROVAL"))) {
             log.warn("[NudgeMail] {} id={} có status='{}' – không ở trạng thái chờ duyệt, bỏ qua.",
                     entityType, entityId, status);
             throw new AppException(ErrorCode.APPROVAL_STEP_NOT_FOUND);

@@ -1,6 +1,6 @@
 package com.sep490.anomaly_training_backend.dto;
 
-import com.sep490.anomaly_training_backend.enums.TrainingPlanDetailStatus;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,7 +40,7 @@ public class ScheduleSummary {
     /**
      * Count of slots per status (PENDING, DONE, etc.)
      */
-    private Map<TrainingPlanDetailStatus, Long> countByStatus;
+    private Map<ReportStatus, Long> countByStatus;
 
     /**
      * Number of unique employees trained (at least once)

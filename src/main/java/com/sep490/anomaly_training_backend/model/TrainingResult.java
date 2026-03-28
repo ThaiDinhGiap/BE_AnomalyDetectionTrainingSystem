@@ -72,7 +72,7 @@ public class TrainingResult extends BaseEntity implements Approvable {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
-    ReportStatus status = ReportStatus.ON_GOING;
+    ReportStatus status = ReportStatus.ONGOING;
 
     @Column(name = "current_version")
     @Builder.Default
@@ -106,9 +106,16 @@ public class TrainingResult extends BaseEntity implements Approvable {
     }
 
     @Override
+    public String getEntityLabel() {
+        return title != null ? title : formCode;
+    }
+
+    @Override
     public void clearRejectFeedback() {
         if (!details.isEmpty()) {
-            details.forEach(detail -> {detail.setRejectFeedback(null);});
+            details.forEach(detail -> {
+                detail.setRejectFeedback(null);
+            });
         }
     }
 }

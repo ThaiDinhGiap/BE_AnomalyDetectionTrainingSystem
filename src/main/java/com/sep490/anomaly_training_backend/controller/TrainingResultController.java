@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/training-result")
+@RequestMapping("/api/v1/training-results")
 @RequiredArgsConstructor
 @Tag(name = "Training Result", description = "Manage training results, scoring and signature confirmation")
 public class TrainingResultController {
@@ -129,7 +129,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "200", description = "Updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid data or calculation logic error")
     })
-    @PutMapping("/update")
+    @PutMapping
     @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<?> updateTrainingResult(
             @RequestBody UpdateTrainingResultRequest request) {
@@ -147,7 +147,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "403", description = "No signing permission (Must be FINAL_INSPECTION role)"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    @PutMapping("/fi-sign")
+    @PutMapping("/fi-signatures")
     @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
         try {
@@ -161,7 +161,7 @@ public class TrainingResultController {
     }
 
     @Operation(summary = "Get all training result records (Overview)")
-    @GetMapping("/list-all")
+    @GetMapping
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<List<TrainingResultListResponse>> getAllResults(
             @Parameter(description = "Filter by Product Line ID") @RequestParam(required = false) Long lineId,
@@ -200,7 +200,7 @@ public class TrainingResultController {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetail(id));
     }
 
-    @Operation(summary = "Get training result details for Supervisor", description = "Returns only details with status WAITING_SV, REJECTED_BY_SV, or APPROVED.")
+    @Operation(summary = "Get training result details for Supervisor", description = "Returns only details with status PENDING_REVIEW, REJECTED, or APPROVED.")
     @GetMapping("/{id}/verify-view")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetailForVerify(
