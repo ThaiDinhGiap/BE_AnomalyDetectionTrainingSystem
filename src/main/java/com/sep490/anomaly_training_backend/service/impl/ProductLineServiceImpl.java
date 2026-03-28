@@ -100,7 +100,12 @@ public class ProductLineServiceImpl implements ProductLineService {
         Group group = groupRepository.findById(request.getGroupId())
                 .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
 
+        if (request.getCode() != null && productLineRepository.findByCode(request.getCode()).isPresent()) {
+            throw new AppException(ErrorCode.PRODUCT_LINE_CODE_ALREADY_EXISTS);
+        }
+
         ProductLine productLine = ProductLine.builder()
+                .code(request.getCode())
                 .name(request.getName())
                 .group(group)
                 .build();
@@ -113,7 +118,7 @@ public class ProductLineServiceImpl implements ProductLineService {
         ProductLine productLine = productLineRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_LINE_NOT_FOUND));
         productLine.setDeleteFlag(true);
-        productLineRepository.save(productLine);
+        productLineRepository.saveAndFlush(productLine);
     }
 
     @Override

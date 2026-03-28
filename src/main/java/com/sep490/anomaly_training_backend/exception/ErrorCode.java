@@ -71,6 +71,7 @@ public enum ErrorCode {
     USER_NOT_TEAM_LEAD(7002, "You are not a team leader of any team.", HttpStatus.FORBIDDEN),
     NO_PERMISSION_FOR_GROUP(7003, "You do not have permission to create a plan for this group.", HttpStatus.FORBIDDEN),
     PRODUCT_LINE_NOT_FOUND(7004, "Product line not found.", HttpStatus.NOT_FOUND),
+    PRODUCT_LINE_CODE_ALREADY_EXISTS(7004, "Product line code already exists.", HttpStatus.CONFLICT),
     PRODUCT_LINE_NOT_IN_GROUP(7005, "The selected product line does not belong to the chosen group.", HttpStatus.BAD_REQUEST),
     TRAINING_PLAN_NOT_FOUND(7006, "Training plan not found.", HttpStatus.NOT_FOUND),
     INVALID_TRAINING_PLAN_STATUS(7007, "This action cannot be performed in the current plan status.", HttpStatus.BAD_REQUEST),

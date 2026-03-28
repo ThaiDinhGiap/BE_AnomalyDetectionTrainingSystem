@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ProductLineRequest {
+    String code;
     String name;
     Long groupId;
 }

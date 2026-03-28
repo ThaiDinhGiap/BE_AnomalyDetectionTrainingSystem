@@ -57,7 +57,7 @@ public class ProcessServiceImpl implements ProcessService {
                 .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
         entity.setDeleteFlag(true);
-        processRepository.save(entity);
+        processRepository.saveAndFlush(entity);
     }
 
     @Override
