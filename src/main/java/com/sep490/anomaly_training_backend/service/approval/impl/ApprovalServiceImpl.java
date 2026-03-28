@@ -91,8 +91,6 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         logAction(entity, ApprovalAction.REVISE, -1, "REVISE", currentUser, null, null, null, request);
         log.info("Revised {} id={} newVersion={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
-
-        publishEvent(ApprovalAction.REVISE, entity, currentUser);
     }
 
     @Override

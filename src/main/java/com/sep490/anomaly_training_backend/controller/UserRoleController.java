@@ -3,7 +3,7 @@ package com.sep490.anomaly_training_backend.controller;
 import com.sep490.anomaly_training_backend.dto.request.UserRoleRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
-import com.sep490.anomaly_training_backend.service.account.UserRoleService;
+import com.sep490.anomaly_training_backend.service.account.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,13 +25,13 @@ import java.util.List;
 @Tag(name = "User Role Management", description = "API for assigning roles to users")
 public class UserRoleController {
 
-    private final UserRoleService userRoleService;
+    private final RoleService roleService;
 
     @Operation(summary = "Get user roles")
     @GetMapping("/{userId}/roles")
     @PreAuthorize("hasAuthority('user.manage')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getUserRoles(@PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.success(userRoleService.getUserRoles(userId)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.getUserRoles(userId)));
     }
 
     @Operation(summary = "Assign roles to user (replace all)")
@@ -40,6 +40,6 @@ public class UserRoleController {
     public ResponseEntity<ApiResponse<List<RoleResponse>>> assignRoles(
             @PathVariable Long userId,
             @Valid @RequestBody UserRoleRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(userRoleService.assignRoles(userId, request)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.assignRoles(userId, request)));
     }
 }

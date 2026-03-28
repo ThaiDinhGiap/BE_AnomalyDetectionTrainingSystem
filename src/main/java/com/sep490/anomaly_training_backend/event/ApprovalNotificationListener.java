@@ -4,7 +4,6 @@ import com.sep490.anomaly_training_backend.dto.request.UnifiedNotificationReques
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.InAppNotificationType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
@@ -17,7 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -45,7 +43,6 @@ public class ApprovalNotificationListener {
                 case SUBMIT -> handleSubmit(event);
                 case APPROVE -> handleApprove(event);
                 case REJECT -> handleReject(event);
-                case REVISE -> handleRevise(event);
             }
         } catch (Exception e) {
             log.error("[ApprovalNotification] Failed to process {} for {} id={}: {}",
@@ -112,28 +109,6 @@ public class ApprovalNotificationListener {
                                 label, event.getEntityLabel(), event.getPerformedBy().getFullName()),
                         InAppNotificationType.WARNING,
                         event, "REJECT"));
-    }
-
-    // ── REVISE: Thông báo người ký bước đầu tiên ──────────────────────────
-
-    private void handleRevise(ApprovalEvent event) {
-        String label = entityTypeLabel(event.getEntityType());
-
-        log.info("[ApprovalNotification] Handling REVISE for {} id={}", event.getEntityType(), event.getEntityId());
-
-        List<ApprovalFlowStep> steps = flowStepRepo
-                .findByEntityTypeAndIsActiveTrueOrderByStepOrderAsc(event.getEntityType());
-        if (steps.isEmpty()) return;
-
-        ApprovalFlowStep firstStep = steps.get(0);
-        approverResolver.resolve(event.getGroupId(), firstStep.getRequiredPermission())
-                .ifPresent(reviewer ->
-                        dispatch(reviewer,
-                                "Tài liệu đã được chỉnh sửa và gửi lại",
-                                String.format("%s \"%s\" đã được %s chỉnh sửa. Cần bạn kiểm duyệt lại.",
-                                        label, event.getEntityLabel(), event.getPerformedBy().getFullName()),
-                                InAppNotificationType.INFO,
-                                event, "REVISE"));
     }
 
     // ── Core dispatch ──────────────────────────────────────────────────────

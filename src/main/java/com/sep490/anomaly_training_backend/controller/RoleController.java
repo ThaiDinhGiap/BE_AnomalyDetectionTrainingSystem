@@ -6,7 +6,7 @@ import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.PermissionResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.RoleResponse;
-import com.sep490.anomaly_training_backend.service.account.RoleManagementService;
+import com.sep490.anomaly_training_backend.service.account.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,20 +31,20 @@ import java.util.List;
 @Tag(name = "Role Management", description = "API for managing roles and role permissions")
 public class RoleController {
 
-    private final RoleManagementService roleManagementService;
+    private final RoleService roleService;
 
     @Operation(summary = "Get all roles")
     @GetMapping
     @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles() {
-        return ResponseEntity.ok(ApiResponse.success(roleManagementService.getAllRoles()));
+        return ResponseEntity.ok(ApiResponse.success(roleService.getAllRoles()));
     }
 
     @Operation(summary = "Get role details by ID")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleDetailResponse>> getRoleById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(roleManagementService.getRoleById(id)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.getRoleById(id)));
     }
 
     @Operation(summary = "Create new role")
@@ -52,7 +52,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(@Valid @RequestBody RoleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(roleManagementService.createRole(request)));
+                .body(ApiResponse.success(roleService.createRole(request)));
     }
 
     @Operation(summary = "Update role")
@@ -61,14 +61,14 @@ public class RoleController {
     public ResponseEntity<ApiResponse<RoleResponse>> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(roleManagementService.updateRole(id, request)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.updateRole(id, request)));
     }
 
     @Operation(summary = "Soft delete role (non-system roles only)")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Long id) {
-        roleManagementService.deleteRole(id);
+        roleService.deleteRole(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -78,13 +78,13 @@ public class RoleController {
     public ResponseEntity<ApiResponse<RoleDetailResponse>> assignPermissions(
             @PathVariable Long id,
             @Valid @RequestBody RolePermissionRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(roleManagementService.assignPermissions(id, request)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.assignPermissions(id, request)));
     }
 
     @Operation(summary = "Get role permissions")
     @GetMapping("/{id}/permissions")
     @PreAuthorize("hasAuthority('role.manage')")
     public ResponseEntity<ApiResponse<List<PermissionResponse>>> getRolePermissions(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(roleManagementService.getRolePermissions(id)));
+        return ResponseEntity.ok(ApiResponse.success(roleService.getRolePermissions(id)));
     }
 }
