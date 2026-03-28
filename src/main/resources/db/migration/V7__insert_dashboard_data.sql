@@ -33,29 +33,41 @@ SET @yesterday = DATE_SUB(@today, INTERVAL 1 DAY);
 -- A. 12 Huấn Luyện Hôm Nay (PENDING)
 INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, target_month, planned_date, actual_date,
                                    status, note, created_by, delete_flag, created_at, updated_at)
-VALUES (3, 1, 'dashboard-mock-1', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+VALUES (3, 1, 'dashboard-mock-1', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 2, 'dashboard-mock-2', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 2, 'dashboard-mock-2', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 3, 'dashboard-mock-3', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 3, 'dashboard-mock-3', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 4, 'dashboard-mock-4', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 4, 'dashboard-mock-4', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 5, 'dashboard-mock-5', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 5, 'dashboard-mock-5', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 6, 'dashboard-mock-6', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 6, 'dashboard-mock-6', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 1, 'dashboard-mock-7', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 1, 'dashboard-mock-7', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 2, 'dashboard-mock-8', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 2, 'dashboard-mock-8', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 3, 'dashboard-mock-9', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 3, 'dashboard-mock-9', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 4, 'dashboard-mock-10', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 4, 'dashboard-mock-10', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 5, 'dashboard-mock-11', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 5, 'dashboard-mock-11', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW()),
-       (3, 6, 'dashboard-mock-12', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock', 'system',
+       (3, 6, 'dashboard-mock-12', DATE_FORMAT(@today, '%Y-%m-01'), @today, NULL, 'PENDING_REVIEW', 'Dashboard mock',
+        'system',
         0, NOW(), NOW());
 
 -- B. 15 Bị lỡ hẹn (PENDING - Quá khứ gần: 1-5 ngày trước)
@@ -308,37 +320,51 @@ VALUES (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-moc
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id,
                                      planned_date, actual_date, status, is_pass, note, created_by, delete_flag,
                                      created_at, updated_at)
-VALUES (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-1'), 1, 1, @today, NULL, 'PENDING_REVIEW',
+VALUES (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-1'), 1, 1, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-2'), 2, 2, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-2'), 2, 2, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-3'), 3, 3, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-3'), 3, 3, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-4'), 4, 4, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-4'), 4, 4, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-5'), 5, 5, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-5'), 5, 5, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-6'), 6, 6, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-6'), 6, 6, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-7'), 1, 1, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-7'), 1, 1, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-8'), 2, 2, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-8'), 2, 2, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-9'), 3, 3, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-9'), 3, 3, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-10'), 4, 4, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-10'), 4, 4, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-11'), 5, 5, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-11'), 5, 5, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW()),
-       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-12'), 6, 6, @today, NULL, 'PENDING_REVIEW',
+       (9, (SELECT id FROM training_plan_details WHERE batch_id = 'dashboard-mock-12'), 6, 6, @today, NULL,
+        'PENDING_REVIEW',
         NULL, 'Dashboard mock pending result - chờ huấn luyện', 'system', 0, NOW(), NOW());
 
 -- F. 2 dòng PENDING result cho các plan details có sẵn từ V6 (IDs 13, 14 - NV003 & NV004 thuộc Plan 3, T3)
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id,
                                      planned_date, actual_date, status, is_pass, note, created_by, delete_flag,
                                      created_at, updated_at)
-VALUES (9, 13, 3, 2, '2026-03-11', NULL, 'PENDING_REVIEW', NULL, 'NV003 - chờ huấn luyện T3', 'tl_tien01', 0, NOW(), NOW()),
-       (9, 14, 4, 1, '2026-03-12', NULL, 'PENDING_REVIEW', NULL, 'NV004 - chờ huấn luyện T3', 'tl_tien01', 0, NOW(), NOW());
+VALUES (9, 13, 3, 2, '2026-03-11', NULL, 'PENDING_REVIEW', NULL, 'NV003 - chờ huấn luyện T3', 'tl_tien01', 0, NOW(),
+        NOW()),
+       (9, 14, 4, 1, '2026-03-12', NULL, 'PENDING_REVIEW', NULL, 'NV004 - chờ huấn luyện T3', 'tl_tien01', 0, NOW(),
+        NOW());
 
 
 -- ============================================================================
@@ -579,15 +605,18 @@ VALUES
 -- NV009: ngày 04-07 MISS → lên lịch lại 04-14 PENDING → 2 dòng cùng batch_id
 (100, 9, 'pend-mock-ph4-nv009', '2026-04-01', '2026-04-07', NULL, 'MISSED', 'NV009 vắng ngày 07/04', 'tl_phay01', 0,
  NOW(), NOW()),
-(100, 9, 'pend-mock-ph4-nv009', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV009 lên lịch lại 14/04', 'tl_phay01', 0,
+(100, 9, 'pend-mock-ph4-nv009', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV009 lên lịch lại 14/04',
+ 'tl_phay01', 0,
  NOW(), NOW()),
 -- NV010: chưa đến ngày → 1 dòng PENDING
-(100, 10, 'pend-mock-ph4-nv010', '2026-04-01', '2026-04-08', NULL, 'PENDING_REVIEW', 'NV010 chờ huấn luyện', 'tl_phay01', 0,
+(100, 10, 'pend-mock-ph4-nv010', '2026-04-01', '2026-04-08', NULL, 'PENDING_REVIEW', 'NV010 chờ huấn luyện',
+ 'tl_phay01', 0,
  NOW(), NOW()),
 -- NV012: ngày 04-03 MISS → lên lịch lại 04-09 PENDING → 2 dòng cùng batch_id
 (100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-03', NULL, 'MISSED', 'NV012 vắng ngày 03/04', 'tl_phay01', 0,
  NOW(), NOW()),
-(100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-09', NULL, 'PENDING_REVIEW', 'NV012 lên lịch lại 09/04', 'tl_phay01',
+(100, 12, 'pend-mock-ph4-nv012', '2026-04-01', '2026-04-09', NULL, 'PENDING_REVIEW', 'NV012 lên lịch lại 09/04',
+ 'tl_phay01',
  0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -618,16 +647,20 @@ VALUES
 -- NV013: ngày 04-03 MISS → lên lịch lại 04-10 PENDING
 (102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-03', NULL, 'MISSED', 'NV013 vắng ngày 03/04', 'tl_hanlap01', 0,
  NOW(), NOW()),
-(102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-10', NULL, 'PENDING_REVIEW', 'NV013 lên lịch lại 10/04', 'tl_hanlap01',
+(102, 13, 'pend-mock-ha4-nv013', '2026-04-01', '2026-04-10', NULL, 'PENDING_REVIEW', 'NV013 lên lịch lại 10/04',
+ 'tl_hanlap01',
  0, NOW(), NOW()),
-(102, 14, 'pend-mock-ha4-nv014', '2026-04-01', '2026-04-04', NULL, 'PENDING_REVIEW', 'NV014 chờ huấn luyện', 'tl_hanlap01', 0,
+(102, 14, 'pend-mock-ha4-nv014', '2026-04-01', '2026-04-04', NULL, 'PENDING_REVIEW', 'NV014 chờ huấn luyện',
+ 'tl_hanlap01', 0,
  NOW(), NOW()),
 -- NV015: ngày 04-07 MISS → lên lịch lại 04-14 PENDING
 (102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-07', NULL, 'MISSED', 'NV015 vắng ngày 07/04', 'tl_hanlap01', 0,
  NOW(), NOW()),
-(102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV015 lên lịch lại 14/04', 'tl_hanlap01',
+(102, 15, 'pend-mock-ha4-nv015', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV015 lên lịch lại 14/04',
+ 'tl_hanlap01',
  0, NOW(), NOW()),
-(102, 16, 'pend-mock-ha4-nv016', '2026-04-01', '2026-04-08', NULL, 'PENDING_REVIEW', 'NV016 chờ huấn luyện', 'tl_hanlap01', 0,
+(102, 16, 'pend-mock-ha4-nv016', '2026-04-01', '2026-04-08', NULL, 'PENDING_REVIEW', 'NV016 chờ huấn luyện',
+ 'tl_hanlap01', 0,
  NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -650,7 +683,8 @@ VALUES (103, 17, 'pend-mock-lb4-nv017', '2026-04-01', '2026-04-03', '2026-04-03'
         'tl_laprap01', 0, NOW(), NOW()),
        (103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-15', NULL, 'MISSED', 'NV020 vắng lần 2 ngày 15/04',
         'tl_laprap01', 0, NOW(), NOW()),
-       (103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-22', NULL, 'PENDING_REVIEW', 'NV020 lên lịch lần 3 ngày 22/04',
+       (103, 20, 'pend-mock-lb4-nv020', '2026-04-01', '2026-04-22', NULL, 'PENDING_REVIEW',
+        'NV020 lên lịch lần 3 ngày 22/04',
         'tl_laprap01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -676,7 +710,8 @@ VALUES (104, 22, 'pend-mock-dc4-nv022', '2026-04-01', '2026-04-03', '2026-04-03'
         'tl_dongco01', 0, NOW(), NOW()),
        (104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-09', NULL, 'MISSED', 'NV026 vắng lần 2 ngày 09/04',
         'tl_dongco01', 0, NOW(), NOW()),
-       (104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-16', NULL, 'PENDING_REVIEW', 'NV026 lên lịch lần 3 ngày 16/04',
+       (104, 26, 'pend-mock-dc4-nv026', '2026-04-01', '2026-04-16', NULL, 'PENDING_REVIEW',
+        'NV026 lên lịch lần 3 ngày 16/04',
         'tl_dongco01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -688,7 +723,8 @@ VALUES (105, 27, 'pend-mock-kcs4-nv027', '2026-04-01', '2026-04-03', '2026-04-03
         'NV027 đã huấn luyện đạt',
         'tl_kcs01', 0, NOW(), NOW()),
 -- NV028: ngày 04-04 MISS → lên lịch lại 04-11 PENDING
-       (105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-04', NULL, 'MISSED', 'NV028 vắng ngày 04/04', 'tl_kcs01',
+       (105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-04', NULL, 'MISSED', 'NV028 vắng ngày 04/04',
+        'tl_kcs01',
         0, NOW(), NOW()),
        (105, 28, 'pend-mock-kcs4-nv028', '2026-04-01', '2026-04-11', NULL, 'PENDING_REVIEW', 'NV028 lên lịch lại 11/04',
         'tl_kcs01', 0, NOW(), NOW()),
@@ -732,10 +768,12 @@ VALUES
 (100, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ph4-nv009' AND status = 'PENDING_REVIEW'), 9, 9,
  '2026-04-14', NULL, 'PENDING_REVIEW', NULL, 'NV009 chờ HLV ngày mới', 'tl_phay01', 0, NOW(), NOW()),
 -- NV010 batch → liên kết dòng PENDING
-(100, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ph4-nv010' AND status = 'PENDING_REVIEW'), 10, 10,
+(100, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ph4-nv010' AND status = 'PENDING_REVIEW'), 10,
+ 10,
  '2026-04-08', NULL, 'PENDING_REVIEW', NULL, 'NV010 chờ HLV', 'tl_phay01', 0, NOW(), NOW()),
 -- NV012 batch → liên kết dòng PENDING (ngày lên lịch lại)
-(100, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ph4-nv012' AND status = 'PENDING_REVIEW'), 12, 8,
+(100, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ph4-nv012' AND status = 'PENDING_REVIEW'), 12,
+ 8,
  '2026-04-09', NULL, 'PENDING_REVIEW', NULL, 'NV012 chờ HLV ngày mới', 'tl_phay01', 0, NOW(), NOW());
 
 -- Result 101 (Hàn T2): 4 batch_ids → 4 result details (2 COMPLETED + 2 PENDING)
@@ -748,22 +786,28 @@ VALUES (101, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-h
        (101, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha2-nv014' AND status = 'COMPLETED'), 14,
         11,
         '2026-02-05', '2026-02-05', 'COMPLETED', FALSE, 'NV014 trượt T2 Hàn', 'tl_hanlap01', 0, NOW(), NOW()),
-       (101, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha2-nv015' AND status = 'PENDING_REVIEW'), 15,
+       (101,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha2-nv015' AND status = 'PENDING_REVIEW'), 15,
         12, '2026-02-17', NULL, 'PENDING_REVIEW', NULL, 'NV015 chờ HLV ngày mới', 'tl_hanlap01', 0, NOW(), NOW()),
-       (101, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha2-nv016' AND status = 'PENDING_REVIEW'), 16,
+       (101,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha2-nv016' AND status = 'PENDING_REVIEW'), 16,
         10, '2026-02-11', NULL, 'PENDING_REVIEW', NULL, 'NV016 chờ HLV', 'tl_hanlap01', 0, NOW(), NOW());
 
 -- Result 102 (Hàn T4): 4 batch_ids → 4 result details (tất cả PENDING)
 INSERT INTO training_result_details (training_result_id, training_plan_detail_id, employee_id, training_sample_id,
                                      planned_date, actual_date, status, is_pass, note, created_by, delete_flag,
                                      created_at, updated_at)
-VALUES (102, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv013' AND status = 'PENDING_REVIEW'), 13,
+VALUES (102,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv013' AND status = 'PENDING_REVIEW'), 13,
         10, '2026-04-10', NULL, 'PENDING_REVIEW', NULL, 'NV013 chờ HLV ngày mới', 'tl_hanlap01', 0, NOW(), NOW()),
-       (102, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv014' AND status = 'PENDING_REVIEW'), 14,
+       (102,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv014' AND status = 'PENDING_REVIEW'), 14,
         11, '2026-04-04', NULL, 'PENDING_REVIEW', NULL, 'NV014 chờ HLV', 'tl_hanlap01', 0, NOW(), NOW()),
-       (102, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv015' AND status = 'PENDING_REVIEW'), 15,
+       (102,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv015' AND status = 'PENDING_REVIEW'), 15,
         12, '2026-04-14', NULL, 'PENDING_REVIEW', NULL, 'NV015 chờ HLV ngày mới', 'tl_hanlap01', 0, NOW(), NOW()),
-       (102, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv016' AND status = 'PENDING_REVIEW'), 16,
+       (102,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ha4-nv016' AND status = 'PENDING_REVIEW'), 16,
         10, '2026-04-08', NULL, 'PENDING_REVIEW', NULL, 'NV016 chờ HLV', 'tl_hanlap01', 0, NOW(), NOW());
 
 -- Result 103 (Lắp Bơm T4): 4 batch_ids → 4 result details (1 COMPLETED + 3 PENDING)
@@ -773,12 +817,15 @@ INSERT INTO training_result_details (training_result_id, training_plan_detail_id
 VALUES (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv017' AND status = 'COMPLETED'), 17,
         23,
         '2026-04-03', '2026-04-03', 'COMPLETED', TRUE, 'NV017 đạt T4', 'tl_laprap01', 0, NOW(), NOW()),
-       (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv018' AND status = 'PENDING_REVIEW'), 18,
+       (103,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv018' AND status = 'PENDING_REVIEW'), 18,
         24, '2026-04-11', NULL, 'PENDING_REVIEW', NULL, 'NV018 chờ HLV ngày mới', 'tl_laprap01', 0, NOW(), NOW()),
-       (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv019' AND status = 'PENDING_REVIEW'), 19,
+       (103,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv019' AND status = 'PENDING_REVIEW'), 19,
         25, '2026-04-07', NULL, 'PENDING_REVIEW', NULL, 'NV019 chờ HLV', 'tl_laprap01', 0, NOW(), NOW()),
 -- NV020 batch: đã MISS 2 lần → liên kết dòng PENDING lần 3
-       (103, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv020' AND status = 'PENDING_REVIEW'), 20,
+       (103,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-lb4-nv020' AND status = 'PENDING_REVIEW'), 20,
         23, '2026-04-22', NULL, 'PENDING_REVIEW', NULL, 'NV020 chờ HLV lần 3', 'tl_laprap01', 0, NOW(), NOW());
 
 -- Result 104 (Động Cơ T4): 5 batch_ids → 5 result details (2 COMPLETED + 3 PENDING)
@@ -791,12 +838,15 @@ VALUES (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-d
        (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv023' AND status = 'COMPLETED'), 23,
         19,
         '2026-04-04', '2026-04-04', 'COMPLETED', TRUE, 'NV023 đạt T4', 'tl_dongco01', 0, NOW(), NOW()),
-       (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv024' AND status = 'PENDING_REVIEW'), 24,
+       (104,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv024' AND status = 'PENDING_REVIEW'), 24,
         20, '2026-04-14', NULL, 'PENDING_REVIEW', NULL, 'NV024 chờ HLV ngày mới', 'tl_dongco01', 0, NOW(), NOW()),
-       (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv025' AND status = 'PENDING_REVIEW'), 25,
+       (104,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv025' AND status = 'PENDING_REVIEW'), 25,
         21, '2026-04-08', NULL, 'PENDING_REVIEW', NULL, 'NV025 chờ HLV', 'tl_dongco01', 0, NOW(), NOW()),
 -- NV026 batch: đã MISS 2 lần → liên kết dòng PENDING lần 3
-       (104, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv026' AND status = 'PENDING_REVIEW'), 26,
+       (104,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-dc4-nv026' AND status = 'PENDING_REVIEW'), 26,
         22, '2026-04-16', NULL, 'PENDING_REVIEW', NULL, 'NV026 chờ HLV lần 3', 'tl_dongco01', 0, NOW(), NOW());
 
 -- Result 105 (KCS T4): 4 batch_ids → 4 result details (1 COMPLETED + 3 PENDING)
@@ -806,11 +856,17 @@ INSERT INTO training_result_details (training_result_id, training_plan_detail_id
 VALUES (105, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv027' AND status = 'COMPLETED'),
         27, 23,
         '2026-04-03', '2026-04-03', 'COMPLETED', TRUE, 'NV027 đạt T4', 'tl_kcs01', 0, NOW(), NOW()),
-       (105, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv028' AND status = 'PENDING_REVIEW'), 28,
+       (105,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv028' AND status = 'PENDING_REVIEW'),
+        28,
         24, '2026-04-11', NULL, 'PENDING_REVIEW', NULL, 'NV028 chờ HLV ngày mới', 'tl_kcs01', 0, NOW(), NOW()),
-       (105, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv029' AND status = 'PENDING_REVIEW'), 29,
+       (105,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv029' AND status = 'PENDING_REVIEW'),
+        29,
         25, '2026-04-07', NULL, 'PENDING_REVIEW', NULL, 'NV029 chờ HLV', 'tl_kcs01', 0, NOW(), NOW()),
-       (105, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv030' AND status = 'PENDING_REVIEW'), 30,
+       (105,
+        (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-kcs4-nv030' AND status = 'PENDING_REVIEW'),
+        30,
         23, '2026-04-08', NULL, 'PENDING_REVIEW', NULL, 'NV030 chờ HLV', 'tl_kcs01', 0, NOW(), NOW());
 
 -- ╔═══════════════════════════════════════════════════════════════════════╗
@@ -834,13 +890,16 @@ VALUES
 -- NV003: ngày 04-07 MISS → lên lịch lại 04-14 PENDING
 (106, 3, 'pend-mock-ti4-nv003', '2026-04-01', '2026-04-07', NULL, 'MISSED', 'NV003 vắng ngày 07/04', 'tl_tien01', 0,
  NOW(), NOW()),
-(106, 3, 'pend-mock-ti4-nv003', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV003 lên lịch lại 14/04', 'tl_tien01', 0,
+(106, 3, 'pend-mock-ti4-nv003', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV003 lên lịch lại 14/04',
+ 'tl_tien01', 0,
  NOW(), NOW()),
 -- NV004: chưa đến ngày → 1 dòng PENDING
-(106, 4, 'pend-mock-ti4-nv004', '2026-04-01', '2026-04-09', NULL, 'PENDING_REVIEW', 'NV004 chờ huấn luyện', 'tl_tien01', 0,
+(106, 4, 'pend-mock-ti4-nv004', '2026-04-01', '2026-04-09', NULL, 'PENDING_REVIEW', 'NV004 chờ huấn luyện', 'tl_tien01',
+ 0,
  NOW(), NOW()),
 -- NV006: chưa đến ngày → 1 dòng PENDING
-(106, 6, 'pend-mock-ti4-nv006', '2026-04-01', '2026-04-10', NULL, 'PENDING_REVIEW', 'NV006 chờ huấn luyện', 'tl_tien01', 0,
+(106, 6, 'pend-mock-ti4-nv006', '2026-04-01', '2026-04-10', NULL, 'PENDING_REVIEW', 'NV006 chờ huấn luyện', 'tl_tien01',
+ 0,
  NOW(), NOW());
 
 -- Result 106 (Tiện T4)
@@ -865,7 +924,7 @@ VALUES
  '2026-04-14', NULL, 'PENDING_REVIEW', NULL, 'NV003 chờ HLV ngày mới', 'tl_tien01', 0, NOW(), NOW()),
 -- NV004: đã test, cần TL ký (NEED_SIGN)
 (106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv004' AND status = 'PENDING_REVIEW'), 4, 4,
- '2026-04-09', '2026-04-09', 'REVISE', TRUE, 'NV004 đã test, cần TL ký xác nhận', 'tl_tien01', 0, NOW(), NOW()),
+ '2026-04-09', '2026-04-09', 'REVISING', TRUE, 'NV004 đã test, cần TL ký xác nhận', 'tl_tien01', 0, NOW(), NOW()),
 -- NV006: SV từ chối, cần test lại
 (106, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-ti4-nv006' AND status = 'PENDING_REVIEW'), 6, 5,
  '2026-04-10', '2026-04-10', 'REJECTED', FALSE, 'NV006 bị SV từ chối – kết quả không đạt', 'tl_tien01', 0, NOW(),
@@ -1076,9 +1135,11 @@ VALUES
  'tl_tien01',
  0, NOW(), NOW()),
 -- NV002: MISS → PENDING
-(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-06', NULL, 'MISSED', 'NV002 vắng ngày 06/03', 'tl_tien01', 0, NOW(),
+(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-06', NULL, 'MISSED', 'NV002 vắng ngày 06/03', 'tl_tien01', 0,
+ NOW(),
  NOW()),
-(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-13', NULL, 'PENDING_REVIEW', 'NV002 lên lịch lại 13/03', 'tl_tien01', 0,
+(107, 2, 'pend-mock-s3-nv002', '2026-03-01', '2026-03-13', NULL, 'PENDING_REVIEW', 'NV002 lên lịch lại 13/03',
+ 'tl_tien01', 0,
  NOW(), NOW()),
 -- NV003: COMPLETED
 (107, 3, 'pend-mock-s3-nv003', '2026-03-01', '2026-03-07', '2026-03-07', 'COMPLETED', 'NV003 đã huấn luyện đạt',
@@ -1089,10 +1150,12 @@ VALUES
  NOW()),
 (107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-17', NULL, 'MISSED', 'NV004 vắng lần 2', 'tl_tien01', 0, NOW(),
  NOW()),
-(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-24', NULL, 'PENDING_REVIEW', 'NV004 lên lịch lần 3', 'tl_tien01', 0,
+(107, 4, 'pend-mock-s3-nv004', '2026-03-01', '2026-03-24', NULL, 'PENDING_REVIEW', 'NV004 lên lịch lần 3', 'tl_tien01',
+ 0,
  NOW(), NOW()),
 -- NV006: PENDING
-(107, 6, 'pend-mock-s3-nv006', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'NV006 chờ huấn luyện', 'tl_tien01', 0,
+(107, 6, 'pend-mock-s3-nv006', '2026-03-01', '2026-03-12', NULL, 'PENDING_REVIEW', 'NV006 chờ huấn luyện', 'tl_tien01',
+ 0,
  NOW(), NOW());
 
 -- Result 107 (Bơm Chìm T3)
@@ -1134,7 +1197,8 @@ INSERT INTO training_plan_details (training_plan_id, employee_id, batch_id, targ
                                    status, note, created_by, delete_flag, created_at, updated_at)
 VALUES
 -- NV001: PENDING
-(108, 1, 'pend-mock-v4-nv001', '2026-04-01', '2026-04-05', NULL, 'PENDING_REVIEW', 'NV001 chờ huấn luyện Van', 'tl_tien01', 0,
+(108, 1, 'pend-mock-v4-nv001', '2026-04-01', '2026-04-05', NULL, 'PENDING_REVIEW', 'NV001 chờ huấn luyện Van',
+ 'tl_tien01', 0,
  NOW(), NOW()),
 -- NV002: COMPLETED
 (108, 2, 'pend-mock-v4-nv002', '2026-04-01', '2026-04-03', '2026-04-03', 'COMPLETED', 'NV002 đã huấn luyện đạt',
@@ -1145,9 +1209,11 @@ VALUES
  'tl_tien01',
  0, NOW(), NOW()),
 -- NV004: MISS → PENDING
-(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-07', NULL, 'MISSED', 'NV004 vắng ngày 07/04', 'tl_tien01', 0, NOW(),
+(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-07', NULL, 'MISSED', 'NV004 vắng ngày 07/04', 'tl_tien01', 0,
+ NOW(),
  NOW()),
-(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV004 lên lịch lại 14/04', 'tl_tien01', 0,
+(108, 4, 'pend-mock-v4-nv004', '2026-04-01', '2026-04-14', NULL, 'PENDING_REVIEW', 'NV004 lên lịch lại 14/04',
+ 'tl_tien01', 0,
  NOW(), NOW()),
 -- NV006: COMPLETED
 (108, 6, 'pend-mock-v4-nv006', '2026-04-01', '2026-04-06', '2026-04-06', 'COMPLETED', 'NV006 đã huấn luyện đạt',
@@ -1169,7 +1235,7 @@ VALUES
  '2026-04-05', NULL, 'PENDING_REVIEW', NULL, 'NV001 chờ HLV Van', 'tl_tien01', 0, NOW(), NOW()),
 -- NV002: đã test, cần TL ký
 (108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv002' AND status = 'COMPLETED'), 2, 35,
- '2026-04-03', '2026-04-03', 'REVISE', TRUE, 'NV002 đã test Van, cần TL ký', 'tl_tien01', 0, NOW(), NOW()),
+ '2026-04-03', '2026-04-03', 'REVISING', TRUE, 'NV002 đã test Van, cần TL ký', 'tl_tien01', 0, NOW(), NOW()),
 -- NV003: SV từ chối
 (108, (SELECT id FROM training_plan_details WHERE batch_id = 'pend-mock-v4-nv003' AND status = 'COMPLETED'), 3, 36,
  '2026-04-04', '2026-04-04', 'REJECTED', FALSE, 'NV003 bị SV từ chối Van T4', 'tl_tien01', 0, NOW(), NOW()),
@@ -1205,7 +1271,8 @@ VALUES
  'tl_tien01',
  0, NOW(), NOW()),
 -- NV004: MISS → PENDING
-(109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-10', NULL, 'MISSED', 'NV004 vắng ngày 10/02', 'tl_tien01', 0, NOW(),
+(109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-10', NULL, 'MISSED', 'NV004 vắng ngày 10/02', 'tl_tien01', 0,
+ NOW(),
  NOW()),
 (109, 4, 'pend-mock-c2-nv004', '2026-02-01', '2026-02-17', '2026-02-17', 'COMPLETED', 'NV004 đã hoàn thành lần 2',
  'tl_tien01', 0, NOW(), NOW()),
