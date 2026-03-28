@@ -2,14 +2,20 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
+import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.RejectReasonResponse;
+import com.sep490.anomaly_training_backend.dto.response.RequiredActionResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.RejectReason;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
+import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
@@ -21,7 +27,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,6 +43,8 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     private final TrainingPlanRepository planRepo;
     private final ApprovalActionRepository actionRepo;
     private final ApprovalFlowStepRepository flowStepRepo;
+    private final RejectReasonRepository rejectReasonRepo;
+    private final RequiredActionRepository requiredActionRepo;
 
     @Override
     public List<PendingApprovalResponse> getPendingApprovals(User currentUser, ApprovalEntityType entityType) {
@@ -194,5 +204,39 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
             case 0 -> "Submit";
             default -> "Step " + stepOrder;
         };
+    }
+
+    // ==================== METADATA (merged from ApprovalMetadataService) ====================
+
+    @Override
+    public List<RejectReasonGroupResponse> getRejectReasonGroups() {
+        List<RejectReason> allReasons = rejectReasonRepo.findAllByOrderByCategoryNameAscIdAsc();
+
+        Map<String, List<RejectReasonResponse>> grouped = new LinkedHashMap<>();
+        for (RejectReason r : allReasons) {
+            grouped
+                    .computeIfAbsent(r.getCategoryName(), k -> new ArrayList<>())
+                    .add(RejectReasonResponse.builder()
+                            .id(r.getId())
+                            .reasonName(r.getReasonName())
+                            .build());
+        }
+
+        return grouped.entrySet().stream()
+                .map(e -> RejectReasonGroupResponse.builder()
+                        .categoryName(e.getKey())
+                        .reasons(e.getValue())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public List<RequiredActionResponse> getRequiredActions() {
+        return requiredActionRepo.findAll().stream()
+                .map(a -> RequiredActionResponse.builder()
+                        .id(a.getId())
+                        .actionName(a.getActionName())
+                        .build())
+                .toList();
     }
 }

@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
+import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
@@ -20,9 +21,13 @@ import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
 import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
+import com.sep490.anomaly_training_backend.service.TrainingPlanService;
+import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
+import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
+import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +52,10 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final RequiredActionRepository requiredActionRepo;
     private final ApprovalHandlerRegistry handlerRegistry;
     private final ApplicationEventPublisher eventPublisher;
+    private final DefectProposalDetailService defectProposalDetailService;
+    private final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
+    private final TrainingPlanService trainingPlanService;
+    private final TrainingResultService trainingResultService;
 
     @Override
     @Transactional
@@ -269,6 +278,20 @@ public class ApprovalServiceImpl implements ApprovalService {
             // Không để event publishing lỗi ảnh hưởng approval flow
             log.error("[ApprovalEvent] Failed to publish {} for {} id={}: {}",
                     action, entity.getEntityType(), entity.getId(), e.getMessage());
+        }
+    }
+
+    // ==================== REJECT DETAIL FEEDBACK (merged from RejectDetailService) ====================
+
+    @Override
+    public void saveFeedback(ApprovalEntityType entityType, Long detailId, DetailFeedbackRequest request, User currentUser) {
+        switch (entityType) {
+            case DEFECT_PROPOSAL -> defectProposalDetailService.saveFeedback(detailId, request, currentUser);
+            case TRAINING_SAMPLE_PROPOSAL ->
+                    trainingSampleProposalDetailService.saveFeedback(detailId, request, currentUser);
+            case TRAINING_PLAN -> trainingPlanService.saveFeedback(detailId, request, currentUser);
+            case TRAINING_RESULT -> trainingResultService.saveFeedback(detailId, request, currentUser);
+            default -> throw new IllegalArgumentException("Unsupported entity type: " + entityType);
         }
     }
 }

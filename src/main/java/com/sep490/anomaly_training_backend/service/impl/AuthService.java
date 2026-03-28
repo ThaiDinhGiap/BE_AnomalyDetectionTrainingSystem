@@ -31,6 +31,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final EmployeeRepository employeeRepository;
     private final MailDispatcher mailDispatcher;
-    
+
     @Value("${app.security.default-password-prefix:ADTMS@}")
     private String defaultPasswordPrefix;
 
@@ -179,6 +180,7 @@ public class AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
+        request.setEmail(StringUtils.hasText(request.getEmail()) ? request.getEmail().trim() : null);
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);

@@ -7,12 +7,19 @@ import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.StepState;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalTimelineService;
-import com.sep490.anomaly_training_backend.service.approval.helper.ApprovableEntityLoader;
-import com.sep490.anomaly_training_backend.service.approval.helper.ExpectedApproverResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +36,11 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
 
     private final ApprovalFlowStepRepository flowStepRepository;
     private final ApprovalActionRepository actionLogRepository;
-    private final ExpectedApproverResolver approverResolver;
-    private final ApprovableEntityLoader entityLoader;
+    private final ApprovalRouteService approvalRouteService;
+    private final TrainingPlanRepository trainingPlanRepository;
+    private final DefectProposalRepository defectProposalRepository;
+    private final TrainingSampleProposalRepository trainingSampleProposalRepository;
+    private final TrainingSampleReviewRepository trainingSampleReviewRepository;
 
     @Override
     public ApprovalTimelineResponse getTimeline(ApprovalEntityType entityType, Long entityId) {
@@ -55,7 +65,7 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
                         (a, b) -> a.getPerformedAt().isAfter(b.getPerformedAt()) ? a : b));
 
         // 3. Load groupId một lần cho toàn bộ steps chưa có log
-        Long groupId = entityLoader.loadGroupId(entityType, entityId).orElse(null);
+        Long groupId = loadGroupId(entityType, entityId).orElse(null);
 
         boolean rejected = logs.stream().anyMatch(l -> l.getAction() == ApprovalAction.REJECT);
         boolean foundWaiting = false;
@@ -82,8 +92,8 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
             // Resolve expected approver khi bước chưa có action thực tế
             User expectedApprover = null;
             if (log == null && groupId != null) {
-                expectedApprover = approverResolver
-                        .resolve(groupId, flowStep.getRequiredPermission())
+                expectedApprover = approvalRouteService
+                        .resolveExpectedApprover(groupId, flowStep.getRequiredPermission())
                         .orElse(null);
             }
 
@@ -169,6 +179,19 @@ public class ApprovalTimelineServiceImpl implements ApprovalTimelineService {
             case APPROVE -> "APPROVED";
             case REJECT -> "REJECTED";
             default -> "PENDING";
+        };
+    }
+
+    // ── Entity loader (inlined from ApprovableEntityLoader) ────────────────
+
+    private Optional<Long> loadGroupId(ApprovalEntityType entityType, Long entityId) {
+        return switch (entityType) {
+            case TRAINING_PLAN -> trainingPlanRepository.findById(entityId).map(TrainingPlan::getGroupId);
+            case DEFECT_PROPOSAL -> defectProposalRepository.findById(entityId).map(DefectProposal::getGroupId);
+            case TRAINING_SAMPLE_PROPOSAL ->
+                    trainingSampleProposalRepository.findById(entityId).map(TrainingSampleProposal::getGroupId);
+            case TRAINING_RESULT -> Optional.empty();
+            case TRAINING_SAMPLE_REVIEW -> trainingSampleReviewRepository.findById(entityId).map(TrainingSampleReview::getGroupId);
         };
     }
 }

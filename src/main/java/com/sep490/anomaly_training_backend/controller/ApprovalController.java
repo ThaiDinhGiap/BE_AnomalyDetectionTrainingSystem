@@ -10,11 +10,9 @@ import com.sep490.anomaly_training_backend.dto.response.RequiredActionResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.approval.ApprovalMetadataService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalTimelineService;
-import com.sep490.anomaly_training_backend.service.approval.RejectDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +39,7 @@ public class ApprovalController {
 
     private final ApprovalService approvalService;
     private final ApprovalQueryService approvalQueryService;
-    private final ApprovalMetadataService approvalMetadataService;
     private final ApprovalTimelineService approvalTimelineService;
-    private final RejectDetailService rejectDetailService;
 
     // ==================== PENDING LIST ====================
 
@@ -111,7 +107,7 @@ public class ApprovalController {
     @Operation(summary = "Get grouped reject reasons for rejection form")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<RejectReasonGroupResponse>>> getRejectReasons() {
-        List<RejectReasonGroupResponse> reasons = approvalMetadataService.getRejectReasonGroups();
+        List<RejectReasonGroupResponse> reasons = approvalQueryService.getRejectReasonGroups();
         return ResponseEntity.ok(ApiResponse.success(reasons));
     }
 
@@ -119,7 +115,7 @@ public class ApprovalController {
     @Operation(summary = "Get list of required actions when rejecting")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<RequiredActionResponse>>> getRequiredActions() {
-        List<RequiredActionResponse> actions = approvalMetadataService.getRequiredActions();
+        List<RequiredActionResponse> actions = approvalQueryService.getRequiredActions();
         return ResponseEntity.ok(ApiResponse.success(actions));
     }
 
@@ -142,7 +138,7 @@ public class ApprovalController {
             @RequestBody DetailFeedbackRequest request,
             @AuthenticationPrincipal User currentUser) {
 
-        rejectDetailService.saveFeedback(entityType, detailId, request, currentUser);
+        approvalService.saveFeedback(entityType, detailId, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

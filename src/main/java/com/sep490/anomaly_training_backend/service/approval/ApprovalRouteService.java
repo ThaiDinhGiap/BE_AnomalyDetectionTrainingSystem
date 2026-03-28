@@ -2,6 +2,8 @@ package com.sep490.anomaly_training_backend.service.approval;
 
 import com.sep490.anomaly_training_backend.model.User;
 
+import java.util.Optional;
+
 public interface ApprovalRouteService {
 
     /**
@@ -18,4 +20,8 @@ public interface ApprovalRouteService {
      * Kiểm tra user có phải là approver hợp lệ cho group này không
      */
     boolean isValidApprover(Long groupId, String requiredPermission, Long userId);
+
+    // ── Expected approver resolution (merged from ExpectedApproverResolver) ──
+
+    Optional<User> resolveExpectedApprover(Long groupId, String requiredPermission);
 }

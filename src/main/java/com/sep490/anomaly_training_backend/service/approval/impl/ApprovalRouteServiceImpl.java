@@ -3,18 +3,20 @@ package com.sep490.anomaly_training_backend.service.approval.impl;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.Group;
+import com.sep490.anomaly_training_backend.model.Section;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ApprovalRouteServiceImpl implements ApprovalRouteService {
 
     private final GroupRepository groupRepo;
@@ -55,5 +57,23 @@ public class ApprovalRouteServiceImpl implements ApprovalRouteService {
         } catch (AppException e) {
             return false;
         }
+    }
+
+    // ==================== EXPECTED APPROVER (merged from ExpectedApproverResolver) ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> resolveExpectedApprover(Long groupId, String requiredPermission) {
+        if (groupId == null) return Optional.empty();
+        return groupRepo.findByIdAndDeleteFlagFalse(groupId)
+                .flatMap(group -> {
+                    User supervisor = group.getSupervisor();
+                    if (supervisor != null && supervisor.hasPermission(requiredPermission)) {
+                        return Optional.of(supervisor);
+                    }
+                    return Optional.ofNullable(group.getSection())
+                            .map(Section::getManager)
+                            .filter(manager -> manager.hasPermission(requiredPermission));
+                });
     }
 }
