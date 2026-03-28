@@ -263,7 +263,6 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
     }
 
-
     // For TL/SV/MG
     @GetMapping("/members")
     @PreAuthorize("hasAuthority('employee.view')")

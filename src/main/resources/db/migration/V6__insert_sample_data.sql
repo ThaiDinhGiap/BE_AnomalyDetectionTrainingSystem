@@ -1326,35 +1326,41 @@ VALUES
 -- Defect Proposal 1: COMPLETED (TL submit → SV approve → MG approve)
 ('DEFECT_PROPOSAL', 1, 1, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Đề xuất báo cáo lỗi Line Tiện T1/2025', '2025-01-20 08:30:00', 'system'),
-('DEFECT_PROPOSAL', 1, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 1, 1, 1, 'review_approve.review', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát',
+ 'ROLE_SUPERVISOR',
  'Xác nhận lỗi đúng thực tế, đề xuất đào tạo ngay', '2025-01-21 10:00:00', 'system'),
 ('DEFECT_PROPOSAL', 1, 2, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Nộp lại sau khi bổ sung thêm lỗi DF003', '2025-01-25 09:00:00', 'system'),
-('DEFECT_PROPOSAL', 1, 2, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 1, 2, 1, 'review_approve.review', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát',
+ 'ROLE_SUPERVISOR',
  'Duyệt lần 2', '2025-01-26 11:00:00', 'system'),
-('DEFECT_PROPOSAL', 1, 2, 2, 'APPROVAL_APPROVE', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
+('DEFECT_PROPOSAL', 1, 2, 2, 'review_approve.approve', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý',
+ 'ROLE_MANAGER',
  'Phê duyệt toàn bộ báo cáo lỗi Line Tiện', '2025-01-27 14:00:00', 'system'),
 -- Defect Proposal 4: REJECTED
 ('DEFECT_PROPOSAL', 4, 1, 0, 'SUBMIT', 'SUBMIT', 9, 'tl_dongco01', 'Bùi Thị Trưởng Tổ ĐC', 'ROLE_TEAM_LEADER',
  'Báo cáo lỗi ĐC tháng 1', '2025-01-28 08:00:00', 'system'),
-('DEFECT_PROPOSAL', 4, 1, 1, 'APPROVAL_REVIEW', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
+('DEFECT_PROPOSAL', 4, 1, 1, 'review_approve.review', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
  'Thiếu ảnh minh chứng piston lắp sai. Cần bổ sung.', '2025-01-29 09:30:00', 'system'),
 -- Training Plan 1: COMPLETED (T1/2026 Tiện)
 ('TRAINING_PLAN', 1, 1, 0, 'SUBMIT', 'SUBMIT', 6, 'tl_tien01', 'Hoàng Văn Trưởng Tổ Tiện', 'ROLE_TEAM_LEADER',
  'Kế hoạch đào tạo T1/2026 Tổ Tiện', '2025-12-28 15:00:00', 'system'),
-('TRAINING_PLAN', 1, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 1, 1, 1, 'review_approve.review', 'APPROVE', 3, 'tran.giamsat1', 'Trần Thị Giám Sát',
+ 'ROLE_SUPERVISOR',
  'OK, lịch phù hợp sản xuất', '2025-12-29 10:00:00', 'system'),
-('TRAINING_PLAN', 1, 1, 2, 'APPROVAL_APPROVE', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý', 'ROLE_MANAGER',
+('TRAINING_PLAN', 1, 1, 2, 'review_approve.approve', 'APPROVE', 2, 'nguyen.quanly', 'Nguyễn Văn Quản Lý',
+ 'ROLE_MANAGER',
  'Phê duyệt. Thực hiện đúng lịch.', '2025-12-30 14:00:00', 'system'),
 -- Training Plan 8: REJECTED
 ('TRAINING_PLAN', 8, 1, 0, 'SUBMIT', 'SUBMIT', 10, 'tl_hanlap01', 'Ngô Văn Trưởng Tổ Hàn', 'ROLE_TEAM_LEADER',
  'KH Tổ Hàn T3/2026', '2026-02-20 09:00:00', 'system'),
-('TRAINING_PLAN', 8, 1, 1, 'APPROVAL_REVIEW', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 8, 1, 1, 'review_approve.review', 'REJECT', 4, 'le.giamsat2', 'Lê Văn Giám Sát', 'ROLE_SUPERVISOR',
  'Thiếu NV016 trong lịch. Bổ sung và nộp lại.', '2026-02-22 11:00:00', 'system'),
 -- Training Plan 10: PENDING_APPROVAL
 ('TRAINING_PLAN', 10, 1, 0, 'SUBMIT', 'SUBMIT', 8, 'tl_laprap01', 'Đặng Văn Trưởng Tổ Lắp',
  'ROLE_TEAM_LEADER', 'KH Bơm T3/2026', '2026-02-25 08:00:00', 'system'),
-('TRAINING_PLAN', 10, 1, 1, 'APPROVAL_REVIEW', 'APPROVE', 5, 'pham.giamsat3', 'Phạm Thị Giám Sát', 'ROLE_SUPERVISOR',
+('TRAINING_PLAN', 10, 1, 1, 'review_approve.review', 'APPROVE', 5, 'pham.giamsat3', 'Phạm Thị Giám Sát',
+ 'ROLE_SUPERVISOR',
  'Đã kiểm, lịch phù hợp', '2026-02-26 10:00:00', 'system');
 
 -- ============================================================================
@@ -1363,14 +1369,14 @@ VALUES
 
 INSERT INTO approval_flow_steps (entity_type, step_order, required_permission, step_label, pending_status, is_active,
                                  created_by)
-VALUES ('DEFECT_PROPOSAL', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
-       ('DEFECT_PROPOSAL', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
-       ('TRAINING_SAMPLE_PROPOSAL', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
-       ('TRAINING_SAMPLE_PROPOSAL', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
-       ('TRAINING_PLAN', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
-       ('TRAINING_PLAN', 2, 'APPROVAL_APPROVE', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
-       ('TRAINING_RESULT', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
-       ('TRAINING_SAMPLE_REVIEW', 1, 'APPROVAL_REVIEW', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system');
+VALUES ('DEFECT_PROPOSAL', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('DEFECT_PROPOSAL', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_SAMPLE_PROPOSAL', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_PLAN', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_PLAN', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
+       ('TRAINING_RESULT', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_SAMPLE_REVIEW', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system');
 
 -- ============================================================================
 -- PART 13: IMPORT HISTORIES
