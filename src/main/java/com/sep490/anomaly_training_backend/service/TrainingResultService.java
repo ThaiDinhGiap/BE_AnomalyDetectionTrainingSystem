@@ -55,8 +55,6 @@ public interface TrainingResultService {
 
     List<SampleResultResponse> getSamplesByProduct(Long productId);
 
-    void rejectDetail(Long detailId, String reason);
-
     void reviseDetail(Long detailId);
 
     void retrainDetail(Long detailId);

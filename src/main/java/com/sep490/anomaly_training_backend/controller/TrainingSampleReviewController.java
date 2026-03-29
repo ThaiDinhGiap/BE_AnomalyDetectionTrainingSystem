@@ -124,7 +124,7 @@ public class TrainingSampleReviewController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Defect Proposal is not found")
     })
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('training_sample_review.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> approveProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -141,7 +141,7 @@ public class TrainingSampleReviewController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_sample_review.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

@@ -853,23 +853,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     @Transactional
-    public void rejectDetail(Long detailId, String reason) {
-        TrainingResultDetail detail = detailRepository.findById(detailId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
-
-        detail.setIsPass(false);
-        detail.setStatus(ReportStatus.REJECTED);
-
-        if (reason != null && !reason.isBlank()) {
-            String existingNote = detail.getNote() != null ? detail.getNote() : "";
-            detail.setNote(existingNote + (existingNote.isEmpty() ? "" : " | ") + "[Từ chối] " + reason);
-        }
-
-        detailRepository.save(detail);
-    }
-
-    @Override
-    @Transactional
     public void reviseDetail(Long detailId) {
         TrainingResultDetail detail = detailRepository.findById(detailId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));

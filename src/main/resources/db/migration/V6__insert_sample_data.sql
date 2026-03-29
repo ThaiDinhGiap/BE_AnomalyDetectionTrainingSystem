@@ -126,15 +126,17 @@ VALUES (1, 1),
 -- PART 1: MODULES (giữ nguyên, thêm dashboard)
 -- ============================================================================
 INSERT INTO modules (id, module_code, display_name, description, sort_order, created_by)
-VALUES (1, 'defect_proposal', 'Báo cáo lỗi sản phẩm', 'Quản lý đề xuất và danh sách lỗi', 1, 'system'),
-       (2, 'training_sample', 'Nội dung huấn luyện', 'Quản lý mẫu HL và rà soát hàng năm', 2, 'system'),
+VALUES (1, 'defect_proposal', 'Đề xuất chỉnh sửa danh sách lỗi quá khứ', 'Quản lý đề xuất và danh sách lỗi', 1,
+        'system'),
+       (2, 'training_sample', 'Đề xuất chỉnh sửa danh sách mẫu huấn luyện',
+        'Quản lý mẫu huấn luyện và rà soát hàng năm', 2, 'system'),
        (3, 'training_plan', 'Kế hoạch huấn luyện', 'Quản lý kế hoạch đào tạo', 3, 'system'),
        (4, 'training_result', 'Kết quả huấn luyện', 'Quản lý kết quả đào tạo', 4, 'system'),
        (5, 'employee', 'Quản lý nhân viên', 'Quản lý hồ sơ nhân viên', 5, 'system'),
        (6, 'user', 'Quản lý tài khoản', 'Quản lý tài khoản hệ thống', 6, 'system'),
        (7, 'role', 'Quản lý phân quyền', 'Quản lý vai trò và phân quyền', 7, 'system'),
        (9, 'scoring', 'Quản lý chính sách', 'Quản lý chính sách chấm điểm ưu tiên', 9, 'system'),
-       (10, 'manage', 'Phạm vi quản lý', 'Xem dashboard theo từng cấp', 10, 'system'),
+       (10, 'manage', 'Phạm vi quản lý', 'Phạm vi quản lý theo từng cấp', 10, 'system'),
        (11, 'staff_structure', 'Cấu trúc nhân sự', 'Quản lý Section/Group/Team', 11, 'system'),
        (12, 'line_structure', 'Cấu trúc dây chuyền', 'Quản lý ProductLine/Process', 12, 'system'),
        (13, 'product', 'Quản lý sản phẩm', 'Quản lý danh mục sản phẩm', 13, 'system'),
@@ -155,30 +157,25 @@ VALUES
 -- ── defect_proposal module (1) ──────────────────────────────────────────────
 (1, 'defect.view', 'Xem danh sách lỗi quá khứ', 1, 'view', 1, TRUE, 'system'),
 (2, 'defect.manage', 'Quản lý danh sách lỗi quá khứ', 1, 'manage', 2, TRUE, 'system'),
-(3, 'defect_proposal.view', 'Xem đề xuất lỗi', 1, 'view', 3, TRUE, 'system'),
-(4, 'defect_proposal.manage', 'Quản lý đề xuất lỗi', 1, 'manage', 4, TRUE, 'system'),
-(5, 'defect_proposal.approve', 'Phê duyệt đề xuất lỗi', 1, 'approve', 5, TRUE, 'system'),
+(3, 'defect_proposal.view', 'Xem danh sách đề xuất chỉnh sửa lỗi quá khứ', 1, 'view', 3, TRUE, 'system'),
+(4, 'defect_proposal.manage', 'Quản lý danh sách đề xuất chỉnh sửa lỗi quá khứ', 1, 'manage', 4, TRUE, 'system'),
 
 -- ── training_sample module (2) ──────────────────────────────────────────────
 (6, 'training_sample.view', 'Xem danh sách mẫu huấn luyện', 2, 'view', 1, TRUE, 'system'),
 (7, 'training_sample.manage', 'Quản lý danh sách mẫu huấn luyện', 2, 'manage', 2, TRUE, 'system'),
-(8, 'training_sample_proposal.view', 'Xem đề xuất mẫu huấn luyện', 2, 'view', 3, TRUE, 'system'),
-(9, 'training_sample_proposal.manage', 'Quản lý đề xuất mẫu huấn luyện', 2, 'manage', 4, TRUE, 'system'),
-(10, 'training_sample_proposal.approve', 'Phê duyệt đề xuất mẫu huấn luyện', 2, 'approve', 5, TRUE, 'system'),
+(8, 'training_sample_proposal.view', 'Xem đề xuất chỉnh sửa mẫu huấn luyện', 2, 'view', 3, TRUE, 'system'),
+(9, 'training_sample_proposal.manage', 'Quản lý đề xuất chỉnh sửa mẫu huấn luyện', 2, 'manage', 4, TRUE, 'system'),
 (11, 'training_sample_review.view', 'Xem rà soát mẫu huấn luyện', 2, 'view', 6, TRUE, 'system'),
-(12, 'training_sample_review.manage', 'Quản lý lịch rà soát mẫu HL', 2, 'manage', 7, TRUE, 'system'),
+(12, 'training_sample_review.manage', 'Quản lý lịch rà soát mẫu huấn luyện', 2, 'manage', 7, TRUE, 'system'),
 (13, 'training_sample_review.perform', 'Thực hiện rà soát mẫu huấn luyện', 2, 'perform', 8, TRUE, 'system'),
-(14, 'training_sample_review.approve', 'Phê duyệt rà soát mẫu huấn luyện', 2, 'approve', 9, TRUE, 'system'),
 
 -- ── training_plan module (3) ────────────────────────────────────────────────
 (15, 'training_plan.view', 'Xem kế hoạch huấn luyện', 3, 'view', 1, TRUE, 'system'),
 (16, 'training_plan.manage', 'Quản lý kế hoạch huấn luyện', 3, 'manage', 2, TRUE, 'system'),
-(17, 'training_plan.approve', 'Phê duyệt kế hoạch huấn luyện', 3, 'approve', 3, TRUE, 'system'),
 
 -- ── training_result module (4) ──────────────────────────────────────────────
 (18, 'training_result.view', 'Xem kết quả huấn luyện', 4, 'view', 1, TRUE, 'system'),
 (19, 'training_result.manage', 'Quản lý kết quả huấn luyện', 4, 'manage', 2, TRUE, 'system'),
-(20, 'training_result.approve', 'Phê duyệt kết quả huấn luyện', 4, 'approve', 3, TRUE, 'system'),
 
 -- ── employee module (5) ─────────────────────────────────────────────────────
 (21, 'employee.view', 'Xem thông tin nhân viên', 5, 'view', 1, TRUE, 'system'),
@@ -197,9 +194,9 @@ VALUES
 (28, 'scoring.manage', 'Quản lý chính sách chấm điểm ưu tiên', 9, 'manage', 2, TRUE, 'system'),
 
 -- ── dashboard / manage module (10) ──────────────────────────────────────────
-(29, 'team.manage', 'Xem dashboard cấp tổ', 10, 'view', 1, TRUE, 'system'),
-(30, 'group.manage', 'Xem dashboard cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
-(31, 'section.manage', 'Xem dashboard cấp xưởng', 10, 'view', 3, TRUE, 'system'),
+(29, 'team.manage', 'Quản lý cấp tổ', 10, 'view', 1, TRUE, 'system'),
+(30, 'group.manage', 'Quản lý cấp dây chuyền', 10, 'view', 2, TRUE, 'system'),
+(31, 'section.manage', 'Quản lý cấp xưởng', 10, 'view', 3, TRUE, 'system'),
 
 -- ── staff_structure module (11) ─────────────────────────────────────────────
 -- StaffOrganizationController: Section/Group/Team CRUD + hierarchy views
@@ -243,18 +240,14 @@ VALUES
 -- Defect
 (2, 1),  -- defect.view
 (2, 3),  -- defect_proposal.view
-(2, 5),  -- defect_proposal.approve
 -- Training Sample
 (2, 6),  -- training_sample.view
 (2, 8),  -- training_sample_proposal.view
-(2, 10), -- training_sample_proposal.approve
 (2, 11), -- training_sample_review.view
 -- Training Plan
 (2, 15), -- training_plan.view
-(2, 17), -- training_plan.approve
 -- Training Result
 (2, 18), -- training_result.view
-(2, 20), -- training_result.approve
 -- Employee
 (2, 21), -- employee.view
 (2, 22), -- employee.manage
@@ -288,20 +281,15 @@ VALUES
 -- Defect
 (3, 1),  -- defect.view
 (3, 3),  -- defect_proposal.view
-(3, 5),  -- defect_proposal.approve
 -- Training Sample
 (3, 6),  -- training_sample.view
 (3, 8),  -- training_sample_proposal.view
-(3, 10), -- training_sample_proposal.approve
 (3, 11), -- training_sample_review.view
 (3, 12), -- training_sample_review.manage
-(3, 14), -- training_sample_review.approve
 -- Training Plan
 (3, 15), -- training_plan.view
-(3, 17), -- training_plan.approve
 -- Training Result
 (3, 18), -- training_result.view
-(3, 20), -- training_result.approve
 -- Employee
 (3, 21), -- employee.view
 -- Scoring
