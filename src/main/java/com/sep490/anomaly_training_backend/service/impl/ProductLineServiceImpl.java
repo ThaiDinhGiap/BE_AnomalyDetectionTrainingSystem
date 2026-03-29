@@ -229,7 +229,7 @@ public class ProductLineServiceImpl implements ProductLineService {
     private List<OrgDropdownItem> getSectionsForUser(User user) {
         Set<Section> sections = new LinkedHashSet<>();
 
-        if (user.hasPermission("group.admin")) {
+        if (user.hasPermission("section.manage")) {
             sections.addAll(sectionRepository.findByManagerId(user.getId()));
         }
         if (user.hasPermission("group.manage")) {
@@ -266,7 +266,7 @@ public class ProductLineServiceImpl implements ProductLineService {
 
         Set<Long> allowedGroupIds = new LinkedHashSet<>();
 
-        if (user.hasPermission("group.admin")) {
+        if (user.hasPermission("section.manage")) {
             sectionRepository.findByManagerId(user.getId()).stream()
                     .filter(s -> s.getId().equals(sectionId))
                     .findFirst()
@@ -304,7 +304,7 @@ public class ProductLineServiceImpl implements ProductLineService {
 
         Set<Long> allowedTeamIds = new LinkedHashSet<>();
 
-        if (user.hasPermission("group.admin") || user.hasPermission("group.manage")) {
+        if (user.hasPermission("group.manage")) {
             allTeams.forEach(t -> allowedTeamIds.add(t.getId()));
         }
         if (user.hasPermission("team.manage")) {
