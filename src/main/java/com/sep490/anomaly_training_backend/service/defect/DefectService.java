@@ -25,6 +25,4 @@ public interface DefectService {
     DefectCoverageResponse getCoverageInProductLine(Long productLineId);
 
     List<DefectInProcess> countDefectInProcess(Long productLineId);
-
-    byte[] exportDefect(Long productLineId);
 }
