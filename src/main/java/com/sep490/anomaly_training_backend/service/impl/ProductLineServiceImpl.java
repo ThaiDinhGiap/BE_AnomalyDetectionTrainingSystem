@@ -315,7 +315,14 @@ public class ProductLineServiceImpl implements ProductLineService {
 
         return allTeams.stream()
                 .filter(t -> allowedTeamIds.contains(t.getId()))
-                .map(t -> OrgDropdownItem.builder().id(t.getId()).name(t.getName()).code(t.getCode()).build())
+                .map(t ->
+                        OrgDropdownItem.builder()
+                                .id(t.getId())
+                                .name(t.getName())
+                                .code(t.getCode())
+                                .fullName(t.getTeamLeader().getFullName())
+                                .employeeCode(t.getTeamLeader().getEmployeeCode())
+                                .build())
                 .collect(Collectors.toList());
     }
 
