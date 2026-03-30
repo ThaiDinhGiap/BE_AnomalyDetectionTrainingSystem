@@ -107,59 +107,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private static final int HISTORY_SIZE = 6;
 
     @Override
-    @Transactional
-    public void generateTrainingResult(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        if (!ReportStatus.COMPLETED.equals(plan.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
-        }
-
-        TrainingResult result = new TrainingResult();
-
-        result.setTrainingPlan(plan);
-        result.setTeam(plan.getTeam());
-        result.setLine(plan.getLine());
-        result.setYear(plan.getStartDate().getYear());
-        result.setTitle("Báo cáo kết quả - " + plan.getTitle());
-        result.setStatus(ReportStatus.ONGOING);
-        result.setCurrentVersion(1);
-
-        List<TrainingResultDetail> resultDetails = new ArrayList<>();
-
-        if (plan.getDetails() != null) {
-            // 1 result detail per plan detail (1:1 mapping)
-            for (TrainingPlanDetail planDetail : plan.getDetails()) {
-                TrainingResultDetail resultDetail = new TrainingResultDetail();
-                resultDetail.setTrainingResult(result);
-                resultDetail.setTrainingPlanDetail(planDetail);
-                resultDetail.setEmployee(planDetail.getEmployee());
-                resultDetail.setPlannedDate(planDetail.getPlannedDate());
-                resultDetail.setBatchId(planDetail.getBatchId());
-                resultDetail.setStatus(ReportStatus.PENDING_REVIEW);
-                resultDetails.add(resultDetail);
-            }
-        }
-
-        result.setDetails(resultDetails);
-        // Lưu trước (JPA auditing sẽ set createdBy = người approve)
-        TrainingResult savedResult = trainingResultRepository.save(result);
-
-        // Generate formCode
-        String lineCode = plan.getLine() != null ? plan.getLine().getCode() : "";
-        savedResult.setFormCode(
-                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, lineCode, savedResult.getId()));
-        trainingResultRepository.save(savedResult);
-
-        // Override createdBy = người tạo plan (native query vì @CreatedBy +
-        // updatable=false)
-        String planCreator = plan.getCreatedBy();
-        trainingResultRepository.updateCreatedBy(savedResult.getId(), planCreator);
-        trainingResultDetailRepository.updateCreatedByForResult(savedResult.getId(), planCreator);
-    }
-
-    @Override
     public KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year) {
         // Nếu không truyền filter nào → chỉ tính KPI cho báo cáo của current user
         String createdBy = null;

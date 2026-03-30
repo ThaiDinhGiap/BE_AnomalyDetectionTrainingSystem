@@ -21,8 +21,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface TrainingResultService {
-    void generateTrainingResult(Long planId);
-
     KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year);
 
     List<TrainingResultOptionResponse> getProductGroupsByLine(Long groupId);
