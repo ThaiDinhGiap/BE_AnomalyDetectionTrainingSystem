@@ -1,15 +1,23 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse;
+import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse.TimelineStep;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.RejectReasonResponse;
 import com.sep490.anomaly_training_backend.dto.response.RequiredActionResponse;
+import com.sep490.anomaly_training_backend.enums.ApprovalAction;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.StepState;
 import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.RejectReason;
+import com.sep490.anomaly_training_backend.model.TrainingPlan;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
@@ -18,7 +26,9 @@ import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
 import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -27,9 +37,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,6 +57,24 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
     private final ApprovalFlowStepRepository flowStepRepo;
     private final RejectReasonRepository rejectReasonRepo;
     private final RequiredActionRepository requiredActionRepo;
+    private final TrainingSampleReviewRepository trainingSampleReviewRepository;
+    private final ApprovalRouteService approvalRouteService;
+
+    @Override
+    public List<ApprovalHistoryResponse> getApprovalHistory(ApprovalEntityType entityType, Long entityId) {
+        return actionRepo.findByEntityTypeAndEntityIdOrderByPerformedAtAsc(entityType, entityId)
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ApprovalHistoryResponse> getApprovalHistoryByVersion(ApprovalEntityType entityType, Long entityId, Integer version) {
+        return actionRepo.findByEntityTypeAndEntityIdAndEntityVersionOrderByPerformedAtAsc(entityType, entityId, version)
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
 
     @Override
     public List<PendingApprovalResponse> getPendingApprovals(User currentUser, ApprovalEntityType entityType) {
@@ -203,6 +233,147 @@ public class ApprovalQueryServiceImpl implements ApprovalQueryService {
             case -1 -> "Revise";
             case 0 -> "Submit";
             default -> "Step " + stepOrder;
+        };
+    }
+
+    // ==================== TIMELINE (merged from ApprovalTimelineService) ====================
+
+    @Override
+    public ApprovalTimelineResponse getTimeline(ApprovalEntityType entityType, Long entityId) {
+
+        // 1. Flow config
+        List<ApprovalFlowStep> flowSteps = flowStepRepo
+                .findByEntityTypeAndIsActiveTrueOrderByStepOrderAsc(entityType);
+
+        // 2. Logs của version hiện tại
+        int latestVersion = actionRepo
+                .findMaxVersionByEntityTypeAndEntityId(entityType, entityId)
+                .orElse(1);
+
+        List<ApprovalActionLog> logs = actionRepo
+                .findByEntityTypeAndEntityIdAndEntityVersionAndDeleteFlagFalseOrderByStepOrderAsc(
+                        entityType, entityId, latestVersion);
+
+        Map<Integer, ApprovalActionLog> logByStep = logs.stream()
+                .collect(Collectors.toMap(
+                        ApprovalActionLog::getStepOrder,
+                        l -> l,
+                        (a, b) -> a.getPerformedAt().isAfter(b.getPerformedAt()) ? a : b));
+
+        // 3. Load groupId một lần cho toàn bộ steps chưa có log
+        Long groupId = loadGroupId(entityType, entityId).orElse(null);
+
+        boolean rejected = logs.stream().anyMatch(l -> l.getAction() == ApprovalAction.REJECT);
+        boolean foundWaiting = false;
+
+        // 4. Build steps
+        List<TimelineStep> steps = new ArrayList<>();
+
+        ApprovalActionLog submitLog = logByStep.get(0);
+        steps.add(buildSubmitStep(submitLog));
+
+        for (ApprovalFlowStep flowStep : flowSteps) {
+            ApprovalActionLog log = logByStep.get(flowStep.getStepOrder());
+            StepState state;
+
+            if (log != null) {
+                state = (log.getAction() == ApprovalAction.REJECT) ? StepState.REJECTED : StepState.DONE;
+            } else if (!foundWaiting && !rejected && submitLog != null) {
+                state = StepState.WAITING;
+                foundWaiting = true;
+            } else {
+                state = StepState.PENDING;
+            }
+
+            User expectedApprover = null;
+            if (log == null && groupId != null) {
+                expectedApprover = approvalRouteService
+                        .resolveExpectedApprover(groupId, flowStep.getRequiredPermission())
+                        .orElse(null);
+            }
+
+            steps.add(buildFlowStep(flowStep, log, state, expectedApprover));
+        }
+
+        return ApprovalTimelineResponse.builder()
+                .entityType(entityType.name())
+                .entityId(entityId)
+                .currentStatus(resolveCurrentStatus(logs, submitLog))
+                .steps(steps)
+                .build();
+    }
+
+    private TimelineStep buildSubmitStep(ApprovalActionLog log) {
+        if (log == null) {
+            return TimelineStep.builder()
+                    .stepOrder(0)
+                    .stepLabel("NGƯỜI TẠO")
+                    .state(StepState.PENDING)
+                    .build();
+        }
+        return TimelineStep.builder()
+                .stepOrder(0)
+                .stepLabel("NGƯỜI TẠO")
+                .state(log.getAction() == ApprovalAction.REVISE ? StepState.REJECTED : StepState.DONE)
+                .performerName(log.getPerformedByFullName())
+                .performerCode(log.getPerformedByUsername())
+                .performedAt(log.getPerformedAt())
+                .action(log.getAction().name())
+                .comment(log.getComment())
+                .build();
+    }
+
+    private TimelineStep buildFlowStep(ApprovalFlowStep flowStep,
+                                       ApprovalActionLog log,
+                                       StepState state,
+                                       User expectedApprover) {
+
+        String label = flowStep.getStepLabel() != null ? flowStep.getStepLabel() : "Step " + flowStep.getStepOrder();
+
+        if (log != null) {
+            return TimelineStep.builder()
+                    .stepOrder(flowStep.getStepOrder())
+                    .stepLabel(label)
+                    .state(state)
+                    .performerName(log.getPerformedByFullName())
+                    .performerCode(log.getPerformedByUsername())
+                    .performedAt(log.getPerformedAt())
+                    .action(log.getAction().name())
+                    .comment(log.getComment())
+                    .build();
+        }
+
+        return TimelineStep.builder()
+                .stepOrder(flowStep.getStepOrder())
+                .stepLabel(label)
+                .state(state)
+                .performerName(expectedApprover != null ? expectedApprover.getFullName() : null)
+                .performerCode(expectedApprover != null ? expectedApprover.getUsername() : null)
+                .build();
+    }
+
+    private String resolveCurrentStatus(List<ApprovalActionLog> logs, ApprovalActionLog submitLog) {
+        if (submitLog == null) return "DRAFT";
+        Optional<ApprovalActionLog> latestFlowLog = logs.stream()
+                .filter(l -> l.getStepOrder() > 0)
+                .max(Comparator.comparingInt(ApprovalActionLog::getStepOrder));
+        if (latestFlowLog.isEmpty()) return "PENDING_REVIEW";
+        ApprovalActionLog last = latestFlowLog.get();
+        return switch (last.getAction()) {
+            case APPROVE -> "APPROVED";
+            case REJECT -> "REJECTED";
+            default -> "PENDING";
+        };
+    }
+
+    private Optional<Long> loadGroupId(ApprovalEntityType entityType, Long entityId) {
+        return switch (entityType) {
+            case TRAINING_PLAN -> planRepo.findById(entityId).map(TrainingPlan::getGroupId);
+            case DEFECT_PROPOSAL -> defectProposalRepository.findById(entityId).map(DefectProposal::getGroupId);
+            case TRAINING_SAMPLE_PROPOSAL ->
+                    trainingSampleProposalRepository.findById(entityId).map(TrainingSampleProposal::getGroupId);
+            case TRAINING_RESULT -> Optional.empty();
+            case TRAINING_SAMPLE_REVIEW -> trainingSampleReviewRepository.findById(entityId).map(TrainingSampleReview::getGroupId);
         };
     }
 

@@ -1,21 +1,29 @@
-package com.sep490.anomaly_training_backend.service.approval.helper;
+package com.sep490.anomaly_training_backend.service.approval.handler;
 
+import com.sep490.anomaly_training_backend.dto.approval.OverdueItem;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.model.Approvable;
+import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,6 +40,20 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
     @Override
     public ApprovalEntityType getType() {
         return ApprovalEntityType.DEFECT_PROPOSAL;
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "đề xuất lỗi";
+    }
+
+    @Override
+    public List<OverdueItem> findOverdueItems(ReportStatus status, LocalDateTime threshold) {
+        return defectProposalRepository.findByStatusAndDeleteFlagFalse(status)
+                .stream()
+                .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
+                .map(r -> new OverdueItem(r.getId(), r.getGroupId()))
+                .toList();
     }
 
     @Override
@@ -179,7 +201,7 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
     private void uploadAttachmentToDefect(Defect defect, DefectProposalDetail proposalDefect) {
         //Create and update image to defect
         List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("DEFECT", defect.getId());
-        List<Attachment>  proposalAttachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", proposalDefect.getId());
+        List<Attachment> proposalAttachments = attachmentService.getAttachmentsByEntity("DEFECT_PROPOSAL", proposalDefect.getId());
         if (originAttachments != null) {
             for (Attachment origin : originAttachments) {
                 attachmentService.deleteAttachment(origin.getId());

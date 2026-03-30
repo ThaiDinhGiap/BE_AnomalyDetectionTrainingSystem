@@ -5,11 +5,8 @@ import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.List;
 
 public interface ApprovalService {
 
@@ -32,16 +29,6 @@ public interface ApprovalService {
      * SV/Manager reject report
      */
     void reject(Approvable entity, User currentUser, RejectRequest req, HttpServletRequest request);
-
-    /**
-     * Lấy lịch sử approval của một entity
-     */
-    List<ApprovalActionLog> getApprovalHistory(ApprovalEntityType entityType, Long entityId);
-
-    /**
-     * Lấy lịch sử approval của một entity theo version cụ thể
-     */
-    List<ApprovalActionLog> getApprovalHistoryByVersion(ApprovalEntityType entityType, Long entityId, Integer version);
 
     /**
      * Kiểm tra user có thể approve/reject entity này không
