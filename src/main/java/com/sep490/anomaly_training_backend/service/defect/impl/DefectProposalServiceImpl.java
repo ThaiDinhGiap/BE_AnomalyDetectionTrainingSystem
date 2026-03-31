@@ -11,23 +11,10 @@ import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
-import com.sep490.anomaly_training_backend.model.Defect;
-import com.sep490.anomaly_training_backend.model.DefectProposal;
-import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
-import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
-import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
@@ -37,12 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +32,6 @@ public class DefectProposalServiceImpl implements DefectProposalService {
     private final DefectProposalRepository defectProposalRepository;
     private final DefectRepository defectRepository;
     private final DefectProposalMapper defectProposalMapper;
-    private final DefectProposalDetailMapper defectProposalDetailMapper;
     private final UserRepository userRepository;
     private final ProductLineRepository productLineRepository;
     private final ProcessRepository processRepository;

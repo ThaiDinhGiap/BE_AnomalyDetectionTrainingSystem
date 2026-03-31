@@ -1,6 +1,8 @@
 package com.sep490.anomaly_training_backend.scheduler.job;
 
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.exception.AppException;
+import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.ProductLine;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
@@ -11,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,7 @@ public class TrainingSampleReviewJob implements Job {
 
     @Override
     @Transactional
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(JobExecutionContext context) {
         try {
             // Lấy configId từ JobDataMap
             Long configId = Long.parseLong(
@@ -38,9 +39,7 @@ public class TrainingSampleReviewJob implements Job {
 
             // 1. Lấy config từ DB
             TrainingSampleReviewConfig config = trainingSampleReviewConfigRepository.findById(configId)
-                    .orElseThrow(() -> new JobExecutionException(
-                            "Config not found: " + configId
-                    ));
+                    .orElseThrow(() -> new AppException(ErrorCode.CONFIG_NOT_FOUND));
 
             // 2. Lấy ProductLine
             ProductLine productLine = config.getReviewPolicy().getProductLine();
@@ -59,11 +58,8 @@ public class TrainingSampleReviewJob implements Job {
             log.info("✓ Successfully created TrainingSampleReview id={} for configId={}",
                     savedReview.getId(), configId);
 
-            log.info("=== Completed TrainingSampleReviewJob ===");
-
         } catch (Exception e) {
-            log.error("❌ Error in TrainingSampleReviewJob", e);
-            throw new JobExecutionException("Failed to create TrainingSampleReview", e);
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to execute TrainingSampleReviewJob");
         }
     }
 }
