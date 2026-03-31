@@ -265,7 +265,7 @@ public class StaffOrganizationController {
 
 
     @GetMapping("/product-lines/{productLineId}/team-leads")
-    @PreAuthorize("hasAuthority('staff_structure.view')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get list of Teams on product line", description = "Used to display dropdown list when creating a new User")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
         List<UserResponse> result = userService.getTeamLeadInProductLine(productLineId);
