@@ -262,18 +262,10 @@ VALUES
 -- Employee
 (2, 21), -- employee.view
 (2, 22), -- employee.manage
--- User/Role
-(2, 23), -- user.view
-(2, 25), -- role.view
 -- Scoring
 (2, 27), -- scoring.view
-(2, 28), -- scoring.manage
 -- Dashboard
-(2, 29), -- team.manage (dashboard TL)
-(2, 30), -- group.manage (dashboard SV)
 (2, 31), -- section.manage (dashboard MNG)
--- Staff Structure
-(2, 32), -- staff_structure.view
 -- Line Structure
 (2, 34), -- line_structure.view
 -- Product
@@ -306,10 +298,7 @@ VALUES
 -- Scoring
 (3, 27), -- scoring.view
 -- Dashboard
-(3, 29), -- team.manage (dashboard TL)
 (3, 30), -- group.manage (dashboard SV)
--- Staff Structure
-(3, 32), -- staff_structure.view
 -- Line Structure
 (3, 34), -- line_structure.view
 -- Product
