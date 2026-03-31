@@ -261,7 +261,6 @@ VALUES
 (2, 18), -- training_result.view
 -- Employee
 (2, 21), -- employee.view
-(2, 22), -- employee.manage
 -- Scoring
 (2, 27), -- scoring.view
 -- Dashboard
