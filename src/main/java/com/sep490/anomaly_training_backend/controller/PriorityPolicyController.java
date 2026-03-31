@@ -70,7 +70,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Get priority policy details by ID")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('scoring.view')")
+    @PreAuthorize("hasAuthority('scoring.policy_view')")
     public ResponseEntity<ApiResponse<PriorityPolicyResponse>> getPolicy(@PathVariable Long id) {
         PriorityPolicyResponse response = policyService.getPolicy(id);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -78,7 +78,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "List priority policies with optional filters")
     @GetMapping
-    @PreAuthorize("hasAuthority('scoring.view')")
+    @PreAuthorize("hasAuthority('scoring.policy_view')")
     public ResponseEntity<ApiResponse<List<PriorityPolicyListResponse>>> listPolicies(
             @RequestParam(required = false) PolicyEntityType entityType,
             @RequestParam(required = false) PolicyStatus status) {
@@ -112,7 +112,7 @@ public class PriorityPolicyController {
 
     @Operation(summary = "Get available metrics by entity type (for building policy filters/ranking)")
     @GetMapping("/metrics")
-    @PreAuthorize("hasAuthority('scoring.view')")
+    @PreAuthorize("hasAuthority('scoring.policy_view')")
     public ResponseEntity<ApiResponse<List<ComputedMetricResponse>>> getAvailableMetrics(
             @RequestParam PolicyEntityType entityType) {
         List<ComputedMetricResponse> metrics = policyService.getAvailableMetrics(entityType);

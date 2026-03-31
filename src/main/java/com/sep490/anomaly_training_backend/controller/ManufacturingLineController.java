@@ -274,13 +274,13 @@ public class ManufacturingLineController {
     }
 
     @GetMapping("/product-lines/{id}/products")
-    @PreAuthorize("hasAuthority('product.view')")
+    @PreAuthorize("hasAuthority('product.catalog')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
     }
 
     @GetMapping("/product-lines/{id}/processes")
-    @PreAuthorize("hasAuthority('line_structure.view')")
+    @PreAuthorize("hasAuthority('line_structure.configure')")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
     }
@@ -288,7 +288,7 @@ public class ManufacturingLineController {
 
     // Unknow
     @GetMapping("/product-lines")
-    @PreAuthorize("hasAuthority('line_structure.view')")
+    @PreAuthorize("hasAuthority('line_structure.configure')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
     }

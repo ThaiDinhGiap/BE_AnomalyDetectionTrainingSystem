@@ -81,7 +81,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Get skill matrix data")
     @GetMapping("/skills/matrix")
-    @PreAuthorize("hasAuthority('employee.view')")
+    @PreAuthorize("hasAuthority('employee_skill.view')")
     public ResponseEntity<SkillMatrixResponse> getSkillMatrix(
             @Parameter(description = "Filter by Team ID", required = true) @RequestParam Long teamId,
             @Parameter(description = "Filter by Product Line ID", required = true) @RequestParam Long lineId,

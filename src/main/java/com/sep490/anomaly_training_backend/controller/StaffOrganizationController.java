@@ -69,7 +69,7 @@ public class StaffOrganizationController {
     }
 
     @GetMapping("/employees")
-    @PreAuthorize("hasAuthority('employee.view')")
+    @PreAuthorize("hasAuthority('employee.view_all')")
     @Operation(summary = "Get list of Employees", description = "Returns a list of all employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployees() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllEmployees()));
