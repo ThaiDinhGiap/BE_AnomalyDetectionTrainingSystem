@@ -171,7 +171,7 @@ public class DefectController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Defect Proposal is not found")
     })
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> approveProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -188,7 +188,7 @@ public class DefectController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('defect_proposal.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> rejectProposal(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -214,14 +214,6 @@ public class DefectController {
     public ResponseEntity<ApiResponse<List<DefectResponse>>> importDefect(@RequestPart("file") MultipartFile file, @AuthenticationPrincipal User currentUser) throws BadRequestException {
         List<DefectResponse> data = defectService.importDefect(currentUser, file);
         return ResponseEntity.ok(ApiResponse.success(data));
-    }
-
-    @Operation(summary = "Export data (Defect Banking)")
-    @GetMapping("/product-lines/{productLineId}/export")
-    @PreAuthorize("hasAuthority('defect.manage')")
-    public ResponseEntity<byte[]> exportDefect(@PathVariable Long productLineId) throws BadRequestException {
-        byte[] data = defectService.exportDefect(productLineId);
-        return ResponseEntity.ok(data);
     }
 
     @Operation(summary = "Submit defect proposal for approval", description = "Change defect proposal status from DRAFT to SUBMITTED.")

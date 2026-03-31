@@ -59,6 +59,7 @@ public class RequirePasswordChangeFilter extends OncePerRequestFilter {
     private boolean isAllowedPath(String path) {
         // Allow all public/auth endpoints so they can login, logout, change password, or refresh token
         return path.startsWith("/api/v1/auth/") ||
+                path.equals("/api/v1/users/change-password") ||
                 path.startsWith("/oauth2/") ||
                 path.startsWith("/login/oauth2/") ||
                 path.equals("/error") ||

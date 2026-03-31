@@ -8,13 +8,9 @@ import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.RequiredActionResponse;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.approval.ApprovalMetadataService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalQueryService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.approval.ApprovalTimelineService;
-import com.sep490.anomaly_training_backend.service.approval.RejectDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/approvals")
@@ -41,9 +35,6 @@ public class ApprovalController {
 
     private final ApprovalService approvalService;
     private final ApprovalQueryService approvalQueryService;
-    private final ApprovalMetadataService approvalMetadataService;
-    private final ApprovalTimelineService approvalTimelineService;
-    private final RejectDetailService rejectDetailService;
 
     // ==================== PENDING LIST ====================
 
@@ -80,16 +71,12 @@ public class ApprovalController {
             @PathVariable Long entityId,
             @RequestParam(required = false) Integer version) {
 
-        List<ApprovalActionLog> logs;
+        List<ApprovalHistoryResponse> response;
         if (version != null) {
-            logs = approvalService.getApprovalHistoryByVersion(entityType, entityId, version);
+            response = approvalQueryService.getApprovalHistoryByVersion(entityType, entityId, version);
         } else {
-            logs = approvalService.getApprovalHistory(entityType, entityId);
+            response = approvalQueryService.getApprovalHistory(entityType, entityId);
         }
-
-        List<ApprovalHistoryResponse> response = logs.stream()
-                .map(this::toHistoryResponse)
-                .toList();
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -111,7 +98,7 @@ public class ApprovalController {
     @Operation(summary = "Get grouped reject reasons for rejection form")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<RejectReasonGroupResponse>>> getRejectReasons() {
-        List<RejectReasonGroupResponse> reasons = approvalMetadataService.getRejectReasonGroups();
+        List<RejectReasonGroupResponse> reasons = approvalQueryService.getRejectReasonGroups();
         return ResponseEntity.ok(ApiResponse.success(reasons));
     }
 
@@ -119,7 +106,7 @@ public class ApprovalController {
     @Operation(summary = "Get list of required actions when rejecting")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<RequiredActionResponse>>> getRequiredActions() {
-        List<RequiredActionResponse> actions = approvalMetadataService.getRequiredActions();
+        List<RequiredActionResponse> actions = approvalQueryService.getRequiredActions();
         return ResponseEntity.ok(ApiResponse.success(actions));
     }
 
@@ -130,7 +117,7 @@ public class ApprovalController {
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long entityId) {
 
-        return ResponseEntity.ok(approvalTimelineService.getTimeline(entityType, entityId));
+        return ResponseEntity.ok(approvalQueryService.getTimeline(entityType, entityId));
     }
 
     @Operation(summary = "Save feedback reject for 1 detail")
@@ -142,55 +129,8 @@ public class ApprovalController {
             @RequestBody DetailFeedbackRequest request,
             @AuthenticationPrincipal User currentUser) {
 
-        rejectDetailService.saveFeedback(entityType, detailId, request, currentUser);
+        approvalService.saveFeedback(entityType, detailId, request, currentUser);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ==================== HELPER ====================
-
-    private ApprovalHistoryResponse toHistoryResponse(ApprovalActionLog log) {
-        Set<ApprovalHistoryResponse.RejectReasonResponse> rejectReasons =
-                log.getRejectReasons() == null ? Set.of() :
-                        log.getRejectReasons().stream()
-                                .map(r -> ApprovalHistoryResponse.RejectReasonResponse.builder()
-                                        .id(r.getId())
-                                        .categoryName(r.getCategoryName())
-                                        .reasonName(r.getReasonName())
-                                        .build())
-                                .collect(Collectors.toSet());
-
-        Set<ApprovalHistoryResponse.RequiredActionResponse> requiredActions =
-                log.getRequiredActions() == null ? Set.of() :
-                        log.getRequiredActions().stream()
-                                .map(a -> ApprovalHistoryResponse.RequiredActionResponse.builder()
-                                        .id(a.getId())
-                                        .actionName(a.getActionName())
-                                        .build())
-                                .collect(Collectors.toSet());
-
-        return ApprovalHistoryResponse.builder()
-                .id(log.getId())
-                .entityVersion(log.getEntityVersion())
-                .stepOrder(log.getStepOrder())
-                .stepName(getStepName(log.getStepOrder()))
-                .requiredPermission(log.getRequiredPermission())
-                .action(log.getAction())
-                .performedByUsername(log.getPerformedByUsername())
-                .performedByFullName(log.getPerformedByFullName())
-                .performedByRole(log.getPerformedByRole())
-                .comment(log.getComment())
-                .rejectReasons(rejectReasons)
-                .requiredActions(requiredActions)
-                .performedAt(log.getPerformedAt())
-                .ipAddress(log.getIpAddress())
-                .build();
-    }
-
-    private String getStepName(int stepOrder) {
-        return switch (stepOrder) {
-            case -1 -> "Revise";
-            case 0 -> "Submit";
-            default -> "Step " + stepOrder;
-        };
-    }
 }

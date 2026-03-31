@@ -86,13 +86,15 @@ public class TrainingSampleProposal extends BaseEntity implements Approvable {
 
     @Override
     public String getEntityLabel() {
-        return formCode != null ? "Chủ đề đào tạo – " + formCode : Approvable.super.getEntityLabel();
+        return formCode != null ? "Đề xuất chỉnh sửa danh sách mẫu huấn luyện – " + formCode : Approvable.super.getEntityLabel();
     }
 
     @Override
     public void clearRejectFeedback() {
         if (!details.isEmpty()) {
-            details.forEach(detail -> {detail.setRejectFeedback(null);});
+            details.forEach(detail -> {
+                detail.setRejectFeedback(null);
+            });
         }
     }
 }

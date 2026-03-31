@@ -23,5 +23,7 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     List<Group> findByTeamLeadId(@Param("teamLeadId") Long teamLeadId);
 
     Optional<Group> findByCode(String code);
+
+    List<Group> findBySectionIdAndDeleteFlagFalse(Long sectionId);
 }
 

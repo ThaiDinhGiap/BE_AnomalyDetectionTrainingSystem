@@ -81,7 +81,7 @@ public class TrainingResultController {
 
     @Operation(summary = "Get skill matrix data")
     @GetMapping("/skills/matrix")
-    @PreAuthorize("hasAuthority('employee.view')")
+    @PreAuthorize("hasAuthority('employee_skill.view')")
     public ResponseEntity<SkillMatrixResponse> getSkillMatrix(
             @Parameter(description = "Filter by Team ID", required = true) @RequestParam Long teamId,
             @Parameter(description = "Filter by Product Line ID", required = true) @RequestParam Long lineId,
@@ -251,17 +251,6 @@ public class TrainingResultController {
         return ResponseEntity.ok("Kết quả huấn luyện đã được gửi thành công!");
     }
 
-    @Operation(summary = "Reject a training result detail (Từ chối kết quả)", description = "Reject a specific result detail row with a reason. The employee may need retraining.")
-    @PutMapping("/details/{detailId}/reject")
-    @PreAuthorize("hasAuthority('training_result.manage')")
-    public ResponseEntity<String> rejectDetail(
-            @Parameter(description = "Detail ID to reject") @PathVariable Long detailId,
-            @RequestBody(required = false) java.util.Map<String, String> body) {
-        String reason = (body != null) ? body.get("reason") : null;
-        trainingResultService.rejectDetail(detailId, reason);
-        return ResponseEntity.ok("Đã từ chối kết quả!");
-    }
-
     @Operation(summary = "Mark detail for retraining (Huấn luyện lại)", description = "Mark a specific result detail as needing retraining and create a new detail row.")
     @PutMapping("/details/{detailId}/retrain")
     @PreAuthorize("hasAuthority('training_result.manage')")
@@ -295,7 +284,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "404", description = "Result not found")
     })
     @PutMapping("/{id}/approve/{detailId}")
-    @PreAuthorize("hasAuthority('training_result.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> approveResultDetail(
             @PathVariable Long id,
             @PathVariable Long detailId,
@@ -312,7 +301,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject/{detailId}")
-    @PreAuthorize("hasAuthority('training_result.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> rejectResultDetail(
             @PathVariable Long id,
             @PathVariable Long detailId,
@@ -321,16 +310,5 @@ public class TrainingResultController {
             HttpServletRequest request) {
         trainingResultService.rejectDetail(id, detailId, rejectRequest, currentUser, request);
         return ResponseEntity.ok("Plan has been rejected!");
-    }
-
-    @Operation(summary = "Revise training result (chỉnh sửa lại sau khi bị từ chối)", description = "Chuyển trạng thái result về REVISE, các detail bị reject về PENDING, tăng version và tạo snapshot lịch sử.")
-    @PutMapping("/{id}/revise")
-    @PreAuthorize("hasAuthority('training_result.manage')")
-    public ResponseEntity<String> reviseResult(
-            @Parameter(description = "Training Result ID") @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser,
-            HttpServletRequest request) {
-        trainingResultService.revise(id, currentUser, request);
-        return ResponseEntity.ok("Đã revise kết quả huấn luyện thành công!");
     }
 }

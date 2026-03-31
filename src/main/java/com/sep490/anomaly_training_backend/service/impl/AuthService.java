@@ -31,11 +31,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,7 +55,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final EmployeeRepository employeeRepository;
     private final MailDispatcher mailDispatcher;
-    
+
     @Value("${app.security.default-password-prefix:ADTMS@}")
     private String defaultPasswordPrefix;
 
@@ -179,6 +181,7 @@ public class AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
+        request.setEmail(StringUtils.hasText(request.getEmail()) ? request.getEmail().trim() : null);
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -215,16 +218,16 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         if (savedUser.getEmail() != null && !savedUser.getEmail().trim().isEmpty()) {
-            String subject = "Your Anomaly Training System Account Information";
-            String body = "Hello " + savedUser.getFullName() + ",\n\n"
-                    + "Your account on the system has been created successfully.\n"
-                    + "Here is your login information:\n"
-                    + "- Username: " + savedUser.getUsername() + "\n"
-                    + "- Password: " + rawPassword + "\n\n"
-                    + "Please log in and change your password immediately for security.\n\n"
-                    + "Best regards,\nThe System Administration Team.";
             try {
-                mailDispatcher.send(savedUser.getEmail(), subject, body);
+                mailDispatcher.sendWithFile(
+                        savedUser.getEmail(),
+                        "Thông tin tài khoản Anomaly Training System",
+                        "email/welcome-account",
+                        Map.of(
+                                "fullName", savedUser.getFullName(),
+                                "username", savedUser.getUsername(),
+                                "password", rawPassword
+                        ));
             } catch (Exception e) {
                 log.error("Failed to send welcome email to {}", savedUser.getEmail(), e);
             }
@@ -251,7 +254,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(String username, com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
+    public AuthResponse changePassword(String username, com.sep490.anomaly_training_backend.dto.request.ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH);
         }
@@ -266,8 +269,11 @@ public class AuthService {
         user.setRequirePasswordChange(false);
         userRepository.save(user);
 
-        // Revoke all existing tokens so user has to log in again with new password
+        // Revoke all existing tokens
         refreshTokenRepository.revokeAllByUser(user);
+
+        // Issue new tokens so user doesn't have to re-login
+        return generateAuthResponse(user);
     }
 
     @Transactional
@@ -291,15 +297,16 @@ public class AuthService {
         // Revoke tokens
         refreshTokenRepository.revokeAllByUser(user);
 
-        String subject = "Your Password Has Been Reset";
-        String body = "Hello " + user.getFullName() + ",\n\n"
-                + "Your password has been successfully reset. Here is your new temporary password:\n"
-                + "- Username: " + user.getUsername() + "\n"
-                + "- Password: " + rawPassword + "\n\n"
-                + "Please log in and change your password immediately for security.\n\n"
-                + "Best regards,\nThe System Administration Team.";
         try {
-            mailDispatcher.send(user.getEmail(), subject, body);
+            mailDispatcher.sendWithFile(
+                    user.getEmail(),
+                    "Mật khẩu của bạn đã được đặt lại",
+                    "email/password-reset",
+                    Map.of(
+                            "fullName", user.getFullName(),
+                            "username", user.getUsername(),
+                            "password", rawPassword
+                    ));
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}", user.getEmail(), e);
         }

@@ -51,7 +51,7 @@ public class DefectProposalExporter implements EntityExporter {
 
         // Header info
         int row = 0;
-        styles.writeSectionHeader(sheet, row++, "PHIẾU ĐỀ XUẤT BÁO CÁO LỖI");
+        styles.writeSectionHeader(sheet, row++, "PHIẾU ĐỀ XUẤT CHỈNH SỬA DANH SÁCH LỖI QUÁ KHỨ");
         row++;
         styles.writeInfoRow(sheet, row++, "Mã phiếu:", proposal.getFormCode());
         styles.writeInfoRow(sheet, row++, "Dây chuyền:", proposal.getProductLine() != null ? proposal.getProductLine().getName() : "");

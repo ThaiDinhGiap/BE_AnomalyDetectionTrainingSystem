@@ -7,7 +7,7 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
-import com.sep490.anomaly_training_backend.service.approval.helper.ExpectedApproverResolver;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.notification.impl.UnifiedNotificationDispatcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ import java.util.Optional;
 public class ApprovalNotificationListener {
 
     private final UnifiedNotificationDispatcher dispatcher;
-    private final ExpectedApproverResolver approverResolver;
+    private final ApprovalRouteService approvalRouteService;
     private final ApprovalFlowStepRepository flowStepRepo;
     private final UserRepository userRepository;
 
@@ -144,7 +144,7 @@ public class ApprovalNotificationListener {
         }
         return flowStepRepo
                 .findByEntityTypeAndPendingStatusAndIsActiveTrue(event.getEntityType(), event.getNewStatus())
-                .flatMap(step -> approverResolver.resolve(event.getGroupId(), step.getRequiredPermission()));
+                .flatMap(step -> approvalRouteService.resolveExpectedApprover(event.getGroupId(), step.getRequiredPermission()));
     }
 
     /**
@@ -174,8 +174,8 @@ public class ApprovalNotificationListener {
         return switch (type) {
             case TRAINING_PLAN -> "Kế hoạch huấn luyện";
             case TRAINING_RESULT -> "Kết quả huấn luyện";
-            case DEFECT_PROPOSAL -> "Báo cáo lỗi";
-            case TRAINING_SAMPLE_PROPOSAL -> "Chủ đề đào tạo";
+            case DEFECT_PROPOSAL -> "Đề xuất chỉnh sửa lỗi quá khứ";
+            case TRAINING_SAMPLE_PROPOSAL -> "Đề xuất chỉnh sửa mẫu huấn luyện";
             case TRAINING_SAMPLE_REVIEW -> "Kiểm tra hàng năm";
         };
     }

@@ -1,11 +1,18 @@
-package com.sep490.anomaly_training_backend.service.approval.helper;
+package com.sep490.anomaly_training_backend.service.approval.handler;
 
+import com.sep490.anomaly_training_backend.dto.approval.OverdueItem;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Approvable;
+import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
@@ -14,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,10 +33,25 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private final AttachmentService attachmentService;
     private final TrainingSampleProposalDetailRepository proposalDetailRepository;
     private final AttachmentRepository attachmentRepository;
+    private final TrainingSampleProposalRepository trainingSampleProposalRepository;
 
     @Override
     public ApprovalEntityType getType() {
         return ApprovalEntityType.TRAINING_SAMPLE_PROPOSAL;
+    }
+
+    @Override
+    public String getDisplayLabel() {
+        return "đề xuất mẫu huấn luyện";
+    }
+
+    @Override
+    public List<OverdueItem> findOverdueItems(ReportStatus status, LocalDateTime threshold) {
+        return trainingSampleProposalRepository.findByStatusAndDeleteFlagFalse(status)
+                .stream()
+                .filter(r -> r.getUpdatedAt() != null && r.getUpdatedAt().isBefore(threshold))
+                .map(r -> new OverdueItem(r.getId(), r.getGroupId()))
+                .toList();
     }
 
     @Override
@@ -75,11 +98,11 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         Integer processOrder = calculateProcessOrder(d.getProcess().getId());
         Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
         Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
-        
+
         created.setProcessOrder(processOrder);
         created.setCategoryOrder(categoryOrder);
         created.setContentOrder(contentOrder);
-        
+
         log.info("Set orders - processOrder: {}, categoryOrder: {}, contentOrder: {}", processOrder, categoryOrder, contentOrder);
 
         // Check for unique constraint before saving
@@ -137,20 +160,20 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         copyFromDetailToTrainingSample(d, existing);
 
         // Recalculate order fields if process, categoryName, or trainingDescription changed
-        if (!oldProcessId.equals(d.getProcess().getId()) || 
-            !oldCategoryName.equals(d.getCategoryName()) || 
-            !oldTrainingDescription.equals(d.getTrainingDescription())) {
-            
+        if (!oldProcessId.equals(d.getProcess().getId()) ||
+                !oldCategoryName.equals(d.getCategoryName()) ||
+                !oldTrainingDescription.equals(d.getTrainingDescription())) {
+
             Integer processOrder = calculateProcessOrder(d.getProcess().getId());
             Integer categoryOrder = calculateCategoryOrder(d.getProcess().getId(), d.getCategoryName());
             Integer contentOrder = calculateContentOrder(d.getProcess().getId(), d.getCategoryName(), d.getTrainingDescription());
-            
+
             existing.setProcessOrder(processOrder);
             existing.setCategoryOrder(categoryOrder);
             existing.setContentOrder(contentOrder);
-            
-            log.info("Recalculated orders for TrainingSample ID {} - processOrder: {}, categoryOrder: {}, contentOrder: {}", 
-                     existing.getId(), processOrder, categoryOrder, contentOrder);
+
+            log.info("Recalculated orders for TrainingSample ID {} - processOrder: {}, categoryOrder: {}, contentOrder: {}",
+                    existing.getId(), processOrder, categoryOrder, contentOrder);
         }
 
         // Note: trainingCode should NOT be changed on UPDATE (it's a permanent identifier)
@@ -281,16 +304,16 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         // Check if this (process, category, description) combination already exists
         java.util.Optional<Integer> existingOrder = trainingSampleRepository.findContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
         if (existingOrder.isPresent()) {
-            log.debug("ProcessId {} + CategoryName {} + TrainingDescription {} already has contentOrder: {}", 
-                     processId, categoryName, trainingDescription, existingOrder.get());
+            log.debug("ProcessId {} + CategoryName {} + TrainingDescription {} already has contentOrder: {}",
+                    processId, categoryName, trainingDescription, existingOrder.get());
             return existingOrder.get();
         }
 
         // If not, get max contentOrder for this (process, category) and increment
         Integer maxContentOrder = trainingSampleRepository.findMaxContentOrderByProcessCategoryAndDescription(processId, categoryName, trainingDescription);
         Integer newContentOrder = maxContentOrder + 1;
-        log.debug("Assigning new contentOrder {} for processId {} + categoryName {} + trainingDescription {}", 
-                 newContentOrder, processId, categoryName, trainingDescription);
+        log.debug("Assigning new contentOrder {} for processId {} + categoryName {} + trainingDescription {}",
+                newContentOrder, processId, categoryName, trainingDescription);
         return newContentOrder;
     }
 }

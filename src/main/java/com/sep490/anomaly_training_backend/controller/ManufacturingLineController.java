@@ -7,11 +7,13 @@ import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
+import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
@@ -170,6 +172,22 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    @GetMapping("/user/org-hierarchy")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Cascading org dropdown",
+            description = "Load dropdown items theo level. " +
+                    "SECTION → GROUP(sectionId) → TEAM(groupId) → PRODUCT_LINE(groupId)"
+    )
+    public ResponseEntity<ApiResponse<List<OrgDropdownItem>>> getOrgHierarchy(
+            @AuthenticationPrincipal User user,
+            @RequestParam OrgHierarchyLevel level,
+            @RequestParam(required = false) Long sectionId,
+            @RequestParam(required = false) Long groupId) {
+        List<OrgDropdownItem> items = productLineService.getOrgHierarchy(user, level, sectionId, groupId);
+        return ResponseEntity.ok(ApiResponse.success(items));
+    }
+
     @GetMapping("/product-lines/detail")
     @PreAuthorize("hasAuthority('line_structure.view')")
     public ResponseEntity<ApiResponse<ProductLineResponse>> getProductLineDetail(@RequestParam Long productLineId) {
@@ -256,21 +274,20 @@ public class ManufacturingLineController {
     }
 
     @GetMapping("/product-lines/{id}/products")
-    @PreAuthorize("hasAuthority('product.view')")
+    @PreAuthorize("hasAuthority('product.catalog')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductsByProductLineId(id)));
     }
 
     @GetMapping("/product-lines/{id}/processes")
-    @PreAuthorize("hasAuthority('line_structure.view')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
     }
 
-
     // Unknow
     @GetMapping("/product-lines")
-    @PreAuthorize("hasAuthority('line_structure.view')")
+    @PreAuthorize("hasAuthority('line_structure.configure')")
     public ResponseEntity<ApiResponse<List<ProductLineResponse>>> getProductLines() {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getAllProductLine()));
     }

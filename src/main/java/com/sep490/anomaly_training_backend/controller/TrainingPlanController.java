@@ -242,7 +242,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "404", description = "Plan not found")
     })
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('training_plan.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> approvePlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,
@@ -259,7 +259,7 @@ public class TrainingPlanController {
             @ApiResponse(responseCode = "400", description = "Invalid rejection reason")
     })
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('training_plan.approve')")
+    @PreAuthorize("hasAnyAuthority('review_approve.review', 'review_approve.approve')")
     public ResponseEntity<String> rejectPlan(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser,

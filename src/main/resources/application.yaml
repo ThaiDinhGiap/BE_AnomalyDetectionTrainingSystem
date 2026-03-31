@@ -119,7 +119,7 @@ cors:
 app:
   security:
     default-password-prefix: ${SECURITY_DEFAULT_PASSWORD_PREFIX:ADTMS@}
-  websockert:
+  websocket:
     enabled: ${WEBSOCKET_ENABLED:true}
   rabbitmq:
     enabled: ${RABBITMQ_ENABLED:true}

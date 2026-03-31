@@ -1,9 +1,11 @@
 package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
+import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
+import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
 import org.apache.coyote.BadRequestException;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,4 +30,6 @@ public interface ProductLineService {
     List<WorkingPosition> getWorkingPosition(User user);
 
     ProductLineDetailResponse getProductLineFullDetail(Long lineId);
+
+    List<OrgDropdownItem> getOrgHierarchy(User user, OrgHierarchyLevel level, Long sectionId, Long groupId);
 }

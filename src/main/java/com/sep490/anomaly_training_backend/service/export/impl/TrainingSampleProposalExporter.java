@@ -50,7 +50,7 @@ public class TrainingSampleProposalExporter implements EntityExporter {
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
 
         int row = 0;
-        styles.writeSectionHeader(sheet, row++, "PHIẾU ĐỀ XUẤT CHỦ ĐỀ ĐÀO TẠO");
+        styles.writeSectionHeader(sheet, row++, "PHIẾU ĐỀ XUẤT CHỈNH SỬA DANH SÁCH MẪU HUẤN LUYỆN");
         row++;
         styles.writeInfoRow(sheet, row++, "Mã phiếu:", proposal.getFormCode());
         styles.writeInfoRow(sheet, row++, "Dây chuyền:", proposal.getProductLine() != null ? proposal.getProductLine().getName() : "");

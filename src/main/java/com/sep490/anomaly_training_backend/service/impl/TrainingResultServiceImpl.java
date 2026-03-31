@@ -2,7 +2,6 @@ package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
-import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
@@ -69,7 +68,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -107,59 +105,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingResultHistoryRepository trainingResultHistoryRepository;
 
     private static final int HISTORY_SIZE = 6;
-
-    @Override
-    @Transactional
-    public void generateTrainingResult(Long planId) {
-        TrainingPlan plan = trainingPlanRepository.findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        if (!ReportStatus.COMPLETED.equals(plan.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_TRAINING_PLAN_STATUS);
-        }
-
-        TrainingResult result = new TrainingResult();
-
-        result.setTrainingPlan(plan);
-        result.setTeam(plan.getTeam());
-        result.setLine(plan.getLine());
-        result.setYear(plan.getStartDate().getYear());
-        result.setTitle("Báo cáo kết quả - " + plan.getTitle());
-        result.setStatus(ReportStatus.ONGOING);
-        result.setCurrentVersion(1);
-
-        List<TrainingResultDetail> resultDetails = new ArrayList<>();
-
-        if (plan.getDetails() != null) {
-            // 1 result detail per plan detail (1:1 mapping)
-            for (TrainingPlanDetail planDetail : plan.getDetails()) {
-                TrainingResultDetail resultDetail = new TrainingResultDetail();
-                resultDetail.setTrainingResult(result);
-                resultDetail.setTrainingPlanDetail(planDetail);
-                resultDetail.setEmployee(planDetail.getEmployee());
-                resultDetail.setPlannedDate(planDetail.getPlannedDate());
-                resultDetail.setBatchId(planDetail.getBatchId());
-                resultDetail.setStatus(ReportStatus.PENDING_REVIEW);
-                resultDetails.add(resultDetail);
-            }
-        }
-
-        result.setDetails(resultDetails);
-        // Lưu trước (JPA auditing sẽ set createdBy = người approve)
-        TrainingResult savedResult = trainingResultRepository.save(result);
-
-        // Generate formCode
-        String lineCode = plan.getLine() != null ? plan.getLine().getCode() : "";
-        savedResult.setFormCode(
-                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, lineCode, savedResult.getId()));
-        trainingResultRepository.save(savedResult);
-
-        // Override createdBy = người tạo plan (native query vì @CreatedBy +
-        // updatable=false)
-        String planCreator = plan.getCreatedBy();
-        trainingResultRepository.updateCreatedBy(savedResult.getId(), planCreator);
-        trainingResultDetailRepository.updateCreatedByForResult(savedResult.getId(), planCreator);
-    }
 
     @Override
     public KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year) {
@@ -412,7 +357,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public List<TrainingResultListResponse> getAllTrainingResults(User currentUser, Long lineId) {
 
-        List<TrainingResult> results;
+        List<TrainingResult> results = new ArrayList<>();
 
         if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
             List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
@@ -428,14 +373,14 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         } else {
             List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISING);
 
-            if (currentUser.hasRole("ROLE_MANAGER")) {
+            if (currentUser.hasPermission("section.manage")) {
                 if (lineId != null) {
                     results = trainingResultRepository.findAllByManagerAndLineId(currentUser.getId(), lineId,
                             excludedStatuses);
                 } else {
                     results = trainingResultRepository.findAllByManager(currentUser.getId(), excludedStatuses);
                 }
-            } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            } else if (currentUser.hasPermission("group.manage")) {
                 List<com.sep490.anomaly_training_backend.model.Group> groups = groupRepository
                         .findBySupervisorId(currentUser.getId());
                 if (groups.isEmpty()) {
@@ -449,7 +394,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 } else {
                     results = trainingResultRepository.findAllByGroupIds(groupIds);
                 }
-            } else {
+            } else if (currentUser.hasPermission("team.manage")) {
                 if (lineId != null) {
                     results = trainingResultRepository.findAllByCreatedByAndLineId(currentUser.getUsername(), lineId);
                 } else {
@@ -855,23 +800,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     @Transactional
-    public void rejectDetail(Long detailId, String reason) {
-        TrainingResultDetail detail = detailRepository.findById(detailId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
-
-        detail.setIsPass(false);
-        detail.setStatus(ReportStatus.REJECTED);
-
-        if (reason != null && !reason.isBlank()) {
-            String existingNote = detail.getNote() != null ? detail.getNote() : "";
-            detail.setNote(existingNote + (existingNote.isEmpty() ? "" : " | ") + "[Từ chối] " + reason);
-        }
-
-        detailRepository.save(detail);
-    }
-
-    @Override
-    @Transactional
     public void reviseDetail(Long detailId) {
         TrainingResultDetail detail = detailRepository.findById(detailId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
@@ -1265,8 +1193,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         detailFeedbackRequest.setRejectReasonIds(req.getRejectReasonIds());
         detailFeedbackRequest.setRequiredActionId(req.getRequiredActionId());
         detailFeedbackRequest.setComment(req.getComment());
-
-        saveFeedback(detailId, detailFeedbackRequest, currentUser);
     }
 
     @Override
@@ -1274,62 +1200,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult report = getReportById(reportId);
         approvalService.reject(report, currentUser, req, request);
         trainingResultRepository.save(report);
-    }
-
-    @Override
-    public void saveFeedback(Long detailId, DetailFeedbackRequest request, User currentUser) {
-
-        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
-                .orElseThrow(() -> new AppException(ErrorCode.PROPOSAL_DETAIL_NOT_FOUND));
-
-        // Tất cả null/empty → xoá feedback
-        if (isEmptyFeedback(request)) {
-            detail.setRejectFeedback(null);
-            trainingResultDetailRepository.save(detail);
-            return;
-        }
-
-        // Batch load reasons + action
-        List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
-        if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
-            reasonSnapshots = rejectReasonRepository
-                    .findAllById(request.getRejectReasonIds())
-                    .stream()
-                    .map(r -> RejectFeedbackJson.RejectReasonSnapshot.builder()
-                            .id(r.getId())
-                            .category(r.getCategoryName())
-                            .label(r.getReasonName())
-                            .build())
-                    .toList();
-        }
-
-        RejectFeedbackJson.RequiredActionSnapshot actionSnapshot = null;
-        if (request.getRequiredActionId() != null) {
-            actionSnapshot = requiredActionRepository
-                    .findById(request.getRequiredActionId())
-                    .map(a -> RejectFeedbackJson.RequiredActionSnapshot.builder()
-                            .id(a.getId())
-                            .label(a.getActionName())
-                            .build())
-                    .orElse(null);
-        }
-
-        detail.setRejectFeedback(RejectFeedbackJson.builder()
-                .savedAt(Instant.now())
-                .savedBy(currentUser.getFullName())
-                .rejectReasons(reasonSnapshots.isEmpty() ? null : reasonSnapshots)
-                .requiredAction(actionSnapshot)
-                .comment(request.getComment())
-                .build());
-
-        trainingResultDetailRepository.save(detail);
-        log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
-    }
-
-    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
-        return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
-                && r.getRequiredActionId() == null
-                && (r.getComment() == null || r.getComment().isBlank());
     }
 
     @Override

@@ -22,6 +22,10 @@ public class ApprovalHandlerRegistry {
     }
 
     public ApprovalHandler getHandler(ApprovalEntityType type) {
-        return handlers.get(type);
+        ApprovalHandler handler = handlers.get(type);
+        if (handler == null) {
+            throw new IllegalStateException("No ApprovalHandler registered for type: " + type);
+        }
+        return handler;
     }
 }

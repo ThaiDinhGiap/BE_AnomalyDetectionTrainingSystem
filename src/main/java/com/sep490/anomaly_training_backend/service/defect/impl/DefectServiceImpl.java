@@ -2,7 +2,8 @@ package com.sep490.anomaly_training_backend.service.defect.impl;
 
 import com.sep490.anomaly_training_backend.dto.request.DefectImportDto;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
+import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
 import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
@@ -12,12 +13,20 @@ import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.DefectMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
-import com.sep490.anomaly_training_backend.service.defect.DefectService;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.defect.DefectService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
@@ -25,7 +34,11 @@ import com.sep490.anomaly_training_backend.util.helper.DefectImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.DefectImportValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -171,7 +184,7 @@ public class DefectServiceImpl implements DefectService {
             long totalClaim = 0;
             long totalStartedClaim = 0;
             for (Defect defect : defects) {
-                if (defect.getDefectType().equals(DefectType.DEFECTIVE_GOODS)){
+                if (defect.getDefectType().equals(DefectType.DEFECTIVE_GOODS)) {
                     totalDefectiveGood++;
                 } else if (defect.getDefectType().equals(DefectType.STARTLED_CLAIM)) {
                     totalStartedClaim++;
@@ -191,12 +204,6 @@ public class DefectServiceImpl implements DefectService {
             defectsInProcess.add(defectInProcess);
         }
         return defectsInProcess;
-    }
-
-    @Override
-    public byte[] exportDefect(Long productLineId) {
-        List<Defect> defects = defectRepository.findAllByProductLineAndDeleteFlagFalseOrderByCreatedAtDesc(productLineId);
-        return null;
     }
 
     private void validateImportFile(MultipartFile file) {
