@@ -349,12 +349,11 @@ VALUES
 
 -- ── FINAL_INSPECTION (role_id=5) ─────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
-VALUES (5, 1),  -- defect.view
-       (5, 18), -- training_result.view
-       (5, 19), -- training_result.manage
-       (5, 21), -- employee.view
-       (5, 29);
--- team.manage (dashboard TL)
+VALUES
+    -- Training Result
+    (3, 18), -- training_result.view
+    (4, 19);
+-- training_result.manage;
 
 -- ============================================================================
 -- PART 3: ORGANIZATION STRUCTURE
