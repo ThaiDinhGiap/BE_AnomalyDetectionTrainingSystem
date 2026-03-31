@@ -116,14 +116,6 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
-    public List<GroupResponse> getGroupsBySection(Long sectionId) {
-        return groupRepository.findBySectionId(sectionId).stream()
-                .filter(g -> !g.isDeleteFlag())
-                .map(groupMapper::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public List<GroupResponse> getGroupByTeamLead(Long teamLeadId) {
         return groupRepository.findByTeamLeadId(teamLeadId).stream().map(groupMapper::toDTO).collect(Collectors.toList());
     }

@@ -263,14 +263,6 @@ public class StaffOrganizationController {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesWithoutAccount()));
     }
 
-    // For TL/SV/MG
-    @GetMapping("/members")
-    @PreAuthorize("hasAuthority('employee.view')")
-    @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
-    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
-            @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesUnderManagement(currentUser)));
-    }
 
     @GetMapping("/product-lines/{productLineId}/team-leads")
     @PreAuthorize("hasAuthority('staff_structure.view')")
@@ -278,6 +270,15 @@ public class StaffOrganizationController {
     public ResponseEntity<ApiResponse<List<UserResponse>>> getTeamLeadInProductLine(@PathVariable Long productLineId) {
         List<UserResponse> result = userService.getTeamLeadInProductLine(productLineId);
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    // For TL/SV/MG
+    @GetMapping("/members")
+    @PreAuthorize("hasAuthority('employee.view')")
+    @Operation(summary = "Get list of Employees by Team ID", description = "Pass the Team ID to get a list of employees belonging to that team")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesUnderManagement(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeesUnderManagement(currentUser)));
     }
 
     @GetMapping("/processes/{processId}/employee-skills")
@@ -305,23 +306,5 @@ public class StaffOrganizationController {
             @PathVariable Long employeeId
     ) {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.getEmployeeSkillsByEmployeeId(employeeId)));
-    }
-
-
-    // Unknow
-    @GetMapping("/sections/{sectionId}/groups")
-    @PreAuthorize("hasAuthority('staff_structure.view')")
-    @Operation(summary = "Get list of Groups by Section ID", description = "Pass the Section ID to get a list of groups belonging to that section")
-    public ResponseEntity<ApiResponse<List<GroupResponse>>> getGroupsBySection(
-            @Parameter(description = "ID của Section (Phòng/Ban)") @PathVariable Long sectionId) {
-        return ResponseEntity.ok(ApiResponse.success(groupService.getGroupsBySection(sectionId)));
-    }
-
-    @GetMapping("/groups/{groupId}/teams")
-    @PreAuthorize("hasAuthority('staff_structure.view')")
-    @Operation(summary = "Get list of Teams by Group ID", description = "Pass the Group ID to get a list of teams belonging to that group")
-    public ResponseEntity<ApiResponse<List<TeamResponse>>> getTeamsByGroup(
-            @Parameter(description = "ID của Group (Nhóm)") @PathVariable Long groupId) {
-        return ResponseEntity.ok(ApiResponse.success(teamService.getTeamsByGroup(groupId)));
     }
 }

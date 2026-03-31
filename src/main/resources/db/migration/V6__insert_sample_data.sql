@@ -230,9 +230,20 @@ VALUES
 
 -- ── ADMIN (role_id=1): tất cả quyền ─────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 1, id
-FROM permissions;
-
+VALUES (1, 22),
+       (1, 23),
+       (1, 24),
+       (1, 25),
+       (1, 26),
+       (1, 27),
+       (1, 28),
+       (1, 32),
+       (1, 33),
+       (1, 35),
+       (1, 36),
+       (1, 37),
+       (1, 38),
+       (1, 39);
 
 -- ── MANAGER (role_id=2) ──────────────────────────────────────────────────────
 INSERT INTO role_permissions (role_id, permission_id)
@@ -338,8 +349,6 @@ VALUES
 (4, 27), -- scoring.view
 -- Dashboard
 (4, 29), -- team.manage (dashboard TL)
--- Staff Structure
-(4, 32), -- staff_structure.view
 -- Line Structure
 (4, 34), -- line_structure.view
 -- Product
