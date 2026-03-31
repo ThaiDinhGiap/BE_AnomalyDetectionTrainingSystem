@@ -11,10 +11,3 @@ VALUES (1, 45),
        (1, 46),
        (1, 47),
        (1, 48);
-
--- ── Gán cho MANAGER (role_id=2) ─────────────────────────────────────────────
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES (2, 45),
-       (2, 46),
-       (2, 47),
-       (2, 48);

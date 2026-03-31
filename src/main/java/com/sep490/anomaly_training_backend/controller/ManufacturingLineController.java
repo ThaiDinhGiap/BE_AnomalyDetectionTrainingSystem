@@ -7,11 +7,11 @@ import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
-import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
 import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
 import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
@@ -173,7 +173,7 @@ public class ManufacturingLineController {
     }
 
     @GetMapping("/user/org-hierarchy")
-    @PreAuthorize("hasAuthority('line_structure.view')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(
             summary = "Cascading org dropdown",
             description = "Load dropdown items theo level. " +
@@ -280,11 +280,10 @@ public class ManufacturingLineController {
     }
 
     @GetMapping("/product-lines/{id}/processes")
-    @PreAuthorize("hasAuthority('line_structure.configure')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<List<ProcessResponse>>> findProcessByProductLine(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ApiResponse.success(processService.getProcessesByProductLineId(id)));
     }
-
 
     // Unknow
     @GetMapping("/product-lines")

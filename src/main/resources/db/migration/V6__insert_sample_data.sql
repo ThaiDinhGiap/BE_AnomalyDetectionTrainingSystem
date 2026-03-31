@@ -101,7 +101,7 @@ VALUES (1, 'admin', 'admin@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UK
         'Lý Thị Kiểm Tra Cuối', TRUE, 'system', 'FI002');
 
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
-VALUES (1, 'ROLE_ADMIN', 'Quản trị', 'Quyền truy cập toàn hệ thống', TRUE, TRUE, 'system'),
+VALUES (1, 'ROLE_ADMIN', 'Quản trị', 'Quyền truy cập toàn hệ thống', FALSE, TRUE, 'system'),
        (2, 'ROLE_MANAGER', 'Quản lý', 'Phê duyệt cấp quản lý', FALSE, TRUE, 'system'),
        (3, 'ROLE_SUPERVISOR', 'Giám sát', 'Phê duyệt cấp giám sát', FALSE, TRUE, 'system'),
        (4, 'ROLE_TEAM_LEADER', 'Tổ trưởng', 'Khởi tạo và nhập liệu', FALSE, TRUE, 'system'),
