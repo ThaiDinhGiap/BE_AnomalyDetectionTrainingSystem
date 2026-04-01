@@ -107,6 +107,8 @@ public class ApprovalServiceImpl implements ApprovalService {
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
 
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
+
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), null, null, request);
 
         ApprovalHandler handler = handlerRegistry.getHandler(entity.getEntityType());
@@ -149,6 +151,8 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
+
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
 

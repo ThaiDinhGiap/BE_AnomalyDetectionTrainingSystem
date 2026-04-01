@@ -1230,7 +1230,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         List<TrainingResultDetail> details = report.getDetails().stream()
                 .filter(d -> d.getStatus() == ReportStatus.PENDING_CONFIRMATION)
                 .map(d -> {
-                    if (d.getSignatureFiOut().equals(currentUser) && d.getSignatureFiIn().equals(currentUser)) {
+                    if (d.getSignatureFiOut() != null && d.getSignatureFiIn() != null &&
+                            d.getSignatureFiOut().equals(currentUser) &&
+                            d.getSignatureFiIn().equals(currentUser)) {
                         d.setStatus(ReportStatus.PENDING_REVIEW);
                     }
                     return d;
