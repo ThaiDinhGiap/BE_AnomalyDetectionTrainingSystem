@@ -5,15 +5,9 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalDetailService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleProposalService;
 import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,17 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -56,8 +40,6 @@ import java.util.List;
 public class TrainingSampleController {
 
     public final TrainingSampleService trainingSampleService;
-    public final TrainingSampleProposalService trainingSampleProposalService;
-    public final TrainingSampleProposalDetailService trainingSampleProposalDetailService;
     public final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get training samples by product line")
@@ -90,7 +72,7 @@ public class TrainingSampleController {
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalResponse>>> getTrainingSampleProposalByProductLine(
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
-        List<TrainingSampleProposalResponse> list = trainingSampleProposalService.getTrainingSampleProposalByProductLine(productLineId, currentUser.getUsername());
+        List<TrainingSampleProposalResponse> list = trainingSampleService.getTrainingSampleProposalByProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -98,7 +80,7 @@ public class TrainingSampleController {
     @GetMapping("/proposals/{id}/details")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     public ResponseEntity<ApiResponse<List<TrainingSampleProposalDetailResponse>>> getTrainingSampleProposalDetail(@PathVariable Long id) {
-        List<TrainingSampleProposalDetailResponse> list = trainingSampleProposalDetailService.getTrainingSampleProposalDetails(id);
+        List<TrainingSampleProposalDetailResponse> list = trainingSampleService.getTrainingSampleProposalDetails(id);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -117,13 +99,13 @@ public class TrainingSampleController {
             @ModelAttribute("request") TrainingSampleProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(trainingSampleProposalService.createTrainingSampleProposal(request, currentUser)));
+                .body(ApiResponse.success(trainingSampleService.createTrainingSampleProposal(request, currentUser)));
     }
 
     @DeleteMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('training_sample_proposal.manage')")
     public ResponseEntity<Void> deleteTrainingSampleProposal(@PathVariable("id") Long id) {
-        trainingSampleProposalService.deleteTrainingSampleProposal(id);
+        trainingSampleService.deleteTrainingSampleProposal(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -133,7 +115,7 @@ public class TrainingSampleController {
             @Parameter(description = "ID of the training sample proposal that needs to be corrected") @PathVariable Long id,
             @Valid @ModelAttribute TrainingSampleProposalRequest request,
             @AuthenticationPrincipal User user) throws BadRequestException {
-        TrainingSampleProposalUpdateResponse response = trainingSampleProposalService.updateTrainingSampleProposal(id, request, user);
+        TrainingSampleProposalUpdateResponse response = trainingSampleService.updateTrainingSampleProposal(id, request, user);
         return ResponseEntity.ok(response);
     }
 
@@ -151,7 +133,7 @@ public class TrainingSampleController {
             @Valid @RequestBody ApproveRequest approveRequest,
             HttpServletRequest request) {
 
-        trainingSampleProposalService.approve(id, currentUser, approveRequest, request);
+        trainingSampleService.approve(id, currentUser, approveRequest, request);
         return ResponseEntity.ok("Training Sample Proposal has been approved successfully!");
     }
 
@@ -168,7 +150,7 @@ public class TrainingSampleController {
             @Valid @RequestBody RejectRequest rejectRequest,
             HttpServletRequest request) {
 
-        trainingSampleProposalService.reject(id, currentUser, rejectRequest, request);
+        trainingSampleService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Training Sample Proposal has been rejected!");
     }
 
@@ -180,7 +162,7 @@ public class TrainingSampleController {
             @PathVariable Long id,
             HttpServletRequest request
     ) {
-        trainingSampleProposalService.revise(id, currentUser, request);
+        trainingSampleService.revise(id, currentUser, request);
         return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
     }
 
@@ -190,7 +172,7 @@ public class TrainingSampleController {
     public ResponseEntity<ResponseEntity<Boolean>> getApprovePermission(
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Proposal ID") @PathVariable Long id) {
-        return ResponseEntity.ok(trainingSampleProposalService.canApprove(id, currentUser));
+        return ResponseEntity.ok(trainingSampleService.canApprove(id, currentUser));
     }
 
     @Operation(summary = "Get training sample detail information")
@@ -216,7 +198,7 @@ public class TrainingSampleController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             HttpServletRequest request) {
-        trainingSampleProposalService.submitTrainingSampleProposalForApproval(id, currentUser, request);
+        trainingSampleService.submitTrainingSampleProposalForApproval(id, currentUser, request);
         return ResponseEntity.ok("Training sample proposal submitted for approval successfully!");
     }
 
