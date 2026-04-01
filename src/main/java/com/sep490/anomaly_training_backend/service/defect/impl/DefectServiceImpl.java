@@ -702,7 +702,8 @@ public class DefectServiceImpl implements DefectService {
 
             // Handle defect - can be null
             if (detailRequest.getDefectId() != null) {
-                Defect defect = defectRepository.findById(detailRequest.getDefectId()).orElse(null);
+                Defect defect = defectRepository.findById(detailRequest.getDefectId())
+                        .orElseThrow(() -> new AppException(ErrorCode.DEFECT_NOT_FOUND));
                 entity.setDefect(defect);
             }
 
