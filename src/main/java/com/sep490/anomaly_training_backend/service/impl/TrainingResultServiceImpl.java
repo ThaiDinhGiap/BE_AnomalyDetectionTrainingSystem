@@ -86,7 +86,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private final TrainingResultRepository trainingResultRepository;
     private final TrainingPlanRepository trainingPlanRepository;
     private final UserRepository userRepository;
-    private final TrainingResultDetailRepository detailRepository;
     private final ApprovalService approvalService;
     private final TeamRepository teamRepository;
     private final ProductLineRepository productLineRepository;
@@ -114,9 +113,9 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
         }
 
-        long totalExecuted = detailRepository.countByFilters(createdBy, teamId, lineId, year);
-        long totalPass = detailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, true);
-        long totalFail = detailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, false);
+        long totalExecuted = trainingResultDetailRepository.countByFilters(createdBy, teamId, lineId, year);
+        long totalPass = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, true);
+        long totalFail = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, false);
 
         BigDecimal passRate = BigDecimal.ZERO;
         if (totalExecuted > 0) {
@@ -173,7 +172,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             List<TrainingResultDetail> detailsToSave = new ArrayList<>();
 
             for (UpdateResultDetailRequest reqDetail : request.getDetails()) {
-                TrainingResultDetail detail = detailRepository.findById(reqDetail.getId())
+                TrainingResultDetail detail = trainingResultDetailRepository.findById(reqDetail.getId())
                         .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
                 if (reqDetail.getProcessId() != null) {
@@ -275,7 +274,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 detailsToSave.add(detail);
             }
 
-            detailRepository.saveAll(detailsToSave);
+            trainingResultDetailRepository.saveAll(detailsToSave);
         }
     }
 
@@ -334,7 +333,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         List<TrainingResultDetail> detailsToSave = new ArrayList<>();
         for (FiSignRequest req : requests) {
-            TrainingResultDetail detail = detailRepository.findById(req.getId())
+            TrainingResultDetail detail = trainingResultDetailRepository.findById(req.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
             if (Boolean.TRUE.equals(req.getIsSignIn())) {
@@ -351,7 +350,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             detailsToSave.add(detail);
         }
 
-        detailRepository.saveAll(detailsToSave);
+        trainingResultDetailRepository.saveAll(detailsToSave);
     }
 
     @Override
@@ -467,7 +466,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             }
 
             // Fetch details for the current TrainingResult to calculate progress statistics
-            List<TrainingResultDetail> details = detailRepository.findByTrainingResultId(entity.getId());
+            List<TrainingResultDetail> details = trainingResultDetailRepository.findByTrainingResultId(entity.getId());
 
             long totalItems = details.size();
             long totalPass = details.stream().filter(d -> d.getIsPass() != null && d.getIsPass()).count();
@@ -801,7 +800,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void reviseDetail(Long detailId) {
-        TrainingResultDetail detail = detailRepository.findById(detailId)
+        TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
         // Chỉ cho revise khi detail đang bị reject
@@ -818,7 +817,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         // Xóa kết quả pass/fail vì detail sẽ được nhập lại từ đầu
         detail.setIsPass(null);
 
-        detailRepository.save(detail);
+        trainingResultDetailRepository.save(detail);
     }
 
     /**
@@ -873,12 +872,12 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void retrainDetail(Long detailId) {
-        TrainingResultDetail originalDetail = detailRepository.findById(detailId)
+        TrainingResultDetail originalDetail = trainingResultDetailRepository.findById(detailId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
         originalDetail.setIsRetrained(true);
         originalDetail.setIsPass(false);
-        detailRepository.save(originalDetail);
+        trainingResultDetailRepository.save(originalDetail);
 
         TrainingResultDetail newDetail = TrainingResultDetail.builder()
                 .trainingResult(originalDetail.getTrainingResult())
@@ -898,7 +897,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .note("[Huấn luyện lại] từ detail #" + detailId)
                 .build();
 
-        detailRepository.save(newDetail);
+        trainingResultDetailRepository.save(newDetail);
     }
 
     @Override
@@ -1208,7 +1207,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     private TrainingResultDetail getDetailtById(Long id) {
-        return detailRepository.findById(id)
+        return trainingResultDetailRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
     }
 
