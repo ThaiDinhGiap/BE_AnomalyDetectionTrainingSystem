@@ -5,9 +5,11 @@ import com.sep490.anomaly_training_backend.dto.response.FailedTrainingResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingSignatureResponse;
 import com.sep490.anomaly_training_backend.model.EmployeeSkill;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.service.ActionItemsService;
+import com.sep490.anomaly_training_backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,53 +21,102 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ActionItemsServiceImpl implements ActionItemsService {
 
+    private static final int EXPIRING_DAYS_THRESHOLD = 15;
+
     private final TrainingResultDetailRepository trainingResultDetailRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
 
     @Override
-    public List<PendingSignatureResponse> getPendingSignatures(Long lineId) {
-        List<TrainingResultDetail> details = trainingResultDetailRepository.findPendingSignatures(lineId);
-        return details.stream()
-                .map(detail -> PendingSignatureResponse.builder()
-                        .detailId(detail.getId())
-                        .employeeName(detail.getEmployee().getFullName())
-                        .employeeCode(detail.getEmployee().getEmployeeCode())
-                        .processName(detail.getProcess() != null ? detail.getProcess().getName() : null)
-                        .productName(detail.getProduct() != null ? detail.getProduct().getName() : null)
-                        .plannedDate(detail.getPlannedDate())
-                        .resultTitle(detail.getTrainingResult().getTitle())
-                        .build())
+    public PendingSignatureResponse getPendingSignatures(Long lineId) {
+        User currentUser = SecurityUtils.getCurrentUserOrThrow();
+
+        List<TrainingResultDetail> details;
+        String signatureType;
+
+        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
+            details = trainingResultDetailRepository.findPendingFiOutSignatures(lineId);
+            signatureType = "FI_OUT";
+        } else if (currentUser.hasRole("ROLE_SUPERVISOR")) {
+            details = trainingResultDetailRepository.findPendingSvReview(lineId);
+            signatureType = "SV";
+        } else {
+            // Default: Team Lead → PRO_OUT
+            details = trainingResultDetailRepository.findPendingProOutSignatures(lineId);
+            signatureType = "PRO_OUT";
+        }
+
+        List<Long> resultIds = details.stream()
+                .map(d -> d.getTrainingResult().getId())
+                .distinct()
                 .collect(Collectors.toList());
+
+        List<String> employeeCodes = details.stream()
+                .map(d -> d.getEmployee().getEmployeeCode())
+                .distinct()
+                .collect(Collectors.toList());
+
+        String description;
+        if ("PRO_OUT".equals(signatureType)) {
+            description = "Kết test xong, chờ TL Sản xuất xác nhận";
+        } else if ("FI_OUT".equals(signatureType)) {
+            description = "Kết test xong, chờ Final Inspection xác nhận";
+        } else {
+            description = "Kết quả chờ Supervisor xác nhận";
+        }
+
+        return PendingSignatureResponse.builder()
+                .count(details.size())
+                .signatureType(signatureType)
+                .description(description)
+                .resultIds(resultIds)
+                .employeeCodes(employeeCodes)
+                .build();
     }
 
     @Override
-    public List<FailedTrainingResponse> getFailedTrainings(Long lineId) {
+    public FailedTrainingResponse getFailedTrainings(Long lineId) {
         List<TrainingResultDetail> details = trainingResultDetailRepository.findFailedTrainings(lineId);
-        return details.stream()
-                .map(detail -> FailedTrainingResponse.builder()
-                        .detailId(detail.getId())
-                        .employeeName(detail.getEmployee().getFullName())
-                        .employeeCode(detail.getEmployee().getEmployeeCode())
-                        .processName(detail.getProcess() != null ? detail.getProcess().getName() : null)
-                        .productName(detail.getProduct() != null ? detail.getProduct().getName() : null)
-                        .failedDate(detail.getActualDate())
-                        .resultTitle(detail.getTrainingResult().getTitle())
-                        .build())
+
+        List<Long> resultIds = details.stream()
+                .map(d -> d.getTrainingResult().getId())
+                .distinct()
                 .collect(Collectors.toList());
+
+        List<String> employeeCodes = details.stream()
+                .map(d -> d.getEmployee().getEmployeeCode())
+                .distinct()
+                .collect(Collectors.toList());
+
+        String description = employeeCodes.isEmpty()
+                ? "Không có nhân viên trượt"
+                : String.join(", ", employeeCodes) + " chưa có lịch tái huấn luyện";
+
+        return FailedTrainingResponse.builder()
+                .count(details.size())
+                .description(description)
+                .resultIds(resultIds)
+                .employeeCodes(employeeCodes)
+                .build();
     }
 
     @Override
-    public List<ExpiringSkillResponse> getExpiringSkills(Long lineId) {
-        LocalDate thirtyDaysFromNow = LocalDate.now().plusDays(30);
-        List<EmployeeSkill> skills = employeeSkillRepository.findExpiringSkills(lineId, thirtyDaysFromNow);
-        return skills.stream()
-                .map(skill -> ExpiringSkillResponse.builder()
-                        .skillId(skill.getId())
-                        .employeeName(skill.getEmployee().getFullName())
-                        .employeeCode(skill.getEmployee().getEmployeeCode())
-                        .processName(skill.getProcess().getName())
-                        .expiryDate(skill.getExpiryDate())
-                        .build())
+    public ExpiringSkillResponse getExpiringSkills(Long lineId) {
+        List<EmployeeSkill> skills = employeeSkillRepository.findPendingReviewSkills(lineId);
+
+        List<String> employeeCodes = skills.stream()
+                .map(s -> s.getEmployee().getEmployeeCode())
+                .distinct()
                 .collect(Collectors.toList());
+
+        String description = skills.isEmpty()
+                ? "Không có chứng chỉ cần giám sát"
+                : skills.size() + " chứng chỉ cần giám sát";
+
+        return ExpiringSkillResponse.builder()
+                .count(skills.size())
+                .daysThreshold(0)
+                .description(description)
+                .employeeCodes(employeeCodes)
+                .build();
     }
 }

@@ -3,16 +3,14 @@ package com.sep490.anomaly_training_backend.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
 public class PendingSignatureResponse {
-    private Long detailId;
-    private String employeeName;
-    private String employeeCode;
-    private String processName;
-    private String productName;
-    private LocalDate plannedDate;
-    private String resultTitle;
+    private long count;
+    private String signatureType; // PRO_OUT, FI_OUT, SV
+    private String description;
+    private List<Long> resultIds;
+    private List<String> employeeCodes;
 }
