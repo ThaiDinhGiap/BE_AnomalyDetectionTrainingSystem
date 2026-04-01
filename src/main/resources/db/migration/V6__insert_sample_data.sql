@@ -1358,7 +1358,7 @@ VALUES ('DEFECT_PROPOSAL', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'P
        ('TRAINING_SAMPLE_PROPOSAL', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
        ('TRAINING_PLAN', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
        ('TRAINING_PLAN', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
-       ('TRAINING_RESULT', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_RESULT', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'ONGOING', TRUE, 'system'),
        ('TRAINING_SAMPLE_REVIEW', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system');
 
 -- ============================================================================
