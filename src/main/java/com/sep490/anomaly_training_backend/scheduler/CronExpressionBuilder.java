@@ -16,7 +16,7 @@ public class CronExpressionBuilder {
         }
 
         if (triggerMonth == null || triggerMonth < 1 || triggerMonth > 12) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT,  "Invalid trigger month");
+            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "Invalid trigger month");
         }
 
     }

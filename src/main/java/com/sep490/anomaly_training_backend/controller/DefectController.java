@@ -5,16 +5,9 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
-import com.sep490.anomaly_training_backend.service.defect.DefectProposalDetailService;
-import com.sep490.anomaly_training_backend.service.defect.DefectProposalService;
 import com.sep490.anomaly_training_backend.service.defect.DefectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,17 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -56,8 +39,6 @@ import java.util.List;
 @Tag(name = "Defect Management", description = "API quản lý lỗi quá khứ và đề xuất ghi nhận lỗi")
 public class DefectController {
     private final DefectService defectService;
-    private final DefectProposalService defectProposalService;
-    private final DefectProposalDetailService defectProposalDetailService;
     private final ImportHistoryService importHistoryService;
 
     @Operation(summary = "Get defects by productLine (Defect Banking)")
@@ -114,7 +95,7 @@ public class DefectController {
             @RequestParam("productLineId") Long productLineId,
             @AuthenticationPrincipal User currentUser) {
 
-        List<DefectProposalResponse> list = defectProposalService.getDefectProposalByProductLine(productLineId, currentUser.getUsername());
+        List<DefectProposalResponse> list = defectService.getDefectProposalByProductLine(productLineId, currentUser.getUsername());
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -122,7 +103,7 @@ public class DefectController {
     @GetMapping("/proposals/{id}/details")
     @PreAuthorize("hasAuthority('defect_proposal.view')")
     public ResponseEntity<ApiResponse<List<DefectProposalDetailResponse>>> getDefectProposalDetail(@PathVariable Long id) {
-        List<DefectProposalDetailResponse> list = defectProposalDetailService.getDefectProposalDetails(id);
+        List<DefectProposalDetailResponse> list = defectService.getDefectProposalDetails(id);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
 
@@ -133,13 +114,13 @@ public class DefectController {
             @ModelAttribute DefectProposalRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(defectProposalService.createDefectProposalDraft(request, currentUser)));
+                .body(ApiResponse.success(defectService.createDefectProposalDraft(request, currentUser)));
     }
 
     @DeleteMapping("/proposals/{id}")
     @PreAuthorize("hasAuthority('defect_proposal.manage')")
     public ResponseEntity<Void> deleteDefectProposal(@PathVariable("id") Long id) {
-        defectProposalService.deleteDefectProposal(id);
+        defectService.deleteDefectProposal(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -148,7 +129,7 @@ public class DefectController {
     public ResponseEntity<DefectProposalUpdateResponse> updateDefectProposal(
             @Parameter(description = "ID of the past defect proposal that needs to be corrected") @PathVariable Long id,
             @ModelAttribute DefectProposalRequest request, @AuthenticationPrincipal User currentUser) throws BadRequestException {
-        DefectProposalUpdateResponse response = defectProposalService.updateDefectProposal(id, request, currentUser);
+        DefectProposalUpdateResponse response = defectService.updateDefectProposal(id, request, currentUser);
         return ResponseEntity.ok(response);
     }
 
@@ -160,7 +141,7 @@ public class DefectController {
             @PathVariable Long id,
             HttpServletRequest request
     ) {
-        defectProposalService.revise(id, currentUser, request);
+        defectService.revise(id, currentUser, request);
         return ResponseEntity.ok("The proposal has been successfully moved back to the Draft status!");
     }
 
@@ -178,7 +159,7 @@ public class DefectController {
             @Valid @RequestBody ApproveRequest approveRequest,
             HttpServletRequest request) {
 
-        defectProposalService.approve(id, currentUser, approveRequest, request);
+        defectService.approve(id, currentUser, approveRequest, request);
         return ResponseEntity.ok("Defect Proposal has been approved successfully!");
     }
 
@@ -195,7 +176,7 @@ public class DefectController {
             @Valid @RequestBody RejectRequest rejectRequest,
             HttpServletRequest request) {
 
-        defectProposalService.reject(id, currentUser, rejectRequest, request);
+        defectService.reject(id, currentUser, rejectRequest, request);
         return ResponseEntity.ok("Defect Proposal has been rejected!");
     }
 
@@ -205,7 +186,7 @@ public class DefectController {
     public ResponseEntity<ResponseEntity<Boolean>> getApprovePermission(
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Proposal ID") @PathVariable Long id) {
-        return ResponseEntity.ok(defectProposalService.canApprove(id, currentUser));
+        return ResponseEntity.ok(defectService.canApprove(id, currentUser));
     }
 
     @Operation(summary = "Import data (Defect Banking)")
@@ -223,7 +204,7 @@ public class DefectController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long id,
             HttpServletRequest request) {
-        defectProposalService.submitDefectProposalForApproval(id, currentUser, request);
+        defectService.submitDefectProposalForApproval(id, currentUser, request);
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
 
