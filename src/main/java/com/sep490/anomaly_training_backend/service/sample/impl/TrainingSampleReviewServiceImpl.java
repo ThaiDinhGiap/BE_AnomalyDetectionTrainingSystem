@@ -15,11 +15,7 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewPolicyMapper;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
@@ -135,7 +131,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         User user = userRepository.findById(request.getTeamLeadId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         review.setReviewedBy(user);
-        review.setStatus(ReportStatus.PENDING_REVIEW);
+        review.setStatus(ReportStatus.ONGOING);
         return trainingSampleReviewMapper.toDto(trainingSampleReviewRepository.save(review));
     }
 
