@@ -80,6 +80,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             entity.setStatus(firstStep.getPendingStatus());
         }
 
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
         logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 

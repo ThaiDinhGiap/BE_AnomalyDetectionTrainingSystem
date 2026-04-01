@@ -165,7 +165,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Query("""
                 SELECT t FROM TrainingResultDetail t
                 WHERE t.trainingResult.id = :resultId
-                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.ONGOING
                   AND t.isPass IS NOT NULL
                   AND t.deleteFlag = false
                 ORDER BY t.plannedDate ASC

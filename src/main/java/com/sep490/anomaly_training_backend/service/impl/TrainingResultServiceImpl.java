@@ -261,13 +261,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 if (detail.getIsPass() != null && detail.getActualDate() == null) {
                     LocalDate today = LocalDate.now();
                     detail.setActualDate(today);
-                    detail.setStatus(ReportStatus.COMPLETED);
 
                     if (detail.getTrainingPlanDetail() != null
                             && detail.getTrainingPlanDetail().getActualDate() == null) {
                         detail.getTrainingPlanDetail().setActualDate(today);
-                        detail.getTrainingPlanDetail().setStatus(
-                                com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED);
                     }
                 }
 
@@ -323,9 +320,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        boolean isFiUser = currentUser.hasRole("FINAL_INSPECTION");
-        if (!isFiUser) {
-            throw new AppException(ErrorCode.FI_PERMISSION_REQUIRED);
+        if (!currentUser.hasPermission("review_approve.confirm")) {
+            throw new AppException(ErrorCode.CONFIRM_PERMISSION_REQUIRED);
         }
 
         if (requests == null || requests.isEmpty())
@@ -505,6 +501,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         List<TrainingResultDetailResponse.DetailRowDto> detailDtos = result.getDetails().stream()
                 .map(this::mapDetailToRow)
+                .sorted()
                 .collect(Collectors.toList());
 
         response.setDetails(detailDtos);
@@ -559,9 +556,16 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             ReportStatus.REJECTED,
             ReportStatus.COMPLETED);
 
+    private static final Set<ReportStatus> FI_VISIBLE_STATUSES = Set.of(
+            ReportStatus.PENDING_CONFIRMATION,
+            ReportStatus.PENDING_REVIEW,
+            ReportStatus.REJECTED,
+            ReportStatus.COMPLETED);
+    ;
+
     @Override
     @Transactional
-    public TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id) {
+    public TrainingResultDetailResponse getTrainingResultDetailForVerify(User currentUser, Long id) {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
@@ -571,13 +575,23 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         TrainingResultDetailResponse response = buildHeaderResponse(result, user);
+        List<TrainingResultDetailResponse.DetailRowDto> detailRowDtos;
 
-        List<TrainingResultDetailResponse.DetailRowDto> detailDtos = result.getDetails().stream()
-                .filter(detail -> detail.getStatus() != null && SV_VISIBLE_STATUSES.contains(detail.getStatus()))
-                .map(this::mapDetailToRow)
-                .collect(Collectors.toList());
+        if (currentUser.hasPermission("review_approve.confirm")) {
+            detailRowDtos = result.getDetails().stream()
+                    .filter(detail -> detail.getStatus() != null && FI_VISIBLE_STATUSES.contains(detail.getStatus()))
+                    .map(this::mapDetailToRow)
+                    .sorted()
+                    .collect(Collectors.toList());
+        } else {
+            detailRowDtos = result.getDetails().stream()
+                    .filter(detail -> detail.getStatus() != null && SV_VISIBLE_STATUSES.contains(detail.getStatus()))
+                    .map(this::mapDetailToRow)
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
 
-        response.setDetails(detailDtos);
+        response.setDetails(detailRowDtos);
         return response;
     }
 
@@ -812,7 +826,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         createDetailHistorySnapshot(detail);
 
         // Chuyển status về PENDING để TL có thể sửa lại
-        detail.setStatus(ReportStatus.PENDING_REVIEW);
+        detail.setStatus(ReportStatus.ONGOING);
 
         // Xóa kết quả pass/fail vì detail sẽ được nhập lại từ đầu
         detail.setIsPass(null);
@@ -892,7 +906,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .cycleTimeStandard(originalDetail.getCycleTimeStandard())
                 .plannedDate(java.time.LocalDate.now())
                 .batchId(originalDetail.getBatchId())
-                .status(ReportStatus.PENDING_REVIEW)
+                .status(ReportStatus.ONGOING)
                 .isRetrained(true)
                 .note("[Huấn luyện lại] từ detail #" + detailId)
                 .build();
@@ -1123,7 +1137,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
 
         approvalService.submit(report, currentUser, request);
-        updateResultDetailAfterSubmission(report);
+        updateResultDetailAfterSubmission(currentUser, report);
 
         trainingResultRepository.save(report);
     }
@@ -1131,9 +1145,13 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private void validateResultForSubmission(TrainingResult result) {
     }
 
-    private void updateResultDetailAfterSubmission(TrainingResult result) {
+    private void updateResultDetailAfterSubmission(User currentUser, TrainingResult result) {
         trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
-                .forEach(detail -> detail.setStatus(ReportStatus.PENDING_REVIEW));
+                .forEach(detail -> {
+                    detail.setSignatureProIn(currentUser);
+                    detail.setSignatureProOut(currentUser);
+                    detail.setStatus(ReportStatus.PENDING_CONFIRMATION);
+                });
     }
 
     @Override
@@ -1157,7 +1175,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         // 3. Chuyển các detail bị reject -> PENDING
         for (TrainingResultDetail detail : result.getDetails()) {
             if (detail.getStatus() == ReportStatus.REJECTED) {
-                detail.setStatus(ReportStatus.PENDING_REVIEW);
+                detail.setStatus(ReportStatus.ONGOING);
             }
         }
 
@@ -1204,6 +1222,21 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public boolean canApprove(Long reportId, User currentUser) {
         return false;
+    }
+
+    @Override
+    public void submitConfirmedResult(Long reportId, User currentUser) {
+        TrainingResult report = getReportById(reportId);
+        List<TrainingResultDetail> details = report.getDetails().stream()
+                .filter(d -> d.getStatus() == ReportStatus.PENDING_CONFIRMATION)
+                .map(d -> {
+                    if (d.getSignatureFiOut().equals(currentUser) && d.getSignatureFiIn().equals(currentUser)) {
+                        d.setStatus(ReportStatus.PENDING_REVIEW);
+                    }
+                    return d;
+                })
+                .toList();
+        trainingResultDetailRepository.saveAll(details);
     }
 
     private TrainingResultDetail getDetailtById(Long id) {

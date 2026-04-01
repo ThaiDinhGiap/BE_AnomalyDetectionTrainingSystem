@@ -304,7 +304,7 @@ public class ProductLineServiceImpl implements ProductLineService {
 
         Set<Long> allowedTeamIds = new LinkedHashSet<>();
 
-        if (user.hasPermission("group.manage")) {
+        if (user.hasPermission("group.manage") || user.hasPermission("section.manage")) {
             allTeams.forEach(t -> allowedTeamIds.add(t.getId()));
         }
         if (user.hasPermission("team.manage")) {

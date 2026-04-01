@@ -868,7 +868,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
                 newResultDetail.setEmployee(planDetail.getEmployee());
                 newResultDetail.setPlannedDate(planDetail.getPlannedDate());
                 newResultDetail.setBatchId(planDetail.getBatchId());
-                newResultDetail.setStatus(com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW);
+                newResultDetail.setStatus(ReportStatus.ONGOING);
                 result.getDetails().add(newResultDetail);
             }
         }

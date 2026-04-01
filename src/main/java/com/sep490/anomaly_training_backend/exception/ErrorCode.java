@@ -144,6 +144,7 @@ public enum ErrorCode {
     APPROVAL_STEP_NOT_FOUND(7405, "No approval step found for the current status.", HttpStatus.NOT_FOUND),
     NOT_DESIGNATED_APPROVER(7406, "You are not the designated approver for this item.", HttpStatus.FORBIDDEN),
     UNSUPPORTED_APPROVER_ROLE(7407, "Unsupported approver role.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CONFIRM_PERMISSION_REQUIRED(7408, "You are not allowed to confirm permission.", HttpStatus.BAD_REQUEST),
 
     // Scoring Policy Errors (range 75xx)
     INVALID_POLICY_STATUS(7500, "This action is not allowed for the current policy status.", HttpStatus.BAD_REQUEST),
