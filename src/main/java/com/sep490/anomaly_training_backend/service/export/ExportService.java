@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service.export;
 
+import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -55,21 +56,21 @@ public class ExportService {
     }
 
     /**
-     * Export list of entities to Excel bytes.
+     * Export filtered list of entities to Excel bytes.
      */
-    public ExportResult exportList(ExportEntityType type) {
+    public ExportResult exportList(ExportEntityType type, ExportFilterRequest filter) {
         EntityExporter exporter = getExporter(type);
 
         try (Workbook workbook = new XSSFWorkbook()) {
             ExcelStyleHelper styles = new ExcelStyleHelper(workbook);
             Sheet sheet = workbook.createSheet(exporter.getSheetName());
 
-            exporter.exportList(sheet, styles);
+            exporter.exportList(sheet, styles, filter);
 
             String fileName = exporter.getFileName(null);
             byte[] bytes = toBytes(workbook);
 
-            log.info("[Export] List {} → {} bytes", type, bytes.length);
+            log.info("[Export] List {} (filtered) → {} bytes", type, bytes.length);
             return new ExportResult(fileName, bytes);
         } catch (IOException e) {
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Export failed: " + e.getMessage());

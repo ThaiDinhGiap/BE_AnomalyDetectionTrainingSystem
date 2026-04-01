@@ -1,6 +1,7 @@
 package com.sep490.anomaly_training_backend.repository;
 
 
+import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -45,5 +46,21 @@ public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSa
             "AND tr.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW " +
             "AND tr.deleteFlag = false")
     List<TrainingSampleReview> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
-}
 
+    @Query("""
+            SELECT r FROM TrainingSampleReview r
+            WHERE r.deleteFlag = false
+              AND (:status IS NULL OR r.status = :status)
+              AND (:productLineId IS NULL OR r.productLine.id = :productLineId)
+              AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
+              AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
+              AND (:ids IS NULL OR r.id IN :ids)
+            ORDER BY r.createdAt DESC
+            """)
+    List<TrainingSampleReview> findByExportFilters(
+            @Param("status") ReportStatus status,
+            @Param("productLineId") Long productLineId,
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("toDate") java.time.LocalDateTime toDate,
+            @Param("ids") List<Long> ids);
+}

@@ -232,7 +232,6 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                                 .plannedDate(workDate)
                                 .status(ReportStatus.PENDING_REVIEW)
                                 .batchId(generateBatchId(trainingPlan, workDate))
-                                .note(buildDetailNote(priority, skill))
                                 .build();
 
                         allDetails.add(detail);
@@ -291,19 +290,6 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
         return dayType == FactoryDayType.WORKING_DAY ||
                 dayType == FactoryDayType.MAKEUP_DAY ||
                 dayType == FactoryDayType.NIGHT_SHIFT;
-    }
-
-    /**
-     * Build note from priority and skill
-     */
-    private String buildDetailNote(PrioritySnapshotDetail priority, EmployeeSkill skill) {
-        String status = skill.getStatus() != null ? skill.getStatus().toString() : "UNKNOWN";
-        return String.format("Tier:%d Rank:%d Skill:%s Status:%s SkillId:%d",
-                priority.getTierOrder(),
-                priority.getSortRank(),
-                skill.getProcess().getName(),
-                status,
-                skill.getId());
     }
 
     private String generateBatchId(TrainingPlan trainingPlan, LocalDate date) {

@@ -118,4 +118,26 @@ public interface TrainingPlanRepository extends JpaRepository<TrainingPlan, Long
     List<TrainingPlan> findAllByManagerAndDeleteFlagFalse(
             @Param("managerId") Long managerId,
             @Param("excludedStatuses") List<ReportStatus> excludedStatuses);
+
+    @Query("""
+            SELECT p FROM TrainingPlan p
+            WHERE p.deleteFlag = false
+              AND (:status IS NULL OR p.status = :status)
+              AND (:productLineId IS NULL OR p.line.id = :productLineId)
+              AND (:teamId IS NULL OR p.team.id = :teamId)
+              AND (CAST(:fromDate AS timestamp) IS NULL OR p.createdAt >= :fromDate)
+              AND (CAST(:toDate AS timestamp) IS NULL OR p.createdAt <= :toDate)
+              AND (:ids IS NULL OR p.id IN :ids)
+              AND (:keyword IS NULL OR LOWER(p.formCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                    OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY p.createdAt DESC
+            """)
+    List<TrainingPlan> findByExportFilters(
+            @Param("status") ReportStatus status,
+            @Param("productLineId") Long productLineId,
+            @Param("teamId") Long teamId,
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("toDate") java.time.LocalDateTime toDate,
+            @Param("ids") List<Long> ids,
+            @Param("keyword") String keyword);
 }

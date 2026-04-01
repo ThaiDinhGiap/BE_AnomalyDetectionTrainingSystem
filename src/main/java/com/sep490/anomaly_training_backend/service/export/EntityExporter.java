@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.service.export;
 
+import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -15,8 +16,8 @@ public interface EntityExporter {
     /** Export a single entity by ID into the given sheet */
     void exportSingle(Long id, Sheet sheet, ExcelStyleHelper styles);
 
-    /** Export all/list of entities into the given sheet */
-    void exportList(Sheet sheet, ExcelStyleHelper styles);
+    /** Export filtered list of entities into the given sheet */
+    void exportList(Sheet sheet, ExcelStyleHelper styles, ExportFilterRequest filter);
 
     /** Display name for the Excel sheet tab */
     String getSheetName();
