@@ -81,13 +81,13 @@ public class SectionServiceImpl implements SectionService {
         sectionRepository.save(section);
     }
 
-    @Override
-    public SectionResponse getSectionById(Long id) {
-        return sectionRepository.findById(id)
-                .filter(s -> !s.isDeleteFlag())
-                .map(sectionMapper::toDTO)
-                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
-    }
+//    @Override
+//    public SectionResponse getSectionById(Long id) {
+//        return sectionRepository.findById(id)
+//                .filter(s -> !s.isDeleteFlag())
+//                .map(sectionMapper::toDTO)
+//                .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
+//    }
 
     @Override
     public List<SectionResponse> getAllSections() {

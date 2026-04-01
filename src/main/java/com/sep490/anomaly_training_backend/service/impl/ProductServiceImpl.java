@@ -1,6 +1,9 @@
 package com.sep490.anomaly_training_backend.service.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.request.ImageData;
+import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
+import com.sep490.anomaly_training_backend.dto.request.ProductImportDto;
+import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
@@ -9,9 +12,16 @@ import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.ProductMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Attachment;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.ProductProcess;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
@@ -20,9 +30,9 @@ import com.sep490.anomaly_training_backend.util.helper.ProductImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.ProductImportValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -396,14 +406,14 @@ public class ProductServiceImpl implements ProductService {
         return response;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        log.info("Fetching all products with pagination: page={}, size={}", pageable.getPageNumber(),
-                pageable.getPageSize());
-        Page<Product> products = productRepository.findByDeleteFlagFalse(pageable);
-        return products.map(productMapper::toDto);
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Page<ProductResponse> getAllProducts(Pageable pageable) {
+//        log.info("Fetching all products with pagination: page={}, size={}", pageable.getPageNumber(),
+//                pageable.getPageSize());
+//        Page<Product> products = productRepository.findByDeleteFlagFalse(pageable);
+//        return products.map(productMapper::toDto);
+//    }
 
     @Override
     @Transactional(readOnly = true)
@@ -435,57 +445,57 @@ public class ProductServiceImpl implements ProductService {
         return responses;
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable) {
-        log.info("Fetching products for process ID: {} with pagination", processId);
-        Page<Product> products = productRepository.findByProcessIdPaginated(processId, pageable);
-        return products.map(productMapper::toDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductResponse> searchProducts(String keyword) {
-        log.info("Searching products with keyword: {}", keyword);
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getAllProductsList();
-        }
-        List<Product> products = productRepository.searchByCodeOrName(keyword.trim());
-        return products.stream()
-                .map(productMapper::toDto)
-                .toList();
-    }
-
-    @Override
-    public void deleteProduct(Long id) {
-        log.info("Deleting product with ID: {}", id);
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        if (product.isDeleteFlag()) {
-            throw new AppException(ErrorCode.PRODUCT_ALREADY_DELETED);
-        }
-        product.setDeleteFlag(true);
-        productRepository.save(product);
-        log.info("Product deleted successfully with ID: {}", id);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isProductCodeExists(String code) {
-        if (code == null || code.trim().isEmpty()) {
-            return false;
-        }
-        return productRepository.findByCodeAndNotDeleted(code.trim()).isPresent();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isProductCodeExistsExcludingId(String code, Long excludingId) {
-        if (code == null || code.trim().isEmpty() || excludingId == null) {
-            return false;
-        }
-        return productRepository.findByCodeAndNotDeleted(code.trim())
-                .filter(product -> !product.getId().equals(excludingId))
-                .isPresent();
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable) {
+//        log.info("Fetching products for process ID: {} with pagination", processId);
+//        Page<Product> products = productRepository.findByProcessIdPaginated(processId, pageable);
+//        return products.map(productMapper::toDto);
+//    }
+//
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<ProductResponse> searchProducts(String keyword) {
+//        log.info("Searching products with keyword: {}", keyword);
+//        if (keyword == null || keyword.trim().isEmpty()) {
+//            return getAllProductsList();
+//        }
+//        List<Product> products = productRepository.searchByCodeOrName(keyword.trim());
+//        return products.stream()
+//                .map(productMapper::toDto)
+//                .toList();
+//    }
+//
+//    @Override
+//    public void deleteProduct(Long id) {
+//        log.info("Deleting product with ID: {}", id);
+//        Product product = productRepository.findById(id)
+//                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+//        if (product.isDeleteFlag()) {
+//            throw new AppException(ErrorCode.PRODUCT_ALREADY_DELETED);
+//        }
+//        product.setDeleteFlag(true);
+//        productRepository.save(product);
+//        log.info("Product deleted successfully with ID: {}", id);
+//    }
+//
+//    @Override
+//    @Transactional(readOnly = true)
+//    public boolean isProductCodeExists(String code) {
+//        if (code == null || code.trim().isEmpty()) {
+//            return false;
+//        }
+//        return productRepository.findByCodeAndNotDeleted(code.trim()).isPresent();
+//    }
+//
+//    @Override
+//    @Transactional(readOnly = true)
+//    public boolean isProductCodeExistsExcludingId(String code, Long excludingId) {
+//        if (code == null || code.trim().isEmpty() || excludingId == null) {
+//            return false;
+//        }
+//        return productRepository.findByCodeAndNotDeleted(code.trim())
+//                .filter(product -> !product.getId().equals(excludingId))
+//                .isPresent();
+//    }
 }

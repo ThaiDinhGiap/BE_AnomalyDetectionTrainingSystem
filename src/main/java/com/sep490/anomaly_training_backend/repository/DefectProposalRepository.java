@@ -13,6 +13,8 @@ import java.util.List;
 public interface DefectProposalRepository extends JpaRepository<DefectProposal, Long> {
     List<DefectProposal> findByProductLineId(Long productLineId);
 
+    List<DefectProposal> findByIdIn(List<Long> ids);
+
     @Query("""
             SELECT d
             FROM DefectProposal d
@@ -63,4 +65,23 @@ public interface DefectProposalRepository extends JpaRepository<DefectProposal, 
               AND d.deleteFlag = false
             """)
     List<DefectProposal> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
+
+    @Query("""
+            SELECT d FROM DefectProposal d
+            WHERE d.deleteFlag = false
+              AND (:status IS NULL OR d.status = :status)
+              AND (:productLineId IS NULL OR d.productLine.id = :productLineId)
+              AND (CAST(:fromDate AS timestamp) IS NULL OR d.createdAt >= :fromDate)
+              AND (CAST(:toDate AS timestamp) IS NULL OR d.createdAt <= :toDate)
+              AND (:ids IS NULL OR d.id IN :ids)
+              AND (:keyword IS NULL OR LOWER(d.formCode) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY d.createdAt DESC
+            """)
+    List<DefectProposal> findByExportFilters(
+            @Param("status") ReportStatus status,
+            @Param("productLineId") Long productLineId,
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("toDate") java.time.LocalDateTime toDate,
+            @Param("ids") List<Long> ids,
+            @Param("keyword") String keyword);
 }

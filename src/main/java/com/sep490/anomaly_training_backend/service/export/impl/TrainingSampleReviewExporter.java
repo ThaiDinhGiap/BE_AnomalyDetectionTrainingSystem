@@ -6,7 +6,7 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.service.export.EntityExporter;
-import com.sep490.anomaly_training_backend.service.export.ExcelStyleHelper;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -75,8 +75,8 @@ public class TrainingSampleReviewExporter implements EntityExporter {
 
     @Override
     @Transactional(readOnly = true)
-    public void exportList(Sheet sheet, ExcelStyleHelper styles) {
-        List<TrainingSampleReview> reviews = reviewRepository.findByDeleteFlagFalse();
+    public void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids) {
+        List<TrainingSampleReview> reviews = reviewRepository.findByIdIn(ids);
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Dây chuyền", "Ngày rà soát", "Hạn chót",
@@ -100,3 +100,4 @@ public class TrainingSampleReviewExporter implements EntityExporter {
         styles.autoSizeColumns(sheet, 9);
     }
 }
+

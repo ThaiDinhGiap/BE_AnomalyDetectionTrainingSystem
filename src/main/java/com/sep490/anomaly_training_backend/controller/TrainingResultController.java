@@ -148,7 +148,7 @@ public class TrainingResultController {
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
     @PutMapping("/fi-signatures")
-    @PreAuthorize("hasAuthority('training_result.manage')")
+    @PreAuthorize("hasAuthority('review_approve.confirm')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
         try {
             trainingResultService.signDetailsByFi(requests);

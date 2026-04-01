@@ -720,35 +720,35 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return row;
     }
 
-    @Override
-    @Transactional
-    public void submitResult(Long resultId) {
-        TrainingResult result = trainingResultRepository.findByIdWithDetails(resultId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
-
-        if (result.getStatus() == ReportStatus.PENDING_REVIEW || result.getStatus() == ReportStatus.PENDING_APPROVAL) {
-            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
-        }
-
-        boolean allHaveProcess = result.getDetails().stream()
-                .allMatch(d -> d.getProcess() != null);
-        if (!allHaveProcess) {
-            throw new AppException(ErrorCode.MISSING_PROCESS_IN_RESULT_DETAIL);
-        }
-
-        java.time.LocalDate now = java.time.LocalDate.now();
-        for (TrainingResultDetail detail : result.getDetails()) {
-            if (detail.getActualDate() == null) {
-                detail.setActualDate(now);
-            }
-            if (detail.getTrainingPlanDetail() != null && detail.getTrainingPlanDetail().getActualDate() == null) {
-                detail.getTrainingPlanDetail().setActualDate(now);
-            }
-        }
-
-        result.setStatus(ReportStatus.PENDING_REVIEW);
-        trainingResultRepository.save(result);
-    }
+//    @Override
+//    @Transactional
+//    public void submitResult(Long resultId) {
+//        TrainingResult result = trainingResultRepository.findByIdWithDetails(resultId)
+//                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+//
+//        if (result.getStatus() == ReportStatus.PENDING_REVIEW || result.getStatus() == ReportStatus.PENDING_APPROVAL) {
+//            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
+//        }
+//
+//        boolean allHaveProcess = result.getDetails().stream()
+//                .allMatch(d -> d.getProcess() != null);
+//        if (!allHaveProcess) {
+//            throw new AppException(ErrorCode.MISSING_PROCESS_IN_RESULT_DETAIL);
+//        }
+//
+//        java.time.LocalDate now = java.time.LocalDate.now();
+//        for (TrainingResultDetail detail : result.getDetails()) {
+//            if (detail.getActualDate() == null) {
+//                detail.setActualDate(now);
+//            }
+//            if (detail.getTrainingPlanDetail() != null && detail.getTrainingPlanDetail().getActualDate() == null) {
+//                detail.getTrainingPlanDetail().setActualDate(now);
+//            }
+//        }
+//
+//        result.setStatus(ReportStatus.PENDING_REVIEW);
+//        trainingResultRepository.save(result);
+//    }
 
     @Override
     public List<TrainingResultOptionResponse> getProcessesByLine(Long lineId) {

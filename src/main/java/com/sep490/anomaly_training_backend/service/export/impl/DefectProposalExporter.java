@@ -7,7 +7,7 @@ import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.service.export.EntityExporter;
-import com.sep490.anomaly_training_backend.service.export.ExcelStyleHelper;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -75,8 +75,8 @@ public class DefectProposalExporter implements EntityExporter {
 
     @Override
     @Transactional(readOnly = true)
-    public void exportList(Sheet sheet, ExcelStyleHelper styles) {
-        List<DefectProposal> proposals = defectProposalRepository.findByDeleteFlagFalse();
+    public void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids) {
+        List<DefectProposal> proposals = defectProposalRepository.findByIdIn(ids);
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Mã phiếu", "Dây chuyền", "Trạng thái", "Phiên bản",

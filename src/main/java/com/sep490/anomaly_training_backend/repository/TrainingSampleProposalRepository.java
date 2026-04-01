@@ -13,6 +13,8 @@ import java.util.List;
 public interface TrainingSampleProposalRepository extends JpaRepository<TrainingSampleProposal, Long> {
     List<TrainingSampleProposal> findByProductLineId(Long productLineId);
 
+    List<TrainingSampleProposal> findByIdIn(List<Long> ids);
+
     List<TrainingSampleProposal> findByStatus(ReportStatus status);
 
     List<TrainingSampleProposal> findByProductLineIdAndStatus(Long productLineId, ReportStatus status);
@@ -62,4 +64,23 @@ public interface TrainingSampleProposalRepository extends JpaRepository<Training
               AND t.deleteFlag = false
             """)
     List<TrainingSampleProposal> findPendingByLineIds(@Param("lineIds") List<Long> lineIds);
+
+    @Query("""
+            SELECT t FROM TrainingSampleProposal t
+            WHERE t.deleteFlag = false
+              AND (:status IS NULL OR t.status = :status)
+              AND (:productLineId IS NULL OR t.productLine.id = :productLineId)
+              AND (CAST(:fromDate AS timestamp) IS NULL OR t.createdAt >= :fromDate)
+              AND (CAST(:toDate AS timestamp) IS NULL OR t.createdAt <= :toDate)
+              AND (:ids IS NULL OR t.id IN :ids)
+              AND (:keyword IS NULL OR LOWER(t.formCode) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY t.createdAt DESC
+            """)
+    List<TrainingSampleProposal> findByExportFilters(
+            @Param("status") ReportStatus status,
+            @Param("productLineId") Long productLineId,
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("toDate") java.time.LocalDateTime toDate,
+            @Param("ids") List<Long> ids,
+            @Param("keyword") String keyword);
 }

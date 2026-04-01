@@ -5,7 +5,6 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -45,7 +44,7 @@ public interface TrainingPlanService {
 
     // ── Lookup ───────────────────────────────────────────────────────────────
 
-    List<GroupResponse> getMyManagedGroups();
+//    List<GroupResponse> getMyManagedGroups();
 
     List<ProcessResponse> getProcessesByProductLine(Long productLineId);
 
@@ -69,5 +68,5 @@ public interface TrainingPlanService {
 
     ResponseEntity<Boolean> canApprove(Long reportId, User currentUser);
 
-    void clearFeedback(Long proposalId);
+//    void clearFeedback(Long proposalId);
 }

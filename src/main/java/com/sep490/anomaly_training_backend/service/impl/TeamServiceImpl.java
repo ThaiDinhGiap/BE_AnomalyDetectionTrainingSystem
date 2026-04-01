@@ -14,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -95,27 +92,27 @@ public class TeamServiceImpl implements TeamService {
         teamRepository.save(team);
     }
 
-    @Override
-    public TeamResponse getTeamById(Long id) {
-        return teamRepository.findById(id)
-                .filter(t -> !t.isDeleteFlag())
-                .map(teamMapper::toDTO)
-                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
-    }
-
-    @Override
-    public List<TeamResponse> getAllTeams() {
-        return teamRepository.findAll().stream()
-                .filter(t -> !t.isDeleteFlag())
-                .map(teamMapper::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<TeamResponse> getTeamsByGroup(Long groupId) {
-        return teamRepository.findByGroupId(groupId).stream()
-                .filter(t -> !t.isDeleteFlag())
-                .map(teamMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+//    @Override
+//    public TeamResponse getTeamById(Long id) {
+//        return teamRepository.findById(id)
+//                .filter(t -> !t.isDeleteFlag())
+//                .map(teamMapper::toDTO)
+//                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND));
+//    }
+//
+//    @Override
+//    public List<TeamResponse> getAllTeams() {
+//        return teamRepository.findAll().stream()
+//                .filter(t -> !t.isDeleteFlag())
+//                .map(teamMapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
+//
+//    @Override
+//    public List<TeamResponse> getTeamsByGroup(Long groupId) {
+//        return teamRepository.findByGroupId(groupId).stream()
+//                .filter(t -> !t.isDeleteFlag())
+//                .map(teamMapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
 }

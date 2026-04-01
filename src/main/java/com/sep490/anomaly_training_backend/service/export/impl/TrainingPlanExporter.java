@@ -7,7 +7,7 @@ import com.sep490.anomaly_training_backend.model.TrainingPlan;
 import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.service.export.EntityExporter;
-import com.sep490.anomaly_training_backend.service.export.ExcelStyleHelper;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -92,8 +92,8 @@ public class TrainingPlanExporter implements EntityExporter {
 
     @Override
     @Transactional(readOnly = true)
-    public void exportList(Sheet sheet, ExcelStyleHelper styles) {
-        List<TrainingPlan> plans = trainingPlanRepository.findByDeleteFlagFalse();
+    public void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids) {
+        List<TrainingPlan> plans = trainingPlanRepository.findByIdIn(ids);
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Mã phiếu", "Tiêu đề", "Tổ", "Dây chuyền",
@@ -117,3 +117,4 @@ public class TrainingPlanExporter implements EntityExporter {
         styles.autoSizeColumns(sheet, 10);
     }
 }
+

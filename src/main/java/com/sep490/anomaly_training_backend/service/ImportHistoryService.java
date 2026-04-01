@@ -9,23 +9,23 @@ import com.sep490.anomaly_training_backend.model.User;
 import java.util.List;
 
 public interface ImportHistoryService {
-     void saveHistory(User user, String filePath, ImportType importType, ImportStatus status, List<ImportErrorItem> errors);
-    default void saveFailHistory(
-            User user,
-            String filePath,
-            ImportType importType,
-            List<ImportErrorItem> errors
-    ) {
-        saveHistory(user, filePath, importType, ImportStatus.FAIL, errors);
-    }
-
-    default void savePassHistory(
-            User user,
-            String filePath,
-            ImportType importType
-    ) {
-        saveHistory(user, filePath, importType, ImportStatus.PASS, List.of());
-    }
+    void saveHistory(User user, String filePath, ImportType importType, ImportStatus status, List<ImportErrorItem> errors);
+//    default void saveFailHistory(
+//            User user,
+//            String filePath,
+//            ImportType importType,
+//            List<ImportErrorItem> errors
+//    ) {
+//        saveHistory(user, filePath, importType, ImportStatus.FAIL, errors);
+//    }
+//
+//    default void savePassHistory(
+//            User user,
+//            String filePath,
+//            ImportType importType
+//    ) {
+//        saveHistory(user, filePath, importType, ImportStatus.PASS, List.of());
+//    }
 
     List<ImportHistoryResponse> getHistory(User user, String importType);
 }

@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.export;
+package com.sep490.anomaly_training_backend.util.helper;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -37,11 +37,25 @@ public class ExcelStyleHelper {
         this.numberStyle = createNumberStyle();
     }
 
-    public CellStyle getHeaderStyle() { return headerStyle; }
-    public CellStyle getDataStyle() { return dataStyle; }
-    public CellStyle getDateStyle() { return dateStyle; }
-    public CellStyle getSectionHeaderStyle() { return sectionHeaderStyle; }
-    public CellStyle getNumberStyle() { return numberStyle; }
+    public CellStyle getHeaderStyle() {
+        return headerStyle;
+    }
+
+    public CellStyle getDataStyle() {
+        return dataStyle;
+    }
+
+    public CellStyle getDateStyle() {
+        return dateStyle;
+    }
+
+    public CellStyle getSectionHeaderStyle() {
+        return sectionHeaderStyle;
+    }
+
+    public CellStyle getNumberStyle() {
+        return numberStyle;
+    }
 
     /**
      * Write a header row with given column names.

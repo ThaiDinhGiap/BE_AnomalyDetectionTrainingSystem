@@ -7,7 +7,6 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
 import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
-import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
 import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
@@ -116,20 +115,20 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
     private final RequiredActionRepository requiredActionRepository;
     private final TrainingPlanSpecialDayRepository trainingPlanSpecialDayRepository;
 
-    @Override
-    public List<GroupResponse> getMyManagedGroups() {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
-
-        return managedTeams.stream()
-                .map(Team::getGroup)
-                .distinct()
-                .map(group -> new GroupResponse(group.getId(), group.getName()))
-                .collect(Collectors.toList());
-    }
+//    @Override
+//    public List<GroupResponse> getMyManagedGroups() {
+//        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User currentUser = userRepository.findByUsername(currentUsername)
+//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+//
+//        List<Team> managedTeams = teamRepository.findAllByTeamLeaderId(currentUser.getId());
+//
+//        return managedTeams.stream()
+//                .map(Team::getGroup)
+//                .distinct()
+//                .map(group -> new GroupResponse(group.getId(), group.getName()))
+//                .collect(Collectors.toList());
+//    }
 
     @Override
     public TrainingPlanGenerationResponse getPlanDetail(Long id) {
@@ -820,15 +819,15 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
 
     // ── Feedback ─────────────────────────────────────────────────────────────
 
-    @Override
-    @Transactional
-    public void clearFeedback(Long proposalId) {
-        List<TrainingPlanDetail> details = trainingPlanDetailRepository
-                .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
-        details.forEach(d -> d.setRejectFeedback(null));
-        trainingPlanDetailRepository.saveAll(details);
-        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
-    }
+//    @Override
+//    @Transactional
+//    public void clearFeedback(Long proposalId) {
+//        List<TrainingPlanDetail> details = trainingPlanDetailRepository
+//                .findByTrainingPlanIdAndDeleteFlagFalse(proposalId);
+//        details.forEach(d -> d.setRejectFeedback(null));
+//        trainingPlanDetailRepository.saveAll(details);
+//        log.info("[RejectFeedback] Đã xoá toàn bộ feedback của proposalId={}", proposalId);
+//    }
 
     // ── Private helpers ───────────────────────────────────────────────────────
     private void populateDetailProcesses(TrainingPlanDetailResponse detailResponse, TrainingPlan plan) {

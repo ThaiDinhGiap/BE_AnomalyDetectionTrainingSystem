@@ -19,6 +19,8 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     @Query(value = "UPDATE training_results SET created_by = :createdBy WHERE id = :id", nativeQuery = true)
     void updateCreatedBy(@Param("id") Long id, @Param("createdBy") String createdBy);
 
+    List<TrainingResult> findByIdIn(List<Long> ids);
+
     @Query("SELECT tp FROM TrainingResult tp WHERE tp.team.group.id = :groupId AND tp.deleteFlag = false")
     List<TrainingResult> findByGroupId(Long groupId);
 
@@ -157,4 +159,28 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
             @Param("lineId") Long lineId);
 
     List<TrainingResult> findByStatusAndDeleteFlagFalse(ReportStatus status);
+
+    @Query("""
+            SELECT r FROM TrainingResult r
+            WHERE r.deleteFlag = false
+              AND (:status IS NULL OR r.status = :status)
+              AND (:productLineId IS NULL OR r.line.id = :productLineId)
+              AND (:teamId IS NULL OR r.team.id = :teamId)
+              AND (:year IS NULL OR r.year = :year)
+              AND (CAST(:fromDate AS timestamp) IS NULL OR r.createdAt >= :fromDate)
+              AND (CAST(:toDate AS timestamp) IS NULL OR r.createdAt <= :toDate)
+              AND (:ids IS NULL OR r.id IN :ids)
+              AND (:keyword IS NULL OR LOWER(r.formCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                                    OR LOWER(r.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            ORDER BY r.createdAt DESC
+            """)
+    List<TrainingResult> findByExportFilters(
+            @Param("status") ReportStatus status,
+            @Param("productLineId") Long productLineId,
+            @Param("teamId") Long teamId,
+            @Param("year") Integer year,
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("toDate") java.time.LocalDateTime toDate,
+            @Param("ids") List<Long> ids,
+            @Param("keyword") String keyword);
 }

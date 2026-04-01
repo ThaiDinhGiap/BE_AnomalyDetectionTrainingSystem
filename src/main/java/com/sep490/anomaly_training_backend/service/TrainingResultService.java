@@ -43,7 +43,7 @@ public interface TrainingResultService {
 
     TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id);
 
-    void submitResult(Long resultId);
+//    void submitResult(Long resultId);
 
     List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
 

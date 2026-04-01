@@ -99,21 +99,21 @@ public class GroupServiceImpl implements GroupService {
         groupRepository.save(group);
     }
 
-    @Override
-    public GroupResponse getGroupById(Long id) {
-        return groupRepository.findById(id)
-                .filter(g -> !g.isDeleteFlag())
-                .map(groupMapper::toDTO)
-                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
-    }
-
-    @Override
-    public List<GroupResponse> getAllGroups() {
-        return groupRepository.findAll().stream()
-                .filter(g -> !g.isDeleteFlag())
-                .map(groupMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+//    @Override
+//    public GroupResponse getGroupById(Long id) {
+//        return groupRepository.findById(id)
+//                .filter(g -> !g.isDeleteFlag())
+//                .map(groupMapper::toDTO)
+//                .orElseThrow(() -> new AppException(ErrorCode.GROUP_NOT_FOUND));
+//    }
+//
+//    @Override
+//    public List<GroupResponse> getAllGroups() {
+//        return groupRepository.findAll().stream()
+//                .filter(g -> !g.isDeleteFlag())
+//                .map(groupMapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
 
     @Override
     public List<GroupResponse> getGroupByTeamLead(Long teamLeadId) {

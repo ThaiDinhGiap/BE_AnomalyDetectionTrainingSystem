@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.defect.impl;
+package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
@@ -8,7 +8,13 @@ import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.request.ImageData;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
 import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.*;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
@@ -18,13 +24,27 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.DefectMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.DefectProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.DefectProposal;
+import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.defect.DefectService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
@@ -33,13 +53,23 @@ import com.sep490.anomaly_training_backend.util.validator.DefectImportValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -67,12 +97,12 @@ public class DefectServiceImpl implements DefectService {
     private final DefectProposalDetailMapper defectProposalDetailMapper;
 
 
-    @Override
-    public List<DefectResponse> getDefectBySupervisor(Long supervisorId) {
-        return defectRepository.findAllBySupervisorAndDeleteFlagFalseOrderByCreatedAtDesc(supervisorId)
-                .stream()
-                .map(defectMapper::toDto).toList();
-    }
+//    @Override
+//    public List<DefectResponse> getDefectBySupervisor(Long supervisorId) {
+//        return defectRepository.findAllBySupervisorAndDeleteFlagFalseOrderByCreatedAtDesc(supervisorId)
+//                .stream()
+//                .map(defectMapper::toDto).toList();
+//    }
 
     @Override
     public List<DefectResponse> getDefectByProductLine(Long productLineId) {

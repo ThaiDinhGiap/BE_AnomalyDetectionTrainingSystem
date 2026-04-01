@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.service.priority.impl;
 
-import com.sep490.anomaly_training_backend.dto.ScheduleSummary;
 import com.sep490.anomaly_training_backend.enums.FactoryDayType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
@@ -232,7 +231,6 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                                 .plannedDate(workDate)
                                 .status(ReportStatus.PENDING_REVIEW)
                                 .batchId(generateBatchId(trainingPlan, workDate))
-                                .note(buildDetailNote(priority, skill))
                                 .build();
 
                         allDetails.add(detail);
@@ -293,80 +291,8 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                 dayType == FactoryDayType.NIGHT_SHIFT;
     }
 
-    /**
-     * Build note from priority and skill
-     */
-    private String buildDetailNote(PrioritySnapshotDetail priority, EmployeeSkill skill) {
-        String status = skill.getStatus() != null ? skill.getStatus().toString() : "UNKNOWN";
-        return String.format("Tier:%d Rank:%d Skill:%s Status:%s SkillId:%d",
-                priority.getTierOrder(),
-                priority.getSortRank(),
-                skill.getProcess().getName(),
-                status,
-                skill.getId());
-    }
-
     private String generateBatchId(TrainingPlan trainingPlan, LocalDate date) {
         return "BATCH_" + trainingPlan.getId() + "_" + date.toString().replace("-", "");
     }
 
-    @Override
-    public TrainingPlan regenerateSchedule(Long trainingPlanId, Long prioritySnapshotId, Integer calendarYear) {
-        log.info("Regenerating schedule for plan: {}", trainingPlanId);
-        trainingPlanDetailRepository.deleteByTrainingPlanId(trainingPlanId);
-        return generateOptimalSchedule(trainingPlanId, prioritySnapshotId, calendarYear);
-    }
-
-    @Override
-    public int getAvailableSlots(Long trainingPlanId, LocalDate date) {
-        TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        int allocated = trainingPlanDetailRepository.countByTrainingPlanIdAndPlannedDate(trainingPlanId, date);
-        int maxPerDay = trainingPlan.getMaxTrainingPerDay() != null ? trainingPlan.getMaxTrainingPerDay() : 5;
-
-        return Math.max(0, maxPerDay - allocated);
-    }
-
-    @Override
-    public ScheduleSummary getScheduleSummary(Long trainingPlanId) {
-        TrainingPlan trainingPlan = trainingPlanRepository.findById(trainingPlanId)
-                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
-
-        List<TrainingPlanDetail> details = trainingPlan.getDetails();
-
-        Map<LocalDate, Long> countByDate = details.stream()
-                .collect(Collectors.groupingBy(
-                        TrainingPlanDetail::getPlannedDate,
-                        Collectors.counting()
-                ));
-
-        Map<ReportStatus, Long> countByStatus = details.stream()
-                .collect(Collectors.groupingBy(
-                        TrainingPlanDetail::getStatus,
-                        Collectors.counting()
-                ));
-
-        long uniqueEmployees = details.stream()
-                .map(d -> d.getEmployee().getId())
-                .distinct()
-                .count();
-
-        long totalSkillsAllocated = details.size();  // Each detail = 1 skill allocation
-
-        ScheduleSummary summary = ScheduleSummary.builder()
-                .totalSlots(details.size())
-                .totalDays(countByDate.size())
-                .avgSlotsPerDay(countByDate.isEmpty() ? 0 : (double) details.size() / countByDate.size())
-                .countByDate(countByDate)
-                .countByStatus(countByStatus)
-                .uniqueEmployeesTrained((int) uniqueEmployees)
-                .totalSkillsAllocated((int) totalSkillsAllocated)
-                .build();
-
-        // Calculate avg skills per employee
-        summary.calculateAvgSkillsPerEmployee();
-
-        return summary;
-    }
 }

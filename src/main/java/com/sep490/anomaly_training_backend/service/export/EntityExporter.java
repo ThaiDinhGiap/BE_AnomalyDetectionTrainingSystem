@@ -1,7 +1,10 @@
 package com.sep490.anomaly_training_backend.service.export;
 
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import org.apache.poi.ss.usermodel.Sheet;
+
+import java.util.List;
 
 /**
  * Strategy interface for entity-specific Excel export logic.
@@ -9,18 +12,28 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 public interface EntityExporter {
 
-    /** Which entity type this exporter handles */
+    /**
+     * Which entity type this exporter handles
+     */
     ExportEntityType getType();
 
-    /** Export a single entity by ID into the given sheet */
+    /**
+     * Export a single entity by ID into the given sheet
+     */
     void exportSingle(Long id, Sheet sheet, ExcelStyleHelper styles);
 
-    /** Export all/list of entities into the given sheet */
-    void exportList(Sheet sheet, ExcelStyleHelper styles);
+    /**
+     * Export filtered list of entities into the given sheet
+     */
+    void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids);
 
-    /** Display name for the Excel sheet tab */
+    /**
+     * Display name for the Excel sheet tab
+     */
     String getSheetName();
 
-    /** Generate file name. If id is null, it's a list export. */
+    /**
+     * Generate file name. If id is null, it's a list export.
+     */
     String getFileName(Long id);
 }

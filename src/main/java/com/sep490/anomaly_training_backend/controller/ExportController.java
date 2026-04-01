@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.controller;
 
+import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.service.export.ExportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,8 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/exports")
@@ -31,14 +36,14 @@ public class ExportController {
     @PreAuthorize("hasAuthority('defect_proposal.view')")
     @Operation(summary = "Export phiếu đề xuất lỗi")
     public ResponseEntity<byte[]> exportDefectProposal(@PathVariable Long id) {
-        return export(ExportEntityType.DEFECT_PROPOSAL, id);
+        return exportSingle(ExportEntityType.DEFECT_PROPOSAL, id);
     }
 
-    @GetMapping("/defect-proposals")
+    @PostMapping("/defect-proposals")
     @PreAuthorize("hasAuthority('defect_proposal.view')")
-    @Operation(summary = "Export danh sách đề xuất lỗi")
-    public ResponseEntity<byte[]> exportDefectProposalList() {
-        return export(ExportEntityType.DEFECT_PROPOSAL, null);
+    @Operation(summary = "Export danh sách đề xuất lỗi (có filter)")
+    public ResponseEntity<byte[]> exportDefectProposalList(@RequestBody(required = false) ExportFilterRequest filter) {
+        return exportList(ExportEntityType.DEFECT_PROPOSAL, filter.getIds());
     }
 
     // ── Training Sample Proposal ────────────────────────────────────────────
@@ -47,14 +52,14 @@ public class ExportController {
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
     @Operation(summary = "Export phiếu đề xuất mẫu đào tạo")
     public ResponseEntity<byte[]> exportTrainingSampleProposal(@PathVariable Long id) {
-        return export(ExportEntityType.TRAINING_SAMPLE_PROPOSAL, id);
+        return exportSingle(ExportEntityType.TRAINING_SAMPLE_PROPOSAL, id);
     }
 
-    @GetMapping("/training-sample-proposals")
+    @PostMapping("/training-sample-proposals")
     @PreAuthorize("hasAuthority('training_sample_proposal.view')")
-    @Operation(summary = "Export danh sách đề xuất mẫu đào tạo")
-    public ResponseEntity<byte[]> exportTrainingSampleProposalList() {
-        return export(ExportEntityType.TRAINING_SAMPLE_PROPOSAL, null);
+    @Operation(summary = "Export danh sách đề xuất mẫu đào tạo (có filter)")
+    public ResponseEntity<byte[]> exportTrainingSampleProposalList(@RequestBody(required = false) ExportFilterRequest filter) {
+        return exportList(ExportEntityType.TRAINING_SAMPLE_PROPOSAL, filter.getIds());
     }
 
     // ── Training Plan ───────────────────────────────────────────────────────
@@ -63,14 +68,14 @@ public class ExportController {
     @PreAuthorize("hasAuthority('training_plan.view')")
     @Operation(summary = "Export kế hoạch đào tạo")
     public ResponseEntity<byte[]> exportTrainingPlan(@PathVariable Long id) {
-        return export(ExportEntityType.TRAINING_PLAN, id);
+        return exportSingle(ExportEntityType.TRAINING_PLAN, id);
     }
 
-    @GetMapping("/training-plans")
+    @PostMapping("/training-plans")
     @PreAuthorize("hasAuthority('training_plan.view')")
-    @Operation(summary = "Export danh sách kế hoạch đào tạo")
-    public ResponseEntity<byte[]> exportTrainingPlanList() {
-        return export(ExportEntityType.TRAINING_PLAN, null);
+    @Operation(summary = "Export danh sách kế hoạch đào tạo (có filter)")
+    public ResponseEntity<byte[]> exportTrainingPlanList(@RequestBody(required = false) ExportFilterRequest filter) {
+        return exportList(ExportEntityType.TRAINING_PLAN, filter.getIds());
     }
 
     // ── Training Result ─────────────────────────────────────────────────────
@@ -79,14 +84,14 @@ public class ExportController {
     @PreAuthorize("hasAuthority('training_result.view')")
     @Operation(summary = "Export kết quả đào tạo")
     public ResponseEntity<byte[]> exportTrainingResult(@PathVariable Long id) {
-        return export(ExportEntityType.TRAINING_RESULT, id);
+        return exportSingle(ExportEntityType.TRAINING_RESULT, id);
     }
 
-    @GetMapping("/training-results")
+    @PostMapping("/training-results")
     @PreAuthorize("hasAuthority('training_result.view')")
-    @Operation(summary = "Export danh sách kết quả đào tạo")
-    public ResponseEntity<byte[]> exportTrainingResultList() {
-        return export(ExportEntityType.TRAINING_RESULT, null);
+    @Operation(summary = "Export danh sách kết quả đào tạo (có filter)")
+    public ResponseEntity<byte[]> exportTrainingResultList(@RequestBody(required = false) ExportFilterRequest filter) {
+        return exportList(ExportEntityType.TRAINING_RESULT, filter.getIds());
     }
 
     // ── Training Sample Review ──────────────────────────────────────────────
@@ -95,23 +100,29 @@ public class ExportController {
     @PreAuthorize("hasAuthority('training_sample_review.view')")
     @Operation(summary = "Export phiếu rà soát mẫu đào tạo")
     public ResponseEntity<byte[]> exportTrainingSampleReview(@PathVariable Long id) {
-        return export(ExportEntityType.TRAINING_SAMPLE_REVIEW, id);
+        return exportSingle(ExportEntityType.TRAINING_SAMPLE_REVIEW, id);
     }
 
-    @GetMapping("/training-sample-reviews")
+    @PostMapping("/training-sample-reviews")
     @PreAuthorize("hasAuthority('training_sample_review.view')")
-    @Operation(summary = "Export danh sách rà soát mẫu đào tạo")
-    public ResponseEntity<byte[]> exportTrainingSampleReviewList() {
-        return export(ExportEntityType.TRAINING_SAMPLE_REVIEW, null);
+    @Operation(summary = "Export danh sách rà soát mẫu đào tạo (có filter)")
+    public ResponseEntity<byte[]> exportTrainingSampleReviewList(@RequestBody(required = false) ExportFilterRequest filter) {
+        return exportList(ExportEntityType.TRAINING_SAMPLE_REVIEW, filter.getIds());
     }
 
-    // ── Helper ──────────────────────────────────────────────────────────────
+    // ── Helpers ─────────────────────────────────────────────────────────────
 
-    private ResponseEntity<byte[]> export(ExportEntityType type, Long id) {
-        ExportService.ExportResult result = (id != null)
-                ? exportService.exportSingle(type, id)
-                : exportService.exportList(type);
+    private ResponseEntity<byte[]> exportSingle(ExportEntityType type, Long id) {
+        ExportService.ExportResult result = exportService.exportSingle(type, id);
+        return buildResponse(result);
+    }
 
+    private ResponseEntity<byte[]> exportList(ExportEntityType type, List<Long> ids) {
+        ExportService.ExportResult result = exportService.exportList(type, ids);
+        return buildResponse(result);
+    }
+
+    private ResponseEntity<byte[]> buildResponse(ExportService.ExportResult result) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(XLSX_MEDIA_TYPE))
                 .header(HttpHeaders.CONTENT_DISPOSITION,

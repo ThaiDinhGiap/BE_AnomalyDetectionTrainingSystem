@@ -1,17 +1,16 @@
 package com.sep490.anomaly_training_backend.service.priority.impl;
 
-import com.sep490.anomaly_training_backend.dto.scoring.ComputedMetricResponse;
 import com.sep490.anomaly_training_backend.enums.ComputeMethod;
 import com.sep490.anomaly_training_backend.enums.MetricReturnType;
-import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PriorityPolicyMapper;
 import com.sep490.anomaly_training_backend.model.ComputedMetric;
 import com.sep490.anomaly_training_backend.model.Employee;
+import com.sep490.anomaly_training_backend.model.MetricClassification;
 import com.sep490.anomaly_training_backend.repository.ComputedMetricRepository;
+import com.sep490.anomaly_training_backend.repository.MetricClassificationRepository;
 import com.sep490.anomaly_training_backend.service.priority.ComputedMetricService;
-import com.sep490.anomaly_training_backend.service.priority.MetricClassificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapper;
@@ -35,9 +34,9 @@ import java.util.stream.Collectors;
 public class ComputedMetricServiceImpl implements ComputedMetricService {
 
     private final ComputedMetricRepository computedMetricRepository;
+    private final MetricClassificationRepository classificationRepository;
     private final PriorityPolicyMapper mapper;
     private final JdbcTemplate jdbcTemplate;
-    private final MetricClassificationService metricClassificationService;
 
     /**
      * In-memory cache for metric definitions (they rarely change).
@@ -45,36 +44,6 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
      */
     private final ConcurrentHashMap<String, ComputedMetric> metricCache = new ConcurrentHashMap<>();
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ComputedMetricResponse> getMetricsByEntityType(PolicyEntityType entityType) {
-        return mapper.toMetricResponseList(
-                computedMetricRepository.findByEntityTypeAndIsActiveTrueAndDeleteFlagFalse(entityType)
-        );
-    }
-
-    @Override
-    public Object calculateMetric(Employee employee, String metricName) {
-        ComputedMetric metric = getCachedMetric(metricName);
-        return calculateMetricValue(employee, metric);
-    }
-
-    @Override
-    public Map<String, Object> calculateAllMetrics(Employee employee, Set<String> metricNames) {
-        Map<String, Object> results = new HashMap<>();
-
-        for (String metricName : metricNames) {
-            try {
-                Object value = calculateMetric(employee, metricName);
-                results.put(metricName, value);
-            } catch (Exception e) {
-                log.error("Failed to calculate metric: {} for employee: {}", metricName, employee.getId(), e);
-                results.put(metricName, null);
-            }
-        }
-
-        return results;
-    }
 
     /**
      * Batch calculate metrics — optimized to avoid N+1 queries.
@@ -132,14 +101,6 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
     }
 
     /**
-     * Force refresh cache (call when metrics are updated via admin API).
-     */
-    public void evictCache() {
-        metricCache.clear();
-        log.info("Metric definition cache cleared");
-    }
-
-    /**
      * Dispatch metric calculation based on compute method.
      */
     private Object calculateMetricValue(Employee employee, ComputedMetric metric) {
@@ -163,12 +124,6 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
 
     /**
      * PROPERTY method: Read a value from an entity using Spring BeanWrapper (reflection).
-     * <p>
-     * Format: "employee.fieldName" or "employee.methodName()" style.
-     * Examples:
-     *   - "employee.yearsOfService" → employee.getYearsOfService()
-     *   - "employee.onWatchlist"    → employee.isOnWatchlist()
-     *   - "employee.status"         → employee.getStatus()
      */
     private Object calculateFromProperty(Employee employee, String propertyPath) {
         String[] parts = propertyPath.split("\\.", 2);
@@ -205,10 +160,8 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
 
     /**
      * SQL method: Execute a parameterized SQL query for a single employee/entity.
-     * Uses parameterized queries to prevent SQL injection.
      */
     private Object calculateFromSQL(Long entityId, String sqlTemplate, MetricReturnType returnType) {
-        // Replace :entityId with ? placeholder for parameterized query
         String parameterizedQuery = sqlTemplate.replace(":entityId", "?");
 
         try {
@@ -228,15 +181,6 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
 
     /**
      * Batch SQL: Rewrite single-row SQL metric queries into batch queries.
-     * <p>
-     * Transforms:
-     *   SELECT DATEDIFF(...) FROM ... WHERE employee_id = ?
-     * Into:
-     *   SELECT employee_id, (DATEDIFF(...)) AS metric_value
-     *   FROM employees e
-     *   WHERE e.id IN (?, ?, ...)
-     * <p>
-     * Falls back to per-employee queries if the SQL cannot be batch-transformed.
      */
     private Map<Long, Object> batchCalculateSQL(List<Long> employeeIds, ComputedMetric metric) {
         Map<Long, Object> results = new HashMap<>();
@@ -247,13 +191,9 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
 
         String sqlTemplate = metric.getComputeDefinition();
 
-        // Try to convert single-entity SQL to batch form
-        // The SQL format is: SELECT <expr> FROM <source> WHERE <source>.employee_id = :entityId [AND ...]
-        // We rewrite it as a correlated subquery per employee
         try {
             String inPlaceholders = employeeIds.stream().map(id -> "?").collect(Collectors.joining(","));
 
-            // Wrap the original query as a correlated subquery
             String batchQuery = "SELECT e.id AS employee_id, (" +
                     sqlTemplate.replace(":entityId", "e.id") +
                     ") AS metric_value FROM employees e WHERE e.id IN (" + inPlaceholders + ") AND e.delete_flag = FALSE";
@@ -269,7 +209,6 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
             log.debug("Batch SQL metric '{}' calculated for {} employees in 1 query",
                     metric.getMetricName(), employeeIds.size());
         } catch (Exception e) {
-            // Fallback: per-employee queries
             log.warn("Batch SQL failed for metric '{}', falling back to per-employee queries: {}",
                     metric.getMetricName(), e.getMessage());
             for (Long empId : employeeIds) {
@@ -293,29 +232,21 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
         };
     }
 
-    // ── CLASSIFICATION ──────────────────────────────────────────────────
+    // ── CLASSIFICATION (inlined from MetricClassificationService) ────────
 
     /**
-     * CLASSIFICATION method: Apply metric classification rules from the
-     * metric_classifications table.
-     * <p>
-     * Steps:
-     * 1. Find the source metric name from the classification rules (metric_source)
-     * 2. Calculate the source metric value for this employee
-     * 3. Apply classification rules to determine the output level
-     * <p>
-     * The compute_definition stores the classification group name (e.g., "process_classification").
+     * CLASSIFICATION method: Apply metric classification rules.
      */
     private Object calculateFromClassification(Employee employee, String classificationName) {
         // Step 1: Find which raw metric feeds into this classification
-        String sourceMetricName = metricClassificationService.getSourceMetricName(classificationName);
+        String sourceMetricName = getSourceMetricName(classificationName);
 
         // Step 2: Calculate the source metric value
         ComputedMetric sourceMetric = getCachedMetric(sourceMetricName);
         Object sourceValue = calculateMetricValue(employee, sourceMetric);
 
         // Step 3: Classify the computed value
-        Map<String, Object> result = metricClassificationService.classifyMetric(classificationName, sourceValue);
+        Map<String, Object> result = classifyMetric(classificationName, sourceValue);
 
         if (result == null) {
             log.warn("No matching classification rule for employee: {}, classification: {}",
@@ -323,8 +254,99 @@ public class ComputedMetricServiceImpl implements ComputedMetricService {
             return null;
         }
 
-        // Return the classification level (integer)
         return result.get("level");
+    }
+
+    /**
+     * Classify 1 metric value theo classification rules.
+     *
+     * @param classificationName Tên classification (VD: "training_priority")
+     * @param metricValue        Giá trị metric cần classify
+     * @return Map {level, label} hoặc null nếu không match
+     */
+    private Map<String, Object> classifyMetric(String classificationName, Object metricValue) {
+        List<MetricClassification> rules = classificationRepository
+                .findByClassificationNameAndIsActiveTrueOrderByPriority(classificationName);
+
+        if (rules.isEmpty()) {
+            throw new AppException(ErrorCode.CLASSIFICATION_NOT_FOUND,
+                    "Classification rules not found: " + classificationName);
+        }
+
+        for (MetricClassification rule : rules) {
+            if (evaluateClassificationCondition(rule.getConditionExpression(), metricValue)) {
+                return Map.of(
+                        "level", rule.getOutputLevel(),
+                        "label", rule.getOutputLabel() != null ? rule.getOutputLabel() : "",
+                        "priority", rule.getPriority()
+                );
+            }
+        }
+
+        log.warn("No matching classification rule for: {} with value: {}", classificationName, metricValue);
+        return null;
+    }
+
+    /**
+     * Get the source metric name used by a classification group.
+     */
+    private String getSourceMetricName(String classificationName) {
+        List<MetricClassification> rules = classificationRepository
+                .findByClassificationNameAndIsActiveTrueOrderByPriority(classificationName);
+
+        if (rules.isEmpty()) {
+            throw new AppException(ErrorCode.CLASSIFICATION_NOT_FOUND,
+                    "Classification rules not found: " + classificationName);
+        }
+
+        return rules.get(0).getMetricSource();
+    }
+
+    /**
+     * Đánh giá condition expression.
+     * Support format: "value > 60", "value <= 30", "value == TRUE", etc.
+     */
+    private boolean evaluateClassificationCondition(String condition, Object actualValue) {
+        try {
+            condition = condition.trim();
+            String[] parts = condition.split("\\s+");
+
+            if (parts.length < 3 || !"value".equals(parts[0])) {
+                throw new AppException(ErrorCode.INVALID_CLASSIFICATION_RULE,
+                        "Invalid condition format: " + condition);
+            }
+
+            String operator = parts[1];
+            String compareValueStr = parts[2];
+
+            return switch (operator) {
+                case ">" -> compareAsNumbers(actualValue, compareValueStr) > 0;
+                case ">=" -> compareAsNumbers(actualValue, compareValueStr) >= 0;
+                case "<" -> compareAsNumbers(actualValue, compareValueStr) < 0;
+                case "<=" -> compareAsNumbers(actualValue, compareValueStr) <= 0;
+                case "==" -> actualValue.toString().equals(compareValueStr);
+                case "!=" -> !actualValue.toString().equals(compareValueStr);
+                default -> throw new AppException(ErrorCode.INVALID_CLASSIFICATION_RULE,
+                        "Unknown operator: " + operator);
+            };
+        } catch (Exception e) {
+            log.error("Error evaluating condition: {} for value: {}", condition, actualValue, e);
+            return false;
+        }
+    }
+
+    /**
+     * So sánh 2 giá trị dưới dạng số.
+     */
+    private int compareAsNumbers(Object val1, String val2Str) {
+        try {
+            double num1 = Double.parseDouble(val1.toString());
+            double num2 = Double.parseDouble(val2Str);
+            return Double.compare(num1, num2);
+        } catch (NumberFormatException e) {
+            throw new AppException(ErrorCode.INVALID_CLASSIFICATION_VALUE,
+                    "Cannot compare non-numeric values");
+        }
     }
 
     // ── EXTENSION ───────────────────────────────────────────────────────

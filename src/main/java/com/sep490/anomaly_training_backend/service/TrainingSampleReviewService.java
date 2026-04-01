@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.sample;
+package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
