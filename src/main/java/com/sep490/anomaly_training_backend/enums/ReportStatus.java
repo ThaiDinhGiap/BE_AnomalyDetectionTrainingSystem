@@ -5,6 +5,7 @@ public enum ReportStatus {
     UNASSIGNED,
     ONGOING,
     REVISING,
+    PENDING_CONFIRMATION,
     PENDING_REVIEW,
     PENDING_APPROVAL,
     REJECTED,

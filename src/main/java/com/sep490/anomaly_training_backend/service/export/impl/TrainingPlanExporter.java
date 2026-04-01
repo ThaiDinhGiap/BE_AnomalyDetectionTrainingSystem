@@ -97,7 +97,7 @@ public class TrainingPlanExporter implements EntityExporter {
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Mã phiếu", "Tiêu đề", "Tổ", "Dây chuyền",
-                "Từ ngày", "Đến ngày", "Trạng thái", "Số NV", "Người tạo");
+                "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Số lượt huấn luyện", "Người tạo");
 
         int rowNum = 1;
         int stt = 1;
