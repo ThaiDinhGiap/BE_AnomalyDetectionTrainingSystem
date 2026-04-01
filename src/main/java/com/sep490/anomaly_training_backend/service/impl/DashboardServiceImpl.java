@@ -178,7 +178,7 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // Failed & missed from result details (already supports null lineId)
-        List<TrainingResultDetail> pendingSignatures = trainingResultDetailRepository.findPendingSignatures(lineId);
+        List<TrainingResultDetail> pendingSignatures = trainingResultDetailRepository.findPendingProOutSignatures(lineId);
         List<TrainingResultDetail> failedTrainings = trainingResultDetailRepository.findFailedTrainings(lineId);
 
         // Count results that are fail for today
