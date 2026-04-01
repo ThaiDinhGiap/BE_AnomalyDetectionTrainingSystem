@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.sample.impl;
+package com.sep490.anomaly_training_backend.service.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
@@ -7,7 +7,12 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.dto.response.sample.*;
+import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
@@ -17,14 +22,29 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.Defect;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.*;
-import com.sep490.anomaly_training_backend.service.ProductService;
-import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.defect.DefectService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
+import com.sep490.anomaly_training_backend.model.Product;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.Role;
+import com.sep490.anomaly_training_backend.model.TrainingSample;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
+import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.DefectRepository;
+import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
+import com.sep490.anomaly_training_backend.repository.ProductRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
+import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
+import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.TrainingSampleService;
+import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.service.minio.ImportImageHandlerService;
 import com.sep490.anomaly_training_backend.util.TrainingCodeGenerator;
@@ -33,13 +53,23 @@ import com.sep490.anomaly_training_backend.util.validator.TrainingSampleImportVa
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +97,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final UserRepository userRepository;
     private final ApprovalService approvalService;
     private final TrainingSampleProposalDetailMapper trainingSampleProposalDetailMapper;
-    
+
 
     @Override
     public List<TrainingSampleResponse> getTrainingSampleByProductLine(Long productLineId) {
@@ -166,13 +196,13 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             List<ImportErrorItem> errors) {
         List<TrainingSampleResponse> responses = new ArrayList<>();
         for (TrainingSampleImportDto dto : parsedRows) {
-                TrainingSample trainingSample = upsertTrainingSample(dto, productLine, errors);
-                // If updating, soft-delete old attachments before handling new ones
-                if (dto.getTrainingCode() != null) {
-                    attachmentService.deleteAttachments("TRAINING_SAMPLE", trainingSample.getId());
-                }
-                handleTrainingSampleImages(dto.getImageData(), trainingSample, user);
-                responses.add(trainingSampleMapper.toDto(trainingSample));
+            TrainingSample trainingSample = upsertTrainingSample(dto, productLine, errors);
+            // If updating, soft-delete old attachments before handling new ones
+            if (dto.getTrainingCode() != null) {
+                attachmentService.deleteAttachments("TRAINING_SAMPLE", trainingSample.getId());
+            }
+            handleTrainingSampleImages(dto.getImageData(), trainingSample, user);
+            responses.add(trainingSampleMapper.toDto(trainingSample));
         }
         return responses;
     }
@@ -214,7 +244,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         // Resolve and validate Process
         Process process = null;
         if (dto.getProcessCode() != null && !dto.getProcessCode().trim().isEmpty()) {
-            process = processRepository.findByProductLineCodeAndCode(productLine.getCode(),dto.getProcessCode())
+            process = processRepository.findByProductLineCodeAndCode(productLine.getCode(), dto.getProcessCode())
                     .orElseThrow(() -> addErrorAndReturn(
                             errors,
                             dto.getExcelRowNumber(),
@@ -277,13 +307,12 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 log.debug("Sample has no ID, skipping image handling");
                 return;
             }
-             importImageHandlerService.handleRowImages(imageData, "TRAINING_SAMPLE", sample.getId(), user.getUsername());
+            importImageHandlerService.handleRowImages(imageData, "TRAINING_SAMPLE", sample.getId(), user.getUsername());
         } catch (Exception e) {
             log.error("Error handling images for TrainingSample id={}: {}", sample.getId(), e.getMessage());
             // Don't throw - ảnh handling fail không nên block main import
         }
     }
-
 
 
     /**
@@ -315,7 +344,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     // ============= Validation Methods =============
 
-    private void validateImportFile(MultipartFile file)  {
+    private void validateImportFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new AppException(ErrorCode.FILE_IS_EMPTY);
         }
@@ -422,6 +451,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         response.setAttachmentUrls(imageUrls);
         return response;
     }
+
     private TrainingSampleResponse enrichResponse(TrainingSample entity) {
         TrainingSampleResponse response = trainingSampleMapper.toDto(entity);
         if (entity.getProduct() != null) {

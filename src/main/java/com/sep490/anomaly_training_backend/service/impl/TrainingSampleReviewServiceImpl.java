@@ -1,4 +1,4 @@
-package com.sep490.anomaly_training_backend.service.sample.impl;
+package com.sep490.anomaly_training_backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
@@ -15,15 +15,19 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewPolicyMapper;
-import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.model.ProductLine;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
+import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.scheduler.TrainingSampleReviewScheduler;
+import com.sep490.anomaly_training_backend.service.TrainingSampleReviewService;
+import com.sep490.anomaly_training_backend.service.TrainingSampleService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleReviewService;
-import com.sep490.anomaly_training_backend.service.sample.TrainingSampleService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

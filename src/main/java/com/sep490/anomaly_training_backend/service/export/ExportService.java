@@ -1,9 +1,9 @@
 package com.sep490.anomaly_training_backend.service.export;
 
-import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -58,14 +58,14 @@ public class ExportService {
     /**
      * Export filtered list of entities to Excel bytes.
      */
-    public ExportResult exportList(ExportEntityType type, ExportFilterRequest filter) {
+    public ExportResult exportList(ExportEntityType type, List<Long> ids) {
         EntityExporter exporter = getExporter(type);
 
         try (Workbook workbook = new XSSFWorkbook()) {
             ExcelStyleHelper styles = new ExcelStyleHelper(workbook);
             Sheet sheet = workbook.createSheet(exporter.getSheetName());
 
-            exporter.exportList(sheet, styles, filter);
+            exporter.exportList(sheet, styles, ids);
 
             String fileName = exporter.getFileName(null);
             byte[] bytes = toBytes(workbook);
@@ -95,5 +95,6 @@ public class ExportService {
     /**
      * Result wrapper for export operations.
      */
-    public record ExportResult(String fileName, byte[] data) {}
+    public record ExportResult(String fileName, byte[] data) {
+    }
 }

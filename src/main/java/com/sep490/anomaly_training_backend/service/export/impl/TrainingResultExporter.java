@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.service.export.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -8,7 +7,7 @@ import com.sep490.anomaly_training_backend.model.TrainingResult;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
 import com.sep490.anomaly_training_backend.service.export.EntityExporter;
-import com.sep490.anomaly_training_backend.service.export.ExcelStyleHelper;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -100,21 +97,8 @@ public class TrainingResultExporter implements EntityExporter {
 
     @Override
     @Transactional(readOnly = true)
-    public void exportList(Sheet sheet, ExcelStyleHelper styles, ExportFilterRequest filter) {
-        LocalDateTime fromDateTime = filter.getFromDate() != null
-                ? filter.getFromDate().atStartOfDay() : null;
-        LocalDateTime toDateTime = filter.getToDate() != null
-                ? filter.getToDate().atTime(LocalTime.MAX) : null;
-
-        List<TrainingResult> results = trainingResultRepository.findByExportFilters(
-                filter.getStatus(),
-                filter.getProductLineId(),
-                filter.getTeamId(),
-                filter.getYear(),
-                fromDateTime,
-                toDateTime,
-                filter.getIds(),
-                filter.getKeyword());
+    public void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids) {
+        List<TrainingResult> results = trainingResultRepository.findByIdIn(ids);
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Mã phiếu", "Tiêu đề", "Năm", "Tổ", "Dây chuyền",

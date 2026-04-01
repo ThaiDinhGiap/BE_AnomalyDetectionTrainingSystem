@@ -13,6 +13,8 @@ import java.util.List;
 public interface TrainingSampleProposalRepository extends JpaRepository<TrainingSampleProposal, Long> {
     List<TrainingSampleProposal> findByProductLineId(Long productLineId);
 
+    List<TrainingSampleProposal> findByIdIn(List<Long> ids);
+
     List<TrainingSampleProposal> findByStatus(ReportStatus status);
 
     List<TrainingSampleProposal> findByProductLineIdAndStatus(Long productLineId, ReportStatus status);

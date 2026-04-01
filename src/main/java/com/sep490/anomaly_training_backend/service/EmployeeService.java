@@ -13,9 +13,7 @@ public interface EmployeeService {
 
     EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
 
-    void deleteEmployee(Long id); // Soft delete
-
-    EmployeeResponse getEmployeeById(Long id);
+    void deleteEmployee(Long id);
 
     List<EmployeeResponse> getAllEmployees();
 

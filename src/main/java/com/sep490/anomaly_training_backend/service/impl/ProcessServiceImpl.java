@@ -60,21 +60,21 @@ public class ProcessServiceImpl implements ProcessService {
         processRepository.saveAndFlush(entity);
     }
 
-    @Override
-    public ProcessResponse getProcessById(Long id) {
-        return processRepository.findById(id)
-                .filter(p -> !p.isDeleteFlag())
-                .map(processMapper::toDTO)
-                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
-    }
-
-    @Override
-    public List<ProcessResponse> getAllProcesses() {
-        return processRepository.findAll().stream()
-                .filter(p -> !p.isDeleteFlag())
-                .map(processMapper::toDTO)
-                .collect(Collectors.toList());
-    }
+//    @Override
+//    public ProcessResponse getProcessById(Long id) {
+//        return processRepository.findById(id)
+//                .filter(p -> !p.isDeleteFlag())
+//                .map(processMapper::toDTO)
+//                .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+//    }
+//
+//    @Override
+//    public List<ProcessResponse> getAllProcesses() {
+//        return processRepository.findAll().stream()
+//                .filter(p -> !p.isDeleteFlag())
+//                .map(processMapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
 
     @Override
     public List<ProcessResponse> getProcessesByProductLineId(Long productLineId) {

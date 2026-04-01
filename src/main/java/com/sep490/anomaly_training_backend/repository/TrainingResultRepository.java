@@ -19,6 +19,8 @@ public interface TrainingResultRepository extends JpaRepository<TrainingResult, 
     @Query(value = "UPDATE training_results SET created_by = :createdBy WHERE id = :id", nativeQuery = true)
     void updateCreatedBy(@Param("id") Long id, @Param("createdBy") String createdBy);
 
+    List<TrainingResult> findByIdIn(List<Long> ids);
+
     @Query("SELECT tp FROM TrainingResult tp WHERE tp.team.group.id = :groupId AND tp.deleteFlag = false")
     List<TrainingResult> findByGroupId(Long groupId);
 

@@ -1,9 +1,13 @@
-package com.sep490.anomaly_training_backend.service.sample;
+package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.sample.*;
+import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;

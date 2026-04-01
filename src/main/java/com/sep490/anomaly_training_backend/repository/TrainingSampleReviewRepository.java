@@ -16,6 +16,8 @@ import java.util.Optional;
 public interface TrainingSampleReviewRepository extends JpaRepository<TrainingSampleReview, Long> {
     Optional<TrainingSampleReview> findByProductLineIdAndReviewDate(Long productLineId, LocalDate reviewDate);
 
+    List<TrainingSampleReview> findByIdIn(List<Long> ids);
+
     @Query("SELECT tr FROM TrainingSampleReview tr " +
             "WHERE tr.reviewedBy.id = :userId  " +
             "AND tr.status IN (com.sep490.anomaly_training_backend.enums.ReportStatus.ONGOING, com.sep490.anomaly_training_backend.enums.ReportStatus.REJECTED)" +

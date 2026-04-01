@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
 import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
+
 import java.util.List;
 
 public interface SectionService {
@@ -11,7 +12,7 @@ public interface SectionService {
 
     void deleteSection(Long id);
 
-    SectionResponse getSectionById(Long id);
+//    SectionResponse getSectionById(Long id);
 
     List<SectionResponse> getAllSections();
 }

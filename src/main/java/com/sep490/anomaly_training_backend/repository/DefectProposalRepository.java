@@ -13,6 +13,8 @@ import java.util.List;
 public interface DefectProposalRepository extends JpaRepository<DefectProposal, Long> {
     List<DefectProposal> findByProductLineId(Long productLineId);
 
+    List<DefectProposal> findByIdIn(List<Long> ids);
+
     @Query("""
             SELECT d
             FROM DefectProposal d

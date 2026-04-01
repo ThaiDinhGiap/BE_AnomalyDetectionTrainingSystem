@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.service;
 
 import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
 import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+
 import java.util.List;
 
 public interface ProcessService {
@@ -11,9 +12,9 @@ public interface ProcessService {
 
     void deleteProcess(Long id);
 
-    ProcessResponse getProcessById(Long id);
-
-    List<ProcessResponse> getAllProcesses();
+//    ProcessResponse getProcessById(Long id);
+//
+//    List<ProcessResponse> getAllProcesses();
 
     List<ProcessResponse> getProcessesByProductLineId(Long groupId);
 

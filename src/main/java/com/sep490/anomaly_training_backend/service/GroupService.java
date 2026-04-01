@@ -14,9 +14,9 @@ public interface GroupService {
 
     void removeGroupFromSection(Long id);
 
-    GroupResponse getGroupById(Long id);
-
-    List<GroupResponse> getAllGroups();
+//    GroupResponse getGroupById(Long id);
+//
+//    List<GroupResponse> getAllGroups();
 
     List<GroupResponse> getMyManagedGroups();
 

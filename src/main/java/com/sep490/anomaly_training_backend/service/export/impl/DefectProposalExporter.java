@@ -1,6 +1,5 @@
 package com.sep490.anomaly_training_backend.service.export.impl;
 
-import com.sep490.anomaly_training_backend.dto.request.ExportFilterRequest;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
@@ -8,7 +7,7 @@ import com.sep490.anomaly_training_backend.model.DefectProposal;
 import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
 import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
 import com.sep490.anomaly_training_backend.service.export.EntityExporter;
-import com.sep490.anomaly_training_backend.service.export.ExcelStyleHelper;
+import com.sep490.anomaly_training_backend.util.helper.ExcelStyleHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -16,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -78,19 +75,8 @@ public class DefectProposalExporter implements EntityExporter {
 
     @Override
     @Transactional(readOnly = true)
-    public void exportList(Sheet sheet, ExcelStyleHelper styles, ExportFilterRequest filter) {
-        LocalDateTime fromDateTime = filter.getFromDate() != null
-                ? filter.getFromDate().atStartOfDay() : null;
-        LocalDateTime toDateTime = filter.getToDate() != null
-                ? filter.getToDate().atTime(LocalTime.MAX) : null;
-
-        List<DefectProposal> proposals = defectProposalRepository.findByExportFilters(
-                filter.getStatus(),
-                filter.getProductLineId(),
-                fromDateTime,
-                toDateTime,
-                filter.getIds(),
-                filter.getKeyword());
+    public void exportList(Sheet sheet, ExcelStyleHelper styles, List<Long> ids) {
+        List<DefectProposal> proposals = defectProposalRepository.findByIdIn(ids);
 
         styles.writeHeaderRow(sheet, 0,
                 "STT", "Mã phiếu", "Dây chuyền", "Trạng thái", "Phiên bản",
