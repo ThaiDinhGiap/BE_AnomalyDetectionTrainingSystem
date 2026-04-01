@@ -4,7 +4,6 @@ import com.sep490.anomaly_training_backend.model.Attachment;
 import com.sep490.anomaly_training_backend.model.AttachmentDeleteOutbox;
 import com.sep490.anomaly_training_backend.repository.AttachmentDeleteOutboxRepository;
 import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
-import com.sep490.anomaly_training_backend.service.minio.IStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,7 +23,7 @@ public class AttachmentCleanupJob {
     private final IStorageService storageService;
 
     // Chạy ngầm mỗi 50 phút (3,000,000 milliseconds)
-    @Scheduled(fixedDelayString = "${app.cron.outbox-cleanup:30000}")
+    @Scheduled(fixedDelayString = "${app.cron.outbox-cleanup:3000000}")
     public void processDeleteOutbox() {
         log.info("Starting Outbox Cleanup Job...");
 

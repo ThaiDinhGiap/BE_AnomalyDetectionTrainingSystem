@@ -351,9 +351,8 @@ VALUES
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
     -- Training Result
-    (5, 18), -- training_result.view
-    (5, 19);
--- training_result.manage;
+    (5, 18);
+-- training_result.view
 
 -- ============================================================================
 -- PART 3: ORGANIZATION STRUCTURE
