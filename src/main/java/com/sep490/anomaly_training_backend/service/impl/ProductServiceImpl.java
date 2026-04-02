@@ -351,12 +351,18 @@ public class ProductServiceImpl implements ProductService {
     private void handleProductImages(ImageData imageData, Product product, User user) {
         try {
             if (product == null || product.getId() == null) {
-                log.debug("Defect has no ID, skipping image handling");
+                log.debug("Product has no ID, skipping image handling");
                 return;
             }
 
-            log.info("Handling images for Defect id={}", product.getId());
+            log.info("Handling images for Product id={}", product.getId());
 
+            List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+            if (!attachments.isEmpty()) {
+                for (Attachment attachment : attachments) {
+                    attachmentService.deleteAttachment(attachment.getId());
+                }
+            }
             importImageHandlerService.handleRowImages(imageData, "PRODUCT", product.getId(), user.getUsername());
 
         } catch (Exception e) {
