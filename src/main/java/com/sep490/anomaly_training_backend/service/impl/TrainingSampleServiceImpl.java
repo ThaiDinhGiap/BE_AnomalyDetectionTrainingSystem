@@ -7,12 +7,7 @@ import com.sep490.anomaly_training_backend.dto.request.TrainingSampleImportDto;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ImportErrorItem;
-import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.*;
 import com.sep490.anomaly_training_backend.enums.ImportStatus;
 import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
@@ -22,24 +17,9 @@ import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalDetailMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleProposalMapper;
-import com.sep490.anomaly_training_backend.model.Attachment;
-import com.sep490.anomaly_training_backend.model.Defect;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.ProductService;
@@ -53,23 +33,14 @@ import com.sep490.anomaly_training_backend.util.validator.TrainingSampleImportVa
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -97,6 +68,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     private final UserRepository userRepository;
     private final ApprovalService approvalService;
     private final TrainingSampleProposalDetailMapper trainingSampleProposalDetailMapper;
+    private final TrainingSampleProposalHistoryRepository trainingSampleProposalHistoryRepository;
 
 
     @Override
@@ -630,11 +602,43 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
     public void revise(Long id, User currentUser, HttpServletRequest request) {
         TrainingSampleProposal proposal = trainingSampleProposalRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_SAMPLE_PROPOSAL_NOT_FOUND));
-        if (!proposal.getCreatedBy().equals(proposal.getCreatedBy())) {
+        if (!proposal.getCreatedBy().equals(currentUser.getUsername())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
+        createHistorySnapshot(proposal);
         approvalService.revise(proposal, currentUser, request);
-        trainingSampleProposalRepository.save(proposal);
+    }
+
+    private void createHistorySnapshot(TrainingSampleProposal proposal) {
+        TrainingSampleProposalHistory history = TrainingSampleProposalHistory.builder()
+                .trainingSampleProposal(proposal)
+                .version(proposal.getCurrentVersion() == null ? 1 : proposal.getCurrentVersion())
+                .recordedAt(LocalDateTime.now())
+                .productLineId(proposal.getProductLine() != null ? proposal.getProductLine().getId() : null)
+                .detailHistory(new ArrayList<>())
+                .build();
+
+        if (proposal.getDetails() != null) {
+            for (TrainingSampleProposalDetail detail : proposal.getDetails()) {
+                TrainingSampleProposalDetailHistory detailHistory = TrainingSampleProposalDetailHistory.builder()
+                        .trainingSampleProposalHistory(history)
+                        .trainingSampleId(detail.getTrainingSample() != null ? detail.getTrainingSample().getId() : null)
+                        .proposalType(detail.getProposalType() != null ? detail.getProposalType().toString() : null)
+                        .processId(detail.getProcess() != null ? detail.getProcess().getId() : null)
+                        .processCode(detail.getProcess() != null ? detail.getProcess().getCode() : null)
+                        .processName(detail.getProcess() != null ? detail.getProcess().getName() : null)
+                        .defectId(detail.getDefect() != null ? detail.getDefect().getId() : null)
+                        .categoryName(detail.getCategoryName())
+                        .trainingSampleCode(detail.getTrainingSampleCode())
+                        .trainingDescription(detail.getTrainingDescription())
+                        .productId(detail.getProduct() != null ? detail.getProduct().getId() : null)
+                        .note(detail.getNote())
+                        .build();
+                history.getDetailHistory().add(detailHistory);
+            }
+        }
+
+        trainingSampleProposalHistoryRepository.save(history);
     }
 
     @Override
@@ -870,6 +874,5 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         entity.setTrainingDescription(request.getTrainingDescription());
         entity.setNote(request.getNote());
 
-        // rejectFeedback được giữ nguyên, không bị thay đổi
     }
 }
