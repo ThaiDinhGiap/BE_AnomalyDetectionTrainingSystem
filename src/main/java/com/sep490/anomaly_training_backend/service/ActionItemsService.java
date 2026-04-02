@@ -6,6 +6,7 @@ import com.sep490.anomaly_training_backend.dto.response.PendingSignatureResponse
 
 public interface ActionItemsService {
     PendingSignatureResponse getPendingSignatures(Long lineId);
+    PendingSignatureResponse getSubmittedPendingApproval(Long lineId);
     FailedTrainingResponse getFailedTrainings(Long lineId);
     ExpiringSkillResponse getExpiringSkills(Long lineId);
 }

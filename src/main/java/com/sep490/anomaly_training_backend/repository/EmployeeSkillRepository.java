@@ -31,6 +31,12 @@ public interface EmployeeSkillRepository extends JpaRepository<EmployeeSkill, Lo
     List<EmployeeSkill> findPendingReviewSkills(@Param("lineId") Long lineId);
 
     @Query("SELECT es FROM EmployeeSkill es JOIN es.process p " +
+            "WHERE es.status = 'PENDING_REVIEW' " +
+            "AND es.deleteFlag = false " +
+            "AND p.productLine.id IN :lineIds")
+    List<EmployeeSkill> findPendingReviewSkillsByLineIds(@Param("lineIds") List<Long> lineIds);
+
+    @Query("SELECT es FROM EmployeeSkill es JOIN es.process p " +
             "WHERE es.employee.id = :employeeId " +
             "AND p.productLine.id = :lineId " +
             "AND es.status = 'VALID' " +
