@@ -61,13 +61,13 @@ public class ManufacturingLineController {
 
     @PostMapping("/products")
     @PreAuthorize("hasAuthority('product.manage')")
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody ProductRequest request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@ModelAttribute ProductRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
     }
 
     @PostMapping("/products/sync")
     @PreAuthorize("hasAuthority('product.manage')")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@RequestBody List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@ModelAttribute List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
     }
 
