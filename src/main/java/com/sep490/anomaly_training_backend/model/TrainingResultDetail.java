@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -160,5 +161,13 @@ public class TrainingResultDetail extends BaseEntity {
      */
     @Column(name = "batch_id", length = 36)
     String batchId;
+
+    public String computeContentHash() {
+        String sb = id + "|" +
+                trainingResult.getCurrentVersion() + "|" +
+                trainingResult.getTeam().getId() + "|";
+
+        return DigestUtils.sha256Hex(sb);
+    }
 
 }
