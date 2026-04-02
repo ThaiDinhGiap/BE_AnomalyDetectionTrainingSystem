@@ -5,11 +5,7 @@ import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
@@ -73,7 +69,7 @@ public class TrainingPlanApprovalHandler implements ApprovalHandler {
         List<TrainingResultDetail> resultDetails = new ArrayList<>();
 
         if (plan.getDetails() != null) {
-            for (TrainingPlanDetail planDetail : plan.getDetails()) {
+            for (TrainingPlanDetail planDetail : plan.getDetails().stream().filter(detail -> !detail.isDeleteFlag()).toList()) {
                 TrainingResultDetail resultDetail = new TrainingResultDetail();
                 resultDetail.setTrainingResult(result);
                 resultDetail.setTrainingPlanDetail(planDetail);
