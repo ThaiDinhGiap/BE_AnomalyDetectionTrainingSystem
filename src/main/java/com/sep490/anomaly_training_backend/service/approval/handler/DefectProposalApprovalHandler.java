@@ -5,17 +5,9 @@ import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.DefectType;
 import com.sep490.anomaly_training_backend.enums.ProcessClassification;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.Attachment;
-import com.sep490.anomaly_training_backend.model.Defect;
-import com.sep490.anomaly_training_backend.model.DefectProposal;
-import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
-import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
-import com.sep490.anomaly_training_backend.repository.DefectProposalRepository;
-import com.sep490.anomaly_training_backend.repository.DefectRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.minio.AttachmentService;
 import com.sep490.anomaly_training_backend.util.DefectCodeGenerator;
@@ -59,7 +51,9 @@ public class DefectProposalApprovalHandler implements ApprovalHandler {
     @Override
     public void applyApproval(Approvable entity) {
         DefectProposal proposal = (DefectProposal) entity;
-        List<DefectProposalDetail> detailList = proposal.getDetails();
+        List<DefectProposalDetail> detailList = proposal.getDetails().stream()
+                .filter(defectProposalDetail -> !defectProposalDetail.isDeleteFlag())
+                .toList();
         if (detailList == null || detailList.isEmpty()) {
             throw new IllegalStateException("Proposal has no details to apply.");
         }

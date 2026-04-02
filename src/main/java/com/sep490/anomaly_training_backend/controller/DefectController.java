@@ -5,12 +5,7 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.DefectService;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
@@ -31,17 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -223,7 +208,7 @@ public class DefectController {
         return ResponseEntity.ok("Defect proposal submitted for approval successfully!");
     }
 
-    @Operation(summary = "Import Defect template")
+    @Operation(summary = "Download Defect template")
     @GetMapping("/download-template")
     @PreAuthorize("hasAuthority('defect.manage')")
     public ResponseEntity<Resource> downloadTemplate() throws IOException {
