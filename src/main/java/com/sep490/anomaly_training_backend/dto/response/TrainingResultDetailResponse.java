@@ -5,6 +5,7 @@ import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -100,6 +101,11 @@ public class TrainingResultDetailResponse {
         private String signatureFiOutName;
 
         private RejectFeedbackJson rejectFeedback;
+
+        // Approval/Reject action metadata
+        private String approvalAction;          // "APPROVE" or "REJECT" or null
+        private String approvalPerformerName;    // Tên người approve/reject
+        private Instant approvalPerformedAt;     // Thời điểm approve/reject
 
         @Override
         public int compareTo(@NotNull DetailRowDto o) {

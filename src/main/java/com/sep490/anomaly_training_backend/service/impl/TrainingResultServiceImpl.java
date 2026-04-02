@@ -306,7 +306,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -504,8 +504,12 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         TrainingResultDetailResponse response = buildHeaderResponse(result, user);
 
+        // Batch-load approval action logs for all details in this report
+        Map<Long, ApprovalActionLog> approvalLogByDetailId = loadDetailApprovalLogs(result.getId());
+
         List<TrainingResultDetailResponse.DetailRowDto> detailDtos = result.getDetails().stream()
                 .map(this::mapDetailToRow)
+                .peek(row -> enrichWithApprovalInfo(row, approvalLogByDetailId))
                 .sorted()
                 .collect(Collectors.toList());
 
@@ -579,18 +583,24 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         TrainingResultDetailResponse response = buildHeaderResponse(result, user);
+
+        // Batch-load approval action logs for all details in this report
+        Map<Long, ApprovalActionLog> approvalLogByDetailId = loadDetailApprovalLogs(result.getId());
+
         List<TrainingResultDetailResponse.DetailRowDto> detailRowDtos;
 
         if (currentUser.hasPermission("review_approve.confirm")) {
             detailRowDtos = result.getDetails().stream()
                     .filter(detail -> detail.getStatus() != null && FI_VISIBLE_STATUSES.contains(detail.getStatus()))
                     .map(this::mapDetailToRow)
+                    .peek(row -> enrichWithApprovalInfo(row, approvalLogByDetailId))
                     .sorted()
                     .collect(Collectors.toList());
         } else {
             detailRowDtos = result.getDetails().stream()
                     .filter(detail -> detail.getStatus() != null && SV_VISIBLE_STATUSES.contains(detail.getStatus()))
                     .map(this::mapDetailToRow)
+                    .peek(row -> enrichWithApprovalInfo(row, approvalLogByDetailId))
                     .sorted()
                     .collect(Collectors.toList());
         }
@@ -735,6 +745,36 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         row.setRejectFeedback(detail.getRejectFeedback());
 
         return row;
+    }
+
+    /**
+     * Batch-load all detail-level approve/reject logs for a Training Result,
+     * returning a Map keyed by detailId (= stepOrder) → latest ApprovalActionLog.
+     */
+    private Map<Long, ApprovalActionLog> loadDetailApprovalLogs(Long reportId) {
+        List<ApprovalActionLog> logs = approvalActionRepository.findDetailLevelActions(
+                ApprovalEntityType.TRAINING_RESULT, reportId);
+
+        // Logs are ordered by performedAt DESC, so first occurrence per stepOrder is the latest
+        Map<Long, ApprovalActionLog> map = new java.util.LinkedHashMap<>();
+        for (ApprovalActionLog logEntry : logs) {
+            map.putIfAbsent(logEntry.getStepOrder().longValue(), logEntry);
+        }
+        return map;
+    }
+
+    /**
+     * Enrich a DetailRowDto with approval action metadata from the log map.
+     */
+    private void enrichWithApprovalInfo(
+            TrainingResultDetailResponse.DetailRowDto row,
+            Map<Long, ApprovalActionLog> approvalLogByDetailId) {
+        ApprovalActionLog logEntry = approvalLogByDetailId.get(row.getId());
+        if (logEntry != null) {
+            row.setApprovalAction(logEntry.getAction().name());
+            row.setApprovalPerformerName(logEntry.getPerformedByFullName());
+            row.setApprovalPerformedAt(logEntry.getPerformedAt());
+        }
     }
 
     // @Override
@@ -1136,28 +1176,25 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    @Transactional
     public void submit(Long reportId, User currentUser, HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
 
-        validateResultForSubmission(report);
-        report.setFormCode(
-                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
+        if (report.getFormCode() == null || report.getFormCode().isBlank()) {
+            report.setFormCode(
+                    ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(),
+                            reportId));
+        }
 
-        approvalService.submit(report, currentUser, request);
         updateResultDetailAfterSubmission(currentUser, report);
 
         trainingResultRepository.save(report);
-    }
-
-    private void validateResultForSubmission(TrainingResult result) {
+        log.info("Submitted result #{} by {} — details promoted to pending", reportId, currentUser.getUsername());
     }
 
     private void updateResultDetailAfterSubmission(User currentUser, TrainingResult result) {
         trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
                 .forEach(detail -> {
-                    // detail.setSignatureProIn(currentUser);
-                    // detail.setSignatureProOut(currentUser);
-
                     if (detail.getClassification() != null && detail.getClassification() == 4) {
                         detail.setStatus(ReportStatus.PENDING_REVIEW);
                     } else {
@@ -1197,7 +1234,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-            HttpServletRequest request) {
+                              HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1235,7 +1272,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-            HttpServletRequest request) {
+                             HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1322,7 +1359,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * so detailId (always >> 2) will never collide.
      */
     private void logDetailAction(TrainingResult report, TrainingResultDetail detail,
-            ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
+                                 ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(ApprovalEntityType.TRAINING_RESULT)
                 .entityId(report.getId())

@@ -119,12 +119,18 @@ class TrainingResultServiceImplTest {
     @Test
     void submitResultForApproval_Success() {
         productLine.setName("PL-Name");
+        productLine.setCode("PL");
+        result.setStatus(ReportStatus.ONGOING);
         when(trainingResultRepository.findByIdWithDetails(200L)).thenReturn(Optional.of(result));
         when(trainingResultRepository.save(result)).thenReturn(result);
+        when(trainingResultDetailRepository.findPendingWithIsPassByResultId(200L))
+                .thenReturn(Collections.emptyList());
 
         service.submit(200L, user, httpRequest);
 
-        verify(approvalService).submit(result, user, httpRequest);
+        assertThat(result.getStatus()).isEqualTo(ReportStatus.PENDING_REVIEW);
+        verify(trainingResultRepository).save(result);
+        verify(approvalService, never()).submit(any(), any(), any());
     }
 
     @Test
