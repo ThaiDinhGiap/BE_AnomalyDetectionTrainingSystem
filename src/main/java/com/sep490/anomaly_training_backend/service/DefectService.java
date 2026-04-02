@@ -3,12 +3,7 @@ package com.sep490.anomaly_training_backend.service;
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.DefectProposalRequest;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectCoverageResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectInProcess;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.defect.DefectResponse;
+import com.sep490.anomaly_training_backend.dto.response.defect.*;
 import com.sep490.anomaly_training_backend.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.coyote.BadRequestException;
@@ -45,7 +40,7 @@ public interface DefectService {
     void submitDefectProposalForApproval(Long proposalId, User currentUser, HttpServletRequest request);
 
     // Relate approval methods
-    void submit(Long proposalId, User currentUser, HttpServletRequest request);
+//    void submit(Long proposalId, User currentUser, HttpServletRequest request);
 
     void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request);
 
