@@ -160,6 +160,16 @@ public class TrainingResultController {
         }
     }
 
+    @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)", description = "Submit the training result. All details must have been filled and signed before submission.")
+    @PutMapping("/{id}/submit-confirmed-result")
+    @PreAuthorize("hasAuthority('review_approve.confirm')")
+    public ResponseEntity<String> submitConfirmedResult(
+            @Parameter(description = "Training Result ID") @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        trainingResultService.submitConfirmedResult(id, currentUser);
+        return ResponseEntity.ok("Kết quả huấn luyện đã được gửi thành công!");
+    }
+
     @Operation(summary = "Get all training result records (Overview)")
     @GetMapping
     @PreAuthorize("hasAuthority('training_result.view')")
@@ -204,8 +214,9 @@ public class TrainingResultController {
     @GetMapping("/{id}/verify-view")
     @PreAuthorize("hasAuthority('training_result.view')")
     public ResponseEntity<TrainingResultDetailResponse> getResultDetailForVerify(
+            @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Training Result Header ID") @PathVariable Long id) {
-        return ResponseEntity.ok(trainingResultService.getTrainingResultDetailForVerify(id));
+        return ResponseEntity.ok(trainingResultService.getTrainingResultDetailForVerify(currentUser, id));
     }
 
     @Operation(summary = "Get processes by product line", description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")

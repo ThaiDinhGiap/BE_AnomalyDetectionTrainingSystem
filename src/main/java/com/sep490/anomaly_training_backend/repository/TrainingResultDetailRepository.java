@@ -42,10 +42,28 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     long countByFiltersAndIsPass(@Param("createdBy") String createdBy, @Param("teamId") Long teamId, @Param("lineId") Long lineId, @Param("year") Integer year, @Param("isPass") boolean isPass);
 
 
+    // Team Lead: details completed but missing PRO_OUT signature
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
-            "WHERE (d.status = 'NEED_SIGN') " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED " +
+            "AND d.signatureProOut IS NULL " +
+            "AND d.isPass IS NOT NULL " +
             "AND (:lineId IS NULL OR r.line.id = :lineId)")
-    List<TrainingResultDetail> findPendingSignatures(@Param("lineId") Long lineId);
+    List<TrainingResultDetail> findPendingProOutSignatures(@Param("lineId") Long lineId);
+
+    // Final Inspection: details completed but missing FI_OUT signature
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED " +
+            "AND d.signatureFiOut IS NULL " +
+            "AND d.isPass IS NOT NULL " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findPendingFiOutSignatures(@Param("lineId") Long lineId);
+
+    // Supervisor: details pending review
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW " +
+            "AND d.isPass IS NOT NULL " +
+            "AND (:lineId IS NULL OR r.line.id = :lineId)")
+    List<TrainingResultDetail> findPendingSvReview(@Param("lineId") Long lineId);
 
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL) " +
@@ -165,7 +183,7 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     @Query("""
                 SELECT t FROM TrainingResultDetail t
                 WHERE t.trainingResult.id = :resultId
-                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW
+                  AND t.status = com.sep490.anomaly_training_backend.enums.ReportStatus.ONGOING
                   AND t.isPass IS NOT NULL
                   AND t.deleteFlag = false
                 ORDER BY t.plannedDate ASC

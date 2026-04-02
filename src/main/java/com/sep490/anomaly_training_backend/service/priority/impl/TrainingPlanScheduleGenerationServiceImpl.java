@@ -185,6 +185,9 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
             totalSkills.addAndGet(v.size());
         });
 
+        // Track already-scheduled (date, employeeId) to prevent duplicates
+        java.util.Set<String> scheduledDayEmployee = new java.util.HashSet<>();
+
         // Multi-pass: từng bước tăng capacity
         for (int dayCapacity = minCapacity; dayCapacity <= maxCapacity; dayCapacity++) {
             log.info("\n--- PASS {} (Daily Capacity: {}) ---", dayCapacity - minCapacity + 1, dayCapacity);
@@ -220,8 +223,10 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
                     int skillIdx = employeeSkillIndex.getOrDefault(empId, 0);
                     List<EmployeeSkill> availableSkills = employeeAvailableSkills.get(empId);
 
-                    // Check: có skill nào để allocate không?
-                    if (availableSkills != null && skillIdx < availableSkills.size()) {
+                    // Check: có skill nào để allocate không? AND employee chưa được xếp ngày này
+                    String dayEmpKey = workDate + "_" + empId;
+                    if (availableSkills != null && skillIdx < availableSkills.size()
+                            && !scheduledDayEmployee.contains(dayEmpKey)) {
                         EmployeeSkill skill = availableSkills.get(skillIdx);
 
                         TrainingPlanDetail detail = TrainingPlanDetail.builder()
@@ -235,6 +240,7 @@ public class TrainingPlanScheduleGenerationServiceImpl implements TrainingPlanSc
 
                         allDetails.add(detail);
                         employeeSkillIndex.put(empId, skillIdx + 1);
+                        scheduledDayEmployee.add(dayEmpKey);
                         allocated++;
                         passDetails++;
                         totalSkills.decrementAndGet();

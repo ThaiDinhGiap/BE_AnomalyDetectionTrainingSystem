@@ -80,6 +80,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             entity.setStatus(firstStep.getPendingStatus());
         }
 
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
         logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 
@@ -105,6 +106,8 @@ public class ApprovalServiceImpl implements ApprovalService {
     public void approve(Approvable entity, User currentUser, ApproveRequest req, HttpServletRequest request) {
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
+
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), null, null, request);
 
@@ -148,6 +151,8 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
+
+        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
 

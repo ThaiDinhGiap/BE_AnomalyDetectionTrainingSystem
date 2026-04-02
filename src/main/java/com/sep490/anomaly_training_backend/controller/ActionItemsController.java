@@ -15,36 +15,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/action-items")
 @RequiredArgsConstructor
-@Tag(name = "Action Items", description = "Endpoints for action items")
+@Tag(name = "Action Items", description = "Endpoints for action items summary")
 public class ActionItemsController {
 
     private final ActionItemsService actionItemsService;
 
-    @Operation(summary = "Get pending signatures for Team Lead")
+    @Operation(summary = "Get pending signatures summary (role-aware: PRO_OUT for TL, FI_OUT for FI, SV for Supervisor)")
     @GetMapping("/pending-signatures")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<PendingSignatureResponse>> getPendingSignatures(
+    public ResponseEntity<PendingSignatureResponse> getPendingSignatures(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getPendingSignatures(lineId));
     }
 
-    @Operation(summary = "Get failed trainings for Team Lead")
+    @Operation(summary = "Get failed trainings summary")
     @GetMapping("/failed-trainings")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<FailedTrainingResponse>> getFailedTrainings(
+    public ResponseEntity<FailedTrainingResponse> getFailedTrainings(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getFailedTrainings(lineId));
     }
 
-    @Operation(summary = "Get expiring skills for Team Lead")
+    @Operation(summary = "Get certificates needing monitoring (chứng chỉ cần giám sát)")
     @GetMapping("/expiring-skills")
     @PreAuthorize("hasAuthority('training_result.view')")
-    public ResponseEntity<List<ExpiringSkillResponse>> getExpiringSkills(
+    public ResponseEntity<ExpiringSkillResponse> getExpiringSkills(
             @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
         return ResponseEntity.ok(actionItemsService.getExpiringSkills(lineId));
     }

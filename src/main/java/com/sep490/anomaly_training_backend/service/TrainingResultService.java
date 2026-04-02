@@ -41,7 +41,7 @@ public interface TrainingResultService {
 
     EmployeeTrainingHistoryResponse getEmployeeTrainingHistory(Long employeeId);
 
-    TrainingResultDetailResponse getTrainingResultDetailForVerify(Long id);
+    TrainingResultDetailResponse getTrainingResultDetailForVerify(User currentUser, Long id);
 
 //    void submitResult(Long resultId);
 
@@ -75,4 +75,6 @@ public interface TrainingResultService {
     void reject(Long reportId, User currentUser, RejectRequest req, HttpServletRequest request);
 
     boolean canApprove(Long reportId, User currentUser);
+
+    void submitConfirmedResult(Long reportId, User currentUser);
 }

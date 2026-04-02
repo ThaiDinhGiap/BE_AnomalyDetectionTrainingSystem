@@ -2,6 +2,7 @@ package com.sep490.anomaly_training_backend.dto.response;
 
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,7 +37,7 @@ public class TrainingResultDetailResponse {
     private List<DetailRowDto> details;
 
     @Data
-    public static class DetailRowDto {
+    public static class DetailRowDto implements Comparable<DetailRowDto> {
         private Long id;
 
         // Plan detail info
@@ -99,5 +100,31 @@ public class TrainingResultDetailResponse {
         private String signatureFiOutName;
 
         private RejectFeedbackJson rejectFeedback;
+
+        @Override
+        public int compareTo(@NotNull DetailRowDto o) {
+            if (this.plannedDate == null && o.plannedDate == null) {
+                return Long.compare(
+                        this.id != null ? this.id : 0L,
+                        o.id != null ? o.id : 0L
+                );
+            }
+            if (this.plannedDate == null) {
+                return 1;
+            }
+            if (o.plannedDate == null) {
+                return -1;
+            }
+
+            int dateComparison = this.plannedDate.compareTo(o.plannedDate);
+            if (dateComparison != 0) {
+                return dateComparison;
+            }
+
+            return Long.compare(
+                    this.id != null ? this.id : 0L,
+                    o.id != null ? o.id : 0L
+            );
+        }
     }
 }

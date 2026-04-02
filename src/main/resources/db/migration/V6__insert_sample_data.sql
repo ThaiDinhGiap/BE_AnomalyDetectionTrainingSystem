@@ -98,7 +98,17 @@ VALUES (1, 'admin', 'admin@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UK
        (12, 'fi_user01', 'fi01@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
         'Trịnh Văn Kiểm Tra Cuối', TRUE, 'system', 'FI001'),
        (13, 'fi_user02', 'fi02@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
-        'Lý Thị Kiểm Tra Cuối', TRUE, 'system', 'FI002');
+        'Lý Thị Kiểm Tra Cuối', TRUE, 'system', 'FI002'),
+       (14, 'VN6666', 'lan@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+        'Mai Lan', TRUE, 'system', '6666'),
+       (15, 'VN8888', 'huy@dmvn.com', '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+        'Nguyễn Văn Huy', TRUE, 'system', '8888'),
+       (16, 'VN8443', null, '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+        'Hoàng Đình Trung', TRUE, 'system', '8443'),
+       (17, 'VN1741', null, '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+        'Phan Thị Vang', TRUE, 'system', '1741'),
+       (18, 'VN0871', null, '$2a$10$FBYVLpW91kJ0ZlradmOB/ujON1kXKLH6UKfbr2eQLNnJX0uB/6RaO',
+        'Nguyễn Thị Thanh Thảo', TRUE, 'system', '0871');
 
 INSERT INTO roles (id, role_code, display_name, description, is_system, is_active, created_by)
 VALUES (1, 'ROLE_ADMIN', 'Quản trị', 'Quyền truy cập toàn hệ thống', FALSE, TRUE, 'system'),
@@ -120,7 +130,12 @@ VALUES (1, 1),
        (10, 4),
        (11, 4),
        (12, 5),
-       (13, 5);
+       (13, 5),
+       (14, 3),
+       (15, 2),
+       (16, 4),
+       (17, 4),
+       (18, 4);
 
 -- ============================================================================
 -- PART 1: MODULES (giữ nguyên, thêm dashboard)
@@ -430,7 +445,12 @@ VALUES (1, 'NV001', 'Nguyễn Văn An', 'ACTIVE', 'admin'),
        (40, 'TL005', 'Ngô Văn Trưởng Tổ Hàn', 'ACTIVE', 'admin'),
        (41, 'TL006', 'Đinh Thị Trưởng KCS', 'ACTIVE', 'admin'),
        (42, 'FI001', 'Trịnh Văn Kiểm Tra Cuối', 'ACTIVE', 'admin'),
-       (43, 'FI002', 'Lý Thị Kiểm Tra Cuối', 'ACTIVE', 'admin');
+       (43, 'FI002', 'Lý Thị Kiểm Tra Cuối', 'ACTIVE', 'admin'),
+       (44, '6666', 'Mai Lan', 'ACTIVE', 'admin'),
+       (45, '8888', 'Nguyễn Văn Huy', 'ACTIVE', 'admin'),
+       (46, '8443', 'Hoàng Đình Trung', 'ACTIVE', 'admin'),
+       (47, '1741', 'Phan Thị Vang', 'ACTIVE', 'admin'),
+       (48, '0871', 'Nguyễn Thị Thanh Thảo', 'ACTIVE', 'admin');
 
 INSERT INTO employee_teams (employee_id, team_id)
 VALUES
@@ -1358,7 +1378,7 @@ VALUES ('DEFECT_PROPOSAL', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'P
        ('TRAINING_SAMPLE_PROPOSAL', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
        ('TRAINING_PLAN', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
        ('TRAINING_PLAN', 2, 'review_approve.approve', 'NGƯỜI PHÊ DUYỆT', 'PENDING_APPROVAL', TRUE, 'system'),
-       ('TRAINING_RESULT', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system'),
+       ('TRAINING_RESULT', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'ONGOING', TRUE, 'system'),
        ('TRAINING_SAMPLE_REVIEW', 1, 'review_approve.review', 'NGƯỜI KIỂM TRA', 'PENDING_REVIEW', TRUE, 'system');
 
 -- ============================================================================

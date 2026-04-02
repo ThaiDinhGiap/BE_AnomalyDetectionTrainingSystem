@@ -89,7 +89,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                         .id(e.getId())
                         .employeeCode(e.getEmployeeCode())
                         .fullName(e.getFullName())
-                        .teamName(e.getTeams() != null ? e.getTeams().get(0).getName() : "N/A")
+                        .teamName(e.getTeams() != null && !e.getTeams().isEmpty() ? e.getTeams().get(0).getName() : "N/A")
                         .status(e.getStatus().name())
                         .build())
                 .collect(toList());

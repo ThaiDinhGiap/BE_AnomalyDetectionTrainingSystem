@@ -32,7 +32,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("SELECT DISTINCT e FROM Employee e JOIN e.teams t WHERE t.group.id = :groupId AND e.status = :status")
     List<Employee> findAllActiveByGroupId(@Param("groupId") Long groupId, @Param("status") EmployeeStatus status);
 
-    @Query("SELECT DISTINCT e FROM Employee e JOIN e.teams t WHERE t.id = :teamId AND e.status = :status")
+    @Query("SELECT DISTINCT e FROM Employee e " +
+            "JOIN e.teams t " +
+            "LEFT JOIN User u ON e.employeeCode = u.employeeCode " +
+            "WHERE u.id IS NULL AND t.id = :teamId AND e.status = :status")
     List<Employee> findAllActiveByTeamId(@Param("teamId") Long teamId, @Param("status") EmployeeStatus status);
 
     @Query("SELECT e FROM Employee e " +

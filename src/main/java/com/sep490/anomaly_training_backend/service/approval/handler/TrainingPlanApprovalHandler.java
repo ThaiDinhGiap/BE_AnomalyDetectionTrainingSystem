@@ -80,7 +80,7 @@ public class TrainingPlanApprovalHandler implements ApprovalHandler {
                 resultDetail.setEmployee(planDetail.getEmployee());
                 resultDetail.setPlannedDate(planDetail.getPlannedDate());
                 resultDetail.setBatchId(planDetail.getBatchId());
-                resultDetail.setStatus(ReportStatus.PENDING_REVIEW);
+                resultDetail.setStatus(ReportStatus.ONGOING);
                 resultDetails.add(resultDetail);
             }
         }
