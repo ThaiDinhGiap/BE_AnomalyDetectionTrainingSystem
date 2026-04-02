@@ -18,11 +18,11 @@ public interface ProductService {
 
     List<ProductResponse> getProductsByProcessId(Long processId);
 
-//    Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable);
+    //    Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable);
 //
 //    List<ProductResponse> searchProducts(String keyword);
 //
-//    void deleteProduct(Long id);
+    void deleteProduct(Long id);
 //
 //    boolean isProductCodeExists(String code);
 //
