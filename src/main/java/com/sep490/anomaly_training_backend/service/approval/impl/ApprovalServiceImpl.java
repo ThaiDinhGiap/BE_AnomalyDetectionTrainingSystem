@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service.approval.impl;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalAction;
@@ -80,7 +79,6 @@ public class ApprovalServiceImpl implements ApprovalService {
             entity.setStatus(firstStep.getPendingStatus());
         }
 
-        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
         logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 
@@ -106,8 +104,6 @@ public class ApprovalServiceImpl implements ApprovalService {
     public void approve(Approvable entity, User currentUser, ApproveRequest req, HttpServletRequest request) {
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
-
-        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         logAction(entity, ApprovalAction.APPROVE, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), null, null, request);
 
@@ -151,8 +147,6 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         ApprovalFlowStep currentStep = getCurrentStep(entity);
         validateApprover(entity, currentUser, currentStep);
-
-        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
 
         logAction(entity, ApprovalAction.REJECT, currentStep.getStepOrder(), currentStep.getRequiredPermission(), currentUser, req.getComment(), new HashSet<>(reasons), requiredActions, request);
 
@@ -266,7 +260,7 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     @Override
     @Transactional
-    public void saveFeedback(ApprovalEntityType entityType, Long detailId, DetailFeedbackRequest request, User currentUser) {
+    public void saveFeedback(ApprovalEntityType entityType, Long detailId, RejectRequest request, User currentUser) {
         switch (entityType) {
             case DEFECT_PROPOSAL -> doSaveFeedback(
                     detailId, request, currentUser,
@@ -297,7 +291,7 @@ public class ApprovalServiceImpl implements ApprovalService {
      */
     private <T> void doSaveFeedback(
             Long detailId,
-            DetailFeedbackRequest request,
+            RejectRequest request,
             User currentUser,
             java.util.function.Function<Long, java.util.Optional<T>> loader,
             java.util.function.BiConsumer<T, RejectFeedbackJson> feedbackSetter,
@@ -317,7 +311,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         log.info("[RejectFeedback] detailId={} updated by {}", detailId, currentUser.getUsername());
     }
 
-    private RejectFeedbackJson buildFeedbackJson(DetailFeedbackRequest request, User currentUser) {
+    private RejectFeedbackJson buildFeedbackJson(RejectRequest request, User currentUser) {
         List<RejectFeedbackJson.RejectReasonSnapshot> reasonSnapshots = List.of();
         if (request.getRejectReasonIds() != null && !request.getRejectReasonIds().isEmpty()) {
             reasonSnapshots = rejectReasonRepo.findAllById(request.getRejectReasonIds()).stream()
@@ -348,7 +342,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .build();
     }
 
-    private boolean isEmptyFeedback(DetailFeedbackRequest r) {
+    private boolean isEmptyFeedback(RejectRequest r) {
         return (r.getRejectReasonIds() == null || r.getRejectReasonIds().isEmpty())
                 && r.getRequiredActionId() == null
                 && (r.getComment() == null || r.getComment().isBlank());

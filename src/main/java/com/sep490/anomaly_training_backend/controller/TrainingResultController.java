@@ -317,9 +317,9 @@ public class TrainingResultController {
             @PathVariable Long id,
             @PathVariable Long detailId,
             @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody RejectRequest rejectRequest,
+            @Valid @RequestBody RejectRequest detailRejectRequest,
             HttpServletRequest request) {
-        trainingResultService.rejectDetail(id, detailId, rejectRequest, currentUser, request);
+        trainingResultService.rejectDetail(id, detailId, detailRejectRequest, currentUser, request);
         return ResponseEntity.ok("Plan has been rejected!");
     }
 }

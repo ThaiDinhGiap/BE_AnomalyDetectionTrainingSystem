@@ -1,7 +1,6 @@
 package com.sep490.anomaly_training_backend.service.approval;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.model.Approvable;
@@ -37,5 +36,5 @@ public interface ApprovalService {
 
     // ── Reject detail feedback (merged from RejectDetailService) ──
 
-    void saveFeedback(ApprovalEntityType entityType, Long detailId, DetailFeedbackRequest request, User currentUser);
+    void saveFeedback(ApprovalEntityType entityType, Long detailId, RejectRequest request, User currentUser);
 }
