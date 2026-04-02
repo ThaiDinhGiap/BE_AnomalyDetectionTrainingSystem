@@ -4,10 +4,8 @@ import com.sep490.anomaly_training_backend.dto.response.ExpiringSkillResponse;
 import com.sep490.anomaly_training_backend.dto.response.FailedTrainingResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingSignatureResponse;
 
-import java.util.List;
-
 public interface ActionItemsService {
-    List<PendingSignatureResponse> getPendingSignatures(Long lineId);
-    List<FailedTrainingResponse> getFailedTrainings(Long lineId);
-    List<ExpiringSkillResponse> getExpiringSkills(Long lineId);
+    PendingSignatureResponse getPendingSignatures(Long lineId);
+    FailedTrainingResponse getFailedTrainings(Long lineId);
+    ExpiringSkillResponse getExpiringSkills(Long lineId);
 }

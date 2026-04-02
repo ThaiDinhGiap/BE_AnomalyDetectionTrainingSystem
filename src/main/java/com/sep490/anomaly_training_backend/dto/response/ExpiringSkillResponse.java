@@ -3,14 +3,13 @@ package com.sep490.anomaly_training_backend.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
 public class ExpiringSkillResponse {
-    private Long skillId;
-    private String employeeName;
-    private String employeeCode;
-    private String processName;
-    private LocalDate expiryDate;
+    private long count;
+    private int daysThreshold;
+    private String description;
+    private List<String> employeeCodes;
 }
