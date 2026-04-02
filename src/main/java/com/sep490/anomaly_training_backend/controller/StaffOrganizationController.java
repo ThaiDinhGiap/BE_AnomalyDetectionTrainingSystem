@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -166,6 +167,16 @@ public class StaffOrganizationController {
     ) {
         employeeService.removeEmployeesFromTeam(id, employeeIds);
         return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    @Operation(summary = "Import Employee data")
+    @PostMapping("/employees/import")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> importEmployee(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        List<EmployeeResponse> data = employeeService.importEmployee(currentUser, file);
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     @PostMapping("/employees")
