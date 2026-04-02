@@ -47,4 +47,21 @@ public interface ApprovalActionRepository extends JpaRepository<ApprovalActionLo
             ApprovalEntityType entityType,
             Long entityId,
             Integer entityVersion);
+
+    /**
+     * Load all detail-level approve/reject actions for a given Training Result.
+     * Detail-level actions use stepOrder = detailId (always > 2), while
+     * header-level actions use stepOrder -1/0/1/2.
+     */
+    @Query("""
+            SELECT a FROM ApprovalActionLog a
+            WHERE a.entityType = :entityType
+              AND a.entityId = :entityId
+              AND a.stepOrder > 2
+              AND a.deleteFlag = false
+            ORDER BY a.performedAt DESC
+            """)
+    List<ApprovalActionLog> findDetailLevelActions(
+            @Param("entityType") ApprovalEntityType entityType,
+            @Param("entityId") Long entityId);
 }
