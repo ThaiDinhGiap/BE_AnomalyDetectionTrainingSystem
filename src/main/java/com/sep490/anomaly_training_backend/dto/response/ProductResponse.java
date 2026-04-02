@@ -1,12 +1,8 @@
 package com.sep490.anomaly_training_backend.dto.response;
 
-import com.sep490.anomaly_training_backend.model.Attachment;
-import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductProcess;
 import lombok.*;
-import java.time.LocalDateTime;
+
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -19,6 +15,6 @@ public class ProductResponse {
     private String name;
     private String description;
     private List<String> attachmentUrls;
-    private List<ProcessResponse>  processes;
+    private List<ProcessResponse> processes;
 }
 
