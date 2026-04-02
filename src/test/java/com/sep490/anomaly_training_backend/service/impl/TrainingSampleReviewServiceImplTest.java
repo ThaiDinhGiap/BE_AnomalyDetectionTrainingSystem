@@ -11,14 +11,9 @@ import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleRev
 import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleReviewResponse;
 import com.sep490.anomaly_training_backend.enums.PolicyStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
-import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewPolicyMapper;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
@@ -40,25 +35,35 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TrainingSampleReviewServiceImplTest {
 
-    @Mock private TrainingSampleReviewPolicyRepository trainingSampleReviewPolicyRepository;
-    @Mock private ProductLineRepository productLineRepository;
-    @Mock private TrainingSampleReviewRepository trainingSampleReviewRepository;
-    @Mock private TrainingSampleReviewMapper trainingSampleReviewMapper;
-    @Mock private UserRepository userRepository;
-    @Mock private TrainingSampleReviewPolicyMapper trainingSampleReviewPolicyMapper;
-    @Mock private ApprovalService approvalService;
-    @Mock private TrainingSampleReviewScheduler scheduler;
-    @Mock private TrainingSampleService trainingSampleService;
-    @Mock private ObjectMapper objectMapper;
+    @Mock
+    private TrainingSampleReviewPolicyRepository trainingSampleReviewPolicyRepository;
+    @Mock
+    private ProductLineRepository productLineRepository;
+    @Mock
+    private TrainingSampleReviewRepository trainingSampleReviewRepository;
+    @Mock
+    private TrainingSampleReviewMapper trainingSampleReviewMapper;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private TrainingSampleReviewPolicyMapper trainingSampleReviewPolicyMapper;
+    @Mock
+    private ApprovalService approvalService;
+    @Mock
+    private TrainingSampleReviewScheduler scheduler;
+    @Mock
+    private TrainingSampleService trainingSampleService;
+    @Mock
+    private ObjectMapper objectMapper;
 
-    @Mock private HttpServletRequest httpRequest;
+    @Mock
+    private HttpServletRequest httpRequest;
 
     @InjectMocks
     private TrainingSampleReviewServiceImpl service;
@@ -81,7 +86,7 @@ class TrainingSampleReviewServiceImplTest {
         policy = new TrainingSampleReviewPolicy();
         policy.setId(100L);
         policy.setProductLine(productLine);
-        
+
         config = new TrainingSampleReviewConfig();
         config.setId(50L);
         config.setReviewPolicy(policy);
@@ -96,7 +101,7 @@ class TrainingSampleReviewServiceImplTest {
 
     @Test
     void getTrainingSampleReviewPoliciesByProductLine_Success() {
-        when(trainingSampleReviewPolicyRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedByAsc(10L))
+        when(trainingSampleReviewPolicyRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedByDesc(10L))
                 .thenReturn(List.of(policy));
         when(trainingSampleReviewPolicyMapper.toDto(policy)).thenReturn(mock(TrainingSampleReviewPolicyResponse.class));
 
@@ -110,7 +115,7 @@ class TrainingSampleReviewServiceImplTest {
         TrainingSampleReviewPolicyRequest req = mock(TrainingSampleReviewPolicyRequest.class);
         when(req.getProductLineId()).thenReturn(10L);
         when(req.getPolicyName()).thenReturn("New Policy");
-        
+
         TrainingSampleReviewConfigRequest confReq = mock(TrainingSampleReviewConfigRequest.class);
         when(confReq.getTriggerDay()).thenReturn(1);
         when(req.getReviewConfigs()).thenReturn(List.of(confReq));

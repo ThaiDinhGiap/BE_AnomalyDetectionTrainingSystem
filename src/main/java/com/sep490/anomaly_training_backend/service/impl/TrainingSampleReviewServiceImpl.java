@@ -15,11 +15,7 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingSampleReviewPolicyMapper;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReview;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewConfig;
-import com.sep490.anomaly_training_backend.model.TrainingSampleReviewPolicy;
-import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewPolicyRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleReviewRepository;
@@ -58,7 +54,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
 
     @Override
     public List<TrainingSampleReviewPolicyResponse> getTrainingSampleReviewPoliciesByProductLine(Long productLineId) {
-        return trainingSampleReviewPolicyRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedByAsc(productLineId).stream()
+        return trainingSampleReviewPolicyRepository.findByProductLineIdAndDeleteFlagFalseOrderByCreatedByDesc(productLineId).stream()
                 .map(trainingSampleReviewPolicyMapper::toDto)
                 .toList();
     }
@@ -144,22 +140,10 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
         TrainingSampleReview review = trainingSampleReviewRepository.findById(reviewRequest.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_REPORT_NOT_FOUND));
 
-        // Validate that review has a config and config has a policy
-        if (review.getConfig() == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReview config is null");
-        }
-
-        TrainingSampleReviewConfig config = review.getConfig();
-        if (config.getReviewPolicy() == null) {
-            throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReviewConfig reviewPolicy is null");
-        }
-
-        TrainingSampleReviewPolicy policy = config.getReviewPolicy();
-        if (policy.getProductLine() == null) {
+        if (review.getProductLine() == null) {
             throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT, "TrainingSampleReviewPolicy productLine is null");
         }
-
-        Long productLineId = policy.getProductLine().getId();
+        Long productLineId = review.getProductLine().getId();
 
         try {
             // Step 1: Fetch training sample data by product line
@@ -179,8 +163,7 @@ public class TrainingSampleReviewServiceImpl implements TrainingSampleReviewServ
 
             // Step 4: Save review to database
             if (review.getStatus().equals(ReportStatus.REJECTED)) {
-                review.setStatus(ReportStatus.PENDING_REVIEW);
-                review.setCurrentVersion(review.getCurrentVersion() + 1);
+                review.setStatus(ReportStatus.ONGOING);
             }
             review = trainingSampleReviewRepository.save(review);
 

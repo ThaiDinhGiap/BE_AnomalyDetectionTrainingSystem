@@ -19,7 +19,7 @@ public interface TrainingSampleReviewPolicyRepository extends JpaRepository<Trai
     /**
      * Tìm policy theo policy code
      */
-    List<TrainingSampleReviewPolicy> findByProductLineIdAndDeleteFlagFalseOrderByCreatedByAsc(Long productLineId);
+    List<TrainingSampleReviewPolicy> findByProductLineIdAndDeleteFlagFalseOrderByCreatedByDesc(Long productLineId);
 
     /**
      * Kiểm tra tồn tại policy code

@@ -38,7 +38,7 @@ public interface ApprovalHandler {
      */
     default void validateBeforeSubmit(Approvable entity) {
         ReportStatus status = entity.getStatus();
-        if (status != ReportStatus.DRAFT && status != ReportStatus.REVISING && status != ReportStatus.PENDING_REVIEW) {
+        if (status != ReportStatus.DRAFT && status != ReportStatus.REVISING && status != ReportStatus.ONGOING) {
             throw new AppException(ErrorCode.INVALID_ENTITY_STATUS,
                     "Entity can only be submitted when in DRAFT/REVISE status");
         }
