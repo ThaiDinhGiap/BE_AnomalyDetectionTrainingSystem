@@ -77,7 +77,7 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.createEmployeeSkill(request)));
     }
 
-    @Operation(summary = "Import products template")
+    @Operation(summary = "Download products template")
     @GetMapping("/products/template")
     @PreAuthorize("hasAuthority('product.manage')")
     public ResponseEntity<Resource> downloadProductTemplate() throws IOException {
@@ -207,7 +207,7 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getProductLineFullDetail(id)));
     }
 
-    @Operation(summary = "Import product lines template")
+    @Operation(summary = "Download product lines template")
     @GetMapping("/product-lines/template")
     @PreAuthorize("hasAuthority('line_structure.manage')")
     public ResponseEntity<Resource> downloadProductLineTemplate() throws IOException {

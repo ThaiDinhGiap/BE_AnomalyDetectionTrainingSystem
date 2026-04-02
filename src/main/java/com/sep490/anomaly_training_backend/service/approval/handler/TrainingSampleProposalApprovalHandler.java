@@ -5,11 +5,7 @@ import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.Attachment;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.repository.AttachmentRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
@@ -57,7 +53,10 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     @Override
     public void applyApproval(Approvable entity) {
         TrainingSampleProposal trainingSampleProposal = (TrainingSampleProposal) entity;
-        List<TrainingSampleProposalDetail> details = trainingSampleProposal.getDetails();
+        List<TrainingSampleProposalDetail> details = trainingSampleProposal.getDetails()
+                .stream()
+                .filter(detail -> !detail.isDeleteFlag())
+                .toList();
         if (details == null || details.isEmpty()) {
             throw new IllegalStateException("TrainingSampleProposal has no details to apply.");
         }
