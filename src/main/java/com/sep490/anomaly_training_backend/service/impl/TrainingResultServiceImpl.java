@@ -1188,6 +1188,16 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.COMPLETED);
+        if (!detail.getIsPass()) {
+            EmployeeSkill employeeSkill = employeeSkillRepository.findByEmployeeIdAndProcessIdAndDeleteFlagFalse(
+                    detail.getEmployee().getId(),
+                    detail.getProcess().getId()
+            ).orElse(null);
+            if (employeeSkill != null) {
+                employeeSkill.setStatus(EmployeeSkillStatus.PENDING_REVIEW);
+                employeeSkillRepository.save(employeeSkill);
+            }
+        }
         trainingResultDetailRepository.save(detail);
     }
 

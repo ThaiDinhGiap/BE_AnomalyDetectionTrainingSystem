@@ -656,15 +656,10 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         TrainingPlan plan = trainingPlanRepository.findById(planId)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_PLAN_NOT_FOUND));
 
-        Long groupId = plan.getLine() != null && plan.getLine().getGroup() != null
-                ? plan.getLine().getGroup().getId()
-                : (plan.getTeam() != null && plan.getTeam().getGroup() != null
-                ? plan.getTeam().getGroup().getId()
-                : null);
+        Long teamId = plan.getTeam() != null ? plan.getTeam().getId() : null;
+        if (teamId == null) return List.of();
 
-        if (groupId == null) return List.of();
-
-        List<Employee> allEmployees = employeeRepository.findAllActiveByGroupId(groupId, EmployeeStatus.ACTIVE);
+        List<Employee> allEmployees = employeeRepository.findAllActiveByTeamId(teamId, EmployeeStatus.ACTIVE);
         Set<Long> inPlanIds = new java.util.HashSet<>(
                 trainingPlanDetailRepository.findEmployeeIdsByTrainingPlanId(planId));
 

@@ -70,7 +70,7 @@ public class Employee extends BaseEntity {
     @Builder.Default
     private List<EmployeeSkill> skills = new ArrayList<>();
 
-    public boolean isOnWatchlist() {
+    public boolean getIsOnWatchlist() {
         if (skills == null || skills.isEmpty()) {
             return false;
         }
