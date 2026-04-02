@@ -134,8 +134,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product upsertProduct(ProductRequest productRequest, User currentUser) {
-        Product product = productRepository.findById(productRequest.getId())
-                .orElseGet(Product::new);
+        Product product;
+        if (productRequest.getId() != null) {
+            product = productRepository.findById(productRequest.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        } else {
+            product = new Product();
+        }
         product.setCode(productRequest.getCode());
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
@@ -144,7 +149,7 @@ public class ProductServiceImpl implements ProductService {
         List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
         if (!originAttachments.isEmpty()) {
             attachmentService.deleteAttachments("PRODUCT", product.getId());
-            List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT",
+            attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT",
                     product.getId(), currentUser.getUsername());
         }
 
