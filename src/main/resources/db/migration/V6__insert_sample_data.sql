@@ -265,9 +265,11 @@ INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 -- Defect
 (2, 1),  -- defect.view
+(2, 2),  -- defect.manage
 (2, 3),  -- defect_proposal.view
 -- Training Sample
 (2, 6),  -- training_sample.view
+(2, 7),  -- training_sample.manage
 (2, 8),  -- training_sample_proposal.view
 (2, 11), -- training_sample_review.view
 -- Training Plan
@@ -297,9 +299,11 @@ INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 -- Defect
 (3, 1),  -- defect.view
+(3, 2),  -- defect.manage
 (3, 3),  -- defect_proposal.view
 -- Training Sample
 (3, 6),  -- training_sample.view
+(3, 7),  -- training_sample.manage
 (3, 8),  -- training_sample_proposal.view
 (3, 11), -- training_sample_review.view
 (3, 12), -- training_sample_review.manage

@@ -6,56 +6,16 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
-import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
 import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
 import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
 import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetailHistory;
-import com.sep490.anomaly_training_backend.model.TrainingResultHistory;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
-import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
-import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
-import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
-import com.sep490.anomaly_training_backend.repository.TeamRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultHistoryRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
@@ -70,12 +30,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -301,7 +256,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -561,7 +516,6 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             ReportStatus.PENDING_REVIEW,
             ReportStatus.REJECTED,
             ReportStatus.COMPLETED);
-    ;
 
     @Override
     @Transactional
@@ -733,35 +687,38 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return row;
     }
 
-//    @Override
-//    @Transactional
-//    public void submitResult(Long resultId) {
-//        TrainingResult result = trainingResultRepository.findByIdWithDetails(resultId)
-//                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
-//
-//        if (result.getStatus() == ReportStatus.PENDING_REVIEW || result.getStatus() == ReportStatus.PENDING_APPROVAL) {
-//            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
-//        }
-//
-//        boolean allHaveProcess = result.getDetails().stream()
-//                .allMatch(d -> d.getProcess() != null);
-//        if (!allHaveProcess) {
-//            throw new AppException(ErrorCode.MISSING_PROCESS_IN_RESULT_DETAIL);
-//        }
-//
-//        java.time.LocalDate now = java.time.LocalDate.now();
-//        for (TrainingResultDetail detail : result.getDetails()) {
-//            if (detail.getActualDate() == null) {
-//                detail.setActualDate(now);
-//            }
-//            if (detail.getTrainingPlanDetail() != null && detail.getTrainingPlanDetail().getActualDate() == null) {
-//                detail.getTrainingPlanDetail().setActualDate(now);
-//            }
-//        }
-//
-//        result.setStatus(ReportStatus.PENDING_REVIEW);
-//        trainingResultRepository.save(result);
-//    }
+    // @Override
+    // @Transactional
+    // public void submitResult(Long resultId) {
+    // TrainingResult result =
+    // trainingResultRepository.findByIdWithDetails(resultId)
+    // .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+    //
+    // if (result.getStatus() == ReportStatus.PENDING_REVIEW || result.getStatus()
+    // == ReportStatus.PENDING_APPROVAL) {
+    // throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS);
+    // }
+    //
+    // boolean allHaveProcess = result.getDetails().stream()
+    // .allMatch(d -> d.getProcess() != null);
+    // if (!allHaveProcess) {
+    // throw new AppException(ErrorCode.MISSING_PROCESS_IN_RESULT_DETAIL);
+    // }
+    //
+    // java.time.LocalDate now = java.time.LocalDate.now();
+    // for (TrainingResultDetail detail : result.getDetails()) {
+    // if (detail.getActualDate() == null) {
+    // detail.setActualDate(now);
+    // }
+    // if (detail.getTrainingPlanDetail() != null &&
+    // detail.getTrainingPlanDetail().getActualDate() == null) {
+    // detail.getTrainingPlanDetail().setActualDate(now);
+    // }
+    // }
+    //
+    // result.setStatus(ReportStatus.PENDING_REVIEW);
+    // trainingResultRepository.save(result);
+    // }
 
     @Override
     public List<TrainingResultOptionResponse> getProcessesByLine(Long lineId) {
@@ -1188,15 +1145,14 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-                              HttpServletRequest request) {
+            HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.COMPLETED);
         if (!detail.getIsPass()) {
             EmployeeSkill employeeSkill = employeeSkillRepository.findByEmployeeIdAndProcessIdAndDeleteFlagFalse(
                     detail.getEmployee().getId(),
-                    detail.getProcess().getId()
-            ).orElse(null);
+                    detail.getProcess().getId()).orElse(null);
             if (employeeSkill != null) {
                 employeeSkill.setStatus(EmployeeSkillStatus.PENDING_REVIEW);
                 employeeSkillRepository.save(employeeSkill);
@@ -1214,7 +1170,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-                             HttpServletRequest request) {
+            HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();

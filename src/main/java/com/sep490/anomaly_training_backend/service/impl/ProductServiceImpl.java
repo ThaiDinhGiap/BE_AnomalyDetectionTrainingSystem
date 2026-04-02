@@ -12,12 +12,8 @@ import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.ProductMapper;
-import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
@@ -138,8 +134,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product upsertProduct(ProductRequest productRequest, User currentUser) {
-        Product product = productRepository.findById(productRequest.getId())
-                .orElseGet(Product::new);
+        Product product;
+        if (productRequest.getId() != null) {
+            product = productRepository.findById(productRequest.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        } else {
+            product = new Product();
+        }
         product.setCode(productRequest.getCode());
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
@@ -148,7 +149,7 @@ public class ProductServiceImpl implements ProductService {
         List<Attachment> originAttachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
         if (!originAttachments.isEmpty()) {
             attachmentService.deleteAttachments("PRODUCT", product.getId());
-            List<Attachment> attachments = attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT",
+            attachmentService.uploadAttachments(productRequest.getImages(), "PRODUCT",
                     product.getId(), currentUser.getUsername());
         }
 
@@ -235,6 +236,7 @@ public class ProductServiceImpl implements ProductService {
             Product product = findOrCreateProduct(dto);
             // Step 2: Update Product fields
             updateProductFields(product, dto);
+            product = productRepository.save(product);
             // Step 3: Apply all processes to product
             List<Process> processes = productLine.getProcesses();
             for (Process process : processes) {
@@ -354,12 +356,18 @@ public class ProductServiceImpl implements ProductService {
     private void handleProductImages(ImageData imageData, Product product, User user) {
         try {
             if (product == null || product.getId() == null) {
-                log.debug("Defect has no ID, skipping image handling");
+                log.debug("Product has no ID, skipping image handling");
                 return;
             }
 
-            log.info("Handling images for Defect id={}", product.getId());
+            log.info("Handling images for Product id={}", product.getId());
 
+            List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+            if (!attachments.isEmpty()) {
+                for (Attachment attachment : attachments) {
+                    attachmentService.deleteAttachment(attachment.getId());
+                }
+            }
             importImageHandlerService.handleRowImages(imageData, "PRODUCT", product.getId(), user.getUsername());
 
         } catch (Exception e) {
@@ -445,7 +453,7 @@ public class ProductServiceImpl implements ProductService {
         return responses;
     }
 
-//    @Override
+    //    @Override
 //    @Transactional(readOnly = true)
 //    public Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable) {
 //        log.info("Fetching products for process ID: {} with pagination", processId);
@@ -466,18 +474,22 @@ public class ProductServiceImpl implements ProductService {
 //                .toList();
 //    }
 //
-//    @Override
-//    public void deleteProduct(Long id) {
-//        log.info("Deleting product with ID: {}", id);
-//        Product product = productRepository.findById(id)
-//                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-//        if (product.isDeleteFlag()) {
-//            throw new AppException(ErrorCode.PRODUCT_ALREADY_DELETED);
-//        }
-//        product.setDeleteFlag(true);
-//        productRepository.save(product);
-//        log.info("Product deleted successfully with ID: {}", id);
-//    }
+    @Override
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.setDeleteFlag(true);
+        List<ProductProcess> productProcess = productProcessRepository.findByProductId(product.getId());
+        productProcess.forEach(pp -> {
+            pp.setDeleteFlag(true);
+            productProcessRepository.save(pp);
+        });
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+        for (Attachment attachment : attachments) {
+            attachmentService.deleteAttachment(attachment.getId());
+        }
+        productRepository.save(product);
+    }
 //
 //    @Override
 //    @Transactional(readOnly = true)

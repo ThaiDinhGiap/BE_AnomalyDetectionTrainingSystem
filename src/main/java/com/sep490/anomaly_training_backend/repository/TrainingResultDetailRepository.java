@@ -50,6 +50,13 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             "AND (:lineId IS NULL OR r.line.id = :lineId)")
     List<TrainingResultDetail> findPendingProOutSignatures(@Param("lineId") Long lineId);
 
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED " +
+            "AND d.signatureProOut IS NULL " +
+            "AND d.isPass IS NOT NULL " +
+            "AND r.line.id IN :lineIds")
+    List<TrainingResultDetail> findPendingProOutSignaturesByLineIds(@Param("lineIds") List<Long> lineIds);
+
     // Final Inspection: details completed but missing FI_OUT signature
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED " +
@@ -57,6 +64,13 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
             "AND d.isPass IS NOT NULL " +
             "AND (:lineId IS NULL OR r.line.id = :lineId)")
     List<TrainingResultDetail> findPendingFiOutSignatures(@Param("lineId") Long lineId);
+
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.COMPLETED " +
+            "AND d.signatureFiOut IS NULL " +
+            "AND d.isPass IS NOT NULL " +
+            "AND r.line.id IN :lineIds")
+    List<TrainingResultDetail> findPendingFiOutSignaturesByLineIds(@Param("lineIds") List<Long> lineIds);
 
     // Supervisor: details pending review
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
@@ -66,9 +80,20 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
     List<TrainingResultDetail> findPendingSvReview(@Param("lineId") Long lineId);
 
     @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.status = com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW " +
+            "AND d.isPass IS NOT NULL " +
+            "AND r.line.id IN :lineIds")
+    List<TrainingResultDetail> findPendingSvReviewByLineIds(@Param("lineIds") List<Long> lineIds);
+
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
             "WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL) " +
             "AND (:lineId IS NULL OR r.line.id = :lineId)")
     List<TrainingResultDetail> findFailedTrainings(@Param("lineId") Long lineId);
+
+    @Query("SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r " +
+            "WHERE d.isPass = false AND (d.isRetrained = false OR d.isRetrained IS NULL) " +
+            "AND r.line.id IN :lineIds")
+    List<TrainingResultDetail> findFailedTrainingsByLineIds(@Param("lineIds") List<Long> lineIds);
 
     @Query("SELECT trd FROM TrainingResultDetail trd " +
             "JOIN FETCH trd.trainingPlanDetail tpd " +
@@ -201,4 +226,19 @@ public interface TrainingResultDetailRepository extends JpaRepository<TrainingRe
                 ORDER BY t.plannedDate ASC
             """)
     List<TrainingResultDetail> getTrainingHistory(@Param("employeeId") Long employeeId);
+
+    @Query("""
+                SELECT d FROM TrainingResultDetail d JOIN d.trainingResult r
+                WHERE d.createdBy = :username
+                  AND d.status IN (
+                      com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_REVIEW,
+                      com.sep490.anomaly_training_backend.enums.ReportStatus.PENDING_APPROVAL
+                  )
+                  AND d.isPass IS NOT NULL
+                  AND d.deleteFlag = false
+                  AND (:lineId IS NULL OR r.line.id = :lineId)
+            """)
+    List<TrainingResultDetail> findSubmittedPendingApproval(
+            @Param("username") String username,
+            @Param("lineId") Long lineId);
 }

@@ -5,11 +5,7 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingSampleProposalRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.CategorySample;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleProposalUpdateResponse;
-import com.sep490.anomaly_training_backend.dto.response.sample.TrainingSampleResponse;
+import com.sep490.anomaly_training_backend.dto.response.sample.*;
 import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.service.ImportHistoryService;
 import com.sep490.anomaly_training_backend.service.TrainingSampleService;
@@ -30,17 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -216,7 +202,7 @@ public class TrainingSampleController {
         return ResponseEntity.ok("Training sample proposal submitted for approval successfully!");
     }
 
-    @Operation(summary = "Import Training Sample template")
+    @Operation(summary = "Download Training Sample template")
     @GetMapping("/download-template")
     @PreAuthorize("hasAuthority('training_sample.manage')")
     public ResponseEntity<Resource> downloadTemplate() throws IOException {
@@ -239,7 +225,7 @@ public class TrainingSampleController {
     @Operation(summary = "Get history import Training Sample")
     @GetMapping("/import-history")
     @PreAuthorize("hasAuthority('training_sample.manage')")
-    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyDefectImport(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyTrainingSampleImport(@AuthenticationPrincipal User currentUser) {
         List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "TRAINING_SAMPLE_IMPORT");
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
