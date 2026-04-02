@@ -368,16 +368,36 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND,
                             "Process not found: " + raw.getProcessName()));
 
-            EmployeeSkill skill = EmployeeSkill.builder()
-                    .employee(employee)
-                    .process(process)
-                    .certifiedDate(raw.getCertificationDate())
-                    .status(EmployeeSkillStatus.VALID)
-                    .build();
+            // Upsert: skip if duplicate (employee + process), or update certifiedDate
+            EmployeeSkill skill = employeeSkillRepository
+                    .findByEmployeeIdAndProcessIdAndDeleteFlagFalse(employee.getId(), process.getId())
+                    .orElse(null);
 
-            employeeSkillRepository.save(skill);
-
-            log.info("Saved skill for employee {} on process {}", employee.getEmployeeCode(), process.getCode());
+            if (skill != null) {
+                // Already exists — update certifiedDate if newer
+                if (raw.getCertificationDate() != null
+                        && (skill.getCertifiedDate() == null
+                            || raw.getCertificationDate().isAfter(skill.getCertifiedDate()))) {
+                    skill.setCertifiedDate(raw.getCertificationDate());
+                    employeeSkillRepository.save(skill);
+                    log.info("Updated existing skill for employee {} on process {}",
+                            employee.getEmployeeCode(), process.getCode());
+                } else {
+                    log.info("Skipped duplicate skill for employee {} on process {}",
+                            employee.getEmployeeCode(), process.getCode());
+                }
+            } else {
+                // New — create
+                EmployeeSkill newSkill = EmployeeSkill.builder()
+                        .employee(employee)
+                        .process(process)
+                        .certifiedDate(raw.getCertificationDate())
+                        .status(EmployeeSkillStatus.VALID)
+                        .build();
+                employeeSkillRepository.save(newSkill);
+                log.info("Saved new skill for employee {} on process {}",
+                        employee.getEmployeeCode(), process.getCode());
+            }
         }
     }
 
