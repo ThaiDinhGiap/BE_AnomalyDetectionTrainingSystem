@@ -12,12 +12,8 @@ import com.sep490.anomaly_training_backend.enums.ImportType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.ProductMapper;
-import com.sep490.anomaly_training_backend.model.Attachment;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.repository.ProcessRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
@@ -235,6 +231,7 @@ public class ProductServiceImpl implements ProductService {
             Product product = findOrCreateProduct(dto);
             // Step 2: Update Product fields
             updateProductFields(product, dto);
+            product = productRepository.save(product);
             // Step 3: Apply all processes to product
             List<Process> processes = productLine.getProcesses();
             for (Process process : processes) {
