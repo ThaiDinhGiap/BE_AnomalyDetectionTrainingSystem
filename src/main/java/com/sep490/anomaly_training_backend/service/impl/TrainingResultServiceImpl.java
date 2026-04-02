@@ -1157,7 +1157,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .forEach(detail -> {
                     detail.setSignatureProIn(currentUser);
                     detail.setSignatureProOut(currentUser);
-                    if (detail.getProcess().getClassification() != null && detail.getProcess().getClassification().getValue() == 4) {
+
+                    if (detail.getClassification() != null && detail.getClassification() == 4) {
                         detail.setStatus(ReportStatus.PENDING_REVIEW);
                     } else {
                         detail.setStatus(ReportStatus.PENDING_CONFIRMATION);
