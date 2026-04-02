@@ -448,7 +448,7 @@ public class ProductServiceImpl implements ProductService {
         return responses;
     }
 
-//    @Override
+    //    @Override
 //    @Transactional(readOnly = true)
 //    public Page<ProductResponse> getProductsByProcessIdPaginated(Long processId, Pageable pageable) {
 //        log.info("Fetching products for process ID: {} with pagination", processId);
@@ -469,18 +469,22 @@ public class ProductServiceImpl implements ProductService {
 //                .toList();
 //    }
 //
-//    @Override
-//    public void deleteProduct(Long id) {
-//        log.info("Deleting product with ID: {}", id);
-//        Product product = productRepository.findById(id)
-//                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-//        if (product.isDeleteFlag()) {
-//            throw new AppException(ErrorCode.PRODUCT_ALREADY_DELETED);
-//        }
-//        product.setDeleteFlag(true);
-//        productRepository.save(product);
-//        log.info("Product deleted successfully with ID: {}", id);
-//    }
+    @Override
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.setDeleteFlag(true);
+        List<ProductProcess> productProcess = productProcessRepository.findByProductId(product.getId());
+        productProcess.forEach(pp -> {
+            pp.setDeleteFlag(true);
+            productProcessRepository.save(pp);
+        });
+        List<Attachment> attachments = attachmentService.getAttachmentsByEntity("PRODUCT", product.getId());
+        for (Attachment attachment : attachments) {
+            attachmentService.deleteAttachment(attachment.getId());
+        }
+        productRepository.save(product);
+    }
 //
 //    @Override
 //    @Transactional(readOnly = true)

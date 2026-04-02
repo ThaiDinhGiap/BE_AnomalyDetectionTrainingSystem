@@ -4,22 +4,10 @@ import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
 import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
-import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.OrgDropdownItem;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductResponse;
-import com.sep490.anomaly_training_backend.dto.response.WorkingPosition;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
-import com.sep490.anomaly_training_backend.service.ImportHistoryService;
-import com.sep490.anomaly_training_backend.service.ProcessService;
-import com.sep490.anomaly_training_backend.service.ProductLineService;
-import com.sep490.anomaly_training_backend.service.ProductService;
+import com.sep490.anomaly_training_backend.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -33,16 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -153,6 +132,13 @@ public class ManufacturingLineController {
     @PreAuthorize("hasAuthority('line_structure.manage')")
     public ResponseEntity<Void> deleteProcess(@PathVariable Long id) {
         processService.deleteProcess(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/product/{id}")
+    @PreAuthorize("hasAuthority('line_structure.manage')")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
