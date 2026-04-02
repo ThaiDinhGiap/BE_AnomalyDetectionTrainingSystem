@@ -256,7 +256,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -1146,7 +1146,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-            HttpServletRequest request) {
+                              HttpServletRequest request) {
         approve(reportId, currentUser, req, request);
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
         detail.setStatus(ReportStatus.COMPLETED);
@@ -1171,7 +1171,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-            HttpServletRequest request) {
+                             HttpServletRequest request) {
         reject(reportId, currentUser, req, request);
 
         TrainingResultDetail detail = trainingResultDetailRepository.findById(detailId).get();
@@ -1200,14 +1200,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult report = getReportById(reportId);
         List<TrainingResultDetail> details = report.getDetails().stream()
                 .filter(d -> d.getStatus() == ReportStatus.PENDING_CONFIRMATION)
-                .map(d -> {
-                    if (d.getSignatureFiOut() != null && d.getSignatureFiIn() != null &&
-                            d.getSignatureFiOut().equals(currentUser) &&
-                            d.getSignatureFiIn().equals(currentUser)) {
-                        d.setStatus(ReportStatus.PENDING_REVIEW);
-                    }
-                    return d;
-                })
+                .peek(d -> d.setStatus(ReportStatus.PENDING_REVIEW))
                 .toList();
         trainingResultDetailRepository.saveAll(details);
     }
