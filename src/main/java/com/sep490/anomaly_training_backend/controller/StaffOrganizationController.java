@@ -1,29 +1,9 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
-import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
-import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
-import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
-import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
-import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
-import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
-import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
-import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.EmployeeService;
-import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
-import com.sep490.anomaly_training_backend.service.GroupService;
-import com.sep490.anomaly_training_backend.service.SectionService;
-import com.sep490.anomaly_training_backend.service.TeamService;
-import com.sep490.anomaly_training_backend.service.TrainingResultService;
+import com.sep490.anomaly_training_backend.service.*;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,18 +11,18 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -306,5 +286,25 @@ public class StaffOrganizationController {
             @PathVariable Long employeeId
     ) {
         return ResponseEntity.ok(ApiResponse.success(employeeSkillService.getEmployeeSkillsByEmployeeId(employeeId)));
+    }
+
+    @Operation(summary = "Download employee skill template")
+    @GetMapping("/employee-skill/download-template")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<Resource> downloadEmployeeSkillTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Employee_skill_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Employee_skill_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
     }
 }
