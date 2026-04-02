@@ -6,58 +6,16 @@ import com.sep490.anomaly_training_backend.dto.request.ScheduleRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanGenerationRequest;
 import com.sep490.anomaly_training_backend.dto.request.TrainingPlanUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeePlanGroup;
-import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanGenerationResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingPlanResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.dto.scoring.PrioritySnapshotResponse;
-import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
-import com.sep490.anomaly_training_backend.enums.PolicyEntityType;
-import com.sep490.anomaly_training_backend.enums.PolicyStatus;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.enums.*;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.PrioritySnapshotMapper;
 import com.sep490.anomaly_training_backend.mapper.TrainingPlanMapper;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.Group;
-import com.sep490.anomaly_training_backend.model.PriorityPolicy;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshot;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.ProductLine;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetailHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanHistory;
-import com.sep490.anomaly_training_backend.model.TrainingPlanSpecialDay;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
-import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.PriorityPolicyRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
-import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
-import com.sep490.anomaly_training_backend.repository.TeamRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanHistoryRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanSpecialDayRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingPlanService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.service.priority.TrainingPlanScheduleGenerationService;
@@ -74,12 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -366,7 +319,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, action.getNote(), schedule);
-                detail.setStatus(ReportStatus.PENDING_REVIEW);
+                detail.setStatus(ReportStatus.ONGOING);
                 detail.setBatchId(batchId);
                 plan.getDetails().add(detail);
             }
@@ -406,7 +359,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
         for (ScheduleRequest schedule : action.getSchedules()) {
             if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                 TrainingPlanDetail detail = createBaseDetail(plan, employee, note, schedule);
-                detail.setStatus(ReportStatus.PENDING_REVIEW);
+                detail.setStatus(ReportStatus.ONGOING);
                 detail.setBatchId(action.getBatchId());
                 plan.getDetails().add(detail);
             }
@@ -426,13 +379,13 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             throw new AppException(ErrorCode.TRAINING_PLAN_DETAIL_NOT_FOUND);
         }
 
-        if (isApproved && detail.getStatus() == ReportStatus.COMPLETED) {
-            throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
-        }
+//        if (isApproved && detail.getStatus() == ReportStatus.COMPLETED) {
+//            throw new AppException(ErrorCode.CANNOT_UPDATE_COMPLETED_DETAIL);
+//        }
 
-        if (action.getEmployeeId() != null) {
-            detail.setEmployee(getValidatedEmployee(action.getEmployeeId()));
-        }
+//        if (action.getEmployeeId() != null) {
+//            detail.setEmployee(getValidatedEmployee(action.getEmployeeId()));
+//        }
         if (action.getNote() != null) {
             detail.setNote(action.getNote());
         }
@@ -503,7 +456,7 @@ public class TrainingPlanServiceImpl implements TrainingPlanService {
             for (ScheduleRequest schedule : request.getSchedules()) {
                 if (schedule.getPlannedDay() != null && schedule.getPlannedDay() > 0) {
                     TrainingPlanDetail detail = createBaseDetail(plan, employee, request.getNote(), schedule);
-                    detail.setStatus(ReportStatus.PENDING_REVIEW);
+                    detail.setStatus(ReportStatus.ONGOING);
                     detail.setBatchId(batchId);
                     plan.getDetails().add(detail);
                     addedDetails.add(detail);

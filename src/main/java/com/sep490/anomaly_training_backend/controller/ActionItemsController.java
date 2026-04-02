@@ -31,6 +31,14 @@ public class ActionItemsController {
         return ResponseEntity.ok(actionItemsService.getPendingSignatures(lineId));
     }
 
+    @Operation(summary = "Get reports submitted by current user that are pending approval from a superior")
+    @GetMapping("/submitted-pending-approval")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<PendingSignatureResponse> getSubmittedPendingApproval(
+            @Parameter(description = "Filter by Line ID") @RequestParam(required = false) Long lineId) {
+        return ResponseEntity.ok(actionItemsService.getSubmittedPendingApproval(lineId));
+    }
+
     @Operation(summary = "Get failed trainings summary")
     @GetMapping("/failed-trainings")
     @PreAuthorize("hasAuthority('training_result.view')")
