@@ -306,7 +306,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -1176,28 +1176,25 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     @Override
+    @Transactional
     public void submit(Long reportId, User currentUser, HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
 
-        validateResultForSubmission(report);
-        report.setFormCode(
-                ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(), reportId));
+        if (report.getFormCode() == null || report.getFormCode().isBlank()) {
+            report.setFormCode(
+                    ReportUtils.generateFormCode(ApprovalEntityType.TRAINING_RESULT, report.getLine().getCode(),
+                            reportId));
+        }
 
-        approvalService.submit(report, currentUser, request);
         updateResultDetailAfterSubmission(currentUser, report);
 
         trainingResultRepository.save(report);
-    }
-
-    private void validateResultForSubmission(TrainingResult result) {
+        log.info("Submitted result #{} by {} — details promoted to pending", reportId, currentUser.getUsername());
     }
 
     private void updateResultDetailAfterSubmission(User currentUser, TrainingResult result) {
         trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
                 .forEach(detail -> {
-                    // detail.setSignatureProIn(currentUser);
-                    // detail.setSignatureProOut(currentUser);
-
                     if (detail.getClassification() != null && detail.getClassification() == 4) {
                         detail.setStatus(ReportStatus.PENDING_REVIEW);
                     } else {
@@ -1237,7 +1234,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-            HttpServletRequest request) {
+                              HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1275,7 +1272,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-            HttpServletRequest request) {
+                             HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1362,7 +1359,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * so detailId (always >> 2) will never collide.
      */
     private void logDetailAction(TrainingResult report, TrainingResultDetail detail,
-            ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
+                                 ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(ApprovalEntityType.TRAINING_RESULT)
                 .entityId(report.getId())
