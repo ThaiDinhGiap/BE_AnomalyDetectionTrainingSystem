@@ -306,7 +306,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -1155,8 +1155,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     private void updateResultDetailAfterSubmission(User currentUser, TrainingResult result) {
         trainingResultDetailRepository.findPendingWithIsPassByResultId(result.getId())
                 .forEach(detail -> {
-                    detail.setSignatureProIn(currentUser);
-                    detail.setSignatureProOut(currentUser);
+                    // detail.setSignatureProIn(currentUser);
+                    // detail.setSignatureProOut(currentUser);
 
                     if (detail.getClassification() != null && detail.getClassification() == 4) {
                         detail.setStatus(ReportStatus.PENDING_REVIEW);
@@ -1197,7 +1197,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-                              HttpServletRequest request) {
+            HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1235,7 +1235,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-                             HttpServletRequest request) {
+            HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1274,14 +1274,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         TrainingResult report = getReportById(reportId);
         List<TrainingResultDetail> details = report.getDetails().stream()
                 .filter(d -> d.getStatus() == ReportStatus.PENDING_CONFIRMATION)
-                .map(d -> {
-                    if (d.getSignatureFiOut() != null && d.getSignatureFiIn() != null &&
-                            d.getSignatureFiOut().equals(currentUser) &&
-                            d.getSignatureFiIn().equals(currentUser)) {
-                        d.setStatus(ReportStatus.PENDING_REVIEW);
-                    }
-                    return d;
-                })
+                .peek(d -> d.setStatus(ReportStatus.PENDING_REVIEW))
                 .toList();
         trainingResultDetailRepository.saveAll(details);
     }
@@ -1295,7 +1288,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .filter(d -> d.getStatus() != ReportStatus.MISSED)
                 .toList();
 
-        if (actionableDetails.isEmpty()) return;
+        if (actionableDetails.isEmpty())
+            return;
 
         boolean allCompleted = actionableDetails.stream()
                 .allMatch(d -> d.getStatus() == ReportStatus.COMPLETED);
@@ -1309,7 +1303,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     /**
      * Validate that the user has one of the review/approve permissions.
-     * Does NOT go through the flow step lookup (training results don't follow multi-step flow).
+     * Does NOT go through the flow step lookup (training results don't follow
+     * multi-step flow).
      */
     private void validateDetailApprover(User currentUser) {
         if (!currentUser.hasPermission("review_approve.review")
@@ -1327,14 +1322,15 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * so detailId (always >> 2) will never collide.
      */
     private void logDetailAction(TrainingResult report, TrainingResultDetail detail,
-                                 ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
+            ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(ApprovalEntityType.TRAINING_RESULT)
                 .entityId(report.getId())
                 .entityVersion(report.getCurrentVersion())
                 .stepOrder(detail.getId().intValue())
                 .requiredPermission(action == ApprovalAction.APPROVE
-                        ? "review_approve.review" : "review_approve.approve")
+                        ? "review_approve.review"
+                        : "review_approve.approve")
                 .action(action)
                 .performedByUser(currentUser)
                 .performedByUsername(currentUser.getUsername())
@@ -1353,7 +1349,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        if (request == null) return null;
+        if (request == null)
+            return null;
         String ip = request.getHeader("X-Forwarded-For");
         return ip != null ? ip.split(",")[0].trim() : request.getRemoteAddr();
     }
