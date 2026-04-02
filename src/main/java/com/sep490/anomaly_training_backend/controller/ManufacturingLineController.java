@@ -59,13 +59,13 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 
-    @PostMapping("/products")
+    @PostMapping(path = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('product.manage')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@ModelAttribute ProductRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
     }
 
-    @PostMapping("/products/sync")
+    @PostMapping(path = "/products/sync", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('product.manage')")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@ModelAttribute List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
