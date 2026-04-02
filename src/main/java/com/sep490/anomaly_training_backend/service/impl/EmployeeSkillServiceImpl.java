@@ -28,7 +28,9 @@ import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
 import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
+import com.sep490.anomaly_training_backend.repository.UserRepository;
 import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
+import com.sep490.anomaly_training_backend.model.User;
 import com.sep490.anomaly_training_backend.util.helper.EmployeeSkillCertificationImportHelper;
 import com.sep490.anomaly_training_backend.util.validator.EmployeeSkillCertificationImportValidator;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +69,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     private final SectionRepository sectionRepository;
     private final TeamRepository teamRepository;
     private final GroupRepository groupRepository;
+    private final UserRepository userRepository;
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -200,7 +203,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
     @Override
     @Transactional
-    public void importSkillMatrix(MultipartFile file) {
+    public void importSkillMatrix(MultipartFile file, User currentUser) {
         log.info("Starting skill matrix import from file: {}", file.getOriginalFilename());
 
         try {
@@ -216,8 +219,19 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                 throw buildAppException(errors);
             }
 
+            // Validate Manager & Supervisor exist in DB
+            User manager = userRepository.findByEmployeeCodeAndDeleteFlagFalse(
+                    importSkillMatrixResult.getManagerCode())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND,
+                            "Manager not found with employee code: " + importSkillMatrixResult.getManagerCode()));
+
+            User supervisor = userRepository.findByEmployeeCodeAndDeleteFlagFalse(
+                    importSkillMatrixResult.getSupervisorCode())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND,
+                            "Supervisor not found with employee code: " + importSkillMatrixResult.getSupervisorCode()));
+
             // Setup mối quan hệ với Team & Group cố định
-            processParsedData(importSkillMatrixResult);
+            processParsedData(importSkillMatrixResult, manager, supervisor, currentUser);
 
             log.info("Skill matrix import completed.");
         } catch (AppException e) {
@@ -261,20 +275,23 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
      * Process parsed data và setup mối quan hệ
      * Tất cả data thuộc về 1 Team cố định từ file header
      */
-    private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult) {
+    private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult,
+                                    User manager, User supervisor, User currentUser) {
         processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
-                importSkillMatrixResult.getHierarchyMap());
+                importSkillMatrixResult.getHierarchyMap(), manager, supervisor, currentUser);
         processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
                 importSkillMatrixResult.getParsedRows());
     }
 
     private void processHierarchyMap(String teamCode, String groupCode,
-            Map<String, Map<String, Set<String>>> hierarchyMap) {
+            Map<String, Map<String, Set<String>>> hierarchyMap,
+            User manager, User supervisor, User currentUser) {
 
         // Step 1: Save Group early (to get ID for use in lambdas)
         Section resolvedSection = null;
         final Group savedGroup = groupRepository.findByCode(groupCode)
                 .orElseGet(() -> { Group g = new Group(groupCode); g.setName(groupCode); return g; });
+        savedGroup.setSupervisor(supervisor);
         groupRepository.save(savedGroup);
 
         for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
@@ -282,6 +299,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
             Section section = sectionRepository.findByCode(sectionCode)
                     .orElseGet(() -> { Section s = new Section(sectionCode); s.setName(sectionCode); return s; });
+            section.setManager(manager);
             section = sectionRepository.save(section);
             resolvedSection = section;
 
@@ -321,11 +339,16 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         Team team = teamRepository.findByCode(teamCode)
                 .orElseGet(() -> { Team t = new Team(teamCode); t.setName(teamCode); return t; });
         team.setGroup(savedGroup);
+        team.setTeamLeader(currentUser);
         teamRepository.save(team);
 
-        log.info("Hierarchy established: Section={}, Group={}, Team={}",
+        log.info("Hierarchy established: Section={} (Manager={}), Group={} (Supervisor={}), Team={} (TeamLeader={})",
                 resolvedSection != null ? resolvedSection.getCode() : "N/A",
-                savedGroup.getCode(), team.getCode());
+                manager.getEmployeeCode(),
+                savedGroup.getCode(),
+                supervisor.getEmployeeCode(),
+                team.getCode(),
+                currentUser.getUsername());
     }
 
     private void processParsedRawData(String teamCode, String groupCode,

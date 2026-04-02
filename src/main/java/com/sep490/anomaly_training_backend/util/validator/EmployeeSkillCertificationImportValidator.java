@@ -56,10 +56,6 @@ public class EmployeeSkillCertificationImportValidator {
             if (isBlank(row.getEmployeeId())) {
                 errors.add(buildRowError(rowNum, "employeeId", null, "Employee ID is required"));
             }
-
-            if (row.getCertifiedQuantity() == null) {
-                errors.add(buildRowError(rowNum, "certifiedQuantity", null, "Certified quantity is required"));
-            }
         }
     }
 

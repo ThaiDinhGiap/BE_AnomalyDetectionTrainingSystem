@@ -190,7 +190,7 @@ public class ManufacturingLineController {
         log.info("User {} is importing skill matrix from file: {}",
                 currentUser.getUsername(), file.getOriginalFilename());
 
-        employeeSkillService.importSkillMatrix(file);
+        employeeSkillService.importSkillMatrix(file, currentUser);
         return ResponseEntity.ok(ApiResponse.success("Import skill matrix successfully"));
     }
 

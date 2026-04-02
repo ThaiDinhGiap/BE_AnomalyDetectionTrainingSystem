@@ -43,6 +43,10 @@ public class EmployeeSkillCertificationImportHelper {
     private static final int HEADER_TEAM_CODE_COL = 1;    // Column B
     private static final int HEADER_GROUP_CODE_COL = 1;   // Column B
 
+    // Manager/Supervisor column indices (0-based)
+    private static final int HEADER_MANAGER_VALUE_COL = 4;    // Column E
+    private static final int HEADER_SUPERVISOR_VALUE_COL = 4; // Column E
+
     // Data column indices (0-based)
     private static final int COL_SECTION_CODE = 0;
     private static final int COL_PRODUCT_LINE_CODE = 1;
@@ -66,12 +70,20 @@ public class EmployeeSkillCertificationImportHelper {
         // Step 1: Extract Team Code & Group Code từ header
         String teamCode = extractTeamCode(sheet);
         String groupCode = extractGroupCode(sheet);
+        String managerCode = extractEmployeeCode(sheet, HEADER_TEAM_CODE_ROW, HEADER_MANAGER_VALUE_COL);
+        String supervisorCode = extractEmployeeCode(sheet, HEADER_GROUP_CODE_ROW, HEADER_SUPERVISOR_VALUE_COL);
 
         if (teamCode == null || teamCode.isBlank()) {
             errors.add(buildRowError(1, "teamCode", null, "Team code is required (Row 1, Column B)"));
         }
         if (groupCode == null || groupCode.isBlank()) {
             errors.add(buildRowError(2, "groupCode", null, "Group code is required (Row 2, Column B)"));
+        }
+        if (managerCode == null || managerCode.isBlank()) {
+            errors.add(buildRowError(1, "managerCode", null, "Manager is required (Row 1, Column E). Format: employeeCode - fullName"));
+        }
+        if (supervisorCode == null || supervisorCode.isBlank()) {
+            errors.add(buildRowError(2, "supervisorCode", null, "Supervisor is required (Row 2, Column E). Format: employeeCode - fullName"));
         }
 
         List<EmployeeSkillCertificationImportDto> results = new ArrayList<>();
@@ -149,7 +161,7 @@ public class EmployeeSkillCertificationImportHelper {
             addToHierarchyMap(hierarchyMap, currentSectionCode, currentProductLineCode, currentProcessName);
         }
 
-        return new ImportSkillMatrixResult(teamCode, groupCode, results, hierarchyMap);
+        return new ImportSkillMatrixResult(teamCode, groupCode, managerCode, supervisorCode, results, hierarchyMap);
     }
 
     /**
@@ -174,6 +186,20 @@ public class EmployeeSkillCertificationImportHelper {
         }
         Cell cell = row.getCell(HEADER_GROUP_CODE_COL);
         return getOptionalStringCellValue(cell);
+    }
+
+    /**
+     * Extract employee code from a cell with format "8888 - Nguyễn Văn Huy".
+     * Returns the part before "-" (trimmed), e.g. "8888".
+     */
+    private String extractEmployeeCode(Sheet sheet, int rowIndex, int colIndex) {
+        Row row = sheet.getRow(rowIndex);
+        if (row == null) return null;
+        Cell cell = row.getCell(colIndex);
+        String raw = getOptionalStringCellValue(cell);
+        if (raw == null || raw.isBlank()) return null;
+        String[] parts = raw.split("-", 2);
+        return parts[0].trim();
     }
 
     /**
