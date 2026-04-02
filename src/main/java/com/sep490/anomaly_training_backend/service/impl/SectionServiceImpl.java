@@ -7,7 +7,9 @@ import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.ProductLineMapper;
 import com.sep490.anomaly_training_backend.mapper.SectionMapper;
+import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.Section;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.UserRepository;
@@ -21,7 +23,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class SectionServiceImpl implements SectionService {
 
     private final SectionRepository sectionRepository;
@@ -29,6 +30,7 @@ public class SectionServiceImpl implements SectionService {
     private final ProductLineRepository productLineRepository;
     private final ProductLineMapper productLineMapper;
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional
@@ -58,17 +60,23 @@ public class SectionServiceImpl implements SectionService {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SECTION_NOT_FOUND));
 
-        if (request.getName() != null && !request.getName().equals(section.getName())) {
+        if (request.getName() != null) {
             section.setName(request.getName());
         }
-        if (request.getCode() != null && !request.getCode().equals(section.getCode())) {
+        if (request.getCode() != null) {
             section.setCode(request.getCode());
         }
-        if (request.getManagerId() != null && (section.getManager() == null || !request.getManagerId().equals(section.getManager().getId()))) {
-            section.setManager(userRepository.findById(request.getManagerId()).orElse(null));
+        if (request.getManagerId() != null) {
+            Employee employee = employeeRepository.findById(request.getManagerId()).orElse(null);
+            if (employee != null) {
+                section.setManager(userRepository.findByEmployeeCodeWithRoles(employee.getEmployeeCode())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND,
+                                "Manager not found with id: " + request.getManagerId())));
+            }
         }
 
-        return sectionMapper.toDTO(sectionRepository.save(section));
+        Section saved = sectionRepository.save(section);
+        return sectionMapper.toDTO(saved);
     }
 
     @Override

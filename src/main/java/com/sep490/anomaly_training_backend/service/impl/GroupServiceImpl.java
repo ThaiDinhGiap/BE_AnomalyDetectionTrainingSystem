@@ -5,9 +5,11 @@ import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
 import com.sep490.anomaly_training_backend.mapper.GroupMapper;
+import com.sep490.anomaly_training_backend.model.Employee;
 import com.sep490.anomaly_training_backend.model.Group;
 import com.sep490.anomaly_training_backend.model.Team;
 import com.sep490.anomaly_training_backend.model.User;
+import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
 import com.sep490.anomaly_training_backend.repository.GroupRepository;
 import com.sep490.anomaly_training_backend.repository.SectionRepository;
 import com.sep490.anomaly_training_backend.repository.TeamRepository;
@@ -31,6 +33,7 @@ public class GroupServiceImpl implements GroupService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final SectionRepository sectionRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     @Transactional
@@ -70,7 +73,10 @@ public class GroupServiceImpl implements GroupService {
             group.setCode(request.getCode());
         }
         if (request.getSupervisorId() != null && (group.getSupervisor() == null || !request.getSupervisorId().equals(group.getSupervisor().getId()))) {
-            group.setSupervisor(userRepository.findById(request.getSectionId()).orElse(null));
+            Employee employee = employeeRepository.findById(request.getSupervisorId()).orElse(null);
+            if (employee != null) {
+                group.setSupervisor(userRepository.findByEmployeeCodeWithRoles(employee.getEmployeeCode()).orElse(null));
+            }
         }
         if (request.getSectionId() != null && (group.getSection() == null || !request.getSectionId().equals(group.getSection().getId()))) {
             group.setSection(sectionRepository.findById(request.getSectionId()).orElse(null));

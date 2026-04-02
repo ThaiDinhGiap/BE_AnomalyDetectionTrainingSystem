@@ -1,0 +1,9 @@
+target
+.git
+.idea
+.mvn
+logs
+.env
+*.md
+.aider*
+import_skill_matrix_BU1.xlsx

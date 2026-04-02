@@ -54,15 +54,20 @@ public abstract class EmployeeMapper {
 
     protected String joinTeamNames(List<Team> teams) {
         if (teams == null || teams.isEmpty()) return "";
-        return teams.stream().map(Team::getName).collect(Collectors.joining(", "));
+        return teams.stream()
+                .map(t -> t.getName() != null ? t.getName() : t.getCode())
+                .collect(Collectors.joining(", "));
     }
 
     protected String joinGroupNames(List<Team> teams) {
         if (teams == null || teams.isEmpty()) return "";
         return teams.stream()
-                .map(t -> t.getGroup() != null ? t.getGroup().getName() : "")
+                .map(t -> {
+                    if (t.getGroup() == null) return "";
+                    return t.getGroup().getName() != null ? t.getGroup().getName() : t.getGroup().getCode();
+                })
                 .distinct()
-                .filter(name -> !name.isEmpty())
+                .filter(name -> name != null && !name.isEmpty())
                 .collect(Collectors.joining(", "));
     }
 }

@@ -270,25 +270,20 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
 
     private void processHierarchyMap(String teamCode, String groupCode,
             Map<String, Map<String, Set<String>>> hierarchyMap) {
-        Team team = teamRepository.findByCode(teamCode)
-                .orElse(new Team(teamCode));
-        teamRepository.save(team);
 
-        Group group = groupRepository.findByCode(groupCode)
-                .orElse(new Group(groupCode));
-        groupRepository.save(group);
+        // Step 1: Save Group early (to get ID for use in lambdas)
+        Section resolvedSection = null;
+        final Group savedGroup = groupRepository.findByCode(groupCode)
+                .orElseGet(() -> { Group g = new Group(groupCode); g.setName(groupCode); return g; });
+        groupRepository.save(savedGroup);
 
-        // Process hierarchy map
         for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
             String sectionCode = sectionEntry.getKey();
 
             Section section = sectionRepository.findByCode(sectionCode)
-                    .orElse(new Section(sectionCode));
-            sectionRepository.save(section);
-
-            if (group.getSection() == null) {
-                group.setSection(section);
-            }
+                    .orElseGet(() -> { Section s = new Section(sectionCode); s.setName(sectionCode); return s; });
+            section = sectionRepository.save(section);
+            resolvedSection = section;
 
             for (Map.Entry<String, Set<String>> plEntry : sectionEntry.getValue().entrySet()) {
                 String productLineCode = plEntry.getKey();
@@ -297,44 +292,77 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                         .orElseGet(() -> {
                             ProductLine newPL = ProductLine.builder()
                                     .code(productLineCode)
-                                    .group(group)
+                                    .name(productLineCode)
+                                    .group(savedGroup)
                                     .build();
                             return productLineRepository.save(newPL);
                         });
 
                 for (String processName : plEntry.getValue()) {
-                    Process process = processRepository.findByName(processName)
+                    processRepository.findByName(processName)
                             .orElseGet(() -> {
                                 Process newProcess = Process.builder()
                                         .name(processName)
+                                        .code(processName)
                                         .productLine(productLine)
                                         .build();
                                 return processRepository.save(newProcess);
                             });
-
-                    log.info("Processed: Team={}, Group={}, Section={}, ProductLine={}, Process={}",
-                            team.getCode(), group.getCode(), section.getCode(), productLine.getCode(),
-                            process.getCode());
                 }
             }
         }
+
+        // Step 2: Build relationships: Section → Group → Team
+        if (resolvedSection != null) {
+            savedGroup.setSection(resolvedSection);
+        }
+        groupRepository.save(savedGroup);
+
+        Team team = teamRepository.findByCode(teamCode)
+                .orElseGet(() -> { Team t = new Team(teamCode); t.setName(teamCode); return t; });
+        team.setGroup(savedGroup);
+        teamRepository.save(team);
+
+        log.info("Hierarchy established: Section={}, Group={}, Team={}",
+                resolvedSection != null ? resolvedSection.getCode() : "N/A",
+                savedGroup.getCode(), team.getCode());
     }
 
     private void processParsedRawData(String teamCode, String groupCode,
             List<EmployeeSkillCertificationImportDto> parsedResults) {
+        // Resolve team once for all employees
+        Team team = teamRepository.findByCode(teamCode)
+                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND,
+                        "Team not found: " + teamCode));
+
+        // Track already-processed employees to avoid redundant team checks
+        Set<String> processedEmployeeCodes = new java.util.HashSet<>();
+
         for (EmployeeSkillCertificationImportDto raw : parsedResults) {
             Employee employee = employeeRepository.findByEmployeeCode(raw.getEmployeeId())
                     .orElseGet(() -> {
                         Employee newEmployee = Employee.builder()
                                 .employeeCode(raw.getEmployeeId())
                                 .fullName(raw.getEmployeeFullName())
-                                .teams(Collections.singletonList(
-                                        teamRepository.findByCode(teamCode)
-                                                .orElseThrow(() -> new AppException(ErrorCode.TEAM_NOT_FOUND,
-                                                        "Team not found: " + teamCode))))
                                 .build();
+                        // Use mutable list — @Builder.Default already initializes to ArrayList
                         return employeeRepository.save(newEmployee);
                     });
+
+            // Assign team if not already assigned (works for both new & existing employees)
+            if (processedEmployeeCodes.add(employee.getEmployeeCode())) {
+                boolean alreadyInTeam = employee.getTeams() != null
+                        && employee.getTeams().stream()
+                                .anyMatch(t -> t.getId().equals(team.getId()));
+                if (!alreadyInTeam) {
+                    if (employee.getTeams() == null) {
+                        employee.setTeams(new ArrayList<>());
+                    }
+                    employee.getTeams().add(team);
+                    employee = employeeRepository.save(employee);
+                    log.info("Assigned employee {} to team {}", employee.getEmployeeCode(), team.getCode());
+                }
+            }
 
             Process process = processRepository.findByName(raw.getProcessName())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND,
