@@ -1365,9 +1365,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .entityId(report.getId())
                 .entityVersion(report.getCurrentVersion())
                 .stepOrder(detail.getId().intValue())
-                .requiredPermission(action == ApprovalAction.APPROVE
-                        ? "review_approve.review"
-                        : "review_approve.approve")
+                .requiredPermission("review_approve.review")
                 .action(action)
                 .performedByUser(currentUser)
                 .performedByUsername(currentUser.getUsername())
