@@ -61,14 +61,37 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public KpiSummaryResponse getKpiSummary(Long teamId, Long lineId, Integer year) {
         // Nếu không truyền filter nào → chỉ tính KPI cho báo cáo của current user
-        String createdBy = null;
-        if (teamId == null && lineId == null && year == null) {
-            createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
-        }
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsernameWithRolesAndPermissions(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        long totalExecuted = trainingResultDetailRepository.countByFilters(createdBy, teamId, lineId, year);
-        long totalPass = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, true);
-        long totalFail = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, false);
+        long totalExecuted = 0;
+        long totalPass = 0;
+        long totalFail = 0;
+
+        if (currentUser.hasPermission("review_approve.confirm")) {
+            totalExecuted = trainingResultDetailRepository.countByFiAndFilters(currentUser.getId(), teamId, lineId, year);
+            totalPass = trainingResultDetailRepository.countByFiAndFiltersAndIsPass(currentUser.getId(), teamId, lineId, year, true);
+            totalFail = trainingResultDetailRepository.countByFiAndFiltersAndIsPass(currentUser.getId(), teamId, lineId, year, false);
+        } else if (currentUser.hasPermission("group.manage")) {
+            List<Group> groups = groupRepository.findBySupervisorId(currentUser.getId());
+            if (groups.isEmpty()) {
+                totalExecuted = 0; totalPass = 0; totalFail = 0;
+            } else {
+                List<Long> groupIds = groups.stream().map(Group::getId).distinct().toList();
+                totalExecuted = trainingResultDetailRepository.countByGroupsAndFilters(groupIds, teamId, lineId, year);
+                totalPass = trainingResultDetailRepository.countByGroupsAndFiltersAndIsPass(groupIds, teamId, lineId, year, true);
+                totalFail = trainingResultDetailRepository.countByGroupsAndFiltersAndIsPass(groupIds, teamId, lineId, year, false);
+            }
+        } else {
+            String createdBy = null;
+            if (teamId == null && lineId == null && year == null) {
+                createdBy = currentUsername;
+            }
+            totalExecuted = trainingResultDetailRepository.countByFilters(createdBy, teamId, lineId, year);
+            totalPass = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, true);
+            totalFail = trainingResultDetailRepository.countByFiltersAndIsPass(createdBy, teamId, lineId, year, false);
+        }
 
         BigDecimal passRate = BigDecimal.ZERO;
         if (totalExecuted > 0) {
@@ -205,8 +228,33 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                     }
                 }
 
+                // Chỉ định FI cho detail (gán cùng 1 FI cho cả In và Out)
+                if (reqDetail.getAssignedFiId() != null) {
+                    User fiUser = userRepository.findByIdWithRolesAndPermissions(reqDetail.getAssignedFiId())
+                            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    if (!fiUser.hasPermission("review_approve.confirm")) {
+                        throw new AppException(ErrorCode.ASSIGNED_USER_NOT_FI);
+                    }
+                    // Chỉ gán khi chưa có xác nhận
+                    if (detail.getFiInConfirmed() == null) {
+                        detail.setSignatureFiIn(fiUser);
+                    }
+                    if (detail.getFiOutConfirmed() == null) {
+                        detail.setSignatureFiOut(fiUser);
+                    }
+                }
+
                 if (reqDetail.getIsRetrained() != null) {
                     detail.setIsRetrained(reqDetail.getIsRetrained());
+                }
+
+                // Validate đánh giá pass/fail phải gán FI trước (trừ classification 4)
+                if (detail.getIsPass() != null) {
+                    if (detail.getClassification() != null && detail.getClassification() != 4) {
+                        if (detail.getSignatureFiIn() == null || detail.getSignatureFiOut() == null) {
+                            throw new AppException(ErrorCode.FI_ASSIGNMENT_REQUIRED);
+                        }
+                    }
                 }
 
                 // Khi isPass được xác định → điền actualDate cho cả result detail và plan
@@ -254,7 +302,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
                 if (detail.getTrainingPlanDetail() != null
                         && detail.getTrainingPlanDetail()
-                        .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
+                                .getStatus() != com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED) {
                     detail.getTrainingPlanDetail().setStatus(
                             com.sep490.anomaly_training_backend.enums.ReportStatus.MISSED);
                 }
@@ -285,14 +333,22 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             TrainingResultDetail detail = trainingResultDetailRepository.findById(req.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
-            // Xác nhận đầu vào (đưa mẫu vào)
+            // Xác nhận đầu vào (đưa mẫu vào) — nếu đã assign thì chỉ FI đó mới ký được
             if (req.getConfirmIn() != null && detail.getFiInConfirmed() == null) {
+                if (detail.getSignatureFiIn() != null
+                        && !detail.getSignatureFiIn().getId().equals(currentUser.getId())) {
+                    throw new AppException(ErrorCode.FI_NOT_ASSIGNED);
+                }
                 detail.setSignatureFiIn(currentUser);
                 detail.setFiInConfirmed(req.getConfirmIn());
             }
 
-            // Xác nhận đầu ra (lấy mẫu ra)
+            // Xác nhận đầu ra (lấy mẫu ra) — nếu đã assign thì chỉ FI đó mới ký được
             if (req.getConfirmOut() != null && detail.getFiOutConfirmed() == null) {
+                if (detail.getSignatureFiOut() != null
+                        && !detail.getSignatureFiOut().getId().equals(currentUser.getId())) {
+                    throw new AppException(ErrorCode.FI_NOT_ASSIGNED);
+                }
                 detail.setSignatureFiOut(currentUser);
                 detail.setFiOutConfirmed(req.getConfirmOut());
             }
@@ -308,16 +364,20 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         List<TrainingResult> results = new ArrayList<>();
 
-        if (currentUser.hasRole("ROLE_FINAL_INSPECTION")) {
-            List<Team> teams = teamRepository.findByFinalInspectionId(currentUser.getId());
-            if (teams.isEmpty()) {
+        if (currentUser.hasPermission("review_approve.confirm")) {
+            List<Long> assignedResultIds = trainingResultDetailRepository
+                    .findResultIdsByAssignedFi(currentUser.getId());
+            if (assignedResultIds.isEmpty()) {
                 return Collections.emptyList();
             }
-            List<Long> groupIds = teams.stream().map(team -> team.getGroup().getId()).distinct().toList();
+            List<TrainingResult> allAssigned = trainingResultRepository.findAllById(assignedResultIds)
+                    .stream().filter(r -> !r.isDeleteFlag()).toList();
             if (lineId != null) {
-                results = trainingResultRepository.findAllByGroupIdsAndLineId(groupIds, lineId);
+                results = allAssigned.stream()
+                        .filter(r -> r.getLine() != null && lineId.equals(r.getLine().getId()))
+                        .toList();
             } else {
-                results = trainingResultRepository.findAllByGroupIds(groupIds);
+                results = allAssigned;
             }
         } else {
             List<ReportStatus> excludedStatuses = Arrays.asList(ReportStatus.DRAFT, ReportStatus.REVISING);
@@ -564,7 +624,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
     @Override
     @Transactional
-    public TrainingResultDetailResponse getTrainingResultDetailForConfirmation(Long id) {
+    public TrainingResultDetailResponse getTrainingResultDetailForConfirmation(User currentUser, Long id) {
         TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
 
@@ -577,8 +637,16 @@ public class TrainingResultServiceImpl implements TrainingResultService {
 
         Map<Long, ApprovalActionLog> approvalLogByDetailId = loadDetailApprovalLogs(result.getId());
 
+        Long fiUserId = currentUser.getId();
         List<TrainingResultDetailResponse.DetailRowDto> detailRowDtos = result.getDetails().stream()
                 .filter(detail -> detail.getStatus() != null && FI_CONFIRMATION_STATUSES.contains(detail.getStatus()))
+                .filter(detail -> {
+                    boolean assignedIn = detail.getSignatureFiIn() != null
+                            && detail.getSignatureFiIn().getId().equals(fiUserId);
+                    boolean assignedOut = detail.getSignatureFiOut() != null
+                            && detail.getSignatureFiOut().getId().equals(fiUserId);
+                    return assignedIn || assignedOut;
+                })
                 .map(this::mapDetailToRow)
                 .peek(row -> enrichWithApprovalInfo(row, approvalLogByDetailId))
                 .sorted()
@@ -738,7 +806,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         List<ApprovalActionLog> logs = approvalActionRepository.findDetailLevelActions(
                 ApprovalEntityType.TRAINING_RESULT, reportId);
 
-        // Logs are ordered by performedAt DESC, so first occurrence per stepOrder is the latest
+        // Logs are ordered by performedAt DESC, so first occurrence per stepOrder is
+        // the latest
         Map<Long, ApprovalActionLog> map = new java.util.LinkedHashMap<>();
         for (ApprovalActionLog logEntry : logs) {
             map.putIfAbsent(logEntry.getStepOrder().longValue(), logEntry);
@@ -1171,6 +1240,16 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                             reportId));
         }
 
+        // Validate: class 1,2,3 phải có FI assigned trước khi submit
+        List<TrainingResultDetail> readyDetails = trainingResultDetailRepository
+                .findPendingWithIsPassByResultId(report.getId());
+        boolean hasUnassigned = readyDetails.stream()
+                .filter(d -> d.getClassification() != null && d.getClassification() != 4)
+                .anyMatch(d -> d.getSignatureFiIn() == null || d.getSignatureFiOut() == null);
+        if (hasUnassigned) {
+            throw new AppException(ErrorCode.FI_ASSIGNMENT_REQUIRED);
+        }
+
         updateResultDetailAfterSubmission(currentUser, report);
 
         trainingResultRepository.save(report);
@@ -1219,7 +1298,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void approveDetail(Long reportId, Long detailId, ApproveRequest req, User currentUser,
-                              HttpServletRequest request) {
+            HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1257,7 +1336,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     @Transactional
     public void rejectDetail(Long reportId, Long detailId, RejectRequest req, User currentUser,
-                             HttpServletRequest request) {
+            HttpServletRequest request) {
         TrainingResult report = getReportById(reportId);
         validateDetailApprover(currentUser);
 
@@ -1352,6 +1431,15 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         }
     }
 
+    @Override
+    public List<TrainingResultOptionResponse> getFiUsers() {
+        List<User> fiUsers = userRepository.findByPermissionCode("review_approve.confirm");
+        return fiUsers.stream()
+                .map(u -> new TrainingResultOptionResponse(u.getId(),
+                        u.getEmployeeCode() + " - " + u.getFullName()))
+                .toList();
+    }
+
     /**
      * Log a detail-level approve/reject action.
      * Uses detailId as stepOrder to satisfy the UNIQUE KEY
@@ -1360,7 +1448,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
      * so detailId (always >> 2) will never collide.
      */
     private void logDetailAction(TrainingResult report, TrainingResultDetail detail,
-                                 ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
+            ApprovalAction action, User currentUser, String comment, HttpServletRequest request) {
         ApprovalActionLog logEntry = ApprovalActionLog.builder()
                 .entityType(ApprovalEntityType.TRAINING_RESULT)
                 .entityId(report.getId())
