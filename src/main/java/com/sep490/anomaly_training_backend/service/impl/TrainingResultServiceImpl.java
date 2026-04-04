@@ -558,6 +558,36 @@ public class TrainingResultServiceImpl implements TrainingResultService {
         return response;
     }
 
+    private static final Set<ReportStatus> FI_CONFIRMATION_STATUSES = Set.of(
+            ReportStatus.PENDING_CONFIRMATION,
+            ReportStatus.COMPLETED);
+
+    @Override
+    @Transactional
+    public TrainingResultDetailResponse getTrainingResultDetailForConfirmation(Long id) {
+        TrainingResult result = trainingResultRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_NOT_FOUND));
+
+        markOverdueDetailsAsMiss(result);
+
+        User user = userRepository.findByUsername(result.getCreatedBy())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        TrainingResultDetailResponse response = buildHeaderResponse(result, user);
+
+        Map<Long, ApprovalActionLog> approvalLogByDetailId = loadDetailApprovalLogs(result.getId());
+
+        List<TrainingResultDetailResponse.DetailRowDto> detailRowDtos = result.getDetails().stream()
+                .filter(detail -> detail.getStatus() != null && FI_CONFIRMATION_STATUSES.contains(detail.getStatus()))
+                .map(this::mapDetailToRow)
+                .peek(row -> enrichWithApprovalInfo(row, approvalLogByDetailId))
+                .sorted()
+                .collect(Collectors.toList());
+
+        response.setDetails(detailRowDtos);
+        return response;
+    }
+
     /**
      * Build header response (thông tin chung của TrainingResult) — dùng chung cho
      * TL và SV.
