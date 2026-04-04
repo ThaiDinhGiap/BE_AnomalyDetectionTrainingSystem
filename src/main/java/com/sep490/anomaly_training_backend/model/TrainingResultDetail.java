@@ -151,6 +151,13 @@ public class TrainingResultDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     User signatureFiOut;
 
+    // FI confirmation results: null=chưa ký, true=đồng ý, false=không đồng ý
+    @Column(name = "fi_in_confirmed")
+    Boolean fiInConfirmed;
+
+    @Column(name = "fi_out_confirmed")
+    Boolean fiOutConfirmed;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "reject_feedback", columnDefinition = "JSON")
     private RejectFeedbackJson rejectFeedback;

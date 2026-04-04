@@ -337,17 +337,18 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             TrainingResultDetail detail = trainingResultDetailRepository.findById(req.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.TRAINING_RESULT_DETAIL_NOT_FOUND));
 
-            if (Boolean.TRUE.equals(req.getIsSignIn())) {
-                if (detail.getSignatureFiIn() == null) {
-                    detail.setSignatureFiIn(currentUser);
-                }
+            // Xác nhận đầu vào (đưa mẫu vào)
+            if (req.getConfirmIn() != null && detail.getFiInConfirmed() == null) {
+                detail.setSignatureFiIn(currentUser);
+                detail.setFiInConfirmed(req.getConfirmIn());
             }
 
-            if (Boolean.TRUE.equals(req.getIsSignOut())) {
-                if (detail.getSignatureFiOut() == null) {
-                    detail.setSignatureFiOut(currentUser);
-                }
+            // Xác nhận đầu ra (lấy mẫu ra)
+            if (req.getConfirmOut() != null && detail.getFiOutConfirmed() == null) {
+                detail.setSignatureFiOut(currentUser);
+                detail.setFiOutConfirmed(req.getConfirmOut());
             }
+
             detailsToSave.add(detail);
         }
 
@@ -742,6 +743,10 @@ public class TrainingResultServiceImpl implements TrainingResultService {
             row.setSignatureFiOutName(detail.getSignatureFiOut().getFullName());
         }
 
+        // FI confirmation results
+        row.setFiInConfirmed(detail.getFiInConfirmed());
+        row.setFiOutConfirmed(detail.getFiOutConfirmed());
+
         row.setRejectFeedback(detail.getRejectFeedback());
 
         return row;
@@ -924,6 +929,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                         detail.getSignatureProOut() != null ? detail.getSignatureProOut().getFullName() : null)
                 .signatureFiOutName(
                         detail.getSignatureFiOut() != null ? detail.getSignatureFiOut().getFullName() : null)
+                .fiInConfirmed(detail.getFiInConfirmed())
+                .fiOutConfirmed(detail.getFiOutConfirmed())
                 .build();
 
         history.getDetailHistories().add(detailHistory);
@@ -1435,6 +1442,8 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                                 detail.getSignatureProOut() != null ? detail.getSignatureProOut().getFullName() : null)
                         .signatureFiOutName(
                                 detail.getSignatureFiOut() != null ? detail.getSignatureFiOut().getFullName() : null)
+                        .fiInConfirmed(detail.getFiInConfirmed())
+                        .fiOutConfirmed(detail.getFiOutConfirmed())
                         .build();
 
                 history.getDetailHistories().add(detailHistory);

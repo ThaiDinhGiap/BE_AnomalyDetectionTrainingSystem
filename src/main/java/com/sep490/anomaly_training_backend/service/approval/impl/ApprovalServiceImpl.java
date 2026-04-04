@@ -9,26 +9,8 @@ import com.sep490.anomaly_training_backend.enums.ReportStatus;
 import com.sep490.anomaly_training_backend.event.ApprovalEvent;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.Approvable;
-import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
-import com.sep490.anomaly_training_backend.model.ApprovalFlowStep;
-import com.sep490.anomaly_training_backend.model.BaseEntity;
-import com.sep490.anomaly_training_backend.model.DefectProposalDetail;
-import com.sep490.anomaly_training_backend.model.RejectReason;
-import com.sep490.anomaly_training_backend.model.RequiredAction;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
-import com.sep490.anomaly_training_backend.repository.ApprovalFlowStepRepository;
-import com.sep490.anomaly_training_backend.repository.DefectProposalDetailRepository;
-import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
-import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalDetailRepository;
+import com.sep490.anomaly_training_backend.model.*;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalHandler;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalRouteService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
@@ -80,6 +62,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
 
         logAction(entity, ApprovalAction.SUBMIT, 0, "SUBMIT", currentUser, null, null, null, request);
+
         log.info("Submitted {} id={} version={} by user={}", entity.getEntityType(), entity.getId(), entity.getCurrentVersion(), currentUser.getUsername());
 
         publishEvent(ApprovalAction.SUBMIT, entity, currentUser);
