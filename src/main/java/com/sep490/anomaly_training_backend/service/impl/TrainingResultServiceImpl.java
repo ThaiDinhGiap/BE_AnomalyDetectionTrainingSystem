@@ -1316,11 +1316,28 @@ public class TrainingResultServiceImpl implements TrainingResultService {
     @Override
     public void submitConfirmedResult(Long reportId, User currentUser) {
         TrainingResult report = getReportById(reportId);
-        List<TrainingResultDetail> details = report.getDetails().stream()
+        List<TrainingResultDetail> pendingDetails = report.getDetails().stream()
                 .filter(d -> d.getStatus() == ReportStatus.PENDING_CONFIRMATION)
-                .peek(d -> d.setStatus(ReportStatus.PENDING_REVIEW))
                 .toList();
-        trainingResultDetailRepository.saveAll(details);
+
+        if (pendingDetails.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_TRAINING_RESULT_STATUS,
+                    "Không có dòng nào ở trạng thái chờ xác nhận FI");
+        }
+
+        // Kiểm tra tất cả detail phải đã được FI xác nhận (đồng ý hoặc không đồng ý)
+        List<Long> unsignedIds = pendingDetails.stream()
+                .filter(d -> d.getFiInConfirmed() == null || d.getFiOutConfirmed() == null)
+                .map(TrainingResultDetail::getId)
+                .toList();
+
+        if (!unsignedIds.isEmpty()) {
+            throw new AppException(ErrorCode.FI_SIGNATURE_REQUIRED,
+                    "Các dòng chưa được FI xác nhận: " + unsignedIds);
+        }
+
+        pendingDetails.forEach(d -> d.setStatus(ReportStatus.PENDING_REVIEW));
+        trainingResultDetailRepository.saveAll(pendingDetails);
     }
 
     /**
