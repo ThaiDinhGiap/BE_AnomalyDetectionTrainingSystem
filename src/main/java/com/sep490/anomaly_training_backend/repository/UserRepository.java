@@ -29,7 +29,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions WHERE u.id = :id AND u.deleteFlag = false")
     Optional<User> findByIdWithRolesAndPermissions(@Param("id") Long id);
 
-    Optional<User> findByOauthProviderAndOauthProviderIdAndDeleteFlagFalse(OAuthProvider oauthProvider, String oauthProviderId);
+    Optional<User> findByOauthProviderAndOauthProviderIdAndDeleteFlagFalse(OAuthProvider oauthProvider,
+            String oauthProviderId);
 
     boolean existsByUsernameAndDeleteFlagFalse(String username);
 
@@ -48,5 +49,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles WHERE u.employeeCode = :employeeCode AND u.deleteFlag = false")
     Optional<User> findByEmployeeCodeWithRoles(@Param("employeeCode") String employeeCode);
-}
 
+    @Query("SELECT DISTINCT u FROM User u JOIN u.roles r JOIN r.permissions p WHERE p.permissionCode = :permissionCode AND u.isActive = true AND u.deleteFlag = false")
+    List<User> findByPermissionCode(@Param("permissionCode") String permissionCode);
+}

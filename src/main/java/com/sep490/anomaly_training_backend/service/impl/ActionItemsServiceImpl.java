@@ -27,10 +27,10 @@ public class ActionItemsServiceImpl implements ActionItemsService {
 
     /**
      * Resolve danh sách lineIds liên quan tới user hiện tại theo permission.
-     * - review_approve.confirm (FI): teams mà FI phụ trách → group → productLine
      * - group.manage (SV): groups mà SV quản lý → productLine
      * - section.manage (MNG): sections mà MNG quản lý → productLine
      * - team.manage (TL): teams mà TL quản lý → group → productLine
+     * Note: FI không dùng method này — FI dùng assignment-based query trực tiếp.
      */
     private List<Long> resolveUserLineIds(User currentUser) {
         if (currentUser.hasPermission("section.manage")) {
@@ -43,17 +43,6 @@ public class ActionItemsServiceImpl implements ActionItemsService {
         if (currentUser.hasPermission("group.manage")) {
             return groupRepository.findBySupervisorId(currentUser.getId()).stream()
                     .flatMap(g -> productLineRepository.findByGroupIdAndDeleteFlagFalse(g.getId()).stream())
-                    .map(ProductLine::getId)
-                    .distinct()
-                    .collect(Collectors.toList());
-        }
-        if (currentUser.hasPermission("review_approve.confirm")) {
-            return teamRepository.findByFinalInspectionId(currentUser.getId()).stream()
-                    .map(Team::getGroup)
-                    .filter(Objects::nonNull)
-                    .map(Group::getId)
-                    .distinct()
-                    .flatMap(groupId -> productLineRepository.findByGroupIdAndDeleteFlagFalse(groupId).stream())
                     .map(ProductLine::getId)
                     .distinct()
                     .collect(Collectors.toList());
@@ -78,9 +67,15 @@ public class ActionItemsServiceImpl implements ActionItemsService {
         String signatureType;
 
         if (currentUser.hasPermission("review_approve.confirm")) {
-            details = lineId != null
-                    ? trainingResultDetailRepository.findPendingFiOutSignatures(lineId)
-                    : resolveAndQuery(currentUser, "FI_OUT");
+            // FI: chỉ thấy detail đã assign cho mình
+            details = trainingResultDetailRepository
+                    .findPendingFiConfirmationByAssignedFi(currentUser.getId());
+            if (lineId != null) {
+                details = details.stream()
+                        .filter(d -> d.getTrainingResult().getLine() != null
+                                && lineId.equals(d.getTrainingResult().getLine().getId()))
+                        .collect(Collectors.toList());
+            }
             signatureType = "FI_OUT";
         } else if (currentUser.hasPermission("group.manage")) {
             details = lineId != null
@@ -102,7 +97,6 @@ public class ActionItemsServiceImpl implements ActionItemsService {
         if (lineIds.isEmpty()) return List.of();
 
         return switch (signatureType) {
-            case "FI_OUT" -> trainingResultDetailRepository.findPendingFiOutSignaturesByLineIds(lineIds);
             case "SV" -> trainingResultDetailRepository.findPendingSvReviewByLineIds(lineIds);
             default -> trainingResultDetailRepository.findPendingProOutSignaturesByLineIds(lineIds);
         };
