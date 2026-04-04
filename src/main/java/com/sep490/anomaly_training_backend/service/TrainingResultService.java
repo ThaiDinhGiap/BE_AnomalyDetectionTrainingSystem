@@ -77,4 +77,6 @@ public interface TrainingResultService {
     boolean canApprove(Long reportId, User currentUser);
 
     void submitConfirmedResult(Long reportId, User currentUser);
+
+    TrainingResultDetailResponse getTrainingResultDetailForConfirmation(Long id);
 }
