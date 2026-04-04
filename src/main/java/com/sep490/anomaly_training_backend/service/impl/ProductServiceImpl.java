@@ -71,6 +71,7 @@ public class ProductServiceImpl implements ProductService {
             List<ProductImportDto> parsedRows = importHelper.parseExcelRows(sheet, errors);
 
             if (!errors.isEmpty()) {
+                saveImportFailHistory(user, productFile, errors);
                 throw new AppException(ErrorCode.IMPORT_PARSE_ERROR);
             }
 
@@ -78,6 +79,7 @@ public class ProductServiceImpl implements ProductService {
             importValidator.validateFileData(parsedRows, errors);
 
             if (!errors.isEmpty()) {
+                saveImportFailHistory(user, productFile, errors);
                 throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
             }
 
@@ -86,6 +88,7 @@ public class ProductServiceImpl implements ProductService {
 
             // Step 4: If any errors occurred during processing, save them
             if (!errors.isEmpty()) {
+                saveImportFailHistory(user, productFile, errors);
                 throw new AppException(ErrorCode.IMPORT_FAILED);
             }
 
