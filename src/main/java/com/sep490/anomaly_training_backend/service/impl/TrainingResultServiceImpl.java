@@ -5,60 +5,13 @@ import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateResultDetailRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
-import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
-import com.sep490.anomaly_training_backend.enums.ApprovalAction;
-import com.sep490.anomaly_training_backend.enums.ApprovalEntityType;
-import com.sep490.anomaly_training_backend.enums.EmployeeSkillStatus;
-import com.sep490.anomaly_training_backend.enums.EmployeeStatus;
-import com.sep490.anomaly_training_backend.enums.ReportStatus;
+import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.enums.*;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
-import com.sep490.anomaly_training_backend.model.ApprovalActionLog;
-import com.sep490.anomaly_training_backend.model.Employee;
-import com.sep490.anomaly_training_backend.model.EmployeeSkill;
-import com.sep490.anomaly_training_backend.model.PrioritySnapshotDetail;
+import com.sep490.anomaly_training_backend.model.*;
 import com.sep490.anomaly_training_backend.model.Process;
-import com.sep490.anomaly_training_backend.model.Product;
-import com.sep490.anomaly_training_backend.model.ProductProcess;
-import com.sep490.anomaly_training_backend.model.Role;
-import com.sep490.anomaly_training_backend.model.Team;
-import com.sep490.anomaly_training_backend.model.TrainingPlan;
-import com.sep490.anomaly_training_backend.model.TrainingPlanDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResult;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
-import com.sep490.anomaly_training_backend.model.TrainingResultDetailHistory;
-import com.sep490.anomaly_training_backend.model.TrainingResultHistory;
-import com.sep490.anomaly_training_backend.model.TrainingSample;
-import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.repository.ApprovalActionRepository;
-import com.sep490.anomaly_training_backend.repository.EmployeeRepository;
-import com.sep490.anomaly_training_backend.repository.EmployeeSkillRepository;
-import com.sep490.anomaly_training_backend.repository.GroupRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotDetailRepository;
-import com.sep490.anomaly_training_backend.repository.PrioritySnapshotRepository;
-import com.sep490.anomaly_training_backend.repository.ProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductLineRepository;
-import com.sep490.anomaly_training_backend.repository.ProductProcessRepository;
-import com.sep490.anomaly_training_backend.repository.ProductRepository;
-import com.sep490.anomaly_training_backend.repository.RejectReasonRepository;
-import com.sep490.anomaly_training_backend.repository.RequiredActionRepository;
-import com.sep490.anomaly_training_backend.repository.TeamRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingPlanRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultDetailRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultHistoryRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingResultRepository;
-import com.sep490.anomaly_training_backend.repository.TrainingSampleRepository;
-import com.sep490.anomaly_training_backend.repository.UserRepository;
+import com.sep490.anomaly_training_backend.repository.*;
 import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.approval.ApprovalService;
 import com.sep490.anomaly_training_backend.util.ReportUtils;
@@ -74,12 +27,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -1332,8 +1280,7 @@ public class TrainingResultServiceImpl implements TrainingResultService {
                 .toList();
 
         if (!unsignedIds.isEmpty()) {
-            throw new AppException(ErrorCode.FI_SIGNATURE_REQUIRED,
-                    "Các dòng chưa được FI xác nhận: " + unsignedIds);
+            throw new AppException(ErrorCode.FI_SIGNATURE_REQUIRED);
         }
 
         pendingDetails.forEach(d -> d.setStatus(ReportStatus.PENDING_REVIEW));
