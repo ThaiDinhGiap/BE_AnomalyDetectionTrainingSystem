@@ -106,6 +106,7 @@ public enum ErrorCode {
     INVALID_TRAINING_RESULT_STATUS(7104, "This action cannot be performed in the current result status.", HttpStatus.BAD_REQUEST),
     MISSING_PROCESS_IN_RESULT_DETAIL(7105, "Cannot submit. Please select a Process for all items.", HttpStatus.BAD_REQUEST),
     TRAINING_SAMPLE_REVIEW_NOT_FOUND(7106, "Training sample review not found.", HttpStatus.NOT_FOUND),
+    FI_SIGNATURE_REQUIRED(7107, "Cannot submit. Final Inspection (FI) must confirm (approve or reject) all pending details.", HttpStatus.BAD_REQUEST),
 
     // Import Errors (range 72xx)
     FILE_IS_EMPTY(7200, "File is empty.", HttpStatus.BAD_REQUEST),
