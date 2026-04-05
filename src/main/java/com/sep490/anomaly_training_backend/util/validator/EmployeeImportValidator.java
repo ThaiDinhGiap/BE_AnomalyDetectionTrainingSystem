@@ -104,34 +104,6 @@ public class EmployeeImportValidator {
                 seenEmployeeCodes.add(dto.getEmployeeCode());
                 employeeCodeRowMap.put(dto.getEmployeeCode(), rowNum);
             }
-
-            // 4. If role is not blank → validate role + email required
-            boolean hasRole = dto.getRole() != null && !dto.getRole().trim().isEmpty();
-            if (hasRole && !dto.getRole().equalsIgnoreCase("Team Lead")) {
-                // 4a. Validate role value
-                String roleCode = mapRoleDisplayToCode(dto.getRole());
-                if (roleCode == null) {
-                    errors.add(buildRowError(rowNum, "role", dto.getRole(),
-                            "Invalid role value. Allowed: Admin, Manager, Supervisor, Final Inspection, Team Lead"));
-                }
-
-                // 4b. Email is required when role is present (because User will be created)
-                if (dto.getEmail() == null || dto.getEmail().trim().isEmpty()) {
-                    errors.add(buildRowError(rowNum, "email", dto.getEmail(),
-                            "Email is required when role is specified"));
-                } else {
-                    // 4c. Check for duplicate email in file
-                    String normalizedEmail = dto.getEmail().trim().toLowerCase();
-                    if (seenEmails.contains(normalizedEmail)) {
-                        Integer firstRow = emailRowMap.get(normalizedEmail);
-                        errors.add(buildRowError(rowNum, "email", dto.getEmail(),
-                                "Duplicate email in file (first occurrence at row " + firstRow + ")"));
-                    } else {
-                        seenEmails.add(normalizedEmail);
-                        emailRowMap.put(normalizedEmail, rowNum);
-                    }
-                }
-            }
         }
 
         log.info("File validation completed. Total rows: {}, Errors: {}", rows.size(), errors.size());
