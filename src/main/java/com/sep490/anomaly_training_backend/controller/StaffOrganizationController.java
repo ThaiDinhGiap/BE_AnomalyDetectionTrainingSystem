@@ -40,6 +40,8 @@ public class StaffOrganizationController {
     private final AuthService authService;
     private final EmployeeSkillService employeeSkillService;
     private final TrainingResultService trainingResultService;
+    private final ImportHistoryService importHistoryService;
+
 
     // For Admin
     @GetMapping("/sections")
@@ -318,4 +320,41 @@ public class StaffOrganizationController {
                 .contentLength(file.contentLength())
                 .body(resource);
     }
+
+    @Operation(summary = "Download employee-account template")
+    @GetMapping("/employee/download-template")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<Resource> downloadEmployeeTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Employee_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Employee_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
+    }
+
+//    @Operation(summary = "Get history import Employee Skill")
+//    @GetMapping("/employee-skill/import-history")
+//    @PreAuthorize("hasAuthority('employee.manage')")
+//    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyEmployeeSkillImport(@AuthenticationPrincipal User currentUser) {
+//        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "EMPLOYEE_SKILL_IMPORT");
+//        return ResponseEntity.ok(ApiResponse.success(responses));
+//    }
+
+    @Operation(summary = "Get history import Employee")
+    @GetMapping("/employee/import-history")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyEmployeeImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "EMPLOYEE_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
 }
