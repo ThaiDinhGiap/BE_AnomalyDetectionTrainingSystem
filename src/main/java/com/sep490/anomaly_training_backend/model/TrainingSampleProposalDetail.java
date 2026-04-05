@@ -2,27 +2,14 @@ package com.sep490.anomaly_training_backend.model;
 
 import com.sep490.anomaly_training_backend.dto.approval.RejectFeedbackJson;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entity for training_sample_proposal_details table - Detail rows in training sample proposals
@@ -62,11 +49,16 @@ public class TrainingSampleProposalDetail extends BaseEntity {
     @EqualsAndHashCode.Exclude
     Process process;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "training_sample_proposal_detail_products",
+        joinColumns = @JoinColumn(name = "proposal_detail_id"),
+        inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Product product;
+    @Builder.Default
+    Set<Product> products = new HashSet<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "defect_id")

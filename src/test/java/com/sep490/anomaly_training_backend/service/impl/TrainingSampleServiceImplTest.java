@@ -116,7 +116,7 @@ class TrainingSampleServiceImplTest {
         sample.setTrainingCode("TS-001");
         sample.setProcess(process);
         sample.setProductLine(productLine);
-        sample.setProduct(product);
+        sample.setProducts(new HashSet<>(List.of(product)));
 
         proposal = new TrainingSampleProposal();
         proposal.setId(200L);

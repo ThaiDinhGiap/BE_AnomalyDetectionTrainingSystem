@@ -16,7 +16,7 @@ public class TrainingSampleProposalDetailResponse {
     Long trainingSampleProposalId;
     Long trainingSampleId;
     ProposalType proposalType;
-    ProductResponse product;
+    List<ProductResponse> products;
     DefectResponse defect;
     Long processId;
     String processName;

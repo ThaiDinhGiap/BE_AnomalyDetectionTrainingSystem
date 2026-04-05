@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Entity for training_samples table - Master data for approved training samples
  */
@@ -49,11 +52,16 @@ public class TrainingSample extends BaseEntity {
     @Column(name = "training_description", nullable = false, columnDefinition = "text")
     String trainingDescription;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "training_sample_products",
+        joinColumns = @JoinColumn(name = "training_sample_id"),
+        inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    Product product;
+    @Builder.Default
+    Set<Product> products = new HashSet<>();
 
     @Column(name = "training_sample_code", length = 20)
     String trainingSampleCode;

@@ -3,6 +3,7 @@ package com.sep490.anomaly_training_backend.service.export.impl;
 import com.sep490.anomaly_training_backend.enums.ExportEntityType;
 import com.sep490.anomaly_training_backend.exception.AppException;
 import com.sep490.anomaly_training_backend.exception.ErrorCode;
+import com.sep490.anomaly_training_backend.model.Product;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposal;
 import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import com.sep490.anomaly_training_backend.repository.TrainingSampleProposalRepository;
@@ -74,7 +75,9 @@ public class TrainingSampleProposalExporter implements EntityExporter {
                 styles.writeCell(dataRow, 3, d.getCategoryName());
                 styles.writeCell(dataRow, 4, d.getTrainingDescription());
                 styles.writeCell(dataRow, 5, d.getProcess() != null ? d.getProcess().getName() : "");
-                styles.writeCell(dataRow, 6, d.getProduct() != null ? d.getProduct().getName() : "");
+                styles.writeCell(dataRow, 6, d.getProducts() != null && !d.getProducts().isEmpty()
+                        ? d.getProducts().stream().map(Product::getName).collect(java.util.stream.Collectors.joining(", "))
+                        : "");
                 styles.writeCell(dataRow, 7, d.getNote());
             }
         }

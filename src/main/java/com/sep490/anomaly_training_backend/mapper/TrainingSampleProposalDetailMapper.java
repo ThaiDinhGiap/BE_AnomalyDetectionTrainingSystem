@@ -5,7 +5,7 @@ import com.sep490.anomaly_training_backend.model.TrainingSampleProposalDetail;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {ProcessMapper.class, DefectMapper.class, TrainingSampleMapper.class})
+@Mapper(componentModel = "spring", uses = {ProcessMapper.class, DefectMapper.class, TrainingSampleMapper.class, ProductMapper.class})
 public abstract class TrainingSampleProposalDetailMapper {
 
     @Mapping(target = "processName", source = "process.name")

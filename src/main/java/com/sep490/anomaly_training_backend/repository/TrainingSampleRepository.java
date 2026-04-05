@@ -44,31 +44,43 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
 """)
     Optional<Long> findMaxTrainingCodeSequence();
 
-    List<TrainingSample> findByProductId(Long productId);
     @Query("SELECT ts FROM TrainingSample ts")
     List<TrainingSample> findAllSamples();
 
-    @Query("SELECT ts FROM TrainingSample ts " +
-            "WHERE ts.product.id = :productId OR ts.product IS NULL")
-    List<TrainingSample> findByProductIdOrGlobal(@Param("productId") Long productId);
-
-    List<TrainingSample> findByProductIdAndProcessId(Long productId, Long processId);
+    @Query("""
+        SELECT DISTINCT ts FROM TrainingSample ts
+        JOIN ts.products p
+        WHERE p.id = :productId
+    """)
+    List<TrainingSample> findByProductId(@Param("productId") Long productId);
 
     @Query("""
-    select ts
-    from TrainingSample ts
-    where ts.process.id = :processId
-      and ts.categoryName = :categoryName
-      and ts.trainingDescription = :trainingDescription
-      and ts.product.id = :productId
-      and ts.trainingSampleCode = :trainingSampleCode
+        SELECT DISTINCT ts FROM TrainingSample ts
+        LEFT JOIN ts.products p
+        WHERE p.id = :productId OR ts.products IS EMPTY
+    """)
+    List<TrainingSample> findByProductIdOrGlobal(@Param("productId") Long productId);
+
+    /**
+     * Check if a TrainingSample exists with matching fields AND contains ANY of the given products.
+     * Uses JOIN through ManyToMany products collection.
+     */
+    @Query("""
+    SELECT DISTINCT ts
+    FROM TrainingSample ts
+    JOIN ts.products p
+    WHERE ts.process.id = :processId
+      AND ts.categoryName = :categoryName
+      AND ts.trainingDescription = :trainingDescription
+      AND ts.trainingSampleCode = :trainingSampleCode
+      AND p.id IN :productIds
 """)
     Optional<TrainingSample> checkExist(
             @Param("processId") Long processId,
             @Param("categoryName") String categoryName,
             @Param("trainingDescription") String trainingDescription,
-            @Param("productId") Long productId,
-            @Param("trainingSampleCode") String trainingSampleCode
+            @Param("trainingSampleCode") String trainingSampleCode,
+            @Param("productIds") List<Long> productIds
     );
 
     /**

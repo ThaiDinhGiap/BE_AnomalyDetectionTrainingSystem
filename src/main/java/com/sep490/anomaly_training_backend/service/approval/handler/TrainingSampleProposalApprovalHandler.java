@@ -251,7 +251,7 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
     private void copyFromDetailToTrainingSample(TrainingSampleProposalDetail d, TrainingSample target) {
         target.setProcess(d.getProcess());
         target.setProductLine(d.getProcess().getProductLine());
-        target.setProduct(d.getProduct());
+        target.getProducts().addAll(d.getProducts());
         target.setDefect(d.getDefect());
         target.setCategoryName(d.getCategoryName());
         target.setTrainingDescription(d.getTrainingDescription());

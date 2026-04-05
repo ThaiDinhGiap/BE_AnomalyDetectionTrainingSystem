@@ -12,10 +12,9 @@ import java.util.List;
 public class TrainingSampleResponse {
     Long trainingSampleId;
     String trainingCode;
-    Long productLineId;
     Long processId;
     String processName;
-    ProductResponse product;
+    List<ProductResponse> products;
     DefectResponse defect;
     String trainingSampleCode;
     String categoryName;

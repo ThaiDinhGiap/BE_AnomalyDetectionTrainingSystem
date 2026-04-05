@@ -3,6 +3,8 @@ package com.sep490.anomaly_training_backend.dto.response.sample;
 import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,7 +15,7 @@ public class TrainingSampleProposalDetailUpdateResponse {
     Long trainingSampleId;
     ProposalType proposalType;
     Long processId;
-    Long productId;
+    List<Long> productIds;
     Long defectId;
     String categoryName;
     String trainingSampleCode;

@@ -21,7 +21,7 @@ public class TrainingSampleProposalDetailRequest {
     Long defectId; // Loi Quá khứ
     String categoryName; // Hạng Mục
     String trainingSampleCode; //Mã mấu
-    Long productId; // Mã sản phẩm
+    List<Long> productIds; // Mã sản phẩm (ManyToMany)
     String trainingDescription; // Nôi dung
     String note; //Chi chú
     

@@ -247,7 +247,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         sample.setTrainingDescription(dto.getTrainingDescription());
         sample.setTrainingSampleCode(dto.getTrainingSampleCode());
         sample.setDefect(defect);
-        sample.setProduct(null); // Product no longer imported from Excel
+        sample.setProducts(new HashSet<>()); // Products managed via proposal, not imported from Excel
         sample.setProcessOrder(dto.getProcessOrder());
         sample.setCategoryOrder(dto.getCategoryOrder());
         sample.setContentOrder(dto.getContentOrder());
@@ -414,8 +414,10 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     private TrainingSampleResponse enrichResponse(TrainingSample entity) {
         TrainingSampleResponse response = trainingSampleMapper.toDto(entity);
-        if (entity.getProduct() != null) {
-            response.setProduct(productService.getProductById(entity.getProduct().getId()));
+        if (entity.getProducts() != null && !entity.getProducts().isEmpty()) {
+            response.setProducts(entity.getProducts().stream()
+                    .map(p -> productService.getProductById(p.getId()))
+                    .collect(Collectors.toList()));
         }
         if (entity.getDefect() != null) {
             response.setDefect(defectService.getDefectById(entity.getDefect().getId()));
@@ -448,8 +450,10 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         if (entity.getRejectFeedback() != null) {
             response.setRejectFeedback(response.getRejectFeedback());
         }
-        if (entity.getProduct() != null) {
-            response.setProduct(productService.getProductById(entity.getProduct().getId()));
+        if (entity.getProducts() != null && !entity.getProducts().isEmpty()) {
+            response.setProducts(entity.getProducts().stream()
+                    .map(p -> productService.getProductById(p.getId()))
+                    .collect(Collectors.toList()));
         }
         if (entity.getDefect() != null) {
             response.setDefect(defectService.getDefectById(entity.getDefect().getId()));
@@ -530,20 +534,20 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
                 ProposalType inferredType = resolveProposalType(item);
-                TrainingSample validateEntity = trainingSampleRepository.checkExist(item.getProcessId(),
+                List<Long> pIds = item.getProductIds() != null ? item.getProductIds() : Collections.emptyList();
+                TrainingSample validateEntity = pIds.isEmpty() ? null : trainingSampleRepository.checkExist(item.getProcessId(),
                                 item.getCategoryName(),
                                 item.getTrainingDescription(),
-                                item.getProductId(),
-                                item.getTrainingSampleCode())
+                                item.getTrainingSampleCode(),
+                                pIds)
                         .orElse(null);
                 if (inferredType != ProposalType.DELETE && Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), item.getTrainingSampleId())) {
                     throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
-                            "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
+                            "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, trainingSampleCode=%s]",
                             validateEntity.getTrainingCode(),
                             validateEntity.getProcess().getCode(),
                             item.getCategoryName(),
                             item.getTrainingDescription(),
-                            validateEntity.getProduct() != null ? validateEntity.getProduct().getCode() : "N/A",
                             item.getTrainingSampleCode()
                     ));
                 }
@@ -621,7 +625,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                         .categoryName(detail.getCategoryName())
                         .trainingSampleCode(detail.getTrainingSampleCode())
                         .trainingDescription(detail.getTrainingDescription())
-                        .productId(detail.getProduct() != null ? detail.getProduct().getId() : null)
+                        .productId(detail.getProducts() != null && !detail.getProducts().isEmpty() ? detail.getProducts().iterator().next().getId() : null)
                         .note(detail.getNote())
                         .build();
                 history.getDetailHistory().add(detailHistory);
@@ -689,20 +693,20 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
 
             // Validate uniqueness only for CREATE and UPDATE
-            TrainingSample validateEntity = trainingSampleRepository.checkExist(detailRequest.getProcessId(),
+            List<Long> pIds = detailRequest.getProductIds() != null ? detailRequest.getProductIds() : Collections.emptyList();
+            TrainingSample validateEntity = pIds.isEmpty() ? null : trainingSampleRepository.checkExist(detailRequest.getProcessId(),
                             detailRequest.getCategoryName(),
                             detailRequest.getTrainingDescription(),
-                            detailRequest.getProductId(),
-                            detailRequest.getTrainingSampleCode())
+                            detailRequest.getTrainingSampleCode(),
+                            pIds)
                     .orElse(null);
             if (resolvedType != ProposalType.DELETE && Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), detailRequest.getTrainingSampleId())) {
                 throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
-                        "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
+                        "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, trainingSampleCode=%s]",
                         validateEntity.getTrainingCode(),
                         validateEntity.getProcess().getCode(),
                         detailRequest.getCategoryName(),
                         detailRequest.getTrainingDescription(),
-                        validateEntity.getProduct() != null ? validateEntity.getProduct().getCode() : "N/A",
                         detailRequest.getTrainingSampleCode()
                 ));
             }
@@ -721,11 +725,15 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 entity.setDefect(defect);
             }
 
-            // Handle product - validate if not null
-            if (detailRequest.getProductId() != null) {
-                Product product = productRepository.findById(detailRequest.getProductId())
-                        .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-                entity.setProduct(product);
+            // Handle products - validate if not null
+            if (detailRequest.getProductIds() != null && !detailRequest.getProductIds().isEmpty()) {
+                Set<Product> products = new HashSet<>();
+                for (Long pid : detailRequest.getProductIds()) {
+                    Product product = productRepository.findById(pid)
+                            .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+                    products.add(product);
+                }
+                entity.setProducts(products);
             }
 
             entity.setTrainingSampleProposal(proposal);
@@ -773,10 +781,12 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             entity.setTrainingSample(null);
         }
 
-        if (request.getProductId() != null) {
-            entity.setProduct(productRepository.getReferenceById(request.getProductId()));
-        } else {
-            entity.setProduct(null);
+        if (request.getProductIds() != null && !request.getProductIds().isEmpty()) {
+            Set<Product> products = new HashSet<>();
+            for (Long pid : request.getProductIds()) {
+                products.add(productRepository.getReferenceById(pid));
+            }
+            entity.setProducts(products);
         }
 
         if (request.getDefectId() != null) {
@@ -796,7 +806,9 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         if (entity == null) return null;
         Long trainingSampleId = entity.getTrainingSample() != null ? entity.getTrainingSample().getId() : null;
         Long processId = entity.getProcess() != null ? entity.getProcess().getId() : null;
-        Long productId = entity.getProduct() != null ? entity.getProduct().getId() : null;
+        List<Long> productIds = entity.getProducts() != null
+                ? entity.getProducts().stream().map(Product::getId).collect(Collectors.toList())
+                : Collections.emptyList();
         Long defectId = entity.getDefect() != null ? entity.getDefect().getId() : null;
 
         return TrainingSampleProposalDetailUpdateResponse.builder()
@@ -804,7 +816,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 .trainingSampleId(trainingSampleId)
                 .proposalType(entity.getProposalType())
                 .processId(processId)
-                .productId(productId)
+                .productIds(productIds)
                 .defectId(defectId)
                 .categoryName(entity.getCategoryName())
                 .trainingSampleCode(entity.getTrainingSampleCode())
@@ -859,10 +871,14 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             entity.setTrainingSample(null);
         }
 
-        if (request.getProductId() != null) {
-            entity.setProduct(productRepository.getReferenceById(request.getProductId()));
+        if (request.getProductIds() != null && !request.getProductIds().isEmpty()) {
+            Set<Product> products = new HashSet<>();
+            for (Long pid : request.getProductIds()) {
+                products.add(productRepository.getReferenceById(pid));
+            }
+            entity.setProducts(products);
         } else {
-            entity.setProduct(null);
+            entity.getProducts().clear();
         }
 
         if (request.getDefectId() != null) {
@@ -919,7 +935,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 deleteDetail.setTrainingSample(member);
                 deleteDetail.setProposalType(ProposalType.DELETE);
                 deleteDetail.setProcess(member.getProcess());
-                deleteDetail.setProduct(member.getProduct());
+                deleteDetail.setProducts(new HashSet<>(member.getProducts()));
                 deleteDetail.setDefect(member.getDefect());
                 deleteDetail.setCategoryName(member.getCategoryName());
                 deleteDetail.setTrainingSampleCode(member.getTrainingSampleCode());
