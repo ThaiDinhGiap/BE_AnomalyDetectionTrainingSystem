@@ -542,16 +542,14 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
-                // Validate uniqueness for non-DELETE types
-                ProposalType inferredType = (item.getTrainingSampleId() == null)
-                        ? ProposalType.CREATE : ProposalType.UPDATE;
+                ProposalType inferredType = resolveProposalType(item);
                 TrainingSample validateEntity = trainingSampleRepository.checkExist(item.getProcessId(),
                                 item.getCategoryName(),
                                 item.getTrainingDescription(),
                                 item.getProductId(),
                                 item.getTrainingSampleCode())
                         .orElse(null);
-                if (Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), item.getTrainingSampleId())) {
+                if (inferredType != ProposalType.DELETE && Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), item.getTrainingSampleId())) {
                     throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
                             "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
                             validateEntity.getTrainingCode(),
@@ -697,10 +695,8 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     private void createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal, User currentUser) {
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
-            // ★ Infer ProposalType from trainingSampleId
-            ProposalType inferredType = (detailRequest.getTrainingSampleId() == null)
-                    ? ProposalType.CREATE
-                    : ProposalType.UPDATE;
+            // ★ Use FE-provided proposalType if present, otherwise infer from trainingSampleId
+            ProposalType resolvedType = resolveProposalType(detailRequest);
 
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
@@ -712,7 +708,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                             detailRequest.getProductId(),
                             detailRequest.getTrainingSampleCode())
                     .orElse(null);
-            if (Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), detailRequest.getTrainingSampleId())) {
+            if (resolvedType != ProposalType.DELETE && Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), detailRequest.getTrainingSampleId())) {
                 throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
                         "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
                         validateEntity.getTrainingCode(),
@@ -746,7 +742,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             }
 
             entity.setTrainingSampleProposal(proposal);
-            entity.setProposalType(inferredType);
+            entity.setProposalType(resolvedType);
             entity.setCategoryName(detailRequest.getCategoryName());
             entity.setProcess(process);
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
@@ -776,10 +772,8 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
         }
 
-        // ★ Infer ProposalType from trainingSampleId
-        ProposalType inferredType = (request.getTrainingSampleId() == null)
-                ? ProposalType.CREATE
-                : ProposalType.UPDATE;
+        // ★ Use FE-provided proposalType if present, otherwise infer
+        ProposalType inferredType = resolveProposalType(request);
 
         TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
         entity.setTrainingSampleProposal(proposal);
@@ -865,10 +859,8 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
         }
 
-        // ★ Infer ProposalType from trainingSampleId
-        ProposalType inferredType = (request.getTrainingSampleId() == null)
-                ? ProposalType.CREATE
-                : ProposalType.UPDATE;
+        // ★ Use FE-provided proposalType if present, otherwise infer
+        ProposalType inferredType = resolveProposalType(request);
 
         entity.setTrainingSampleProposal(proposal);
         entity.setProposalType(inferredType);
@@ -951,5 +943,19 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 log.info("Auto-created DELETE detail for TrainingSample id={} (not in request snapshot)", member.getId());
             }
         }
+    }
+
+    /**
+     * Resolve ProposalType: use FE-provided value if present, otherwise infer from trainingSampleId.
+     * - FE sends explicit proposalType (e.g., DELETE for deleting entire group) → use it
+     * - FE sends null → infer: trainingSampleId == null → CREATE, otherwise → UPDATE
+     */
+    private ProposalType resolveProposalType(TrainingSampleProposalDetailRequest request) {
+        if (request.getProposalType() != null) {
+            return request.getProposalType();
+        }
+        return (request.getTrainingSampleId() == null)
+                ? ProposalType.CREATE
+                : ProposalType.UPDATE;
     }
 }

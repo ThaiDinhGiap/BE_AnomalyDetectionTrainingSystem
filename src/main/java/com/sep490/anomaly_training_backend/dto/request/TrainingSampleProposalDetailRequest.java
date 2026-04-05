@@ -1,5 +1,6 @@
 package com.sep490.anomaly_training_backend.dto.request;
 
+import com.sep490.anomaly_training_backend.enums.ProposalType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.util.List;
 public class TrainingSampleProposalDetailRequest {
     Long trainingSampleProposalDetailId;
     Long trainingSampleId; // chỉ định mẫu huan luyen nào đc tác động
+    ProposalType proposalType; // Optional: FE gửi khi muốn explicit (vd DELETE nhóm), null thì BE tự infer
     Long processId; //Công doan
     Long defectId; // Loi Quá khứ
     String categoryName; // Hạng Mục
