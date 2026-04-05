@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface TrainingSampleRepository extends JpaRepository<TrainingSample, Long> {
@@ -107,4 +108,23 @@ public interface TrainingSampleRepository extends JpaRepository<TrainingSample, 
      */
     @Query(value = "SELECT DISTINCT ts.content_order FROM training_samples ts WHERE ts.process_id = :processId AND ts.category_name = :categoryName AND ts.training_description = :trainingDescription AND ts.delete_flag = false LIMIT 1", nativeQuery = true)
     Optional<Integer> findContentOrderByProcessCategoryAndDescription(@Param("processId") Long processId, @Param("categoryName") String categoryName, @Param("trainingDescription") String trainingDescription);
+
+    /**
+     * Find all siblings in the same group (same trainingSampleCode + productLine)
+     */
+    List<TrainingSample> findByTrainingSampleCodeAndProductLineIdAndDeleteFlagFalse(
+            String trainingSampleCode, Long productLineId);
+
+    /**
+     * Batch find all members of multiple groups (used for snapshot delete detection)
+     */
+    @Query("""
+        SELECT ts FROM TrainingSample ts
+        WHERE ts.trainingSampleCode IN :codes
+          AND ts.productLine.id = :productLineId
+          AND ts.deleteFlag = false
+    """)
+    List<TrainingSample> findByTrainingSampleCodeInAndProductLineIdAndDeleteFlagFalse(
+            @Param("codes") Set<String> codes,
+            @Param("productLineId") Long productLineId);
 }

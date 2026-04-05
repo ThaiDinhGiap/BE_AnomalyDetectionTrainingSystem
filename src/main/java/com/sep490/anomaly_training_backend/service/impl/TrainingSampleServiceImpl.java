@@ -41,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -541,23 +542,27 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         for (TrainingSampleProposalDetailRequest item : items) {
             if (item.getTrainingSampleProposalDetailId() == null) {
                 TrainingSampleProposalDetail newEntity = mapToEntity(item, proposal);
+                // Validate uniqueness for non-DELETE types
+                ProposalType inferredType = (item.getTrainingSampleId() == null)
+                        ? ProposalType.CREATE : ProposalType.UPDATE;
                 TrainingSample validateEntity = trainingSampleRepository.checkExist(item.getProcessId(),
                                 item.getCategoryName(),
                                 item.getTrainingDescription(),
                                 item.getProductId(),
                                 item.getTrainingSampleCode())
                         .orElse(null);
-                if (!item.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != item.getTrainingSampleId()) {
+                if (Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), item.getTrainingSampleId())) {
                     throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
                             "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
                             validateEntity.getTrainingCode(),
                             validateEntity.getProcess().getCode(),
                             item.getCategoryName(),
                             item.getTrainingDescription(),
-                            validateEntity.getProduct().getCode(),
+                            validateEntity.getProduct() != null ? validateEntity.getProduct().getCode() : "N/A",
                             item.getTrainingSampleCode()
                     ));
                 }
+                newEntity.setProposalType(inferredType);
                 newEntity = trainingSampleProposalDetailRepository.save(newEntity);
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     attachmentService.uploadAttachments(item.getImages(), "TRAINING_SAMPLE_PROPOSAL", newEntity.getId(), currentUser.getUsername());
@@ -692,28 +697,35 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
 
     private void createDetail(List<TrainingSampleProposalDetailRequest> proposalDetailList, TrainingSampleProposal proposal, User currentUser) {
         for (TrainingSampleProposalDetailRequest detailRequest : proposalDetailList) {
+            // ★ Infer ProposalType from trainingSampleId
+            ProposalType inferredType = (detailRequest.getTrainingSampleId() == null)
+                    ? ProposalType.CREATE
+                    : ProposalType.UPDATE;
+
             Process process = processRepository.findById(detailRequest.getProcessId())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND));
+
+            // Validate uniqueness only for CREATE and UPDATE
             TrainingSample validateEntity = trainingSampleRepository.checkExist(detailRequest.getProcessId(),
                             detailRequest.getCategoryName(),
                             detailRequest.getTrainingDescription(),
                             detailRequest.getProductId(),
                             detailRequest.getTrainingSampleCode())
                     .orElse(null);
-            if (!detailRequest.getProposalType().equals(ProposalType.DELETE) && Objects.nonNull(validateEntity) && validateEntity.getId() != detailRequest.getTrainingSampleId()) {
+            if (Objects.nonNull(validateEntity) && !Objects.equals(validateEntity.getId(), detailRequest.getTrainingSampleId())) {
                 throw new AppException(ErrorCode.TRAINING_SAMPLE_ALREADY_EXISTS, String.format(
                         "Mẫu đào tạo đã tồn tại [Mã huấn luyện=%s, công đoạn=%s, Hạng mục=%s, Nội dung=%s, Sản phẩm=%s, trainingSampleCode=%s]",
                         validateEntity.getTrainingCode(),
                         validateEntity.getProcess().getCode(),
                         detailRequest.getCategoryName(),
                         detailRequest.getTrainingDescription(),
-                        validateEntity.getProduct().getCode(),
+                        validateEntity.getProduct() != null ? validateEntity.getProduct().getCode() : "N/A",
                         detailRequest.getTrainingSampleCode()
                 ));
             }
             TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
 
-            // Handle trainingSample - can be null
+            // Handle trainingSample - can be null for CREATE
             if (detailRequest.getTrainingSampleId() != null) {
                 TrainingSample trainingSample = trainingSampleRepository.findById(detailRequest.getTrainingSampleId()).orElse(null);
                 entity.setTrainingSample(trainingSample);
@@ -734,7 +746,7 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             }
 
             entity.setTrainingSampleProposal(proposal);
-            entity.setProposalType(detailRequest.getProposalType());
+            entity.setProposalType(inferredType);
             entity.setCategoryName(detailRequest.getCategoryName());
             entity.setProcess(process);
             entity.setTrainingDescription(detailRequest.getTrainingDescription());
@@ -749,11 +761,13 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                 attachmentService.uploadAttachments(detailRequest.getImages(), "TRAINING_SAMPLE_PROPOSAL", entity.getId(), currentUser.getUsername());
             }
         }
+
+        // ★ Detect DELETE: find group members in DB not present in request
+        detectAndCreateDeleteDetails(proposalDetailList, proposal);
     }
 
     private TrainingSampleProposalDetail mapToEntity(TrainingSampleProposalDetailRequest request, TrainingSampleProposal proposal) {
         if (request == null) throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT);
-        if (request.getProposalType() == null) throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
         if (request.getProcessId() == null) throw new AppException(ErrorCode.MISSING_PROCESS_ID);
         if (request.getCategoryName() == null || request.getCategoryName().isBlank()) {
             throw new AppException(ErrorCode.MISSING_CATEGORY_NAME);
@@ -762,9 +776,14 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
         }
 
+        // ★ Infer ProposalType from trainingSampleId
+        ProposalType inferredType = (request.getTrainingSampleId() == null)
+                ? ProposalType.CREATE
+                : ProposalType.UPDATE;
+
         TrainingSampleProposalDetail entity = new TrainingSampleProposalDetail();
         entity.setTrainingSampleProposal(proposal);
-        entity.setProposalType(request.getProposalType());
+        entity.setProposalType(inferredType);
         entity.setProcess(processRepository.getReferenceById(request.getProcessId()));
 
         if (request.getTrainingSampleId() != null) {
@@ -838,7 +857,6 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
      */
     private void updateDetailFields(TrainingSampleProposalDetail entity, TrainingSampleProposalDetailRequest request, TrainingSampleProposal proposal) {
         if (request == null) throw new AppException(ErrorCode.INVALID_REQUEST_FORMAT);
-        if (request.getProposalType() == null) throw new AppException(ErrorCode.MISSING_PROPOSAL_TYPE);
         if (request.getProcessId() == null) throw new AppException(ErrorCode.MISSING_PROCESS_ID);
         if (request.getCategoryName() == null || request.getCategoryName().isBlank()) {
             throw new AppException(ErrorCode.MISSING_CATEGORY_NAME);
@@ -847,8 +865,13 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
             throw new AppException(ErrorCode.MISSING_TRAINING_DESCRIPTION);
         }
 
+        // ★ Infer ProposalType from trainingSampleId
+        ProposalType inferredType = (request.getTrainingSampleId() == null)
+                ? ProposalType.CREATE
+                : ProposalType.UPDATE;
+
         entity.setTrainingSampleProposal(proposal);
-        entity.setProposalType(request.getProposalType());
+        entity.setProposalType(inferredType);
         entity.setProcess(processRepository.getReferenceById(request.getProcessId()));
 
         if (request.getTrainingSampleId() != null) {
@@ -873,6 +896,60 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
         entity.setTrainingSampleCode(request.getTrainingSampleCode());
         entity.setTrainingDescription(request.getTrainingDescription());
         entity.setNote(request.getNote());
+    }
 
+    /**
+     * Snapshot delete detection: find TrainingSample members that exist in DB groups
+     * but are NOT referenced in the request → auto-create DELETE proposal details.
+     * Uses 2 batch queries:
+     *   Query 1: Load referenced samples to get their OLD trainingSampleCodes
+     *   Query 2: Load ALL members of those old groups
+     * Then compare to find missing members.
+     */
+    private void detectAndCreateDeleteDetails(
+            List<TrainingSampleProposalDetailRequest> requestDetails,
+            TrainingSampleProposal proposal) {
+
+        // Collect trainingSampleIds from request (non-null only = existing records)
+        Set<Long> requestIds = requestDetails.stream()
+                .map(TrainingSampleProposalDetailRequest::getTrainingSampleId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (requestIds.isEmpty()) return;
+
+        // ① Query 1: Batch load referenced samples → get OLD trainingSampleCodes
+        List<TrainingSample> referenced = trainingSampleRepository.findAllById(requestIds);
+        Set<String> oldCodes = referenced.stream()
+                .map(TrainingSample::getTrainingSampleCode)
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toSet());
+
+        if (oldCodes.isEmpty()) return;
+
+        // ② Query 2: Batch load ALL members of old groups
+        List<TrainingSample> allGroupMembers = trainingSampleRepository
+                .findByTrainingSampleCodeInAndProductLineIdAndDeleteFlagFalse(
+                        oldCodes, proposal.getProductLine().getId());
+
+        // ③ Compare: members in DB but not in request → CREATE DELETE details
+        for (TrainingSample member : allGroupMembers) {
+            if (!requestIds.contains(member.getId())) {
+                TrainingSampleProposalDetail deleteDetail = new TrainingSampleProposalDetail();
+                deleteDetail.setTrainingSampleProposal(proposal);
+                deleteDetail.setTrainingSample(member);
+                deleteDetail.setProposalType(ProposalType.DELETE);
+                deleteDetail.setProcess(member.getProcess());
+                deleteDetail.setProduct(member.getProduct());
+                deleteDetail.setDefect(member.getDefect());
+                deleteDetail.setCategoryName(member.getCategoryName());
+                deleteDetail.setTrainingSampleCode(member.getTrainingSampleCode());
+                deleteDetail.setTrainingDescription(member.getTrainingDescription());
+                deleteDetail.setNote(member.getNote());
+                deleteDetail.setDeleteFlag(false);
+                trainingSampleProposalDetailRepository.save(deleteDetail);
+                log.info("Auto-created DELETE detail for TrainingSample id={} (not in request snapshot)", member.getId());
+            }
+        }
     }
 }

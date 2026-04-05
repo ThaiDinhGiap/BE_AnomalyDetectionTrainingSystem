@@ -12,6 +12,7 @@ import java.util.List;
 public class TrainingSampleResponse {
     Long trainingSampleId;
     String trainingCode;
+    Long productLineId;
     Long processId;
     String processName;
     ProductResponse product;
@@ -20,5 +21,8 @@ public class TrainingSampleResponse {
     String categoryName;
     String trainingDescription;
     String note;
+    Integer processOrder;
+    Integer categoryOrder;
+    Integer contentOrder;
     List<String> attachmentUrls;
 }
