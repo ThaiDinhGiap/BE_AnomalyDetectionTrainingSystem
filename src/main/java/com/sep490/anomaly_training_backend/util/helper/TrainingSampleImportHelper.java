@@ -27,16 +27,15 @@ import java.util.*;
 @Slf4j
 public class TrainingSampleImportHelper {
 
-    // Excel column indices (0-based)
+    // Excel column indices (0-based) - Column G "Mã sản phẩm" removed, subsequent shifted left
     private static final int COL_PROCESS = 1;
     private static final int COL_CATEGORY = 2;
     private static final int COL_DEFECT = 3;
     private static final int COL_TRAINING_DESCRIPTION = 4;
     private static final int COL_TRAINING_SAMPLE_CODE = 5;
-    private static final int COL_PRODUCT_CODE = 6;
-    private static final int COL_TRAINING_CODE = 7;
-    private static final int COL_IMAGE = 8;           // NEW: Column for embedded image
-    private static final int COL_NOTE = 9;            // UPDATED: Note moved to column 9
+    private static final int COL_TRAINING_CODE = 6;
+    private static final int COL_IMAGE = 7;           // Column for embedded image
+    private static final int COL_NOTE = 8;            // Note column
 
     /**
      * Parse Excel file starting from row 3
@@ -117,7 +116,6 @@ public class TrainingSampleImportHelper {
                 .defectCode(currentDefect)
                 .trainingDescription(trainingDesc.trim())
                 .trainingSampleCode(normalize(rawRow.getTrainingSampleCodeColumn()))
-                .productCode(normalize(rawRow.getProductCodeColumn()))
                 .trainingCode(normalize(rawRow.getTrainingCodeColumn()))
                 .imageData(rawRow.getImageData())  // Carry forward image data
                 .processOrder(lastProcessCode != null ? processOrderCounter : 1)
@@ -143,11 +141,10 @@ public class TrainingSampleImportHelper {
         String defectColumn = getOptionalStringCellValue(row.getCell(COL_DEFECT));
         String trainingDescriptionColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_DESCRIPTION));
         String trainingSampleCodeColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_SAMPLE_CODE));
-        String productCodeColumn = getOptionalStringCellValue(row.getCell(COL_PRODUCT_CODE));
         String trainingCodeColumn = getOptionalStringCellValue(row.getCell(COL_TRAINING_CODE));
         String noteColumn = getOptionalStringCellValue(row.getCell(COL_NOTE));
         
-        // Extract image data from column 8 (COL_IMAGE)
+        // Extract image data from COL_IMAGE
         ImageData imageData = extractImageFromRow(row, excelRowNumber);
 
         return TrainingSampleImportRowData.builder()
@@ -156,7 +153,6 @@ public class TrainingSampleImportHelper {
             .defectColumn(defectColumn)
             .trainingDescriptionColumn(trainingDescriptionColumn)
             .trainingSampleCodeColumn(trainingSampleCodeColumn)
-            .productCodeColumn(productCodeColumn)
             .trainingCodeColumn(trainingCodeColumn)
             .noteColumn(noteColumn)
             .imageData(imageData)

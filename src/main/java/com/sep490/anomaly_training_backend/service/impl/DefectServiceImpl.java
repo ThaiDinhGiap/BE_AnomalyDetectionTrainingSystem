@@ -141,8 +141,8 @@ public class DefectServiceImpl implements DefectService {
                 throw new AppException(ErrorCode.IMPORT_VALIDATION_ERROR);
             }
 
-            // Step 5: Upsert all rows (changed from insert to upsert)
-            List<DefectResponse> responses = upsertAllRows(parsedRows, productLine, currentUser, errors);
+            // Step 5: Insert all rows (import only creates new defects)
+            List<DefectResponse> responses = insertAllRows(parsedRows, productLine, currentUser, errors);
 
             // Step 6: Save success history
             saveImportPassHistory(currentUser, file);
@@ -282,13 +282,11 @@ public class DefectServiceImpl implements DefectService {
 
 
     /**
-     * Upsert all parsed rows into database
-     * - If defectCode is null: always INSERT new
-     * - If defectCode is not null: find existing, UPDATE if found OR CREATE if new
+     * Insert all parsed rows into database as new defects
+     * - Always create new defects with auto-generated defect codes
      * - Handle images from Excel rows
-     * - Soft-delete old attachments when updating
      */
-    private List<DefectResponse> upsertAllRows(
+    private List<DefectResponse> insertAllRows(
             List<DefectImportDto> parsedRows,
             ProductLine productLine,
             User user, List<ImportErrorItem> errors) {
@@ -296,16 +294,7 @@ public class DefectServiceImpl implements DefectService {
         List<DefectResponse> responses = new ArrayList<>();
 
         for (DefectImportDto dto : parsedRows) {
-            // Check if this is an update (defectCode is not null AND record exists)
-            boolean isUpdate = dto.getDefectCode() != null
-                    && defectRepository.findByDefectCode(dto.getDefectCode()).isPresent();
-
-            Defect defect = upsertDefect(dto, productLine, errors);
-
-            // If updating, soft-delete old attachments before handling new ones
-            if (isUpdate && defect.getId() != null) {
-                attachmentService.deleteAttachments("DEFECT", defect.getId());
-            }
+            Defect defect = insertNewDefect(dto, productLine, errors);
             handleDefectImages(dto.getImageData(), defect, user);
             responses.add(defectMapper.toDto(defect));
         }
@@ -313,37 +302,15 @@ public class DefectServiceImpl implements DefectService {
         return responses;
     }
 
-    private Defect upsertDefect(DefectImportDto dto, ProductLine productLine, List<ImportErrorItem> errors) {
-        // Find existing by defectCode only if defectCode is not null
-        Defect defect;
-        if (dto.getDefectCode() != null && !dto.getDefectCode().trim().isEmpty()) {
-            defect = defectRepository
-                    .findByDefectCode(dto.getDefectCode())
-                    .orElseThrow(() -> addErrorAndReturn(
-                            errors,
-                            dto.getExcelRowNumber(),
-                            "defectCode",
-                            dto.getProductCode(),
-                            "Defect not found with code: " + dto.getProductCode(),
-                            ErrorCode.DEFECT_NOT_FOUND
-                    ));
-        } else {
-            // If defectCode is null, always create new
-            defect = new Defect();
-        }
-
-        // If updating, soft-delete old attachments before handling new ones
-        if (defect.getId() != null) {
-            attachmentService.deleteAttachments("DEFECT", defect.getId());
-        }
+    private Defect insertNewDefect(DefectImportDto dto, ProductLine productLine, List<ImportErrorItem> errors) {
+        Defect defect = new Defect();
 
         // Apply all fields
         applyImportDtoToDefect(dto, productLine, defect, errors);
         Defect saved = defectRepository.save(defect);
 
-        boolean isNew = defect.getId() == null;
-        log.info("Upserted Defect: code={}, id={}, isNew={}",
-                dto.getDefectCode(), saved.getId(), isNew);
+        log.info("Inserted new Defect: code={}, id={}",
+                saved.getDefectCode(), saved.getId());
         return saved;
     }
 
@@ -375,11 +342,9 @@ public class DefectServiceImpl implements DefectService {
                             ErrorCode.PRODUCT_NOT_FOUND
                     ));
         }
-        if (dto.getDefectCode() != null) {
-            defect.setDefectCode(dto.getDefectCode());
-        } else {
-            defect.setDefectCode(defectCodeGenerator.generateDefectCode());
-        }
+
+        // Always generate new defect code for import
+        defect.setDefectCode(defectCodeGenerator.generateDefectCode());
 
         defect.setDefectDescription(dto.getDefectDescription());
         defect.setDetectedDate(dto.getDetectedDate());

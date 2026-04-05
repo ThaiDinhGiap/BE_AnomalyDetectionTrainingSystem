@@ -20,24 +20,23 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class DefectImportHelper {
-    // 0-based column index
-    private static final int COL_DEFECT_CODE = 1;
-    private static final int COL_PROCESS = 2;
-    private static final int COL_DEFECT_DESCRIPTION = 3;
-    private static final int COL_IMAGE = 4;
-    private static final int COL_DETECTED_DATE = 5;
-    private static final int COL_ORIGIN_CAUSE = 6;
-    private static final int COL_OUTFLOW_CAUSE = 7;
-    private static final int COL_ORIGIN_MEASURE = 8;
-    private static final int COL_OUTFLOW_MEASURE = 9;
-    private static final int COL_PRODUCT = 10;
-    private static final int COL_CUSTOMER = 11;
-    private static final int COL_QUANTITY = 12;
-    private static final int COL_CAUSE_POINT = 13;
-    private static final int COL_CONCLUSION = 14;
-    private static final int COL_ESCAPED = 15;
-    private static final int COL_CUSTOMER_CLAIM = 16;
-    private static final int COL_STARTLED_CLAIM = 17;
+    // 0-based column index (Column B "Mã lỗi quá khứ" removed, all shifted left by 1)
+    private static final int COL_PROCESS = 1;
+    private static final int COL_DEFECT_DESCRIPTION = 2;
+    private static final int COL_IMAGE = 3;
+    private static final int COL_DETECTED_DATE = 4;
+    private static final int COL_ORIGIN_CAUSE = 5;
+    private static final int COL_OUTFLOW_CAUSE = 6;
+    private static final int COL_ORIGIN_MEASURE = 7;
+    private static final int COL_OUTFLOW_MEASURE = 8;
+    private static final int COL_PRODUCT = 9;
+    private static final int COL_CUSTOMER = 10;
+    private static final int COL_QUANTITY = 11;
+    private static final int COL_CAUSE_POINT = 12;
+    private static final int COL_CONCLUSION = 13;
+    private static final int COL_ESCAPED = 14;
+    private static final int COL_CUSTOMER_CLAIM = 15;
+    private static final int COL_STARTLED_CLAIM = 16;
 
     /**
      * Parse toàn bộ data row từ row 3 trở đi.
@@ -63,7 +62,6 @@ public class DefectImportHelper {
     }
 
     private DefectImportDto parseRow(Row row, int excelRowNumber) throws BadRequestException {
-        String defectCode = getOptionalStringCellValue(row.getCell(COL_DEFECT_CODE));
         String processCode = getOptionalStringCellValue(row.getCell(COL_PROCESS));
         String defectDescription = getOptionalStringCellValue(row.getCell(COL_DEFECT_DESCRIPTION));
         LocalDate detectedDate = getLocalDateCellValue(row.getCell(COL_DETECTED_DATE), "Ngày phát sinh", excelRowNumber);
@@ -85,7 +83,6 @@ public class DefectImportHelper {
 
         return DefectImportDto.builder()
                 .excelRowNumber(excelRowNumber)
-                .defectCode(defectCode)
                 .processCode(processCode)
                 .defectDescription(defectDescription)
                 .imageData(imageData)

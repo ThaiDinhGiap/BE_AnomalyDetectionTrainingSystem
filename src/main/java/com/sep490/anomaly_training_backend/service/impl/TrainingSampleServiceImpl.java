@@ -235,32 +235,19 @@ public class TrainingSampleServiceImpl implements TrainingSampleService {
                             errors,
                             dto.getExcelRowNumber(),
                             "defectCode",
-                            dto.getProductCode(),
-                            "Product not found with code: " + dto.getProductCode(),
+                            dto.getDefectCode(),
+                            "Defect not found with code: " + dto.getDefectCode(),
                             ErrorCode.DEFECT_NOT_FOUND
                     ));
         }
 
-        // Resolve and validate Product
-        Product product = null;
-        if (dto.getProductCode() != null && !dto.getProductCode().trim().isEmpty()) {
-            product = productRepository.findByCode(dto.getProductCode())
-                    .orElseThrow(() -> addErrorAndReturn(
-                            errors,
-                            dto.getExcelRowNumber(),
-                            "productCode",
-                            dto.getProductCode(),
-                            "Product not found with code: " + dto.getProductCode(),
-                            ErrorCode.PRODUCT_NOT_FOUND
-                    ));
-        }
         sample.setProcess(process);
         sample.setProductLine(productLine);
         sample.setCategoryName(dto.getCategoryName());
         sample.setTrainingDescription(dto.getTrainingDescription());
         sample.setTrainingSampleCode(dto.getTrainingSampleCode());
         sample.setDefect(defect);
-        sample.setProduct(product);
+        sample.setProduct(null); // Product no longer imported from Excel
         sample.setProcessOrder(dto.getProcessOrder());
         sample.setCategoryOrder(dto.getCategoryOrder());
         sample.setContentOrder(dto.getContentOrder());

@@ -30,7 +30,6 @@ public class DefectImportValidator {
      */
     public void validateFileData(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
         validateRequiredFields(parsedRows, errors);
-        validateDefectCodeDuplicates(parsedRows, errors);
         validateDefectDescriptionDuplicates(parsedRows, errors);
     }
 
@@ -55,44 +54,6 @@ public class DefectImportValidator {
                         null,
                         "defectDescription is required"
                 ));
-            }
-        }
-    }
-
-    /**
-     * Validate defectCode không được trùng trong cùng file
-     */
-    private void validateDefectCodeDuplicates(List<DefectImportDto> parsedRows, List<ImportErrorItem> errors) {
-        Map<String, Integer> defectCodeCount = new HashMap<>();
-        Map<String, Integer> firstRowOfCode = new HashMap<>();
-
-        for (DefectImportDto row : parsedRows) {
-            String defectCode = normalize(row.getDefectCode());
-            if (defectCode == null) {
-                continue;
-            }
-
-            defectCodeCount.put(defectCode, defectCodeCount.getOrDefault(defectCode, 0) + 1);
-            if (!firstRowOfCode.containsKey(defectCode)) {
-                firstRowOfCode.put(defectCode, row.getExcelRowNumber());
-            }
-        }
-
-        for (Map.Entry<String, Integer> entry : defectCodeCount.entrySet()) {
-            if (entry.getValue() > 1) {
-                String defectCode = entry.getKey();
-                Integer firstRow = firstRowOfCode.get(defectCode);
-
-                for (DefectImportDto row : parsedRows) {
-                    if (defectCode.equals(normalize(row.getDefectCode()))) {
-                        errors.add(buildRowError(
-                                row.getExcelRowNumber(),
-                                "defectCode",
-                                defectCode,
-                                "defectCode " + defectCode + " is duplicated with row " + firstRow
-                        ));
-                    }
-                }
             }
         }
     }

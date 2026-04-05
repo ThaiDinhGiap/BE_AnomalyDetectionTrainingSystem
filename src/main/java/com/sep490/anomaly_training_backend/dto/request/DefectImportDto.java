@@ -15,7 +15,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class DefectImportDto {
     // Resolved values after carry-forward logic
-    private String defectCode;
     private String defectDescription;
     private LocalDate detectedDate;
     private String note;

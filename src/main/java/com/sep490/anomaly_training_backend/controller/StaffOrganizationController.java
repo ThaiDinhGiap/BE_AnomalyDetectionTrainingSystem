@@ -1,9 +1,31 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.*;
-import com.sep490.anomaly_training_backend.dto.response.*;
+import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
+import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
+import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
+import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
+import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
+import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
+import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
+import com.sep490.anomaly_training_backend.dto.response.ImportHistoryResponse;
+import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
+import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
+import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
+import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
+import com.sep490.anomaly_training_backend.dto.response.UserResponse;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.*;
+import com.sep490.anomaly_training_backend.service.EmployeeService;
+import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
+import com.sep490.anomaly_training_backend.service.GroupService;
+import com.sep490.anomaly_training_backend.service.ImportHistoryService;
+import com.sep490.anomaly_training_backend.service.SectionService;
+import com.sep490.anomaly_training_backend.service.TeamService;
+import com.sep490.anomaly_training_backend.service.TrainingResultService;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +41,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -305,7 +335,7 @@ public class StaffOrganizationController {
     @GetMapping("/employee-skill/download-template")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadEmployeeSkillTemplate() throws IOException {
-        ClassPathResource file = new ClassPathResource("templates/excel/Employee_skill_guideline.xlsx");
+        ClassPathResource file = new ClassPathResource("templates/excel/Template_Nhập báo cáo lịch sử chứng nhận công đoạn.xlsx");
 
         if (!file.exists()) {
             throw new FileNotFoundException("Không tìm thấy file template Excel");
@@ -313,7 +343,7 @@ public class StaffOrganizationController {
         Resource resource = new InputStreamResource(file.getInputStream());
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Employee_skill_guideline.xlsx")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Template_Nhập báo cáo lịch sử chứng nhận công đoạn.xlsx")
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ))
