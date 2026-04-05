@@ -1,29 +1,9 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.EmployeeRequest;
-import com.sep490.anomaly_training_backend.dto.request.GroupRequest;
-import com.sep490.anomaly_training_backend.dto.request.SectionRequest;
-import com.sep490.anomaly_training_backend.dto.request.TeamRequest;
-import com.sep490.anomaly_training_backend.dto.request.UserCreateRequest;
-import com.sep490.anomaly_training_backend.dto.request.UserUpdateRequest;
-import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeNoAccountDTO;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillResponse;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeTrainingHistoryResponse;
-import com.sep490.anomaly_training_backend.dto.response.GroupResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.SectionResponse;
-import com.sep490.anomaly_training_backend.dto.response.TeamResponse;
-import com.sep490.anomaly_training_backend.dto.response.UserDashboard;
-import com.sep490.anomaly_training_backend.dto.response.UserResponse;
+import com.sep490.anomaly_training_backend.dto.request.*;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.model.User;
-import com.sep490.anomaly_training_backend.service.EmployeeService;
-import com.sep490.anomaly_training_backend.service.EmployeeSkillService;
-import com.sep490.anomaly_training_backend.service.GroupService;
-import com.sep490.anomaly_training_backend.service.SectionService;
-import com.sep490.anomaly_training_backend.service.TeamService;
-import com.sep490.anomaly_training_backend.service.TrainingResultService;
+import com.sep490.anomaly_training_backend.service.*;
 import com.sep490.anomaly_training_backend.service.account.UserService;
 import com.sep490.anomaly_training_backend.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,14 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -66,6 +40,8 @@ public class StaffOrganizationController {
     private final AuthService authService;
     private final EmployeeSkillService employeeSkillService;
     private final TrainingResultService trainingResultService;
+    private final ImportHistoryService importHistoryService;
+
 
     // For Admin
     @GetMapping("/sections")
@@ -193,6 +169,16 @@ public class StaffOrganizationController {
     ) {
         employeeService.removeEmployeesFromTeam(id, employeeIds);
         return ResponseEntity.ok(ApiResponse.success());
+    }
+
+    @Operation(summary = "Import Employee data")
+    @PostMapping("/employees/import")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> importEmployee(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        List<EmployeeResponse> data = employeeService.importEmployee(currentUser, file);
+        return ResponseEntity.ok(ApiResponse.success(data));
     }
 
     @PostMapping("/employees")
@@ -334,4 +320,41 @@ public class StaffOrganizationController {
                 .contentLength(file.contentLength())
                 .body(resource);
     }
+
+    @Operation(summary = "Download employee-account template")
+    @GetMapping("/employee/download-template")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> downloadEmployeeTemplate() throws IOException {
+        ClassPathResource file = new ClassPathResource("templates/excel/Employee_guideline.xlsx");
+
+        if (!file.exists()) {
+            throw new FileNotFoundException("Không tìm thấy file template Excel");
+        }
+        Resource resource = new InputStreamResource(file.getInputStream());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Employee_guideline.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .contentLength(file.contentLength())
+                .body(resource);
+    }
+
+//    @Operation(summary = "Get history import Employee Skill")
+//    @GetMapping("/employee-skill/import-history")
+//    @PreAuthorize("hasAuthority('employee.manage')")
+//    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyEmployeeSkillImport(@AuthenticationPrincipal User currentUser) {
+//        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "EMPLOYEE_SKILL_IMPORT");
+//        return ResponseEntity.ok(ApiResponse.success(responses));
+//    }
+
+    @Operation(summary = "Get history import Employee")
+    @GetMapping("/employee/import-history")
+    @PreAuthorize("hasAuthority('employee.manage')")
+    public ResponseEntity<ApiResponse<List<ImportHistoryResponse>>> historyEmployeeImport(@AuthenticationPrincipal User currentUser) {
+        List<ImportHistoryResponse> responses = importHistoryService.getHistory(currentUser, "EMPLOYEE_IMPORT");
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
 }

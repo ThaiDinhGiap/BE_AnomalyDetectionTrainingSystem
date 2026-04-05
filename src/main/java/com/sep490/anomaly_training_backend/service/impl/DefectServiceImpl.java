@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -65,6 +66,7 @@ public class DefectServiceImpl implements DefectService {
     private final DefectProposalDetailRepository defectProposalDetailRepository;
     private final ApprovalService approvalService;
     private final DefectProposalDetailMapper defectProposalDetailMapper;
+    private final DefectProposalHistoryRepository defectProposalHistoryRepository;
 
 
 //    @Override
@@ -639,18 +641,6 @@ public class DefectServiceImpl implements DefectService {
         defectProposalRepository.save(proposal);
     }
 
-    // Approval Methods
-//    @Override
-//    public void submit(Long proposalId, User currentUser, HttpServletRequest request) {
-//        DefectProposal proposal = defectProposalRepository.findById(proposalId)
-//                .orElseThrow(() -> new AppException(ErrorCode.DEFECT_PROPOSAL_NOT_FOUND));
-//        if (!proposal.getCreatedBy().equals(currentUser.getUsername())) {
-//            throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
-//        }
-//        approvalService.submit(proposal, currentUser, request);
-//        defectProposalRepository.save(proposal);
-//    }
-
     @Override
     public void approve(Long proposalId, User currentUser, ApproveRequest req, HttpServletRequest request) {
         DefectProposal proposal = defectProposalRepository.findById(proposalId)
@@ -687,14 +677,46 @@ public class DefectServiceImpl implements DefectService {
         if (!currentUser.getUsername().equals(proposal.getCreatedBy())) {
             throw new AppException(ErrorCode.ONLY_AUTHOR_CAN_EDIT);
         }
+        createHistorySnapshot(proposal);
         approvalService.revise(proposal, currentUser, request);
     }
 
-//    @Override
-//    public void sendSubmission(DefectProposalRequest reportRequest, User currentUser, HttpServletRequest request) {
-//        DefectProposal proposal = createProposal(reportRequest, currentUser);
-//        this.submit(proposal.getId(), currentUser, request);
-//    }
+    private void createHistorySnapshot(DefectProposal proposal) {
+        DefectProposalHistory history = DefectProposalHistory.builder()
+                .defectProposal(proposal)
+                .version(proposal.getCurrentVersion() == null ? 1 : proposal.getCurrentVersion())
+                .formCode(proposal.getFormCode())
+                .recordedAt(LocalDateTime.now())
+                .productLineId(proposal.getProductLine().getId() != null ? proposal.getProductLine().getId() : null)
+                .detailHistory(new ArrayList<>())
+                .build();
+
+        if (proposal.getDetails() != null) {
+            for (DefectProposalDetail detail : proposal.getDetails()) {
+                DefectProposalDetailHistory detailHistory = DefectProposalDetailHistory.builder()
+                        .defectProposalHistory(history)
+                        .defectId(detail.getDefect() != null ? detail.getDefect().getId() : null)
+                        .proposalType(detail.getProposalType() != null ? detail.getProposalType().toString() : null)
+                        .defectDescription(detail.getDefectDescription())
+                        .processId(detail.getProcess() != null ? detail.getProcess().getId() : null)
+                        .processCode(detail.getProcess() != null ? detail.getProcess().getCode() : null)
+                        .processName(detail.getProcess() != null ? detail.getProcess().getName() : null)
+                        .detectedDate(detail.getDetectedDate())
+                        .note(detail.getNote())
+                        .originCause(detail.getOriginCause())
+                        .outflowCause(detail.getOutflowCause())
+                        .causePoint(detail.getCausePoint())
+                        .originMeasures(detail.getOriginMeasures())
+                        .outflowMeasures(detail.getOutflowMeasures())
+                        .defectType(detail.getDefectType())
+                        .build();
+                history.getDetailHistory().add(detailHistory);
+            }
+        }
+
+        defectProposalHistoryRepository.save(history);
+    }
+
 
     private void createDetail(List<DefectProposalDetailRequest> DefectProposalDetailList, DefectProposal proposal, User currentUser) {
         for (DefectProposalDetailRequest detailRequest : DefectProposalDetailList) {

@@ -1,9 +1,6 @@
 package com.sep490.anomaly_training_backend.controller;
 
-import com.sep490.anomaly_training_backend.dto.request.EmployeeSkillRequest;
-import com.sep490.anomaly_training_backend.dto.request.ProcessRequest;
-import com.sep490.anomaly_training_backend.dto.request.ProductLineRequest;
-import com.sep490.anomaly_training_backend.dto.request.ProductRequest;
+import com.sep490.anomaly_training_backend.dto.request.*;
 import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.enums.OrgHierarchyLevel;
 import com.sep490.anomaly_training_backend.model.User;
@@ -59,16 +56,16 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.createProductLine(productLineRequest)));
     }
 
-    @PostMapping("/products")
+    @PostMapping(path = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('product.manage')")
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody ProductRequest request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@ModelAttribute ProductRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success(productService.createProduct(request, currentUser)));
     }
 
-    @PostMapping("/products/sync")
+    @PostMapping(path = "/products/sync", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('product.manage')")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@RequestBody List<ProductRequest> request, @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(request, currentUser)));
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> syncProduct(@ModelAttribute SyncProductRequest syncProductRequest, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success(productService.syncProduct(syncProductRequest.getRequest(), currentUser)));
     }
 
     @PostMapping("/employee-skills")
@@ -284,9 +281,4 @@ public class ManufacturingLineController {
         return ResponseEntity.ok(ApiResponse.success(productLineService.getByTeamLeadId(currentUser.getId())));
     }
 
-    @PutMapping("/products/{id}")
-    @PreAuthorize("hasAuthority('product.manage')")
-    public ResponseEntity<ApiResponse<ProcessResponse>> updateProduct() {
-        return null;
-    }
 }
