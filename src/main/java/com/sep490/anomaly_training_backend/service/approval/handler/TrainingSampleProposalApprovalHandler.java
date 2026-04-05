@@ -103,11 +103,6 @@ public class TrainingSampleProposalApprovalHandler implements ApprovalHandler {
         created.setContentOrder(contentOrder);
 
         log.info("Set orders - processOrder: {}, categoryOrder: {}, contentOrder: {}", processOrder, categoryOrder, contentOrder);
-
-        // Check for unique constraint before saving
-        if (!created.getTrainingSampleCode().isEmpty() && trainingSampleRepository.existsByProductLineIdAndTrainingSampleCode(created.getProductLine().getId(), created.getTrainingSampleCode())) {
-            throw new AppException(ErrorCode.TRAINING_SAMPLE_CODE_ALREADY_EXISTS, "trainingSampleCode already exists for this productLine. proposalDetail detailId=" + d.getId());
-        }
         // Save the new TrainingSample
         created = trainingSampleRepository.save(created);
         log.info("TrainingSample created successfully with ID: {} and trainingCode: {}", created.getId(), created.getTrainingCode());
