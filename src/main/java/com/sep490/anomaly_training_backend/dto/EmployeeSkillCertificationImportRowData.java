@@ -16,6 +16,7 @@ public class EmployeeSkillCertificationImportRowData {
 
     private String sectionCodeColumn;
     private String productLineCodeColumn;
+    private String processCodeColumn;
     private String processNameColumn;
     private String certifiedQuantityColumn;
     private String employeeColumn;

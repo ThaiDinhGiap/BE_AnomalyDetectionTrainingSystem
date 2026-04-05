@@ -18,9 +18,8 @@ public class TrainingSampleImportRowData {
     private String defectColumn;
     private String trainingDescriptionColumn;
     private String trainingSampleCodeColumn;
-    private String productCodeColumn;
-    private String noteColumn;
     private String trainingCodeColumn;
+    private String noteColumn;
     
     // Image data from Excel (from column 8/I)
     private ImageData imageData;

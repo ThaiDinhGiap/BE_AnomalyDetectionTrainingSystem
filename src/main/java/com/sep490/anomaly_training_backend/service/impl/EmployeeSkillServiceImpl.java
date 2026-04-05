@@ -272,37 +272,76 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
     }
 
     /**
-     * Process parsed data và setup mối quan hệ
-     * Tất cả data thuộc về 1 Team cố định từ file header
+     * Process parsed data and setup relationships
+     * All data belongs to a single Team from file header
      */
     private void processParsedData(ImportSkillMatrixResult importSkillMatrixResult,
                                     User manager, User supervisor, User currentUser) {
-        processHierarchyMap(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
-                importSkillMatrixResult.getHierarchyMap(), manager, supervisor, currentUser);
+        processHierarchyMap(importSkillMatrixResult, manager, supervisor, currentUser);
         processParsedRawData(importSkillMatrixResult.getTeamCode(), importSkillMatrixResult.getGroupCode(),
                 importSkillMatrixResult.getParsedRows());
     }
 
-    private void processHierarchyMap(String teamCode, String groupCode,
-            Map<String, Map<String, Set<String>>> hierarchyMap,
+    private void processHierarchyMap(ImportSkillMatrixResult result,
             User manager, User supervisor, User currentUser) {
 
-        // Step 1: Save Group early (to get ID for use in lambdas)
-        Section resolvedSection = null;
-        final Group savedGroup = groupRepository.findByCode(groupCode)
-                .orElseGet(() -> { Group g = new Group(groupCode); g.setName(groupCode); return g; });
-        savedGroup.setSupervisor(supervisor);
-        groupRepository.save(savedGroup);
+        String teamCode = result.getTeamCode();
+        String teamName = result.getTeamName();
+        String groupCode = result.getGroupCode();
+        String groupName = result.getGroupName();
+        String sectionCode = result.getSectionCode();
+        String sectionName = result.getSectionName();
+        String lineCode = result.getLineCode();
+        String lineName = result.getLineName();
 
+        // Step 1: Resolve Section (find or create, update name)
+        Section section = sectionRepository.findByCode(sectionCode)
+                .orElseGet(() -> { Section s = new Section(sectionCode); s.setName(sectionName); return s; });
+        if (sectionName != null && !sectionName.isBlank()) {
+            section.setName(sectionName);
+        }
+        section.setManager(manager);
+        section = sectionRepository.save(section);
+
+        // Step 2: Resolve Group (find or create, update name)
+        Group group = groupRepository.findByCode(groupCode)
+                .orElseGet(() -> { Group g = new Group(groupCode); g.setName(groupName); return g; });
+        if (groupName != null && !groupName.isBlank()) {
+            group.setName(groupName);
+        }
+        group.setSupervisor(supervisor);
+        group.setSection(section);
+        groupRepository.save(group);
+
+        // Step 3: Resolve Team (find or create, update name)
+        Team team = teamRepository.findByCode(teamCode)
+                .orElseGet(() -> { Team t = new Team(teamCode); t.setName(teamName); return t; });
+        if (teamName != null && !teamName.isBlank()) {
+            team.setName(teamName);
+        }
+        team.setGroup(group);
+        team.setTeamLeader(currentUser);
+        teamRepository.save(team);
+
+        // Step 4: Resolve ProductLine from header "Line" (find or create, update name)
+        ProductLine headerProductLine = productLineRepository.findByCode(lineCode)
+                .orElseGet(() -> {
+                    ProductLine newPL = ProductLine.builder()
+                            .code(lineCode)
+                            .name(lineName)
+                            .group(group)
+                            .build();
+                    return productLineRepository.save(newPL);
+                });
+        if (lineName != null && !lineName.isBlank()) {
+            headerProductLine.setName(lineName);
+        }
+        headerProductLine.setGroup(group);
+        productLineRepository.save(headerProductLine);
+
+        // Step 5: Process hierarchy map entries (Section → ProductLine → Process)
+        Map<String, Map<String, Set<String>>> hierarchyMap = result.getHierarchyMap();
         for (Map.Entry<String, Map<String, Set<String>>> sectionEntry : hierarchyMap.entrySet()) {
-            String sectionCode = sectionEntry.getKey();
-
-            Section section = sectionRepository.findByCode(sectionCode)
-                    .orElseGet(() -> { Section s = new Section(sectionCode); s.setName(sectionCode); return s; });
-            section.setManager(manager);
-            section = sectionRepository.save(section);
-            resolvedSection = section;
-
             for (Map.Entry<String, Set<String>> plEntry : sectionEntry.getValue().entrySet()) {
                 String productLineCode = plEntry.getKey();
 
@@ -311,17 +350,18 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                             ProductLine newPL = ProductLine.builder()
                                     .code(productLineCode)
                                     .name(productLineCode)
-                                    .group(savedGroup)
+                                    .group(group)
                                     .build();
                             return productLineRepository.save(newPL);
                         });
 
-                for (String processName : plEntry.getValue()) {
-                    processRepository.findByName(processName)
+                for (String processCode : plEntry.getValue()) {
+                    // Find process by code, create if not found
+                    processRepository.findByCode(processCode)
                             .orElseGet(() -> {
                                 Process newProcess = Process.builder()
-                                        .name(processName)
-                                        .code(processName)
+                                        .code(processCode)
+                                        .name(processCode) // name defaults to code; will be updated by row data
                                         .productLine(productLine)
                                         .build();
                                 return processRepository.save(newProcess);
@@ -330,25 +370,8 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
             }
         }
 
-        // Step 2: Build relationships: Section → Group → Team
-        if (resolvedSection != null) {
-            savedGroup.setSection(resolvedSection);
-        }
-        groupRepository.save(savedGroup);
-
-        Team team = teamRepository.findByCode(teamCode)
-                .orElseGet(() -> { Team t = new Team(teamCode); t.setName(teamCode); return t; });
-        team.setGroup(savedGroup);
-        team.setTeamLeader(currentUser);
-        teamRepository.save(team);
-
-        log.info("Hierarchy established: Section={} (Manager={}), Group={} (Supervisor={}), Team={} (TeamLeader={})",
-                resolvedSection != null ? resolvedSection.getCode() : "N/A",
-                manager.getEmployeeCode(),
-                savedGroup.getCode(),
-                supervisor.getEmployeeCode(),
-                team.getCode(),
-                currentUser.getUsername());
+        log.info("Hierarchy established: Section={} ({}), Group={} ({}), Team={} ({}), Line={} ({})",
+                sectionCode, sectionName, groupCode, groupName, teamCode, teamName, lineCode, lineName);
     }
 
     private void processParsedRawData(String teamCode, String groupCode,
@@ -368,11 +391,10 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                                 .employeeCode(raw.getEmployeeId())
                                 .fullName(raw.getEmployeeFullName())
                                 .build();
-                        // Use mutable list — @Builder.Default already initializes to ArrayList
                         return employeeRepository.save(newEmployee);
                     });
 
-            // Assign team if not already assigned (works for both new & existing employees)
+            // Assign team if not already assigned
             if (processedEmployeeCodes.add(employee.getEmployeeCode())) {
                 boolean alreadyInTeam = employee.getTeams() != null
                         && employee.getTeams().stream()
@@ -387,9 +409,17 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                 }
             }
 
-            Process process = processRepository.findByName(raw.getProcessName())
+            // Resolve process by CODE instead of name
+            Process process = processRepository.findByCode(raw.getProcessCode())
                     .orElseThrow(() -> new AppException(ErrorCode.PROCESS_NOT_FOUND,
-                            "Process not found: " + raw.getProcessName()));
+                            "Process not found with code: " + raw.getProcessCode()));
+
+            // Update process name if provided and different
+            if (raw.getProcessName() != null && !raw.getProcessName().isBlank()
+                    && !raw.getProcessName().equals(process.getName())) {
+                process.setName(raw.getProcessName());
+                processRepository.save(process);
+            }
 
             // Upsert: skip if duplicate (employee + process), or update certifiedDate
             EmployeeSkill skill = employeeSkillRepository
@@ -397,7 +427,6 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                     .orElse(null);
 
             if (skill != null) {
-                // Already exists — update certifiedDate if newer
                 if (raw.getCertificationDate() != null
                         && (skill.getCertifiedDate() == null
                             || raw.getCertificationDate().isAfter(skill.getCertifiedDate()))) {
@@ -410,7 +439,6 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
                             employee.getEmployeeCode(), process.getCode());
                 }
             } else {
-                // New — create
                 EmployeeSkill newSkill = EmployeeSkill.builder()
                         .employee(employee)
                         .process(process)

@@ -19,6 +19,7 @@ public class EmployeeSkillCertificationImportDto {
 
     private String sectionCode;
     private String productLineCode;
+    private String processCode;
     private String processName;
 
     private Integer certifiedQuantity;

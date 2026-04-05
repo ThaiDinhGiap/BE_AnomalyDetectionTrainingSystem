@@ -23,7 +23,7 @@ public class TrainingSampleImportValidator {
      * - Content rows: processCode, categoryName, trainingDescription, trainingCode are required
      * - Header rows: processCode, categoryName are required; trainingDescription, trainingCode optional
      * - No duplicate trainingCode within content rows
-     * - No duplicate business key: (processCode, categoryName, trainingDescription, trainingSampleCode, productCode)
+     * - No duplicate business key: (processCode, categoryName, trainingDescription, trainingSampleCode)
      */
     public void validateFileData(List<TrainingSampleImportDto> parsedRows, List<ImportErrorItem> errors) {
         validateRequiredFields(parsedRows, errors);
@@ -127,8 +127,7 @@ public class TrainingSampleImportValidator {
                     row.getProcessCode(),
                     row.getCategoryName(),
                     row.getTrainingDescription(),
-                    row.getTrainingSampleCode(),
-                    row.getProductCode()
+                    row.getTrainingSampleCode()
             );
 
             Integer firstRow = firstRowOfKey.get(key);
@@ -141,28 +140,26 @@ public class TrainingSampleImportValidator {
                         null,
                         "Row " + row.getExcelRowNumber()
                                 + " is duplicated with row " + firstRow
-                                + " by (processCode, categoryName, trainingDescription, trainingSampleCode, productCode)"
+                                + " by (processCode, categoryName, trainingDescription, trainingSampleCode)"
                 ));
             }
         }
     }
 
     /**
-     * Build business key from 5 fields
+     * Build business key from 4 fields
      * Normalize all fields first (trim, null -> blank)
      */
     private String buildBusinessKey(
             String processCode,
             String categoryName,
             String trainingDescription,
-            String trainingSampleCode,
-            String productCode) {
+            String trainingSampleCode) {
 
         return normalize(processCode) + "|" +
                normalize(categoryName) + "|" +
                normalize(trainingDescription) + "|" +
-               normalize(trainingSampleCode) + "|" +
-               normalize(productCode);
+               normalize(trainingSampleCode);
     }
 
     /**

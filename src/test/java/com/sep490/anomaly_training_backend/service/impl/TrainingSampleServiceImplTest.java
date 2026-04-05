@@ -156,7 +156,6 @@ class TrainingSampleServiceImplTest {
             TrainingSampleImportDto dto = new TrainingSampleImportDto();
             dto.setTrainingCode("TS-001");
             dto.setProcessCode("PRC-01");
-            dto.setProductCode("PRD-01");
             dto.setExcelRowNumber(1);
             dto.setProcessOrder(1);
             dto.setCategoryOrder(1);
@@ -174,7 +173,6 @@ class TrainingSampleServiceImplTest {
 
             when(trainingSampleRepository.findByTrainingCode("TS-001")).thenReturn(Optional.of(sample));
             when(processRepository.findByProductLineCodeAndCode("PL-01", "PRC-01")).thenReturn(Optional.of(process));
-            when(productRepository.findByCode("PRD-01")).thenReturn(Optional.of(product));
             when(trainingSampleRepository.save(sample)).thenReturn(sample);
             when(trainingSampleMapper.toDto(sample)).thenReturn(mock(TrainingSampleResponse.class));
 

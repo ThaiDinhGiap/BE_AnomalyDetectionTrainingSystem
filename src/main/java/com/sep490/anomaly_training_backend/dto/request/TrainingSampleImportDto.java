@@ -23,7 +23,6 @@ public class TrainingSampleImportDto {
 
     // Optional fields
     private String trainingSampleCode;
-    private String productCode;
 
     // Image data from Excel
     private ImageData imageData;
