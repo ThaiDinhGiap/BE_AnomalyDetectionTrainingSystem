@@ -229,6 +229,10 @@ public class ProductLineServiceImpl implements ProductLineService {
     private List<OrgDropdownItem> getSectionsForUser(User user) {
         Set<Section> sections = new LinkedHashSet<>();
 
+        if (user.hasPermission("factory.manage")) {
+            sections.addAll(sectionRepository.findByDeleteFlagFalse());
+        }
+
         if (user.hasPermission("section.manage")) {
             sections.addAll(sectionRepository.findByManagerId(user.getId()));
         }
@@ -265,6 +269,15 @@ public class ProductLineServiceImpl implements ProductLineService {
         List<Group> allGroups = groupRepository.findBySectionIdAndDeleteFlagFalse(sectionId);
 
         Set<Long> allowedGroupIds = new LinkedHashSet<>();
+
+        if (user.hasPermission("factory.manage")) {
+            sectionRepository.findById(sectionId).ifPresent(section -> {
+                allowedGroupIds.addAll(section.getGroups().stream()
+                        .filter(g -> !g.isDeleteFlag())
+                        .map(Group::getId)
+                        .toList());
+            });
+        }
 
         if (user.hasPermission("section.manage")) {
             sectionRepository.findByManagerId(user.getId()).stream()
@@ -303,6 +316,15 @@ public class ProductLineServiceImpl implements ProductLineService {
         List<Team> allTeams = teamRepository.findByGroupId(groupId);
 
         Set<Long> allowedTeamIds = new LinkedHashSet<>();
+
+        if (user.hasPermission("factory.manage")) {
+            groupRepository.findById(groupId).ifPresent(g -> {
+                allowedTeamIds.addAll(g.getTeams().stream()
+                        .filter(t -> !t.isDeleteFlag())
+                        .map(Team::getId)
+                        .toList());
+            });
+        }
 
         if (user.hasPermission("group.manage") || user.hasPermission("section.manage")) {
             allTeams.forEach(t -> allowedTeamIds.add(t.getId()));
