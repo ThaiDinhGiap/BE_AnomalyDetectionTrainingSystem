@@ -43,7 +43,7 @@ public interface TrainingResultService {
 
     TrainingResultDetailResponse getTrainingResultDetailForVerify(User currentUser, Long id);
 
-//    void submitResult(Long resultId);
+    // void submitResult(Long resultId);
 
     List<TrainingResultOptionResponse> getProcessesByLine(Long lineId);
 
@@ -77,4 +77,8 @@ public interface TrainingResultService {
     boolean canApprove(Long reportId, User currentUser);
 
     void submitConfirmedResult(Long reportId, User currentUser);
+
+    TrainingResultDetailResponse getTrainingResultDetailForConfirmation(User currentUser, Long id);
+
+    List<TrainingResultOptionResponse> getFiUsers();
 }

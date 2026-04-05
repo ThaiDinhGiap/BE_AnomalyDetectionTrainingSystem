@@ -1011,6 +1011,10 @@ CREATE TABLE training_result_details
     signature_pro_out       BIGINT COMMENT 'TL Sản xuất ký lúc ra',
     signature_fi_out        BIGINT COMMENT 'TL Kiểm tra ký lúc ra (nullable nếu classification=4)',
 
+    -- FI xác nhận kết quả: NULL=chưa ký, TRUE=đồng ý, FALSE=không đồng ý
+    fi_in_confirmed         BOOLEAN DEFAULT NULL COMMENT 'FI xác nhận đầu vào',
+    fi_out_confirmed        BOOLEAN DEFAULT NULL COMMENT 'FI xác nhận đầu ra',
+
     reject_feedback         JSON,
 
     delete_flag             BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -1099,6 +1103,10 @@ CREATE TABLE training_result_detail_history
     signature_fi_in_name       VARCHAR(100),
     signature_pro_out_name     VARCHAR(100),
     signature_fi_out_name      VARCHAR(100),
+
+    -- FI confirmation snapshot
+    fi_in_confirmed            BOOLEAN DEFAULT NULL,
+    fi_out_confirmed           BOOLEAN DEFAULT NULL,
 
     delete_flag                BOOLEAN     NOT NULL DEFAULT FALSE,
     created_at                 TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,

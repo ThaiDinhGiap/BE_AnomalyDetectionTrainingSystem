@@ -27,7 +27,6 @@ public class UpdateResultDetailRequest {
     // Thời gian vòng thao tác TB (s) - auto-fill từ process, nhưng có thể override
     private BigDecimal cycleTimeStandard;
 
-
     // Thời gian đưa mẫu vào
     private LocalTime timeIn;
 
@@ -55,4 +54,7 @@ public class UpdateResultDetailRequest {
 
     // Training topic (text tự do nếu không chọn sample)
     private String trainingTopic;
+
+    // Chỉ định FI cho detail (gán cùng 1 FI cho cả In và Out)
+    private Long assignedFiId;
 }

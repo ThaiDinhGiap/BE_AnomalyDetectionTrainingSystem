@@ -23,7 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
- * Entity for training_result_detail_history table - History/snapshot of training result details
+ * Entity for training_result_detail_history table - History/snapshot of
+ * training result details
  */
 @Entity
 @Table(name = "training_result_detail_history")
@@ -105,4 +106,11 @@ public class TrainingResultDetailHistory extends BaseEntity {
 
     @Column(name = "batch_id", length = 36)
     String batchId;
+
+    @Column(name = "fi_in_confirmed")
+    Boolean fiInConfirmed;
+
+    @Column(name = "fi_out_confirmed")
+    Boolean fiOutConfirmed;
+
 }

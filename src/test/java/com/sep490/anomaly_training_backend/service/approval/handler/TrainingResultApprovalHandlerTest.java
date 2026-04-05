@@ -71,13 +71,13 @@ class TrainingResultApprovalHandlerTest {
     }
 
     @Test
-    void afterApprove_ShouldBumpVersion() {
+    void afterApprove_ShouldNotBumpVersion() {
         TrainingResult result = new TrainingResult();
         result.setId(1L);
         result.setCurrentVersion(1);
 
         handler.afterApprove(result);
 
-        assertThat(result.getCurrentVersion()).isEqualTo(2);
+        assertThat(result.getCurrentVersion()).isEqualTo(1);
     }
 }

@@ -2,7 +2,7 @@ package com.sep490.anomaly_training_backend.controller;
 
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalHistoryResponse;
 import com.sep490.anomaly_training_backend.dto.approval.ApprovalTimelineResponse;
-import com.sep490.anomaly_training_backend.dto.approval.DetailFeedbackRequest;
+import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.response.ApiResponse;
 import com.sep490.anomaly_training_backend.dto.response.PendingApprovalResponse;
 import com.sep490.anomaly_training_backend.dto.response.RejectReasonGroupResponse;
@@ -126,7 +126,7 @@ public class ApprovalController {
     public ResponseEntity<ApiResponse<Void>> saveDetailFeedback(
             @PathVariable ApprovalEntityType entityType,
             @PathVariable Long detailId,
-            @RequestBody DetailFeedbackRequest request,
+            @RequestBody RejectRequest request,
             @AuthenticationPrincipal User currentUser) {
 
         approvalService.saveFeedback(entityType, detailId, request, currentUser);

@@ -5,6 +5,7 @@ import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -78,36 +79,44 @@ public class TrainingResultDetailResponse {
         private String trainingTopic;
 
         // Time tracking
-        private LocalTime timeIn;       // Thời gian đưa mẫu vào
-        private LocalTime timeStartOp;  // Thời gian bắt đầu vòng thao tác
-        private LocalTime timeOut;      // Thời gian lấy mẫu ra
+        private LocalTime timeIn; // Thời gian đưa mẫu vào
+        private LocalTime timeStartOp; // Thời gian bắt đầu vòng thao tác
+        private LocalTime timeOut; // Thời gian lấy mẫu ra
         private Integer detectionTime;
 
         // Result
-        private Boolean isPass;         // Đánh giá: Đạt/Trượt
-        private Boolean isRetrained;    // Huấn luyện lại
-        private String note;            // Ghi chú
+        private Boolean isPass; // Đánh giá: Đạt/Trượt
+        private Boolean isRetrained; // Huấn luyện lại
+        private String note; // Ghi chú
         private String detailStatus;
 
         // Signatures
-        private Long signatureProInId;      // Chữ ký Pro vào
+        private Long signatureProInId; // Chữ ký Pro vào
         private String signatureProInName;
-        private Long signatureFiInId;       // FI xác nhận đưa mẫu vào
+        private Long signatureFiInId; // FI xác nhận đưa mẫu vào
         private String signatureFiInName;
-        private Long signatureProOutId;     // Chữ ký Pro ra
+        private Long signatureProOutId; // Chữ ký Pro ra
         private String signatureProOutName;
-        private Long signatureFiOutId;      // FI xác nhận lấy mẫu ra
+        private Long signatureFiOutId; // FI xác nhận lấy mẫu ra
         private String signatureFiOutName;
 
+        // FI confirmation results: null=chưa ký, true=đồng ý, false=không đồng ý
+        private Boolean fiInConfirmed;
+        private Boolean fiOutConfirmed;
+
         private RejectFeedbackJson rejectFeedback;
+
+        // Approval/Reject action metadata
+        private String approvalAction; // "APPROVE" or "REJECT" or null
+        private String approvalPerformerName; // Tên người approve/reject
+        private Instant approvalPerformedAt; // Thời điểm approve/reject
 
         @Override
         public int compareTo(@NotNull DetailRowDto o) {
             if (this.plannedDate == null && o.plannedDate == null) {
                 return Long.compare(
                         this.id != null ? this.id : 0L,
-                        o.id != null ? o.id : 0L
-                );
+                        o.id != null ? o.id : 0L);
             }
             if (this.plannedDate == null) {
                 return 1;
@@ -123,8 +132,7 @@ public class TrainingResultDetailResponse {
 
             return Long.compare(
                     this.id != null ? this.id : 0L,
-                    o.id != null ? o.id : 0L
-            );
+                    o.id != null ? o.id : 0L);
         }
     }
 }

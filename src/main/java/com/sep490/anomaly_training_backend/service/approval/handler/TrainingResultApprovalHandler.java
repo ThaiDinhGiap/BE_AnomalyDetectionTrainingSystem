@@ -65,8 +65,7 @@ public class TrainingResultApprovalHandler implements ApprovalHandler {
 
     @Override
     public void afterApprove(Approvable entity) {
-        entity.setCurrentVersion(entity.getCurrentVersion() + 1);
-        log.info("TrainingResult id={} approved — version bumped to {}", entity.getId(), entity.getCurrentVersion());
+        log.info("TrainingResult id={} approved", entity.getId());
     }
 
     @Override

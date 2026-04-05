@@ -106,6 +106,10 @@ public enum ErrorCode {
     INVALID_TRAINING_RESULT_STATUS(7104, "This action cannot be performed in the current result status.", HttpStatus.BAD_REQUEST),
     MISSING_PROCESS_IN_RESULT_DETAIL(7105, "Cannot submit. Please select a Process for all items.", HttpStatus.BAD_REQUEST),
     TRAINING_SAMPLE_REVIEW_NOT_FOUND(7106, "Training sample review not found.", HttpStatus.NOT_FOUND),
+    FI_SIGNATURE_REQUIRED(7107, "Cannot submit. Final Inspection (FI) must confirm (approve or reject) all pending details.", HttpStatus.BAD_REQUEST),
+    FI_NOT_ASSIGNED(7108, "Bạn không được chỉ định xác nhận detail này.", HttpStatus.FORBIDDEN),
+    FI_ASSIGNMENT_REQUIRED(7109, "Tất cả detail phân loại 1,2,3 phải được chỉ định FI trước khi gửi.", HttpStatus.BAD_REQUEST),
+    ASSIGNED_USER_NOT_FI(7110, "Người được chỉ định không có vai trò Final Inspection.", HttpStatus.BAD_REQUEST),
 
     // Import Errors (range 72xx)
     FILE_IS_EMPTY(7200, "File is empty.", HttpStatus.BAD_REQUEST),

@@ -12,6 +12,8 @@ import java.util.Set;
 public class ImportSkillMatrixResult {
     private String teamCode;
     private String groupCode;
+    private String managerCode;
+    private String supervisorCode;
     private List<EmployeeSkillCertificationImportDto> parsedRows;
     private Map<String, Map<String, Set<String>>> hierarchyMap;
 }

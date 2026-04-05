@@ -303,7 +303,7 @@ public class StaffOrganizationController {
 
     @Operation(summary = "Download employee skill template")
     @GetMapping("/employee-skill/download-template")
-    @PreAuthorize("hasAuthority('employee.manage')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadEmployeeSkillTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Employee_skill_guideline.xlsx");
 
@@ -323,7 +323,7 @@ public class StaffOrganizationController {
 
     @Operation(summary = "Download employee-account template")
     @GetMapping("/employee/download-template")
-    @PreAuthorize("hasAuthority('employee.manage')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> downloadEmployeeTemplate() throws IOException {
         ClassPathResource file = new ClassPathResource("templates/excel/Employee_guideline.xlsx");
 

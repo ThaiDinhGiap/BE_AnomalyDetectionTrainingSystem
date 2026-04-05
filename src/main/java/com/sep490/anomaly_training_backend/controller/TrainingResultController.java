@@ -4,16 +4,7 @@ import com.sep490.anomaly_training_backend.dto.approval.ApproveRequest;
 import com.sep490.anomaly_training_backend.dto.approval.RejectRequest;
 import com.sep490.anomaly_training_backend.dto.request.FiSignRequest;
 import com.sep490.anomaly_training_backend.dto.request.UpdateTrainingResultRequest;
-import com.sep490.anomaly_training_backend.dto.response.EmployeeSkillCertificateResponse;
-import com.sep490.anomaly_training_backend.dto.response.KpiSummaryResponse;
-import com.sep490.anomaly_training_backend.dto.response.PrioritizedEmployeeResponse;
-import com.sep490.anomaly_training_backend.dto.response.ProductLineResponse;
-import com.sep490.anomaly_training_backend.dto.response.SampleResultResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultDetailResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultListResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultOptionResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProcessResponse;
-import com.sep490.anomaly_training_backend.dto.response.TrainingResultProductOptionResponse;
+import com.sep490.anomaly_training_backend.dto.response.*;
 import com.sep490.anomaly_training_backend.dto.response.skill_matrix.SkillMatrixResponse;
 import com.sep490.anomaly_training_backend.model.TrainingResultDetail;
 import com.sep490.anomaly_training_backend.model.User;
@@ -32,13 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -133,12 +118,8 @@ public class TrainingResultController {
     @PreAuthorize("hasAuthority('training_result.manage')")
     public ResponseEntity<?> updateTrainingResult(
             @RequestBody UpdateTrainingResultRequest request) {
-        try {
-            trainingResultService.updateResult(request);
-            return ResponseEntity.ok("Training Result updated successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
-        }
+        trainingResultService.updateResult(request);
+        return ResponseEntity.ok("Training Result updated successfully.");
     }
 
     @Operation(summary = "FI batch signature confirmation", description = "For FINAL_INSPECTION role only. When all 4 signatures are complete, Actual Date of Plan and Result will be automatically updated.")
@@ -150,14 +131,8 @@ public class TrainingResultController {
     @PutMapping("/fi-signatures")
     @PreAuthorize("hasAuthority('review_approve.confirm')")
     public ResponseEntity<?> signByFi(@RequestBody List<FiSignRequest> requests) {
-        try {
-            trainingResultService.signDetailsByFi(requests);
-            return ResponseEntity.ok("FI signature confirmed successfully.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
-        }
+        trainingResultService.signDetailsByFi(requests);
+        return ResponseEntity.ok("FI signature confirmed successfully.");
     }
 
     @Operation(summary = "Submit training result for approval (GỬI KẾT QUẢ)", description = "Submit the training result. All details must have been filled and signed before submission.")
@@ -217,6 +192,22 @@ public class TrainingResultController {
             @AuthenticationPrincipal User currentUser,
             @Parameter(description = "Training Result Header ID") @PathVariable Long id) {
         return ResponseEntity.ok(trainingResultService.getTrainingResultDetailForVerify(currentUser, id));
+    }
+
+    @Operation(summary = "Get training result details for FI confirmation", description = "Returns only details assigned to the current FI user with status PENDING_CONFIRMATION or COMPLETED.")
+    @GetMapping("/{id}/confirmation-view")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<TrainingResultDetailResponse> getResultDetailForConfirmation(
+            @AuthenticationPrincipal User currentUser,
+            @Parameter(description = "Training Result Header ID") @PathVariable Long id) {
+        return ResponseEntity.ok(trainingResultService.getTrainingResultDetailForConfirmation(currentUser, id));
+    }
+
+    @Operation(summary = "Get list of FI users", description = "Returns users with review_approve.confirm permission.")
+    @GetMapping("/fi-users")
+    @PreAuthorize("hasAuthority('training_result.view')")
+    public ResponseEntity<List<TrainingResultOptionResponse>> getFiUsers() {
+        return ResponseEntity.ok(trainingResultService.getFiUsers());
     }
 
     @Operation(summary = "Get processes by product line", description = "Returns list of processes for the Công đoạn dropdown on the result detail screen.")
@@ -317,9 +308,9 @@ public class TrainingResultController {
             @PathVariable Long id,
             @PathVariable Long detailId,
             @AuthenticationPrincipal User currentUser,
-            @Valid @RequestBody RejectRequest rejectRequest,
+            @Valid @RequestBody RejectRequest detailRejectRequest,
             HttpServletRequest request) {
-        trainingResultService.rejectDetail(id, detailId, rejectRequest, currentUser, request);
+        trainingResultService.rejectDetail(id, detailId, detailRejectRequest, currentUser, request);
         return ResponseEntity.ok("Plan has been rejected!");
     }
 }
